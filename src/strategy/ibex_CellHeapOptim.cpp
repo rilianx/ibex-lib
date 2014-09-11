@@ -30,139 +30,152 @@ namespace {
 // this comparator is used in the first heap (buffer of Optimizer   crit==LB)
 struct CellComparatorFirstCrit {
 	bool operator()(const pair<OptimCell*,pair<double,double> >& c1, const pair<OptimCell*,pair<double,double> >& c2) {
-	  if( c1.second.first !=  c2.second.first)
-	    return c1.second.first >= c2.second.first;
-	  else
-	    return c1.second.second >= c2.second.second;
+		if( c1.second.first !=  c2.second.first)
+			return c1.second.first >= c2.second.first;
+		else
+			return c1.second.second >= c2.second.second;
 	}
 };
 
 
-  // the other comparators  used in the second heap  (buffer2  of Optimizer)
+// the other comparators  used in the second heap  (buffer2  of Optimizer)
 struct CellComparatorSecondCrit {
 	bool operator()(const pair<OptimCell*,pair<double,double> >& c1, const pair<OptimCell*,pair<double,double> >& c2) {
-	  if( c1.second.second !=  c2.second.second)
-	    return c1.second.second >= c2.second.second;
-	  else
-	    return c1.second.first >= c2.second.first;
+		if( c1.second.second !=  c2.second.second)
+			return c1.second.second >= c2.second.second;
+		else
+			return c1.second.first >= c2.second.first;
 	}
 };
 
 
-  
-  CellHeapOptim::CellHeapOptim(const int y, criterion crit) : y(y) , crit(crit){;}
-  
 
-/** The cost is already computed, it is the interval of
- * last variable corresponding to the objective */
-  pair<double,double> CellHeapOptim::cost(const OptimCell& c) const {
-	  switch (crit)	{
-	  	  case LB  : return pair<double,double>(  c.box[y].lb()								,c.box[y].ub());
-	  	  case UB  : return pair<double,double>(  c.box[y].ub()								,c.box[y].lb());
-	  	  case C3  : return pair<double,double>( -((c.loup - c.pf.lb()) / c.pf.diam() )		,c.box[y].lb());
-	  	  case C5  : return pair<double,double>(-(c.pu * (c.loup - c.pf.lb()) / c.pf.diam()),c.box[y].lb());
-	  	  case C7  : return pair<double,double>(c.box[y].lb()/(c.pu*(c.loup-c.pf.lb())/c.pf.diam()),c.box[y].lb());
-	  	  case PU  : return pair<double,double>( -c.pu										,c.box[y].lb());
-	  	  case PF  : return pair<double,double>(  c.pf.lb()									,c.pf.ub());
-	  	  default: ibex_error("CellHeapOptim::cost : case impossible");
-	  }
+CellHeapOptim::CellHeapOptim(const int y, criterion crit) : y(y) , crit(crit){;}
+
+
+double CellHeapOptim::cost_first(const OptimCell& c) const {
+	switch (crit)	{
+	case LB  : return  c.box[y].lb();
+	case UB  : return  c.box[y].ub();
+	case C3  : return -((c.loup - c.pf.lb()) / c.pf.diam() );
+	case C5  : return -(c.pu * (c.loup - c.pf.lb()) / c.pf.diam());
+	case C7  : return  c.box[y].lb()/(c.pu*(c.loup-c.pf.lb())/c.pf.diam());
+	case PU  : return -c.pu	;
+	case PF  : return  c.pf.lb();
+	}
+
+}
+
+/** The second criterion */
+double CellHeapOptim::cost_second(const OptimCell& c) const {
+	switch (crit)	{
+	case LB  : 	return c.box[y].ub();
+	case PF  : 	return c.pf.ub();
+	case UB  : case PU  : case C7  : case C5  : case C3  :
+				return c.box[y].lb();
+	}
 
 }
 
 
-  /* removes from the top of the heap the cells that have already been removed from the other heap (heap_present <2) */
-  void CellHeapOptim::cleantop()  {
+pair<double,double> CellHeapOptim::cost(const OptimCell& c) const {
+	return pair<double,double>( cost_first(c),cost_second(c));
+}
+
+
+/* removes from the top of the heap the cells that have already been removed from the other heap (heap_present <2) */
+void CellHeapOptim::cleantop()  {
 	while (!empty() && (lopt.front().first)->heap_present < 2)
-	  { OptimCell *c = pop();
-	    if (c->heap_present == 0) delete c;
-	  }
-	
-	
-  }
-  
-
-  /* "heap destruction" made by another comparator and reconstruction of the heap with its comparator : useful for diversification by breaking the ties another way*/
-  void CellHeapOptim:: makeheap()
-  {
-	  make_heap (lopt.begin(),lopt.end(),CellComparatorSecondCrit());
-	  make_heap (lopt.begin(),lopt.end(),CellComparatorFirstCrit());
-  }
-
-    void CellHeapOptim::flush() {
-    for (vector<pair<OptimCell*,pair<double,double> > >::iterator it=lopt.begin(); it!=lopt.end(); it++)
-	  { OptimCell* cell=it->first;
-		cell->heap_present--;
-	    if (cell->heap_present==0)	  delete cell;
-	    // delete it->second;  // not need now?
-	  }
-    lopt.clear();
-  }
+	{ OptimCell *c = pop();
+	if (c->heap_present == 0) delete c;
+	}
 
 
-    // E.g.: called in Optimizer in case of a new upper bound
-    // on the objective ("loup"). This function then removes (and deletes) from
-    // the heap all the cells with a cost greater than loup.
-    void CellHeapOptim::contract_heap(double loup)  {
+}
 
-    	//	cout << " before contract heap  "  << lopt.size() <<  endl ;
-    	switch (crit)	{
-    	case LB  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorFirstCrit()); break;
-    	case UB  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
-    	case C3  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
-    	case C5  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
-    	case C7  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
-    	case PU  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
-    	case PF  :  sort_heap(lopt.begin(),lopt.end(),CellComparatorFirstCrit()); break;
-    	default: ibex_error("CellHeapOptim::contract_heap : case impossible");
-    	}
+/* "heap destruction" made by another comparator and reconstruction of the heap with its comparator : useful for diversification by breaking the ties another way*/
+void CellHeapOptim:: makeheap()
+{
+	make_heap (lopt.begin(),lopt.end(),CellComparatorSecondCrit());
+	make_heap (lopt.begin(),lopt.end(),CellComparatorFirstCrit());
+}
 
-    	vector<pair<OptimCell*,pair<double,double> > >::iterator it0=lopt.begin();
+void CellHeapOptim::flush() {
+	for (vector<pair<OptimCell*,pair<double,double> > >::iterator it=lopt.begin(); it!=lopt.end(); it++)
+	{ OptimCell* cell=it->first;
+	cell->heap_present--;
+	if (cell->heap_present==0)	  delete cell;
+	// delete it->second;  // not need now?
+	}
+	lopt.clear();
+}
 
-    	int k=0;
-    	if (crit==LB || crit== PF) {
-    		while (it0!=lopt.end() && it0->second.first > loup) { it0++; k++; }
-    	} else {
-    		while (it0!=lopt.end() && it0->second.second > loup) { it0++; k++; }
-    	}
 
-    	for (int i=0;i<k;i++) {
-    		//	cout << " i " << " heap_present " << (lopt[i].first)->heap_present << endl;
-    		(lopt[i].first)->heap_present--;
-    		if ((lopt[i].first)->heap_present==0) {
-    			delete lopt[i].first;
-    		}
-    		//delete lopt[i].second;  //not need now?
-    	}
+// E.g.: called in Optimizer in case of a new upper bound
+// on the objective ("loup"). This function then removes (and deletes) from
+// the heap all the cells with a cost greater than loup.
+void CellHeapOptim::contract_heap(double loup)  {
 
-    	if (k>0) lopt.erase(lopt.begin(),it0);
-// J'avais pas compris que la value du loup pouvait changer !!!!!!!!!!!!!!!!!!!!!!!
-// MAis si elle change le vector n'est plus trié???
+	//	cout << " before contract heap  "  << lopt.size() <<  endl ;
+// sort the heap with the criterion LB
+	switch (crit)	{
+	case LB  : 	case PF  :
+		sort_heap(lopt.begin(),lopt.end(),CellComparatorFirstCrit()); break; //TODO JN: is it really necessary? The heap should be already sort.
+	case UB  :  case C3  :  case C5  :  case C7  :  case PU  :
+		sort_heap(lopt.begin(),lopt.end(),CellComparatorSecondCrit()); break;
+	}
 
-    	if (crit==C3||crit==C5||crit==C7)
-    		for (unsigned int i=0;i<lopt.size();i++) (lopt[i].first)->loup=loup;
+// detect the number of OptimCell to remove
+	vector<pair<OptimCell*,pair<double,double> > >::iterator it0=lopt.begin();
+	int k=0;
+	switch (crit)	{
+	case LB  : 	case PF  :
+		while (it0!=lopt.end() && it0->second.first > loup) { it0++; k++; }  break;
+	case UB  :  case C3  :  case C5  :  case C7  :  case PU  :
+		while (it0!=lopt.end() && it0->second.second > loup) { it0++; k++; } break;
+	}
 
-    	switch (crit)
-    	{case LB: make_heap(lopt.begin(), lopt.end() ,CellComparatorlb());break;
-    	case UB : make_heap(lopt.begin(), lopt.end(), CellComparatorub()); break;
-    	case C3 : 	make_heap(lopt.begin(), lopt.end(), CellComparatorC3()); break;
-    	case C5 : 	make_heap(lopt.begin(), lopt.end(), CellComparatorC5()); break;
-    	case C7: 	make_heap(lopt.begin(), lopt.end(), CellComparatorC7()); break;
-    	case PU: 	make_heap(lopt.begin(), lopt.end(), CellComparatorpu()); break;
-    	}
-    }
+// remove this OptimCell
+	for (int i=0;i<k;i++) {
+		//	cout << " i " << " heap_present " << (lopt[i].first)->heap_present << endl;
+		(lopt[i].first)->heap_present--;
+		if ((lopt[i].first)->heap_present==0) {
+			delete lopt[i].first;
+		}
+		//delete lopt[i].second;  //not need now?
+	}
+	if (k>0) lopt.erase(lopt.begin(),it0);
 
-  
-  // remove the cell from the buffer and decrements its heap_present counter
-  OptimCell* CellHeapOptim::pop() {
-    OptimCell* c = lopt.front().first;
-    c->heap_present--;
-    pop_heap(lopt.begin(), lopt.end(), CellComparatorFirstCrit());
-    // delete lopt.back().second; // not need now?
-    lopt.pop_back(); // removes the "best"
-    return c;     // and returns it
-  }
+// update the value of the criterion if necessary
+	switch (crit)	{
 
-  void CellHeapOptim::push(OptimCell* cell) {
+	case C3  : case C5  : case C7  : {
+		for (unsigned int i=0;i<lopt.size();i++) {
+			(lopt[i].first)->loup=loup;
+			lopt[i].second.first = cost_first(*(lopt[i].first));
+		}
+		break;
+	}
+	case LB  : case UB  :  	case PF  : case PU  : default : break;
+	}
+
+// rebuild the heap with the first criterion
+	make_heap(lopt.begin(),lopt.end(),CellComparatorFirstCrit());
+
+}
+
+
+// remove the cell from the buffer and decrements its heap_present counter
+OptimCell* CellHeapOptim::pop() {
+	OptimCell* c = lopt.front().first;
+	c->heap_present--;
+	pop_heap(lopt.begin(), lopt.end(), CellComparatorFirstCrit());
+	// delete lopt.back().second; // not need now?
+	lopt.pop_back(); // removes the "best"
+	return c;     // and returns it
+}
+
+void CellHeapOptim::push(OptimCell* cell) {
 	if (capacity>0 && size()==capacity) throw CellBufferOverflow();
 
 	lopt.push_back(pair<OptimCell*,pair<double,double> >(cell,&cost(*cell)));
@@ -170,18 +183,18 @@ struct CellComparatorSecondCrit {
 	push_heap(lopt.begin(), lopt.end(), CellComparatorFirstCrit());
 
 	cell->heap_present++;
-	
+
 }
 
 
-  // returns the cell on the top of the heap without modifying the heap
-  OptimCell* CellHeapOptim::top() const {
-    return lopt.front().first;
-  }
+// returns the cell on the top of the heap without modifying the heap
+OptimCell* CellHeapOptim::top() const {
+	return lopt.front().first;
+}
 
-    double CellHeapOptim::minimum()  {
+double CellHeapOptim::minimum()  {
 	return lopt.front().second.first;
-  }
+}
 
 int CellHeapOptim::size() const {
 	return lopt.size();
@@ -189,7 +202,7 @@ int CellHeapOptim::size() const {
 bool CellHeapOptim::empty() const {
 	return lopt.empty();
 }
-  
+
 ostream& operator<<(ostream& os, const CellHeapOptim& heap) {
 	os << "[ ";
 	for (vector<pair<OptimCell*,pair<double,double> > >::const_iterator it=heap.lopt.begin(); it!=heap.lopt.end(); it++)
@@ -197,5 +210,5 @@ ostream& operator<<(ostream& os, const CellHeapOptim& heap) {
 	return os << "]";
 }
 
-  
+
 } // end namespace ibex

@@ -103,6 +103,11 @@ public:
  protected:
    /** The cost of a cell. */
   std::pair<double,double> cost(const OptimCell& c) const;
+  /** The first criterion of a cell. */
+ double cost_first(const OptimCell& c) const;
+
+ /** The second criterion of a cell. */
+double cost_second(const OptimCell& c) const;
 
   // cells and associated "costs"
   std::vector<std::pair<OptimCell*,std::pair<double,double>> > lopt;
