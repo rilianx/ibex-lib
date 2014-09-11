@@ -8,12 +8,10 @@
 // Last Update : May 12, 2012
 //============================================================================
 
-#ifndef __IBEX_CELL_HEAP_H__
-#define __IBEX_CELL_HEAP_H__
+#ifndef __IBEX_CELL_HEAP_2_H__
+#define __IBEX_CELL_HEAP_2_H__
 
 #include "ibex_CellBuffer.h"
-#include <utility>
-#include <vector>
 
 namespace ibex {
 
@@ -40,6 +38,8 @@ class CellHeap_2 : public CellBuffer {
 
 public:
 
+	CellHeap_2();
+
 	~CellHeap_2();
 
 	/** Flush the buffer.
@@ -54,6 +54,9 @@ public:
 
 	/** push a new cell on the stack. */
 	void push(Cell* cell);
+
+	/** push a new cell on the stack with the computed criterion. */
+	void push(Cell* cell, double crit);
 
 	/** Pop a cell from the stack and return it.*/
 	Cell* pop();
@@ -77,13 +80,19 @@ public:
 
 protected:
 	/** The "cost" of a cell. */
-	virtual double cost(const Cell&) const;
+	virtual double cost(const Cell&) const {return 0;};
 
 
 	/** the root of the heap */
 	HeapNode * root;
 
 	friend std::ostream& operator<<(std::ostream&, const CellHeap_2&);
+
+private:
+	/** access to the ith node rank by largest-first order */
+	HeapNode * selectNode(int i) const;
+
+	void contract_tmp(double new_loup, HeapNode * node, CellHeap_2 & heap);
 
 
 };
@@ -93,7 +102,9 @@ std::ostream& operator<<(std::ostream&, const CellHeap_2& heap);
 
 
 class HeapNode {
-public:
+
+private:
+	friend class CellHeap_2;
 
 	/** create an empty node */
 	HeapNode();
@@ -101,15 +112,8 @@ public:
 	/** create an node with a cell and its criterion */
 	HeapNode(Cell* elt, double crit);
 
-	/** create an node with a cell and its criterion */
-	HeapNode(Cell* elt, double crit, HeapNode * father);
-
 	/** Delete the node and all its sons */
 	HeapNode::~HeapNode() ;
-
-
-private:
-	friend class CellHeap_2;
 
 	// the stored Cell
 	Cell* elt;
@@ -125,7 +129,11 @@ private:
 	HeapNode * father;
 
 	/** The way to compare two pairs (cells,crit). */
-	bool is_sup(HeapNode *n2) const;
+	bool isSup(HeapNode *n) const;
+	bool isSup(double d) const ;
+
+	void switchElt(HeapNode *n);
+
 
 	friend std::ostream& operator<<(std::ostream& os, const HeapNode& node) ;
 
@@ -140,4 +148,4 @@ std::ostream& operator<<(std::ostream& os, const HeapNode& node) ;
 
 
 } // end namespace ibex
-#endif // __IBEX_CELL_HEAP_H__
+#endif // __IBEX_CELL_HEAP_2_H__
