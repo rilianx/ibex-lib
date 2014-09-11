@@ -84,10 +84,10 @@ bool OptimCtc::localsearch(const IntervalVector* box, int nb) {
 					loup_point = v_tmp;
 					loup_change = true;
 					{
-						int prec=cout.precision();
-						cout.precision(12);
-						cout << "[localsearch]"  << " loup update " << loup  << " loup point  " << loup_point << endl;
-						cout.precision(prec);
+					int prec=cout.precision();
+					cout.precision(12);
+					cout << "[localsearch]"  << " loup update " << loup  << " loup point  " << loup_point << endl;
+					cout.precision(prec);
 					}
 				}
 			}
@@ -187,8 +187,8 @@ void OptimCtc::handle_cell(OptimCell& c, const IntervalVector& init_box ){
 			c.loup=1.e8;
 
 		// the cell is put into the 2 heaps
-		buffer.push_costpf(&c);
-		if (critpr > 0)      buffer2.push_costpf(&c);
+		buffer.push(&c);
+		if (critpr > 0)      buffer2.push(&c);
 
 		nb_cells++;
 		// reconstruction of the 2 heaps every heap_build_period nodes
@@ -236,8 +236,8 @@ void OptimCtc::add_buffer_pf(IntervalVector* list, int size) {
 			bsc.add_backtrackable(*cell);
 
 			// the cell is put into the 2 heaps with the cost stored in pf
-			buffer.push_costpf(cell);
-			if (critpr > 0)      buffer2.push_costpf(cell);
+			buffer.push(cell);
+			if (critpr > 0)      buffer2.push(cell);
 
 		} catch (EmptyBoxException& ) {/* nothing to do */}
 	}
