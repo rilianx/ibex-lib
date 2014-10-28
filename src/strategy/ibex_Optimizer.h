@@ -299,6 +299,10 @@ public:
 	/** Number of cells put into the heap (which passed through the contractors)  */
 	int nb_cells;
 
+
+	/** Lower bound of the small boxes taken by the precision */
+	double uplo_of_epsboxes;
+
 protected:
 	/**
 	 * \brief Return an upper bound of f(x).
@@ -549,7 +553,7 @@ protected:
 	
 	void compute_pu (OptimCell& c);
 	
-private:
+//~ private:
 
 	/** Rigor mode (eps_equ==0) */
 	const bool rigor;
@@ -560,8 +564,6 @@ private:
 	/** Inner contractor (for the negation of g) */
 	CtcUnion* is_inside;
 
-	/** Lower bound of the small boxes taken by the precision */
-	double uplo_of_epsboxes;
 
 
 
