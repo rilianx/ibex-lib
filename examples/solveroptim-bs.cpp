@@ -1,7 +1,7 @@
 //============================================================================
 //                                  I B E X
-// File        : optimizer-ampl.cpp
-// Author      : Gilles Chabert  Bertrand Neveu
+// File        : solveroptim-bs.cpp
+// Author      : Gilles Chabert  Bertrand Neveu Ignacio Araya
 // Copyright   : Ecole des Mines de Nantes (France)
 // License     : See the LICENSE file
 // Created     : Jul 12, 2012
@@ -20,7 +20,7 @@ int main(int argc, char** argv){
 	// ------------------------------------------------
 	// Parameterized Optimizer (with a system loaded from a file, and choice of contractor, linearization and bisector)
 	//
-        // Load a problem to optimize
+    // Load a problem to optimize
 	// --------------------------
 	try {
 
@@ -40,6 +40,7 @@ int main(int argc, char** argv){
 	int nseeds= atoi(argv[10]);
 	string ampl = argv[11];
     int N = atoi(argv[12]);
+	double eqeps= 1.e-8;
 	
 	int mohc_active_components = 31; //all components are activated
 	if(argc>13){
@@ -220,13 +221,14 @@ int main(int argc, char** argv){
 	int samplesize=1;
 
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
-	OptimizerBS* o=NULL;
+	Optimizer* o=NULL;
 	Solver* s =NULL;
 	CellStack buff;
+
+	if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
 	
-	
-	if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
-	abs(N),(N<0));
+	//~ if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
+	//~ abs(N),(N<0));
     else s=new Solver(*ctcxn,*bs,buff);
 
 
@@ -247,7 +249,7 @@ int main(int argc, char** argv){
     vector<IntervalVector> sols;
     cout.precision(10);
 	// the search itself
-	if (o) o->optimize(orig_sys->box,obj_init_bound);
+	if (o) o->optimize(orig_sys->box);
 	if (s) sols=s->solve(sys->box);
 
 	// printing the results
@@ -289,7 +291,7 @@ int main(int argc, char** argv){
 
     if(type=="optim" && !infeas) cout << argv[1] << " " << uplo << "," << loup << " " << double(total_time)/double(nseeds) << " " <<
              double(total_boxes)/double(nseeds) << " " << touts << endl;
-    else  cout << argv[1] << "  infeas, infeas " << double(total_time)/double(nseeds) << " " <<
+    else  cout << argv[1] << " infeas " << double(total_time)/double(nseeds) << " " <<
              double(total_boxes)/double(nseeds) << " " << touts << endl;
      
     if(type=="solver") cout << argv[1] << " " << nsols  << " " << double(total_time)/double(nseeds) << " " <<

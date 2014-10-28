@@ -105,7 +105,7 @@ public:
 	 *
 	 *         TIMEOUT             time is out.
 	 */
-	Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
+	virtual Status optimize(const IntervalVector& init_box, double obj_init_bound=POS_INFINITY);
 
 	/**
 	 * \brief Displays on standard output a report of the last call to #optimize(const IntervalVector&).
