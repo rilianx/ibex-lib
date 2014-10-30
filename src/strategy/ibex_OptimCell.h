@@ -39,11 +39,6 @@ public:
 	double pu;
 	/** the current loup : updated by contract_heap  */
 	double loup;
-/** for the beam-search strategy */
-	double lb;
-	//~ int loup_subtree;
-	long int id;
-	
 	};
 
   } // end namespace ibex

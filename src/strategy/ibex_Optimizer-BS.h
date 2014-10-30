@@ -22,7 +22,7 @@
 #include "ibex_EntailedCtr.h"
 #include "ibex_LinearSolver.h"
 #include "ibex_PdcHansenFeasibility.h"
-#include "ibex_OptimCell.h"
+#include "ibex_CellSet.h"
 #include "ibex_Optimizer.h"
 
 
@@ -44,22 +44,10 @@ namespace ibex {
 //~ };
 
 
-struct minLB {
-  bool operator() (const OptimCell* c1, const OptimCell* c2) const
-  {
-	  
-	  if(c1->lb < c2->lb) return true;
-	 // else if(c1->lb == c2->lb && c1->loup_subtree > c2->loup_subtree) return true;	  
-	  else return(c1->lb == c2->lb /*&& c1->loup_subtree == c2->loup_subtree */&& c1->id < c2->id);
 
 
-	  
-	  //~ else if(c1->lb == c2->lb && c1->ub < c2->ub) return true;
-	  //~ else if(c1->lb == c2->lb && c1->ub == c2->ub && c1->loup_subtree > c2->loup_subtree) return true;	  
-	  //~ else return(c1->ub == c2->ub && c1->lb == c2->lb && c1->loup_subtree == c2->loup_subtree && c1 < c2);
 
-  }
-};
+
 
 
 
@@ -109,6 +97,10 @@ public:
 			double goal_rel_prec=default_goal_rel_prec, double goal_abs_prec=default_goal_abs_prec,
 			  int sample_size=default_sample_size, double equ_eps=default_equ_eps, bool rigor=false, int N=1, bool exploitation=true);
 
+	/**
+	 * \brief Delete *this.
+	 */
+	virtual ~OptimizerBS();
 
 	/**
 	 * \brief Run the optimization.
@@ -122,12 +114,65 @@ public:
 
     //~ std::set<OptimCell *,minLB> buffer2;
 
+	/**
+	 * \brief Main procedure for processing a box.
+	 *
+	 * <ul>
+	 * <li> contract and bound the cell box (see contract_and_bound)
+	 * <li> return true iff the cell has not been deleted
+	 * </ul>
+	 *
+	 */
+	bool handle_cell_nopush(Cell& c, const IntervalVector& init_box);
+
+	/**
+	 * \brief Contract and bound procedure for processing a box.
+	 *
+	 * <ul>
+	 * <li> contract the cell's box w.r.t the "loup",
+	 * <li> contract with the contractor ctc,
+	 * <li> search for a new loup,
+	 * <li> call the first order contractor
+	 * </ul>
+	 *
+	 */
+	void contract_and_bound(Cell& c, const IntervalVector& init_box);
+
+	/**
+	 * \brief Update the uplo
+	 */
+	void update_uplo();
+
+	/**
+	 * \brief Displays on standard output a report of the last call to #optimize(const IntervalVector&).
+	 *
+	 * Information provided:
+	 * <ul><li> interval of the cost  [uplo,loup]
+	 *     <li> the best feasible point found
+	 *     <li>total running time
+	 *     <li>total number of cells created during the exploration
+	 * </ul>
+	 */
+	void report();
+
+	/**
+	 * \brief Displays on standard output a report of the last call to #optimize(const IntervalVector&).
+	 *
+	 * Information provided:
+	 * <ul><li> interval of the cost  [uplo,loup]
+	 *     <li>total running time
+	 * </ul>
+	 */
+	void report_perf();
+
 private:
 	 /* KBFS *************/
 	//~ double box_loup;
 	//~ Vector box_point;
 	int N;
     bool exploitation;
+    CellSet<minLB> bufferset;
+    
     /* *******************/
 
 };

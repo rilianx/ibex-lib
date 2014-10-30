@@ -225,10 +225,10 @@ int main(int argc, char** argv){
 	Solver* s =NULL;
 	CellStack buff;
 
-	if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
+	//if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
 	
-	//~ if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
-	//~ abs(N),(N<0));
+	if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
+	abs(N),(N<0));
     else s=new Solver(*ctcxn,*bs,buff);
 
 

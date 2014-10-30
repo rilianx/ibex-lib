@@ -31,18 +31,12 @@ namespace {
 // this comparator is used in the first heap (buffer of Optimizer   crit==LB)
 struct CellComparatorlb {
 	bool operator()(const pair<OptimCell*,Interval*>& c1, const pair<OptimCell*,Interval*>& c2) {
-	   if(c1.first->lb > c2.first->lb) return true;
-	   //~ else if(c1.first->lb == c2.first->lb && c1.first->loup_subtree < c2.first->loup_subtree) return true;	  
-	   else return(c1.first->lb == c2.first->lb /*&& c1.first->loup_subtree == c2.first->loup_subtree*/ && c1.first->id > c2.first->id);
-		
-		
-	  //~ if( c1.second->lb() !=  c2.second->lb())
-	    //~ return c1.second->lb() >= c2.second->lb();
-	  //~ else  
-	    //~ return c1.second->ub() >= c2.second->ub();
+	  if( c1.second->lb() !=  c2.second->lb())
+	    return c1.second->lb() >= c2.second->lb();
+	  else  
+	    return c1.second->ub() >= c2.second->ub();
 	}
 };
-
 
 
   // the other comparators  used in the second heap  (buffer2  of Optimizer)
