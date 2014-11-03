@@ -79,29 +79,11 @@ int main(int argc, char** argv){
 
 	Bsc * bs;
 
-	/*if (bisection=="roundrobin")
-	  bs = new RoundRobin (prec);
-	else if (bisection== "largestfirst")
-          bs= new LargestFirst();
-	else if (bisection=="smearsum")
-	  bs = new SmearSum(ext_sys,prec);
-	else if (bisection=="smearmax")
-	  bs = new SmearMax(ext_sys,prec);
-	else*/ if (bisection=="smearsumrel")
+	if (bisection=="smearsumrel")
 	  bs = new SmearSumRelative(*sys,prec);
 	else if (bisection=="smearmaxrel")
 	  bs = new SmearMaxRelative(*sys,prec);
 
-//	else if (bisection== "largestfirstnoobj")
-//	  bs= new LargestFirstNvar (sys->nb_var,prec);
-// 	else if (bisection=="roundrobinnoobj")
-// 	  bs = new RoundRobinNvar(sys->nb_var,prec);
-// 	else if (bisection=="smearsumrelprop")
-// 	  bs = new SmearSumRelProp(ext_sys,prec);
-//	else if (bisection=="biasedobj")
-//	  bs = new BiasedObjective(goalprec, prec);
-//	else if (bisection=="biasedobjlargest")
-//	  bs = new BiasedObjectiveLargest(goalprec, prec);
 
 	else {cout << bisection << " is not an implemented  bisection mode "  << endl; return -1;}
 
@@ -251,82 +233,6 @@ int main(int argc, char** argv){
 	 }
 	if (s) sols=s->solve(sys->box);
 
-    //~ if(o){
-		//~ cout << "loup:" << o->loup << endl;
-		//~ cout << "nodes:" << o->buffer.size() << endl;
-		 //~ o->MINLB=true;
-		//~ double loup=o->loup;
-		//~ double uplo=o->uplo;
-		//~ set<OptimCell *, minLB> buffer=o->buffer;
-		//~ vector<IntervalVector> boxes;
-		//~ 
-      //~ for (std::set<OptimCell *>::iterator it=buffer.begin(); it!=buffer.end(); ++it)
-         //~ boxes.push_back( (*it)->box);
-       //~ if(boxes.size()<20) return 1;
-       //~ for(int i=0; i<100;i++) {
-		  //~ 
-		  //~ try{
-//~ 
-		  //~ IntervalVector initbox=boxes[rand()%boxes.size()];
-		  //~ 
-		  //~ 
-		  //~ 
-		  //~ Vector pt=initbox.mid();;
-	  //~ 
-		  //~ //LB
-		  //~ cout << initbox[o->ext_sys.goal_var()].lb() << ";";
-//~ 
-//~ 
-		  //~ int feas=0; double sum=0.0;	int n=0; double minp=POS_INFINITY;  
-		  //~ for(int k=0;k<10;k++){
-			  //~ if(k!=0) pt=initbox.random();
-			  //~ double res = o->goal(pt);
-		      //~ 
-		      //~ bool inner = true;
-	          //~ for (int j=1; j<sys->ctrs.size(); j++) {
-		      ////   if (o->entailed->normalized(j)) continue;
-		         //~ Interval y=sys->ctrs[j].f.eval(pt);
-		         //~ if (y.lb()>0) {inner= false; break;}
-	          //~ }
-              //~ if(inner) feas++;
-			  //~ if(res < POS_INFINITY){ sum+=res; n++;}
-			  //~ if(res < minp) minp=res;
-			  //~ 
-			  //~ if(k==0) cout << res << ";";
-		  //~ }
-		  //~ cout << sum/10.0 << ";";
-		  //~ cout << minp << ";";
-		  //~ 
-		  //~ if(feas>=3)  cout << "Feas_sample";
-		  //~ cout << " ;";
-        //~ 
-          //~ 
-            //~ 
-          //~ try{
-			//~ o->timeout=2; 
-		    //~ o->optimize(initbox,POS_INFINITY);
-		    //~ cout << o->loup << ";";
-		  //~ }catch (EmptyBoxException e) {
-			  //~ cout << " ;";
-		  //~ }
-		   //~ 
-          //~ try{
-			//~ o->timeout=40; 
-		    //~ o->optimize(initbox,POS_INFINITY);
-		    //~ cout << o->loup  << ";";
-		  //~ }catch (EmptyBoxException e) {
-			  //~ cout << "unfeas;" << "UNFEAS" ;
-		  //~ }
-//~ 
-		  //~ 
-		 //~ } catch (EmptyBoxException e) {}
-		  //~ 
-		  //~ 
-		 //~ cout << endl;
-	  //~ }
-    //~ } 
-
-	// printing the results
 
     if((o && o->time>timelimit) || (s && s->time>timelimit))
         touts++;
