@@ -240,6 +240,7 @@ void OptimizerBS::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 
 bool OptimizerBS::handle_cell_nopush(Cell& c, const IntervalVector& init_box ){
 	try {
+		    
 			contract_and_bound(c, init_box);
 	        c.get<CellBS>().lb=c.box[c.box.size()-1].lb();
 	        c.get<CellBS>().id=nb_cells;
@@ -328,19 +329,16 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 
 
 			Cell *c=(*S.begin());
-              //cout  << c->id << "," << c->lb << ";" << c->ub << " depth:" << depth << endl;
+			if (c->box[c->box.size()-1].lb() > compute_ymax()) {S.erase(S.begin()); delete c; continue;};  
+
 			try {
 
 				pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
 
 				pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);
 				
-				int v=new_cells.first->get<BisectedVar>().var;
-
-				//buffer.erase(S.front());
 				S.erase(S.begin());
 
-               // int loup_subtree=c->loup_subtree;
 				delete c; 
 			    
 			    if(!exploitation){
@@ -354,7 +352,6 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 				if (uplo_of_epsboxes == NEG_INFINITY) {
 					cout << " possible infinite minimum " << endl;
 					goto end;
-					//~ break;
 				}
 	
 				time_limit_check();
