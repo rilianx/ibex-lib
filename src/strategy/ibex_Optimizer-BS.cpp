@@ -38,24 +38,8 @@ namespace ibex {
 //~ const int    OptimizerBS::default_sample_size = 10;
 //~ const double OptimizerBS::default_equ_eps = 1e-08;
 //~ const double OptimizerBS::default_loup_tolerance = 0.1;
-template class CellSet<minLB>;
+//~ template class CellSet<minLB>;
 
-
-CellBS::CellBS() : lb(0.0), id(0) {
-
-}
-
-CellBS::CellBS(const CellBS& e) : lb(e.lb), id(e.id) {
-
-}
-
-std::pair<Backtrackable*,Backtrackable*> CellBS::down() {
-	return std::pair<Backtrackable*,Backtrackable*>(new CellBS(*this),new CellBS(*this));
-}
-
-CellBS::~CellBS() {
-
-}
 
 OptimizerBS::~OptimizerBS() {
 	if (is_inside) {
@@ -258,7 +242,7 @@ bool OptimizerBS::handle_cell_nopush(Cell& c, const IntervalVector& init_box ){
 	try {
 			contract_and_bound(c, init_box);
 	        c.get<CellBS>().lb=c.box[c.box.size()-1].lb();
-	        c.get<CellBS>().id=nb_cells; 
+	        c.get<CellBS>().id=nb_cells;
 	        nb_cells++;
 	}
 	catch(EmptyBoxException&) {

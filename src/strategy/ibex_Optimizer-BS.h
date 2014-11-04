@@ -29,24 +29,6 @@
 namespace ibex {
 
 
-//~ struct minUBBox {
-  //~ bool operator() (const OptimCell* c1, const OptimCell* c2) const
-  //~ {
-	  //~ 
-	  //~ if(c1->ub < c2->ub) return true;
-	  //~ else return (c1->ub == c2->ub &&  c1->loup_subtree > c2->loup_subtree && c1->id < c2->id);
-	  
-	  //~ else if(c1->ub == c2->ub && c1->loup_subtree > c2->loup_subtree) return true;
-	  //~ else if(c1->ub == c2->ub && c1->loup_subtree == c2->loup_subtree && c1->lb < c2->lb) return true;
-	  //~ else return(c1->ub == c2->ub && c1->lb == c2->lb && c1->loup_subtree == c2->loup_subtree && c1 < c2);
-
-  //~ }
-//~ };
-
-
-
-
-
 
 
 

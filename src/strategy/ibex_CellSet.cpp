@@ -12,6 +12,24 @@
 
 namespace ibex {
 
+CellBS::CellBS() : lb(0.0), depth(0), id(0) {
+
+}
+
+CellBS::CellBS(const CellBS& e) : lb(e.lb), depth(e.depth) {
+
+}
+
+std::pair<Backtrackable*,Backtrackable*> CellBS::down() {
+	CellBS* c1=new CellBS(*this);
+	CellBS* c2=new CellBS(*this);
+	c1->depth=depth+1;
+	c2->depth=depth+1;
+	return std::pair<Backtrackable*,Backtrackable*>(c1,c2);
+}
+
+CellBS::~CellBS(){ }
+
 template <class T>
 void CellSet<T>::flush() {
 	while (!cset.empty()) {
@@ -47,6 +65,30 @@ template <class T>
 Cell* CellSet<T>::top() const {
 	return *cset.begin();
 }
+
+template <class T>
+Cell* CellSet<T>::random_pop(double lb_max) {
+	std::set<Cell*>::iterator it=cset.begin();
+	double roulette=0.0;
+	int first_depth=(*it)->get<CellBS>().depth;
+	while(it!=cset.end() && (*it)->get<CellBS>().lb <=lb_max){
+		roulette += std::pow(2.0, (double)(first_depth-(*it)->get<CellBS>().depth));
+		it++;
+	}
+	roulette=(double) (rand()/RAND_MAX) * roulette;
+	
+	it=cset.begin();
+	while(it!=cset.end() && roulette>=0.0){
+	  roulette -= std::pow(2.0, (double)(first_depth-(*it)->get<CellBS>().depth));
+	  it++;
+    }
+	
+	it--;
+	Cell* c = *it;
+	cset.erase(it);
+	return c;
+}
+
 
   // E.g.: called in Optimizer in case of a new upper bound
 // on the objective ("loup"). This function then removes (and deletes) from

@@ -37,10 +37,13 @@ public:
 	 */
 	std::pair<Backtrackable*,Backtrackable*> down();
 
+    /**unique identifier for comparisons*/
+    int id;
+    
 	/** lower bound for the box */
 	double lb;
-	/** unique identifier for the node */
-	long int id;
+	/** depth of the node **/
+	int depth;
 
 protected:
 
@@ -52,7 +55,8 @@ struct minLB {
   bool operator() (const Cell* c1, const Cell* c2) const
   {  
 	  if(c1->get<CellBS>().lb < c2->get<CellBS>().lb) return true;
-	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().id < c2->get<CellBS>().id);
+	  else if(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth < c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id < c2->get<CellBS>().id);
   }
 };
 
@@ -83,6 +87,9 @@ class CellSet : public CellBuffer {
 
   /** Return the next box (but does not pop it).*/
   Cell* top() const;
+  
+  /** Return a random box with lb<=max_lb */
+  Cell* random_pop(double max_lb);
 
 /**
    * Removes (and deletes) from the heap all the cells
