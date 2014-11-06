@@ -27,6 +27,6 @@ echo ./$algo $FILE $type $filt $lr smearsumrel 1e-8 1e-8 $time $taumohc $rand $a
 
 done
 
-while [ "$(pidof $algo | wc -w)" -ge 1 ]; do
-  sleep 10
-done
+#~ while [ "$(pidof $algo | wc -w)" -ge 1 ]; do
+  #~ sleep 10
+#~ done

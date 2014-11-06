@@ -418,7 +418,7 @@ void Optimizer::contract ( IntervalVector& box, const IntervalVector& init_box) 
 }
 
 bool too_close(double a, double t, double b){
-	 return (std::abs((a-b)/(b-t)) < 0.01);
+	 return ((std::abs((a-b)/(b-t)) < 0.1));
 }
 
 void Optimizer::updateUB(double& alpha, double uplo, double loup, double& loup_est){
@@ -434,8 +434,8 @@ void Optimizer::updateUB(double& alpha, double uplo, double loup, double& loup_e
      else
        loup_est=h*uplo + (1.0-h)*loup;
 
-     if(too_close(loup_est, uplo, loup))
-                loup_est=loup;  
+     //if(too_close(loup_est, uplo, loup))
+     //loup_est=loup;  
                   
                     
      alpha+=step; if(alpha>0.999) alpha=0.999; 
@@ -530,10 +530,16 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 					if(uplo>=loup_est){ //wrong estimate
 						alpha=0.0; //abrupt decline
 						loup_est=loup;
+						//cout << loup_est << "," << loup << endl;
 					}
-
+                     
+                    double ymax;
+	                if (loup==POS_INFINITY) ymax=POS_INFINITY;
+	                else ymax= compute_ymax()+1.e-15;
+ 	                y &= Interval(NEG_INFINITY,ymax);
+ 	                
                     
-                    if(loup!=loup_est && y.ub() > loup_est && !too_close(y.ub(), y.lb(), loup_est))
+                    if(!y.is_empty() && loup!=loup_est && loup_est > y.lb()+1e-8 && loup_est < y.ub()-0.1*(y.diam()))
                         flag=BISECTY;
 				}
 				
@@ -543,9 +549,12 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 			   }else if (flag== BISECTY){
 				   IntervalVector right=c->box;
 		           IntervalVector left=c->box;
-                   right[ext_sys.goal_var()]=Interval(loup_est,y.ub());
-                   left[ext_sys.goal_var()]=Interval(y.lb(),loup_est);
-                   new_cells=c->bisect(left,right);	
+		           
+		           double point=loup_est; //std::max(y.lb()+0.1*y.diam(),loup_est);
+                   right[ext_sys.goal_var()]=Interval(point,y.ub());
+                   left[ext_sys.goal_var()]=Interval(y.lb(),point);
+                   new_cells=c->bisect(left,right);					   
+
 				}
 							
 				if (indbuf ==0) 
@@ -553,6 +562,8 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 				else  
 					buffer2.pop();
 				if (c->heap_present==0) delete c; // deletes the cell if it is no more present in a heap.
+
+                if(new_cells.first==NULL) continue;
 
                 try{
 				    IntervalVector init=(new_cells.first)->box;
@@ -574,6 +585,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 					break;
 				}
 				if (loup_changed) {
+                    // cout << loup << endl;
 					// In case of a new upper bound (loup_changed == true), all the boxes
 					// with a lower bound greater than (loup - goal_prec) are removed and deleted.
 					// Note: if contraction was before bisection, we could have the problem
@@ -581,7 +593,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 					// older version of the code (before revision 284).
 
 					double ymax= compute_ymax();
-
+ 
 					buffer.contract_heap(ymax);
 					//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
 					if (critpr > 0) buffer2.contract_heap(ymax);
@@ -593,13 +605,18 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 					if (trace) cout << setprecision(12) << "ymax=" << ymax << " uplo= " <<  uplo<< endl;
 					
                     //***Estimating UB approach****
-                    if(loup < loup_est )
-                          updateUB(alpha, uplo, loup, loup_est);
+                    if(loup < loup_est ){
+						 //comment the condition for the not-so-strict approach
+                         if(alpha >0.0) updateUB(alpha, uplo, loup, loup_est);
+                         else loup_est=loup;   
+                       // cout << alpha << "," << loup_est << "," << loup << endl; 
+					  }
                     if(trace)
                          cout << "est_loup("<< (loup!=loup_est) <<"):" << loup_est << ", alpha=" << alpha<< endl;
 					//******************************
 					
 				}
+				
 				update_uplo();
 				time_limit_check();
 
