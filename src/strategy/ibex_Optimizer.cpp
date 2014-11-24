@@ -446,6 +446,7 @@ void Optimizer::updateUB(double& alpha, double uplo, double loup, double& loup_e
     
 }
 
+
 Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj_init_bound) {
 	loup=obj_init_bound;
 	pseudo_loup=obj_init_bound;
@@ -530,6 +531,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 				if(loup!=loup_est){
 					if(uplo>=loup_est){ //wrong estimate
 						alpha=0.0; //abrupt decline
+						step=0.0;// abrupt decline strict
 						loup_est=loup;
 						//cout << loup_est << "," << loup << endl;
 					}
@@ -540,8 +542,9 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
  	                y &= Interval(NEG_INFINITY,ymax);
  	                
                     
-                    if(!y.is_empty() && loup!=loup_est && loup_est > y.lb()+1e-8 && loup_est < y.ub()-0.1*(y.diam()))
+                    if(!y.is_empty() && loup!=loup_est && loup_est > y.lb()+1e-8 && loup_est < y.ub()-0.1*(y.diam())){
                         flag=BISECTY;
+					}
 				}
 				
                 if(flag==NORMAL_BISECTION){
@@ -608,10 +611,10 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
                     //***Estimating UB approach****
                     if(loup < loup_est ){
 						 //comment the condition for the not-so-strict approach
-                         if(alpha >0.0) updateUB(alpha, uplo, loup, loup_est);
-                         else loup_est=loup;   
+                         updateUB(alpha, uplo, loup, loup_est);
+                       }   
                        // cout << alpha << "," << loup_est << "," << loup << endl; 
-					  }
+					  
                     if(trace)
                          cout << "est_loup("<< (loup!=loup_est) <<"):" << loup_est << ", alpha=" << alpha<< endl;
 					//******************************
