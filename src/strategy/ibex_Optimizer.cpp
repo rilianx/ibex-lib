@@ -427,8 +427,9 @@ void Optimizer::updateUB(double& alpha, double uplo, double loup, double& loup_e
          delta=(loup_est-loup)/(loup_est-uplo);
        
                    
-     double h=(delta < 1.0-alpha)? (alpha*delta)/(1.0-alpha) :
-                                  (delta*(1.0-alpha)-1.0)/alpha + 2.0;
+     double h=alpha;
+     //~ (delta < 1.0-alpha)? (alpha*delta)/(1.0-alpha) :
+                                  //~ (delta*(1.0-alpha)-1.0)/alpha + 2.0;
      if(uplo==NEG_INFINITY)
        loup_est=-h*1e10 + (1.0-h)*loup;
      else
