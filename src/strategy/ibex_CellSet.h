@@ -60,6 +60,14 @@ struct minLB {
   }
 };
 
+//same as a stack
+struct maxID {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  return (c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
 /** \ingroup strategy
  *
  * \brief Cell Set.
@@ -91,11 +99,13 @@ class CellSet : public CellBuffer {
   /** Return a random box with lb<=max_lb */
   Cell* random_pop(double max_lb);
 
+  Cell* erase(Cell* c);
+
 /**
    * Removes (and deletes) from the heap all the cells
    * with a cost greater than \a loup. y is the variable related to the objective function
    */
-  void contract_heap(double loup, int y);
+  void contract_heap(double loup, int y, bool remove=false);
 
  private:
   /* Set of cells */

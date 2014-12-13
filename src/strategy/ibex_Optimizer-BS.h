@@ -77,7 +77,7 @@ public:
 
 	OptimizerBS(System& sys, Ctc& ctc, Bsc& bsc, double prec=default_prec,
 			double goal_rel_prec=default_goal_rel_prec, double goal_abs_prec=default_goal_abs_prec,
-			  int sample_size=default_sample_size, double equ_eps=default_equ_eps, bool rigor=false, int N=1, bool exploitation=true);
+			  int sample_size=default_sample_size, double equ_eps=default_equ_eps, bool rigor=false, double N=1.0, int max_deadends=10000);
 
 	/**
 	 * \brief Delete *this.
@@ -151,9 +151,14 @@ private:
 	 /* KBFS *************/
 	//~ double box_loup;
 	//~ Vector box_point;
-	int N;
-    bool exploitation;
+	enum strategy{RESTART_DFS,BEAM_SEARCH,RESTART_DFS_PLUS};
+	strategy SELNODE_STRATEGY;
+	
+	int iter; //number of leafes from the last selection of the best node
+	double N;
+	int max_deadends;
     CellSet<minLB> bufferset;
+    CellSet<maxID> bufferset_dfs;
     
     /* *******************/
 

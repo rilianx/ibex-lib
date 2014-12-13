@@ -50,6 +50,7 @@ OptimizerBS::~OptimizerBS() {
 		delete is_inside;
 	}
 	bufferset.flush();
+	bufferset_dfs.flush();
 
 	delete mylp;
 	//	delete &(objshaver->ctc);
@@ -155,11 +156,14 @@ void OptimizerBS::report_perf() {
 
 OptimizerBS::OptimizerBS(System& user_sys, Ctc& ctc, Bsc& bsc, double prec,
 					 double goal_rel_prec, double goal_abs_prec, int sample_size, double equ_eps,
-					 bool rigor, int N, bool exploitation) : Optimizer(user_sys, ctc, bsc, prec,
+					 bool rigor, double N, int max_deadends) : Optimizer(user_sys, ctc, bsc, prec,
 					 goal_rel_prec, goal_abs_prec, sample_size, equ_eps,
-					 rigor,0), N(N), exploitation(exploitation), bufferset()
+					 rigor,0), N(N), max_deadends(max_deadends), bufferset(), 	bufferset_dfs()
 				 {
-
+					if(N==0.0) 
+						SELNODE_STRATEGY=RESTART_DFS_PLUS;
+					else
+						SELNODE_STRATEGY=BEAM_SEARCH;
 }
 
 void OptimizerBS::contract_and_bound(Cell& c, const IntervalVector& init_box) {
@@ -253,7 +257,6 @@ bool OptimizerBS::handle_cell_nopush(Cell& c, const IntervalVector& init_box ){
 	return true;
 }
 
-int iter=0;
 Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double obj_init_bound) {
 
 	loup=obj_init_bound;
@@ -270,6 +273,7 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 	diam_rand=0;
 
     bufferset.flush();
+	bufferset_dfs.flush();
 	
 	Cell* root=new Cell(IntervalVector(n+1));
 
@@ -292,15 +296,16 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 	time=0;
 	Timer::start();
 	
-	if(handle_cell_nopush(*root,init_box)) bufferset.push(root);
-	
+	if(handle_cell_nopush(*root,init_box)) {
+		bufferset.push(root);
+		if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
+			bufferset_dfs.push(root);
+	}
 	
 	double ymax= POS_INFINITY;
 	
 	try {	
 		while (!bufferset.empty()) {
-						
-		  iter++;
 
 		  //~ update_uplo();
 
@@ -311,43 +316,84 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 			loup_changed=false;
 			
 			set<Cell*,minLB> SS;
+			bool exploitation=true;
+			
+			switch(SELNODE_STRATEGY){
+				case RESTART_DFS:
+				case RESTART_DFS_PLUS:
+				if(iter>=max_deadends){
+					iter=0;
+					Cell* c = bufferset.pop();
+					bufferset_dfs.erase(c);
+					SS.insert(c);
+				    exploitation=false;
+				}else{
+					Cell* c = bufferset_dfs.pop();
+					bufferset.erase(c);
+					SS.insert(c);
+					exploitation=false;
+				}
+				break;
+				
+				case BEAM_SEARCH:
+				Cell* c = bufferset.pop();
+				//bufferset_dfs.erase(c);
+				SS.insert(c);
+				exploitation=((double)rand()/(double)RAND_MAX < N);
+			}
 
-		    SS.insert(bufferset.pop());
-
-	        int depth=0;
 
             set<Cell*,minLB> S;
- 
-        while(!SS.empty()){
+            while(!SS.empty()){
+			S=SS;
+			SS.clear();
+	 
 
-         S=SS;
-         SS.clear();
-			depth++;
-		 
-		 
-         while(!S.empty()){
+			int deadends=0;		 
+			while(!S.empty()){
+				Cell *c=(*S.begin());
+				if (c->box[c->box.size()-1].lb() > compute_ymax()) {S.erase(S.begin()); delete c; continue;};  
 
+				try {
 
-			Cell *c=(*S.begin());
-			if (c->box[c->box.size()-1].lb() > compute_ymax()) {S.erase(S.begin()); delete c; continue;};  
+					pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
+					pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);			
+					S.erase(S.begin());
 
-			try {
-
-				pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
-
-				pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);
-				
-				S.erase(S.begin());
-
-				delete c; 
+					delete c; 
 			    
-			    if(!exploitation){
-					if(handle_cell_nopush(*new_cells.first,init_box)) bufferset.push(new_cells.first);
-				    if(handle_cell_nopush(*new_cells.second,init_box))  bufferset.push(new_cells.second);		
-				}else{
-					if(handle_cell_nopush(*new_cells.first,init_box)) SS.insert(new_cells.first);
-				    if(handle_cell_nopush(*new_cells.second,init_box)) SS.insert(new_cells.second); 
-				}
+					if(!exploitation){
+						if(handle_cell_nopush(*new_cells.second,init_box)){
+							bufferset.push(new_cells.second);
+						}else{
+							new_cells.second=NULL;
+							iter++;
+						}
+					
+						if(handle_cell_nopush(*new_cells.first,init_box)){
+							bufferset.push(new_cells.first);
+						}else{
+							new_cells.first=NULL;
+							iter++;
+						}
+						
+						if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS){
+							//se ordenan por minLB los ultimos 2 nodos agregados a la pila
+							if(SELNODE_STRATEGY==RESTART_DFS_PLUS && new_cells.first && new_cells.second )
+								if(new_cells.first->get<CellBS>().lb > new_cells.second->get<CellBS>().lb){
+								new_cells.first->get<CellBS>().id --;
+								new_cells.second->get<CellBS>().id ++;
+							}
+							if( new_cells.first) bufferset_dfs.push(new_cells.first);
+							if( new_cells.second) bufferset_dfs.push(new_cells.second);
+						}
+							
+					}else{
+						if(handle_cell_nopush(*new_cells.first,init_box)) SS.insert(new_cells.first); 
+						else deadends++;
+						if(handle_cell_nopush(*new_cells.second,init_box)) SS.insert(new_cells.second); 
+						else deadends++;
+					}
 						  
 				if (uplo_of_epsboxes == NEG_INFINITY) {
 					cout << " possible infinite minimum " << endl;
@@ -368,12 +414,17 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 
 
         //cout << SS.size() << endl;
-        if(SS.size()>N){
+        if(exploitation){
 		  std::set<Cell *>::iterator it=SS.begin();
-		  for(int i=0;i<N;i++,it++);
+		  
+		  if(max_deadends > deadends)
+			for(int i=0;i<N && it!=SS.end();i++,it++); 
+		  
 		  
           for (;it!=SS.end();){
 			bufferset.push(*it);
+			if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
+				bufferset_dfs.push(*it);
 			SS.erase(it++);
 		  }
 	    }
@@ -390,7 +441,10 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 					// older version of the code (before revision 284).
 					ymax= compute_ymax();
 
-                    bufferset.contract_heap(ymax,ext_sys.goal_var());
+                   
+                    if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
+						bufferset_dfs.contract_heap(ymax,ext_sys.goal_var());
+					bufferset.contract_heap(ymax,ext_sys.goal_var(), true);
 
                     
 					if (ymax <=NEG_INFINITY) {

@@ -37,16 +37,17 @@ int main(int argc, char** argv){
 	double goalprec= atof (argv[7]);
 	double timelimit = atof(argv[8]);
 	double taumohc= atof(argv[9]);
-	int nseeds= atoi(argv[10]);
-	string ampl = argv[11];
-    int N = atoi(argv[12]);
+	int nseed= atoi(argv[10]);
+    double N = atof(argv[11]);
+    int  max_deadends= 100000;
+    if(argc>12) max_deadends = atoi(argv[12]);
 	double eqeps= 1.e-8;
 	
 	int mohc_active_components = 31; //all components are activated
 	if(argc>13){
 		mohc_active_components = 0;
 		for (int i = 0; i < strlen(argv[13]); ++i)
-           mohc_active_components = mohc_active_components*2 + (argv[13][i] - '0'); 
+           mohc_active_components = mohc_active_components*2 + (argv[14][i] - '0'); 
 	}
 
 	
@@ -63,10 +64,12 @@ int main(int argc, char** argv){
    int nsols=100000;
    bool infeas=false;
 
-   for(int i=0; i<nseeds;i++){
-	srand(i+1);
+   //~ for(int i=0; i<nseeds;i++){
+	srand(nseed);
     System* orig_sys,*sys;
-    if(ampl=="ampl"){
+    
+    std::size_t found = string(argv[1]).find(".nl");
+	if (found!=std::string::npos){
 	       AmplInterface interface (argv[1]);
 	       orig_sys= interface.getSystem();
      }else
@@ -225,10 +228,10 @@ int main(int argc, char** argv){
 	Solver* s =NULL;
 	CellStack buff;
 
-	//if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
+	//~ if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
 	
 	if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
-	abs(N),(N<0));
+	N,max_deadends);
     else s=new Solver(*ctcxn,*bs,buff);
 
 
@@ -285,17 +288,14 @@ int main(int argc, char** argv){
 
 
 
-    }
+    //~ }
 
 
 
-    if(type=="optim" && !infeas) cout << argv[1] << " " << uplo << "," << loup << " " << double(total_time)/double(nseeds) << " " <<
-             double(total_boxes)/double(nseeds) << " " << touts << endl;
-    else  cout << argv[1] << " infeas " << double(total_time)/double(nseeds) << " " <<
-             double(total_boxes)/double(nseeds) << " " << touts << endl;
-     
-    if(type=="solver") cout << argv[1] << " " << nsols  << " " << double(total_time)/double(nseeds) << " " <<
-             double(total_boxes)/double(nseeds) << " " << touts << endl;
+    if(type=="optim") cout << argv[1] << " " << uplo << "," << loup << " " << double(total_time) << " " <<
+             double(total_boxes) << " " << touts << endl;
+    else if(type=="solver") cout << argv[1] << " " << nsols  << " " << double(total_time) << " " <<
+             double(total_boxes) << " " << touts << endl;
 
 	return 0;
 

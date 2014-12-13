@@ -89,17 +89,22 @@ Cell* CellSet<T>::random_pop(double lb_max) {
 	return c;
 }
 
+template <class T>
+Cell* CellSet<T>::erase(Cell* c) {
+	cset.erase(c);
+}
+
 
   // E.g.: called in Optimizer in case of a new upper bound
 // on the objective ("loup"). This function then removes (and deletes) from
 // the heap all the cells with a cost greater than loup.
 template <class T>
-void CellSet<T>::contract_heap(double loup, int y){
+void CellSet<T>::contract_heap(double loup, int y, bool remove){
   std::set<Cell*>::iterator it0=cset.begin();
 
   while(it0!=cset.end()) {
 	  if((*it0)->box[y].lb() > loup){
-	     delete *it0;
+	     if (remove) delete *it0;
          cset.erase(it0++);
       }else
          it0++;
@@ -107,5 +112,5 @@ void CellSet<T>::contract_heap(double loup, int y){
 }
 
 template class CellSet<minLB>;
-
+template class CellSet<maxID>;
 } // end namespace ibex
