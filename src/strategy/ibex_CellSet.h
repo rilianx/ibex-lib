@@ -39,9 +39,10 @@ public:
 
     /**unique identifier for comparisons*/
     int id;
-    
 	/** lower bound for the box */
 	double lb;
+	/** lower bound for the box */
+	double ub;
 	/** depth of the node **/
 	int depth;
 
@@ -56,7 +57,27 @@ struct minLB {
   {  
 	  if(c1->get<CellBS>().lb < c2->get<CellBS>().lb) return true;
 	  else if(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth < c2->get<CellBS>().depth) return true;
-	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id < c2->get<CellBS>().id);
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
+struct minLB_lbub {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  if(c1->get<CellBS>().lb < c2->get<CellBS>().lb) return true;
+	  else if(c1->get<CellBS>().ub < c2->get<CellBS>().ub && c1->get<CellBS>().lb == c2->get<CellBS>().lb) return true;
+	  else if(c1->get<CellBS>().ub == c2->get<CellBS>().ub && c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth > c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().ub == c2->get<CellBS>().ub && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
+struct minUB {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  if(c1->get<CellBS>().ub < c2->get<CellBS>().ub) return true;
+	  else if(c1->get<CellBS>().lb < c2->get<CellBS>().lb && c1->get<CellBS>().ub == c2->get<CellBS>().ub) return true;
+	  else if(c1->get<CellBS>().ub == c2->get<CellBS>().ub && c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth > c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().ub == c2->get<CellBS>().ub && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
   }
 };
 
@@ -65,6 +86,33 @@ struct maxID {
   bool operator() (const Cell* c1, const Cell* c2) const
   {  
 	  return (c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
+//same as a stack
+struct maxDepth {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  if (c1->get<CellBS>().depth > c2->get<CellBS>().depth) return true;
+	  else if(c1->get<CellBS>().lb < c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
+struct deepFirst {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  if (c1->get<CellBS>().depth > c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
+  }
+};
+
+struct minLB4ibf {
+  bool operator() (const Cell* c1, const Cell* c2) const
+  {  
+	  if(c1->get<CellBS>().lb < c2->get<CellBS>().lb) return true;
+	  else if(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth > c2->get<CellBS>().depth) return true;
+	  else return(c1->get<CellBS>().lb == c2->get<CellBS>().lb && c1->get<CellBS>().depth == c2->get<CellBS>().depth && c1->get<CellBS>().id > c2->get<CellBS>().id);
   }
 };
 
@@ -105,13 +153,61 @@ class CellSet : public CellBuffer {
    * Removes (and deletes) from the heap all the cells
    * with a cost greater than \a loup. y is the variable related to the objective function
    */
-  void contract_heap(double loup, int y, bool remove=false);
+  void contract(double loup, int y, bool remove=false);
 
  private:
   /* Set of cells */
   std::set<Cell*,T> cset;
   
 };
+
+
+/** \ingroup strategy
+ *
+ * \brief Cell BiCriteria.
+ *
+ * For best-first switching among two criteria (minLB and other one). \see #CellBuffer
+ */
+template <class T2>
+class CellBiCriteria : public CellBuffer {
+ public:
+ 
+  CellBiCriteria(double prob_maxlb=0.5);
+ 
+  /** Flush the buffer.
+   * All the remaining cells will be *deleted* */
+  void flush();
+
+  /** Return the size of the buffer. */
+  int size() const;
+
+  /** Return true if the buffer is empty. */
+  bool empty() const;
+
+  /** push a new cell on the stack. */
+  void push(Cell* cell);
+
+  /** Pop a cell from the stack and return it.*/
+  Cell* pop();
+
+  /** Return the next box (but does not pop it).*/
+  Cell* top() const;
+  
+  //~ Cell* erase(Cell* c);
+
+/**
+   * Removes (and deletes) from the heap all the cells
+   * with a cost greater than \a loup. y is the variable related to the objective function
+   */
+  void contract(double loup, int y, bool remove=false);
+
+ private:
+  /* Set of cells */
+  std::set<Cell*,minLB_lbub> cset;
+  std::set<Cell*,T2> cset2;
+  double prob_maxlb;
+};
+
 
 
 

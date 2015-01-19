@@ -50,7 +50,7 @@ OptimizerBS::~OptimizerBS() {
 		delete is_inside;
 	}
 	bufferset.flush();
-	bufferset_dfs.flush();
+
 
 	delete mylp;
 	//	delete &(objshaver->ctc);
@@ -154,16 +154,13 @@ void OptimizerBS::report_perf() {
 }
 
 
-OptimizerBS::OptimizerBS(System& user_sys, Ctc& ctc, Bsc& bsc, double prec,
+OptimizerBS::OptimizerBS(System& user_sys, Ctc& ctc, Bsc& bsc, CellBuffer& bufferset, double prec,
 					 double goal_rel_prec, double goal_abs_prec, int sample_size, double equ_eps,
-					 bool rigor, double N, int max_deadends) : Optimizer(user_sys, ctc, bsc, prec,
+					 bool rigor, int selnode, double N,  double prob_bs, bool initset) : Optimizer(user_sys, ctc, bsc, prec,
 					 goal_rel_prec, goal_abs_prec, sample_size, equ_eps,
-					 rigor,0), N(N), max_deadends(max_deadends), bufferset(), 	bufferset_dfs()
+					 rigor,0), N(N), selnode(selnode), prob_bs(prob_bs), initset(initset), bufferset(bufferset), factor_adaptive(1.0)
 				 {
-					if(N==0.0) 
-						SELNODE_STRATEGY=RESTART_DFS_PLUS;
-					else
-						SELNODE_STRATEGY=BEAM_SEARCH;
+
 }
 
 void OptimizerBS::contract_and_bound(Cell& c, const IntervalVector& init_box) {
@@ -176,7 +173,7 @@ void OptimizerBS::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 
 	double ymax;
 	if (loup==POS_INFINITY) ymax=POS_INFINITY;
-	else ymax= compute_ymax();
+	else ymax= compute_ymax()+1.e-15;
 	//	else ymax= compute_ymax();
 	/*
 	if (!(y.ub() == ymax))
@@ -220,6 +217,8 @@ void OptimizerBS::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 	if (y.is_empty()) { // fix issue #44
 		throw EmptyBoxException();
 	}
+	
+	c.get<CellBS>().ub = y.ub();
 
 	/*====================================================================*/
 	// [gch] TODO: the case (!c.box.is_bisectable()) seems redundant
@@ -257,6 +256,167 @@ bool OptimizerBS::handle_cell_nopush(Cell& c, const IntervalVector& init_box ){
 	return true;
 }
 
+void OptimizerBS::handle_node(Cell* c, CellBuffer& L, const IntervalVector& init_box ){
+	if (c->box[c->box.size()-1].lb() > compute_ymax()) {delete c; return;};  
+	try{
+		pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
+		pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);			
+	    delete c;
+		
+		if(handle_cell_nopush(*new_cells.second,init_box))
+			L.push(new_cells.second);
+		if(handle_cell_nopush(*new_cells.first,init_box))
+			L.push(new_cells.first);
+
+	
+
+	}catch (NoBisectableVariableException& ) {
+		update_uplo_of_epsboxes ((c->box)[ext_sys.goal_var()].lb());
+		delete c;
+	}
+
+	time_limit_check();
+
+}
+
+void move_nodes(CellBuffer& LL, CellBuffer& L, int M=-1){
+
+	if(M==-1) M=LL.size();
+	for(int i=0; !LL.empty() && i<M; i++)
+		L.push(LL.pop());
+}
+
+
+//~ void OptimizerBS::diving(CellBuffer& L, const IntervalVector& init_box){
+	//~ CellSet<maxID> LL;
+	//~ LL.push(L.pop());
+	//~ int fails=0;
+	//~ while(!LL.empty()){
+		//~ Cell* c2 = LL.pop();
+		//~ int size = LL.size();
+		//~ handle_node(c2, LL, init_box );
+		//~ 
+		//~ if (uplo_of_epsboxes == NEG_INFINITY) {
+			//~ cout << " possible infinite minimum " << endl;
+			//~ return;
+		//~ }
+//~ 
+		//~ if (LL.size()==size) fails++;
+		//~ if(fails >= M)
+			//~ move_nodes(LL, L);
+	//~ }
+//~ }
+
+//~ void OptimizerBS::diving_iter(CellBuffer& L, const IntervalVector& init_box){
+	//~ CellSet<maxID> LL;
+	//~ LL.push(L.pop());
+	//~ int iters=0;
+	//~ while(!LL.empty()){
+		//~ Cell* c2 = LL.pop();
+		//~ int size = LL.size();
+		//~ handle_node(c2, LL, init_box );
+		//~ 
+		//~ if (uplo_of_epsboxes == NEG_INFINITY) {
+			//~ cout << " possible infinite minimum " << endl;
+			//~ return;
+		//~ }
+		//~ 
+		//~ if(iters >= M)
+			//~ move_nodes(LL, L);
+		//~ iters++;
+	//~ }
+//~ }
+
+//R. Bixby and E. Rothberg, Progress in computational mixed integer programming. A look back from the other side of the tipping point, Annals of Operations Research, 149 (2007), pp. 3741.
+//~ void OptimizerBS::probed_diving(CellBuffer& L, const IntervalVector& init_box){
+	//~ CellSet<maxID> LL;
+	//~ LL.push(L.pop());
+	//~ int fails=0;
+	//~ while(!LL.empty()){
+		//~ Cell* c = LL.pop();
+		//~ int size = LL.size();
+		//~ handle_node(c, LL, init_box );
+		//~ 
+		//~ if (uplo_of_epsboxes == NEG_INFINITY) {
+			//~ cout << " possible infinite minimum " << endl;
+			//~ return;
+		//~ }
+		//~ 
+		//~ if (LL.size()==size) fails++;
+		//~ if (LL.size()==size+2){//sort the last two leaves
+			//~ Cell* c1=LL.pop();
+			//~ Cell* c2=LL.pop();
+			//~ if( minLB()(c2, c1) ){
+				//~ c2->get<CellBS>().id++;
+				//~ c1->get<CellBS>().id--;
+			//~ }
+			//~ LL.push(c1); LL.push(c2);
+		//~ }
+		//~ if(fails >= M)
+			//~ move_nodes(LL, L);
+	//~ }
+//~ }
+
+void OptimizerBS::beam_search(CellBuffer& L, const IntervalVector& init_box){
+	CellSet<minLB> LL,L_s;
+	if(initset){
+	  for(int i=0;i<N && !L.empty() ; i++) 	LL.push(L.pop());
+    }else LL.push(L.pop());
+	while(!LL.empty()){
+		while(!LL.empty()){
+			Cell* c2 = LL.pop();
+			handle_node(c2, L_s, init_box );
+				
+			if (uplo_of_epsboxes == NEG_INFINITY) {
+				cout << " possible infinite minimum " << endl;
+				return;
+			}
+
+		}
+		move_nodes(L_s, LL, N);
+		move_nodes(L_s, L);
+
+	}
+}
+
+void OptimizerBS::ibest_first(CellBuffer& L, const IntervalVector& init_box, int selnode){
+	CellBuffer* LL, *Laux;
+	if(selnode==IBEST_FIRST_MINLB){
+		LL=new CellSet<minLB4ibf>;
+		Laux=new CellSet<minLB4ibf>;
+	}else if(selnode==IBEST_FIRST_MAXDEPTH){
+		LL=new CellSet<maxDepth>;
+		Laux=new CellSet<maxDepth>;	
+	}else if(selnode==IBEST_FIRST_DEEPFIRST){
+		LL=new CellSet<deepFirst>;
+		Laux=new CellSet<deepFirst>;			
+	}
+	
+	if(initset){
+	  for(int i=0;i<N && !L.empty() ; i++) LL->push(L.pop());
+    }else LL->push(L.pop());
+
+	while(!LL->empty()){
+		Cell* c2 = LL->pop();
+		handle_node(c2, *LL, init_box );
+			
+		if (uplo_of_epsboxes == NEG_INFINITY) {
+			cout << " possible infinite minimum " << endl;
+			delete LL; delete Laux;
+			return;
+		}
+		
+			
+		if(LL->size()>N){
+			move_nodes(*LL, *Laux, N);
+		    move_nodes(*LL, L); //put size-M boxes from LL into L
+		    move_nodes(*Laux, *LL);
+	   }
+	}
+	delete LL; delete Laux;
+}
+
+
 Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double obj_init_bound) {
 
 	loup=obj_init_bound;
@@ -273,7 +433,6 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 	diam_rand=0;
 
     bufferset.flush();
-	bufferset_dfs.flush();
 	
 	Cell* root=new Cell(IntervalVector(n+1));
 
@@ -296,11 +455,9 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 	time=0;
 	Timer::start();
 	
-	if(handle_cell_nopush(*root,init_box)) {
+	if(handle_cell_nopush(*root,init_box)) 
 		bufferset.push(root);
-		if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
-			bufferset_dfs.push(root);
-	}
+	
 	
 	double ymax= POS_INFINITY;
 	
@@ -308,131 +465,44 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 		while (!bufferset.empty()) {
 
 		  //~ update_uplo();
-
-		  if (bufferset.empty()) 
-			  break;
-		 
-		  
+  
 			loup_changed=false;
 			
-			set<Cell*,minLB> SS;
-			bool exploitation=true;
-			
-			switch(SELNODE_STRATEGY){
-				case RESTART_DFS:
-				case RESTART_DFS_PLUS:
-				if(iter>=max_deadends){
-					iter=0;
-					Cell* c = bufferset.pop();
-					bufferset_dfs.erase(c);
-					SS.insert(c);
-				    exploitation=false;
-				}else{
-					Cell* c = bufferset_dfs.pop();
-					bufferset.erase(c);
-					SS.insert(c);
-					exploitation=false;
-				}
-				break;
-				
-				case BEAM_SEARCH:
-				Cell* c = bufferset.pop();
-				//bufferset_dfs.erase(c);
-				SS.insert(c);
-				exploitation=((double)rand()/(double)RAND_MAX < N);
-			}
-
-
-            set<Cell*,minLB> S;
-            while(!SS.empty()){
-			S=SS;
-			SS.clear();
-	 
-
-			int deadends=0;		 
-			while(!S.empty()){
-				Cell *c=(*S.begin());
-				if (c->box[c->box.size()-1].lb() > compute_ymax()) {S.erase(S.begin()); delete c; continue;};  
-
-				try {
-
-					pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
-					pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);			
-					S.erase(S.begin());
-
-					delete c; 
-			    
-					if(!exploitation){
-						if(handle_cell_nopush(*new_cells.second,init_box)){
-							bufferset.push(new_cells.second);
-						}else{
-							new_cells.second=NULL;
-							iter++;
-						}
-					
-						if(handle_cell_nopush(*new_cells.first,init_box)){
-							bufferset.push(new_cells.first);
-						}else{
-							new_cells.first=NULL;
-							iter++;
-						}
-						
-						if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS){
-							//se ordenan por minLB los ultimos 2 nodos agregados a la pila
-							if(SELNODE_STRATEGY==RESTART_DFS_PLUS && new_cells.first && new_cells.second )
-								if(new_cells.first->get<CellBS>().lb > new_cells.second->get<CellBS>().lb){
-								new_cells.first->get<CellBS>().id --;
-								new_cells.second->get<CellBS>().id ++;
-							}
-							if( new_cells.first) bufferset_dfs.push(new_cells.first);
-							if( new_cells.second) bufferset_dfs.push(new_cells.second);
-						}
-							
-					}else{
-						if(handle_cell_nopush(*new_cells.first,init_box)) SS.insert(new_cells.first); 
-						else deadends++;
-						if(handle_cell_nopush(*new_cells.second,init_box)) SS.insert(new_cells.second); 
-						else deadends++;
-					}
-						  
-				if (uplo_of_epsboxes == NEG_INFINITY) {
-					cout << " possible infinite minimum " << endl;
-					goto end;
-				}
 	
-				time_limit_check();
-			}
+			//Cell* c = bufferset.pop();
 			
-			catch (NoBisectableVariableException& ) {
-				update_uplo_of_epsboxes ((c->box)[ext_sys.goal_var()].lb());
-                S.erase(S.begin());
-				delete c;
-			}
-
 			
-		}
+			
+			switch(selnode){
+				case BEAM_SEARCH: 
+					if((double) rand()/ (double) RAND_MAX < prob_bs)  
+						beam_search( bufferset, init_box);
+					else 
+						handle_node(bufferset.pop(), bufferset, init_box);
+				break;
+				case IBEST_FIRST_MINLB: 
+				case IBEST_FIRST_MAXDEPTH: 
+				case IBEST_FIRST_DEEPFIRST:
+					if((double) rand()/ (double) RAND_MAX < prob_bs)  
+						ibest_first( bufferset, init_box, selnode);
+					else 
+						handle_node(bufferset.pop(), bufferset, init_box);
+				break;
 
-
-        //cout << SS.size() << endl;
-        if(exploitation){
-		  std::set<Cell *>::iterator it=SS.begin();
-		  
-		  if(max_deadends > deadends)
-			for(int i=0;i<N && it!=SS.end();i++,it++); 
-		  
-		  
-          for (;it!=SS.end();){
-			bufferset.push(*it);
-			if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
-				bufferset_dfs.push(*it);
-			SS.erase(it++);
-		  }
-	    }
-
-
-		}
+				case NORMAL: handle_node(bufferset.pop(), bufferset, init_box); break;
+				//~ case DIVING: diving(bufferset, init_box ); break;
+				//~ case PROBED_DIVING: probed_diving(bufferset, init_box ); break;
+				//~ case DIVING_ITER: diving_iter(bufferset, init_box);
+			}	
+			if(factor_adaptive==0.0) selnode=NORMAL;
+			
+			
+			if (uplo_of_epsboxes == NEG_INFINITY) {
+				cout << " possible infinite minimum " << endl;
+				goto end;
+			}
 		
-        if (loup<old_loup) {
+			if (loup<old_loup) {
 
 					// In case of a new upper bound (loup_changed == true), all the boxes
 					// with a lower bound greater than (loup - goal_prec) are removed and deleted.
@@ -440,11 +510,10 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 					// that the current cell is removed by contract_heap. See comments in
 					// older version of the code (before revision 284).
 					ymax= compute_ymax();
-
+					
+					if(factor_adaptive>1.0) N=1.0;
                    
-                    if(SELNODE_STRATEGY==RESTART_DFS || SELNODE_STRATEGY==RESTART_DFS_PLUS)
-						bufferset_dfs.contract_heap(ymax,ext_sys.goal_var());
-					bufferset.contract_heap(ymax,ext_sys.goal_var(), true);
+					bufferset.contract(ymax,ext_sys.goal_var(), true);
 
                     
 					if (ymax <=NEG_INFINITY) {
@@ -455,7 +524,8 @@ Optimizer::Status OptimizerBS::optimize(const IntervalVector& init_box, double o
 					if (trace) cout << setprecision(12) << "ymax=" << ymax << " uplo= " <<  uplo<< endl;
 
 					old_loup=loup; 
-		}	
+		}	else
+			if(factor_adaptive>1.0) N*=factor_adaptive;
 
 		
 		if (uplo_of_epsboxes == NEG_INFINITY || ymax <=NEG_INFINITY) {cout << "uplo = neginfinity"<< endl; break;}

@@ -38,22 +38,26 @@ int main(int argc, char** argv){
 	double timelimit = atof(argv[8]);
 	double taumohc= atof(argv[9]);
 	int nseed= atoi(argv[10]);
-    double N = atof(argv[11]);
-    int  max_deadends= 100000;
-    if(argc>12) max_deadends = atoi(argv[12]);
+	string globalselnode= argv[11];
+    string strategy= argv[12];
+    double N = atof(argv[13]);
+    double prob_bs = atof(argv[14]);
+    bool initset = (atoi(argv[15])==1);
+    double factor_adaptive = (argc>16)? atof(argv[16]): 1.0;
+   
+     
 	double eqeps= 1.e-8;
-	
 	int mohc_active_components = 31; //all components are activated
-	if(argc>13){
-		mohc_active_components = 0;
-		for (int i = 0; i < strlen(argv[13]); ++i)
-           mohc_active_components = mohc_active_components*2 + (argv[14][i] - '0'); 
-	}
+	//~ if(argc>12){
+		//~ mohc_active_components = 0;
+		//~ for (int i = 0; i < strlen(argv[12]); ++i)
+           //~ mohc_active_components = mohc_active_components*2 + (argv[13][i] - '0'); 
+	//~ }
 
 	
 
     double obj_init_bound=POS_INFINITY;
-    if(argc>14) obj_init_bound=atof(argv[14]);
+    //~ if(argc>14) obj_init_bound=atof(argv[14]);
 	double eq_eps= 1.e-8;
 
     int touts=0;
@@ -224,15 +228,34 @@ int main(int argc, char** argv){
 	int samplesize=1;
 
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
-	Optimizer* o=NULL;
+	OptimizerBS* o=NULL;
 	Solver* s =NULL;
 	CellStack buff;
 
 	//~ if(type=="optim") o=new Optimizer(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,eqeps);
-	
-	if(type=="optim") o=new OptimizerBS(*orig_sys,*ctcxn,*bs,prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, 
-	N,max_deadends);
-    else s=new Solver(*ctcxn,*bs,buff);
+	int snode;
+	if(strategy=="bs")
+		snode=OptimizerBS::BEAM_SEARCH;
+	else if(strategy=="ibf-minlb")
+		snode=OptimizerBS::IBEST_FIRST_MINLB;
+	else if(strategy=="ibf-maxdepth")
+		snode=OptimizerBS::IBEST_FIRST_MAXDEPTH;
+	else if(strategy=="ibf-deepfirst")
+		snode=OptimizerBS::IBEST_FIRST_DEEPFIRST;
+	else if(strategy=="normal")
+		snode=OptimizerBS::NORMAL;
+
+    CellBuffer* bufferset;
+    if(globalselnode=="minlb")
+		bufferset=new CellSet<minLB>;
+	else if(globalselnode=="minlbub")
+		bufferset=new CellBiCriteria<minUB>(0.5);
+		
+
+	if(type=="optim"){
+		o=new OptimizerBS(*orig_sys,*ctcxn,*bs, *bufferset, prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false, snode, N, prob_bs, initset);
+		o->factor_adaptive=factor_adaptive;
+	} else s=new Solver(*ctcxn,*bs,buff);
 
 
 

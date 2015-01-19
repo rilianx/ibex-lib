@@ -61,8 +61,12 @@ public:
 	 *   \param sample_size   - number of samples taken when looking for a "loup"
 	 *   \param equ_eps       - thickness of equations when relaxed to inequalities
 	 *   \param rigor         - look for points that strictly satisfy equalities. By default: false
-	 *   \param critpr        - probability to choose the second criterion in node selection; integer in [0,100]. By default 50
-	 *  \param crit           - second criterion in node selection (the first criterion is the minimum of the objective estimate). default value CellHeapOPtim::UB
+	 *   \param selnode	   - search strategy (NORMAL, BEAM_SEARCH, BEAM_SEARCH2, PBEAM_SEARCH, DIVING, PROBED_DIVING, DIVING_ITER)
+	 *   \param N			   - number of beams for the beam search strategy
+	 *   \param prob_bs	   - probability of calling to beam search instead of handle the node normally
+	 *   \param M			   - number of treated leaves before the beam search is called again
+	 *   \param initset   	   - if true, the beam search begins from the N best boxes in bufferset, otherwise it begins with the best box
+	 *   \param alpha		   - boxes such that lb(xo) > (1-alpha)*uplo + alpha*loup are discarded from the beam search
 	 *
 	 * <ul> The extended system (see ExtendedSystem constructor) contains:
 	 * <li> (n+1) variables, x_1,...x_n,y. The index of y is #goal_var (==n).
@@ -75,9 +79,9 @@ public:
 	 *
 	 */
 
-	OptimizerBS(System& sys, Ctc& ctc, Bsc& bsc, double prec=default_prec,
+	OptimizerBS(System& sys, Ctc& ctc, Bsc& bsc, CellBuffer& bufferset, double prec=default_prec,
 			double goal_rel_prec=default_goal_rel_prec, double goal_abs_prec=default_goal_abs_prec,
-			  int sample_size=default_sample_size, double equ_eps=default_equ_eps, bool rigor=false, double N=1.0, int max_deadends=10000);
+			  int sample_size=default_sample_size, double equ_eps=default_equ_eps, bool rigor=false, int selnode=NORMAL, double N=1.0,  double prob_bs=1.1, bool initset=false);
 
 	/**
 	 * \brief Delete *this.
@@ -106,6 +110,13 @@ public:
 	 *
 	 */
 	bool handle_cell_nopush(Cell& c, const IntervalVector& init_box);
+
+	void handle_node(Cell* c, CellBuffer& L, const IntervalVector& init_box );
+	void beam_search(CellBuffer& L, const IntervalVector& init_box);
+	void ibest_first(CellBuffer& L, const IntervalVector& init_box, int selnode);
+	//~ void probed_diving(CellBuffer& L, const IntervalVector& init_box);
+	//~ void diving_iter(CellBuffer& L, const IntervalVector& init_box);
+	//~ void diving(CellBuffer& L, const IntervalVector& init_box);
 
 	/**
 	 * \brief Contract and bound procedure for processing a box.
@@ -147,19 +158,22 @@ public:
 	 */
 	void report_perf();
 
-private:
+	enum strategy{NORMAL, BEAM_SEARCH, IBEST_FIRST_MINLB, IBEST_FIRST_MAXDEPTH,IBEST_FIRST_DEEPFIRST};
+
+
 	 /* KBFS *************/
 	//~ double box_loup;
 	//~ Vector box_point;
-	enum strategy{RESTART_DFS,BEAM_SEARCH,RESTART_DFS_PLUS};
-	strategy SELNODE_STRATEGY;
+
+	int selnode;
 	
-	int iter; //number of leafes from the last selection of the best node
 	double N;
-	int max_deadends;
-    CellSet<minLB> bufferset;
-    CellSet<maxID> bufferset_dfs;
-    
+	double prob_bs;
+	bool initset;
+	double factor_adaptive;
+
+    CellBuffer& bufferset;
+   
     /* *******************/
 
 };
