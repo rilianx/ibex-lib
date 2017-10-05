@@ -8,18 +8,21 @@
 #ifndef SYMBOLIC_EXPRNODE2DAG_H_
 #define SYMBOLIC_EXPRNODE2DAG_H_
 
-#define CAST(m,n) dynamic_cast<const m*>(n)
-#define LEFT(n) &CAST(ExprBinaryOp,n)->left
-#define RIGHT(n) &CAST(ExprBinaryOp,n)->right
-#define GET_VALUE(n) CAST(ExprConstant,n)->get_value()
-#define GET_EXPR(n) &dynamic_cast<const ExprUnaryOp*> (n)->expr
-#define NULL 0
 
+#include "ibex_System.h"
+#include "ibex_Expr.h"
+#include "ibex_ExprCopy.h"
 #include <map>
 
 using namespace std;
 
 namespace ibex {
+
+#define CAST(m,n) dynamic_cast<const m*>(n)
+#define LEFT(n) &CAST(ExprBinaryOp,n)->left
+#define RIGHT(n) &CAST(ExprBinaryOp,n)->right
+#define GET_VALUE(n) CAST(ExprConstant,n)->get_value()
+#define GET_EXPR(n) &dynamic_cast<const ExprUnaryOp*> (n)->expr
 
 
 enum{CONSTANT=-1, SYM, EXP, LOG, COS, SIN, TAN, COSH, SINH, TANH, ACOS, ASIN, ATAN, ACOSH, ASINH, ATANH, ABS, POWER, SIGN, SQR,
@@ -188,7 +191,6 @@ public:
 
 	}
 
-	static const ExprNode& generate(System& sys, Array<const ExprSymbol>& new_vars2);
 
 	/*
 	 * \brief
@@ -196,6 +198,9 @@ public:
 	static void get_add_children(const ExprNode& nn, map<const ExprNode*,Interval,lt>& children, Interval sign=Interval(1.0));
 
 	static void get_mul_children(const ExprBinaryOp& op2, map< const ExprNode*, Interval, lt> & children, Interval sig=Interval(1.0));
+
+	static const ExprNode& generate(System& sys, Array<const ExprSymbol>& new_vars2);
+
 
 
 	protected:

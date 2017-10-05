@@ -7,7 +7,10 @@
 
 #include "ExprNode2Dag.h"
 
+using namespace std;
+
 namespace ibex {
+
 
 void ExprNode2Dag::get_add_children(const ExprNode& nn, map<const ExprNode*,Interval,lt>& children, Interval sign){
 	const ExprNode* n = &nn;
