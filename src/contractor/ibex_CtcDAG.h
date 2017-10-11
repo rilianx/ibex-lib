@@ -8,17 +8,9 @@
 #ifndef SRC_CONTRACTOR_IBEX_CTCDAG_H_
 #define SRC_CONTRACTOR_IBEX_CTCDAG_H_
 
-#include <sstream>
-#include <vector>
-#include <stack>
-#include <memory>
-#include <map>
-#include <set>
-#include <iostream>
-#include <utility>
-#include <cmath>
-#include <list>
-#include <assert.h>
+#include "ibex_Ctc.h"
+#include "ibex_Function.h"
+#include "ibex_Eval.h"
 
 using namespace std;
 
@@ -139,16 +131,13 @@ public:
 	Domain y;
 
 
-
-
-	CtcDag(Function& f, Array<NumConstraint>& ctrs) : Ctc(f.nb_var()), f(f),
-			y(NumConstraint(f,EQ).right_hand_side()), eval(f),
-			hc4r(eval), d(eval.getDomains()){
-
-		for(int i=0; i<y.dim.size(); i++) y[i]=ctrs[i].right_hand_side();
-	}
+	CtcDag(Function& f, Array<NumConstraint>& ctrs);
 
 	void contract(IntervalVector& box);
+
+	Function& get_f();
+
+	ExprDomain& getDomains();
 
 };
 
