@@ -65,7 +65,7 @@ namespace ibex {
 	}
 
 	Function& CtcDag::get_f() {
-		return f;
+		return f;;
 	}
 
 	ExprDomain& CtcDag::getDomains() {
