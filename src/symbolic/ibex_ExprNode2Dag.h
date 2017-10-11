@@ -5,8 +5,8 @@
  *      Author: iaraya
  */
 
-#ifndef SYMBOLIC_EXPRNODE2DAG_H_
-#define SYMBOLIC_EXPRNODE2DAG_H_
+#ifndef SYMBOLIC_IBEX_EXPRNODE2DAG_H_
+#define SYMBOLIC_IBEX_EXPRNODE2DAG_H_
 
 
 #include "ibex_System.h"
@@ -257,4 +257,4 @@ public:
 
 } /* namespace ibex */
 
-#endif /* SYMBOLIC_EXPRNODE2DAG_H_ */
+#endif /* SYMBOLIC_IBEX_EXPRNODE2DAG_H_ */

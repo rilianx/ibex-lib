@@ -5,6 +5,7 @@
  *      Author: victor
  */
 
+#include "ibex.h"
 
 using namespace std;
 using namespace ibex;
@@ -41,6 +42,7 @@ int main(int argc, char** argv){
 	srand(nseed);
 
     System* orig_sys,*sys;
+    LoupFinderDefault* loupfinder;
     std::size_t found = string(argv[1]).find(".nl");
 	if (found!=std::string::npos){
 	       AmplInterface interface (argv[1]);
@@ -50,7 +52,11 @@ int main(int argc, char** argv){
 
 	// the extended system
 	if(strategy=="solver") sys=orig_sys;
-	else sys=new ExtendedSystem(*orig_sys,eqeps);
+	else {
+		sys=new ExtendedSystem(*orig_sys,eqeps);
+		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps);
+		loupfinder = new  LoupFinderDefault(*norm_sys,true);
+	}
 
 
 	// Build the bisection heuristic
@@ -84,7 +90,7 @@ int main(int argc, char** argv){
 	// hc4 inside xnewton loop
 	CtcHC4 hc44xn (sys->ctrs,0.01,false);
 	// The 3BCID contractor on all variables (component of the contractor when filtering == "3bcidhc4")
-	Ctc3BCid c3bcidhc4(sys->nb_var,hc44cid);
+	Ctc3BCid c3bcidhc4(hc44cid);
 	// hc4 followed by 3bcidhc4 : the actual contractor used when filtering == "3bcidhc4"
 	CtcCompo hc43bcidhc4 (hc4, c3bcidhc4);
 	// The ACID contractor (component of the contractor  when filtering == "acidhc4")
@@ -141,77 +147,65 @@ int main(int argc, char** argv){
 
     CtcNewton* ctcnewton=NULL;
     if(strategy=="solver"){
-	    ctcnewton=new CtcNewton(sys->f,5e8,prec,1.e-4);
+	    ctcnewton=new CtcNewton(sys->f_ctrs,5e8,prec,1.e-4);
 		ctc =  new CtcCompo (*ctc, *ctcnewton);
 	}
 
-	// The CtcXNewton contractor
-	// corner selection for linearizations : two corners are selected, a random one and its opposite
-//	vector<LinearRelaxXTaylor::corner_point> cpoints;
-//	cpoints.push_back(LinearRelaxXTaylor::RANDOM);
-//	cpoints.push_back(LinearRelaxXTaylor::RANDOM_INV);
-
-//	LinearRelax* lr=NULL;
-//	if (linearrelaxation=="art")
-//	  lr= new LinearRelaxCombo(*sys,LinearRelaxCombo::ART);
-//	else if  (linearrelaxation=="compo")
-//	  lr= new LinearRelaxCombo(*sys,LinearRelaxCombo::COMPO);
-//	else if (linearrelaxation=="xn" || linearrelaxation=="xn_onlyy")
-//	  lr= new LinearRelaxXTaylor (*sys,cpoints);
 
 
-
-
-
+	Linearizer* lr;
+	if (linearrelaxation=="art")
+	  lr= new LinearizerCombo(*sys,LinearizerCombo::ART);
+	else if  (linearrelaxation=="compo")
+	  lr= new LinearizerCombo(*sys,LinearizerCombo::COMPO);
+	else if (linearrelaxation=="xn")
+	  lr= new LinearizerXTaylor (*sys, LinearizerXTaylor::RELAX, LinearizerXTaylor::RANDOM_OPP);
 	//	else {cout << linearrelaxation  <<  " is not an implemented  linear relaxation mode "  << endl; return -1;}
 	// fixpoint linear relaxation , hc4  with default fix point ratio 0.2
-//	CtcFixPoint* cxn;
-//	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn" )
-//	  //cxn = new CtcLinearRelaxation (*lr, hc44xn);
-//		cxn = new CtcFixPoint (*new CtcCompo(*new CtcPolytopeHull(*lr, CtcPolytopeHull::ALL_BOX), hc44xn), default_relax_ratio);
-//	//  the actual contractor  ctc + linear relaxation
-//	else if (linearrelaxation=="xn_onlyy")
-//        cxn = new CtcFixPoint (*new CtcCompo(*new CtcPolytopeHull(*lr, CtcPolytopeHull::ONLY_Y), hc44xn), default_relax_ratio);
-// 	else if (linearrelaxation=="xn_art"){
-//		cxn = new CtcFixPoint (*new CtcCompo(
-//		*new CtcPolytopeHull(*new LinearRelaxXTaylor (*sys,cpoints), CtcPolytopeHull::ALL_BOX),
-//		*new CtcPolytopeHull(*new LinearRelaxCombo(*sys,LinearRelaxCombo::ART), CtcPolytopeHull::ALL_BOX), hc44xn), default_relax_ratio);
-//    }
-
-//	if (linearrelaxation=="taylor")
-//		cxn = new CtcFixPoint (*new CtcCompo(*new TaylorLinear(*sys), hc44xn), default_relax_ratio);
-
-
+	CtcFixPoint* cxn;
+	CtcPolytopeHull* cxn_poly;
+	CtcCompo* cxn_compo;
+	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
+          {
+		cxn_poly = new CtcPolytopeHull(*lr);
+		cxn_compo =new CtcCompo(*cxn_poly, hc44xn);
+		cxn = new CtcFixPoint (*cxn_compo, default_relax_ratio);
+	  }
+	//  the actual contractor  ctc + linear relaxation
 	Ctc* ctcxn;
-//	if (linearrelaxation=="xn_art" || linearrelaxation=="compo" ||
-//			linearrelaxation=="art"|| linearrelaxation=="xn" || linearrelaxation=="xn_onlyy" || linearrelaxation=="taylor")
-//          ctcxn= new CtcCompo  (*ctc, *cxn);
-//	else
+	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
+          ctcxn= new CtcCompo  (*ctc, *cxn);
+	else
 	  ctcxn = ctc;
+
 	// one point probed when looking for a new feasible point (updating the loup)
 	int samplesize=1;
 
 	if(strategy=="solver"){
 		// A "CellStack" means a depth-first search.
 		CellStack buff;
-		Solver s(*ctcxn,*bs,buff);
+
+
+		Solver s(*sys, *ctcxn, *bs, buff, Vector(sys->nb_var,prec), Vector(sys->nb_var,POS_INFINITY));
 		s.time_limit = timelimit;;
-		s.trace=1;  // solutions are printed as soon as found when trace=1
+		s.trace=0;  // solutions are printed as soon as found when trace=1
 
 		// Solve the system and get the solutions
-		vector<IntervalVector> sols=s.solve(sys->box);
+		Solver::Status state=s.solve(sys->box);
 
-		// Display the number of solutions
-		cout << "number of solutions=" << sols.size() << endl;
+
+		cout << state << endl;
+		s.report();
+
 
 		// Display the number of boxes (called "cells")
 		// generated during the search
-		cout << "number of cells=" << s.nb_cells << endl;
+		cout << "number of cells=" << s.get_nb_cells() << endl;
 		// Display the cpu time used
-		cout << "cpu time used=" << s.time << "s."<< endl;
+		cout << "cpu time used=" << s.get_time() << "s."<< endl;
 
-		cout << argv[1] << " " << sols.size() << " " << s.time << " " <<
-				s.nb_cells << " " << (s.time>timelimit) << endl;
+		cout << argv[1] << " " << s.get_manifold().size() << " " << s.get_time() << " " <<
+		s.get_nb_cells() << " " << (s.get_time()>timelimit) << endl;
 
 		return 1;
 
@@ -221,8 +215,11 @@ int main(int argc, char** argv){
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
 	Optimizer* o=NULL;
 
+	CellBufferOptim* buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
+
 	if(strategy=="lbub")
-	    o=new Optimizer(*orig_sys,*ctcxn,*bs, prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false);
+	    o=new Optimizer(sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec);
 //	else if(strategy=="feasdiv")
 //		o=new FeasibleDiving(*orig_sys,*ctcxn,*bs, prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false);
 	else {cout << strategy <<  " is not an implemented search strategy "  << endl; return -1;}
@@ -256,8 +253,8 @@ int main(int argc, char** argv){
 
 
 
-    cout << argv[1] << " " << o->uplo << "," << o->loup << " " << double(o->time) << " " <<
-             double(o->nb_cells) << " " << (o->time>timelimit) << endl;
+    cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
+             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
 
 
 	return 0;

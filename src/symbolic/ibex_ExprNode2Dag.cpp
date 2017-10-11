@@ -5,7 +5,7 @@
  *      Author: iaraya
  */
 
-#include "ExprNode2Dag.h"
+#include "ibex_ExprNode2Dag.h"
 
 using namespace std;
 
