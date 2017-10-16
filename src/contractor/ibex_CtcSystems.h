@@ -102,7 +102,7 @@ public:
 
 
 	virtual void contract(IntervalVector& box);
-	virtual int linearization(const IntervalVector& x, LinearSolver& lp_solver);
+	virtual int linearize(const IntervalVector& x, LinearSolver& lp_solver);
 
 	bool is_mult;
 	bool extended;

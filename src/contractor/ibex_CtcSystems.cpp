@@ -136,7 +136,7 @@ namespace ibex {
 		d.read_arg_domains(box);
 	}
 
-	virtual int EmbeddedLinearSystem::linearization(const IntervalVector& x, LinearSolver& lp_solver){
+	virtual int EmbeddedLinearSystem::linearize(const IntervalVector& x, LinearSolver& lp_solver){
 		return LinearSystem::linearization(x,lp_solver);
 	}
 
