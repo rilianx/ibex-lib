@@ -225,8 +225,31 @@ private:
 
 
 	template<typename T>
-	void add_row(IntervalMatrix& A, Array<const ExprNode> &b, const T* bi, map<const ExprNode*, int>& xmap,
-		int& nb_rows, int& nb_cols);
+		void add_row(IntervalMatrix& A, Array<const ExprNode> &b, const T* bi, map<const ExprNode*, int>& xmap,
+				int& nb_rows, int& nb_cols){
+
+			nb_rows++;
+			A.resize(nb_rows,nb_cols);
+			for(int i=0;i<nb_cols;i++) A[nb_rows-1][i]=0.0;
+			b.add(*bi);
+
+			map< const ExprNode*, Interval, lt > children;
+
+			if(CAST(ExprAdd, bi))
+				ExprNode2Dag().get_add_children(*bi,children);
+			else
+				ExprNode2Dag().get_mul_children(*bi,children);
+
+			for(map< const ExprNode*, Interval, lt >::iterator it =children.begin(); it!=children.end();it++){
+				if(xmap.find(it->first)==xmap.end()) {
+					nb_cols++;
+					xmap[it->first] = nb_cols-1;
+					A.resize(nb_rows,nb_cols);
+					for(int i=0;i<nb_rows-1;i++) A[i][nb_cols-1]=0.0;
+				}
+				A[nb_rows-1][ xmap[it->first] ]=it->second;
+			}
+		}
 
 	template<typename T>
 		Array<Ctc> getEmbeddedLinearSystems(CtcDag& dag_ctc, bool is_mult, int ctc_type, bool extended, int nb_nodes=-1){

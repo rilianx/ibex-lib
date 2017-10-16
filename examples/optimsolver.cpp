@@ -112,11 +112,11 @@ int main(int argc, char** argv){
 	|| filtering =="cse+hc4+pseudoinverse" || filtering =="cse+hc4+gauss"
 	|| filtering =="cse+hc4+gauss_pseudoinv" || filtering =="cse+hc4+gauss_mult"){
 		int ctc_type=-1;
-//		if(filtering =="cse+hc4+simplex") ctc_type=LinearSystem::SIMPLEX;
-//		else if(filtering =="cse+hc4+pseudoinverse") ctc_type=LinearSystem::PSEUDOINVERSE;
-//		else if(filtering =="cse+hc4+gauss") ctc_type=LinearSystem::GAUSS_JORDAN;
-//		else if(filtering =="cse+hc4+gauss_mult") ctc_type=LinearSystem::MULT_GAUSS_JORDAN;
-//		else if(filtering =="cse+hc4+gauss_pseudoinv") ctc_type=LinearSystem::GAUSS_PSEUDOINV;
+		if(filtering =="cse+hc4+simplex") ctc_type=LinearSystem::SIMPLEX;
+		else if(filtering =="cse+hc4+pseudoinverse") ctc_type=LinearSystem::PSEUDOINVERSE;
+		else if(filtering =="cse+hc4+gauss") ctc_type=LinearSystem::GAUSS_JORDAN;
+		else if(filtering =="cse+hc4+gauss_mult") ctc_type=LinearSystem::MULT_GAUSS_JORDAN;
+		else if(filtering =="cse+hc4+gauss_pseudoinv") ctc_type=LinearSystem::GAUSS_PSEUDOINV;
 
 		Array<const ExprSymbol> vars_dag(sys->args.size());
         const ExprNode& dag_root=ExprNode2Dag::generate(*sys, vars_dag);
@@ -126,17 +126,17 @@ int main(int argc, char** argv){
 	    CtcFixPoint* dagctc_fp = new CtcFixPoint(*dagctc,0.01);
 	    if(filtering =="cse+hc4") ctc = dagctc_fp;
 
-//	    else{
-//
-//			Array<Ctc> a;
-//			a.add(getEmbeddedLinearSystems<ExprAdd>(*dagctc, false, ctc_type, extended_embedded_system/*, sys->nb_ctr*/));
-//			a.add(getEmbeddedLinearSystems<ExprMul>(*dagctc, true, ctc_type, extended_embedded_system));
-//
-//			CtcCompo* linear_systems = (a.size()>0)? new CtcCompo(a) : NULL;
-//
-//			ctc = (linear_systems)? new CtcFixPoint(*new CtcCompo(*dagctc_fp,*linear_systems),0.01) : dagctc_fp;
-//
-//	    }
+	    else{
+
+			Array<Ctc> a;
+			a.add(getEmbeddedLinearSystems<ExprAdd>(*dagctc, false, ctc_type, extended_embedded_system/*, sys->nb_ctr*/));
+			a.add(getEmbeddedLinearSystems<ExprMul>(*dagctc, true, ctc_type, extended_embedded_system));
+
+			CtcCompo* linear_systems = (a.size()>0)? new CtcCompo(a) : NULL;
+
+			ctc = (linear_systems)? new CtcFixPoint(*new CtcCompo(*dagctc_fp,*linear_systems),0.01) : dagctc_fp;
+
+	    }
 		if(filtering2 == "acidhc4"){
 			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
 			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
