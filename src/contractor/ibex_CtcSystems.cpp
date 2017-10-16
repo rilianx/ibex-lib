@@ -331,7 +331,8 @@ namespace ibex {
 	        if(ctc_type==LinearSystem::MULT_GAUSS_JORDAN){
 
 	    		if(extended){
-	    			Matrix I = Matrix::diag(-Vector::ones((*it)->get_bn().size()));
+	    			Vector a= -Vector::ones((*it)->get_bn().size());
+	    			Matrix I = Matrix::diag(a);
 	    			int nb_rows=(*it)->getA().nb_rows();
 	    			int nb_cols=(*it)->getA().nb_cols();
 	    			(*it)->getA().resize(nb_rows, nb_cols+(*it)->get_bn().size());

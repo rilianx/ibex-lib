@@ -8,8 +8,12 @@
 #ifndef SRC_CONTRACTOR_IBEX_CTCSYSTEMS_H_
 #define SRC_CONTRACTOR_IBEX_CTCSYSTEMS_H_
 #include <list>
+#include <map>
+#include <set>
 
-
+#include "ibex_Ctc.h"
+#include "ibex_Linearizer.h"
+#include "ibex_CtcPolytopeHull.h"
 
 
 #define CAST(m,n) dynamic_cast<const m*>(n)
@@ -28,7 +32,7 @@ namespace ibex {
  * If P does not exist the contractor perform at most 2n simplex for contracting x
  */
 
-class LinearSystem : public Ctc, Linearizer {
+class LinearSystem : public Linearizer, Ctc {
 public:
 
 
@@ -42,6 +46,7 @@ public:
 	 * \brief Create the linear inequalities Ax<=b.
 	 */
 	LinearSystem(int nb_var, int ctc_type = SIMPLEX) :
+		Linearizer(nb_var),
 		ctc(*this, LinearSolver::default_max_iter,
 		LinearSolver::default_max_time_out, LinearSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(nb_var), A(1,1), b(1), P(1,1), PA(1,1), Pb(1) {
@@ -52,7 +57,7 @@ public:
 	 * \brief Create the linear inequalities Ax<=b.
 	 */
 	LinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,  int ctc_type = GAUSS_JORDAN) :
-		ctc(*this, LinearSolver::default_max_iter,
+		Linearizer(A.nb_cols()), ctc(*this, LinearSolver::default_max_iter,
 		LinearSolver::default_max_time_out, LinearSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(A.nb_cols()), A(A), b(1), P(P), PA(PA), Pb(1) {
 
