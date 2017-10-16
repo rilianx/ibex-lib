@@ -56,6 +56,59 @@ namespace ibex {
 	}
 
 
+	EmbeddedLinearSystem::EmbeddedLinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,
+						Array<const ExprNode>& xn, Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
+						ExprDomain& d, bool is_mult=false, bool extended=false) :
+							LinearSystem(A, P, PA), xn(xn), bn(bn), node2i(node2i), d(d),
+								is_mult(is_mult), x(xn.size()), extended(extended)  {
+
+				b.resize(A.nb_rows());
+				if(extended)
+					b=Vector::zeros(A.nb_rows());
+	}
+
+	EmbeddedLinearSystem::EmbeddedLinearSystem(const IntervalMatrix& AA, Array<const ExprNode>& xn,
+						Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
+						ExprDomain& d, bool is_mult=false, int ctc_type = SIMPLEX, bool extended=false) :
+
+				LinearSystem(AA.nb_cols()+((extended)? bn.size():0), ctc_type), xn(xn), bn(bn), node2i(node2i), d(d),
+				is_mult(is_mult), x(xn.size()), extended(extended) {
+
+				A=AA;
+				b.resize(bn.size());
+				if(extended){
+					Matrix I = Matrix::diag(-Vector::ones(bn.size()));
+					A.resize(AA.nb_rows(), AA.nb_cols()+bn.size());
+					A.put(0,AA.nb_cols(),I);
+					this->xn.add(bn);
+					x.resize(this->xn.size());
+					b=Vector::zeros(bn.size());
+				}
+			   if(ctc_type == PSEUDOINVERSE){
+				   pseudoinverse(A.mid(), P);
+				   PA=P*A;
+			   }
+			   else if(ctc_type == GAUSS_PSEUDOINV ){
+				   //A is the matrix A after performing gauss elimination
+				   //A <-- G*A : A is a diagonal matrix
+				   //A = G*b
+				   bool exist;
+				   exist = pseudoinverse(A.mid(), P);
+				   if (exist)
+						PA=P*A;
+				   else{
+					   PA=A;
+					   P = gauss_jordan(PA);
+				   }
+				   // after this: PA*x = P*b
+			   }else if(ctc_type == GAUSS_JORDAN ){
+				   PA=A;
+				   P = gauss_jordan(PA);
+			   }
+			   cout.precision(3);
+			}
+
+
 
 	void EmbeddedLinearSystem::contract(IntervalVector& box){
 		IntervalVector logx(xn.size()), absx(xn.size());
@@ -105,7 +158,11 @@ namespace ibex {
 			PA= new IntervalMatrix(*PA2);
 		else PA=NULL;
 	}
-
+	EmbeddedLinearSystem*  EmbeddedLinearSystemBuilder::create(){
+		if(PA && P && node2i && d && ctc_type!=-1) return new EmbeddedLinearSystem(A, *P, *PA, xn, bn, *node2i, *d, is_mult, extended);
+		else if(node2i && d && ctc_type!=-1) return new EmbeddedLinearSystem(A, xn, bn, *node2i, *d, is_mult, ctc_type, extended);
+		return NULL;
+	}
 
 	void create_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x, Array<const ExprNode> &b,
 			vector<pair <set <int>,set <int> > >& subsets){
@@ -183,8 +240,6 @@ namespace ibex {
 
 		create_subsystems(ls_list, A,x,b,subsets);
 	}
-
-
 
 
 
