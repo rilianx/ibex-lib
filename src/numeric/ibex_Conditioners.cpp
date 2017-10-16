@@ -12,7 +12,7 @@ using namespace std;
 namespace ibex {
 
 
-	Matrix Conditioners::gauss_jordan (IntervalMatrix& A, double prec){
+	Matrix gauss_jordan (IntervalMatrix& A, double prec){
 
 		set <int> rows_checked;
 		Matrix B(1,1);
@@ -80,7 +80,7 @@ namespace ibex {
 
 
 
-	void Conditioners::gauss_jordan_collection (IntervalMatrix &A, list<Matrix> &list_P, list<IntervalMatrix> &list_PA, double prec){
+	void gauss_jordan_collection (IntervalMatrix &A, list<Matrix> &list_P, list<IntervalMatrix> &list_PA, double prec){
 		set <int> rows_checked;
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
@@ -182,7 +182,7 @@ namespace ibex {
 			list_P.push_back(perm);
 		}
 	}
-	bool Conditioners::pseudoinverse(Matrix A, IntervalMatrix& P){
+	bool pseudoinverse(Matrix A, IntervalMatrix& P){
 		Matrix tmp=A.transpose()*A;
 		Matrix tmp2(A.nb_cols(),A.nb_cols());
 		try{

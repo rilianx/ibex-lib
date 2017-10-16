@@ -17,14 +17,12 @@ using namespace std;
 
 namespace ibex {
 
-class Conditioners{
-	public:
+
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
+
 	void gauss_jordan_collection (IntervalMatrix &A, list<Matrix> &list_P, list<IntervalMatrix> &list_PA, double prec=1e-7);
+
 	bool pseudoinverse(Matrix A, IntervalMatrix& P);
-};
-
-
 
 }
 
