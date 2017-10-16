@@ -7,7 +7,12 @@
 
 #ifndef SRC_CONTRACTOR_IBEX_CTCSYSTEMS_H_
 #define SRC_CONTRACTOR_IBEX_CTCSYSTEMS_H_
+#include <list>
 
+
+
+
+#define CAST(m,n) dynamic_cast<const m*>(n)
 
 using namespace std;
 
@@ -76,6 +81,117 @@ protected:
 	IntervalVector Pb;
 
 };
+
+
+class EmbeddedLinearSystem : public LinearSystem {
+public:
+
+	/**
+	 * All but SIMPLEX
+	 */
+	EmbeddedLinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,
+			Array<const ExprNode>& xn, Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
+			ExprDomain& d, bool is_mult=false, bool extended=false);
+
+	/**
+	 * \brief Create the linear inequalities Ax<=b.
+	 */
+	EmbeddedLinearSystem(const IntervalMatrix& AA, Array<const ExprNode>& xn,
+			Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
+			ExprDomain& d, bool is_mult=false, int ctc_type = SIMPLEX, bool extended=false);
+
+
+	virtual void contract(IntervalVector& box);
+	virtual int linearization(const IntervalVector& x, LinearSolver& lp_solver);
+
+	bool is_mult;
+	bool extended;
+
+
+private:
+
+	Array<const ExprNode> xn; // size:nb_cols
+	Array<const ExprNode> bn; // size:nb_rows
+	IntervalVector x;
+
+	map<const ExprNode*, int> node2i;
+	ExprDomain& d;
+
+};
+
+
+class EmbeddedLinearSystemBuilder {
+
+public:
+
+	EmbeddedLinearSystemBuilder(const IntervalMatrix& A, Array<const ExprNode>& xn,
+			Array<const ExprNode>& bn) : A(A), xn(xn), bn(bn), PA(NULL), P(NULL), node2i(NULL), d(NULL), is_mult(false), ctc_type(-1), extended(false) { }
+
+	void set_P(Matrix* P2){
+		if(P) delete P;
+		if(P2)
+			P= new IntervalMatrix(*P2);
+		else P=NULL;
+	}
+
+	void set_PA(IntervalMatrix* PA2){
+		if(PA) delete PA;
+		if(PA2)
+			PA= new IntervalMatrix(*PA2);
+		else PA=NULL;
+	}
+
+	void set_node2i(map<const ExprNode*, int>* n) { node2i=n; }
+	void set_domain(ExprDomain* dd) { d=dd; }
+	void set_is_mult(bool m) { is_mult=m; }
+	void set_ctc_type(int t) { ctc_type=t; }
+	void set_extended(bool e) { extended=e; }
+
+
+	EmbeddedLinearSystem* create(){
+		if(PA && P && node2i && d && ctc_type!=-1) return new EmbeddedLinearSystem(A, *P, *PA, xn, bn, *node2i, *d, is_mult, extended);
+		else if(node2i && d && ctc_type!=-1) return new EmbeddedLinearSystem(A, xn, bn, *node2i, *d, is_mult, ctc_type, extended);
+		return NULL;
+	}
+
+	inline Array<const ExprNode>& get_bn() { return bn;}
+	inline Array<const ExprNode>& get_xn() { return xn;}
+
+
+    inline IntervalMatrix& getA() { return A; }
+
+
+private:
+	IntervalMatrix A;
+	IntervalMatrix* P;
+	IntervalMatrix* PA;
+
+	Array<const ExprNode> xn; // size:nb_cols
+	Array<const ExprNode> bn; // size:nb_rows
+
+	map<const ExprNode*, int>* node2i;
+	ExprDomain* d;
+
+	bool is_mult;
+	int ctc_type;
+	bool extended;
+};
+
+	void create_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x, Array<const ExprNode> &b,
+		vector<pair <set <int>,set <int> > >& subsets);
+
+
+	void find_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x,
+		Array<const ExprNode> &b, int& nb_rows, int& nb_cols);
+
+
+
+	template<typename T>
+	void add_row(IntervalMatrix& A, Array<const ExprNode> &b, const T* bi, map<const ExprNode*, int>& xmap,
+		int& nb_rows, int& nb_cols);
+
+	template<typename T>
+	Array<Ctc> getEmbeddedLinearSystems(CtcDag& dag_ctc, bool is_mult, int ctc_type, bool extended, int nb_nodes=-1);
 
 
 }
