@@ -127,19 +127,8 @@ public:
 	EmbeddedLinearSystemBuilder(const IntervalMatrix& A, Array<const ExprNode>& xn,
 			Array<const ExprNode>& bn) : A(A), xn(xn), bn(bn), PA(NULL), P(NULL), node2i(NULL), d(NULL), is_mult(false), ctc_type(-1), extended(false) { }
 
-	void set_P(Matrix* P2){
-		if(P) delete P;
-		if(P2)
-			P= new IntervalMatrix(*P2);
-		else P=NULL;
-	}
-
-	void set_PA(IntervalMatrix* PA2){
-		if(PA) delete PA;
-		if(PA2)
-			PA= new IntervalMatrix(*PA2);
-		else PA=NULL;
-	}
+	void set_P(Matrix* P2);
+	void set_PA(IntervalMatrix* PA2);
 
 	void set_node2i(map<const ExprNode*, int>* n) { node2i=n; }
 	void set_domain(ExprDomain* dd) { d=dd; }

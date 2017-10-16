@@ -141,6 +141,22 @@ namespace ibex {
 	}
 
 
+
+	void EmbeddedLinearSystemBuilder::set_P(Matrix* P2){
+		if(P) delete P;
+		if(P2)
+			P= new IntervalMatrix(*P2);
+		else P=NULL;
+	}
+
+	void EmbeddedLinearSystemBuilder::set_PA(IntervalMatrix* PA2){
+		if(PA) delete PA;
+		if(PA2)
+			PA= new IntervalMatrix(*PA2);
+		else PA=NULL;
+	}
+
+
 	void create_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x, Array<const ExprNode> &b,
 			vector<pair <set <int>,set <int> > >& subsets){
 
@@ -166,10 +182,6 @@ namespace ibex {
 				}
 				for (it2=subsets[i].first.begin(); it2!=subsets[i].first.end(); it2++)
 					temp_x.add(x[*it2]);
-					//~ for (int m =0 ; m < temp_x.size() ; m++)
-						//~ cout << temp_x[m] << endl;
-					//~ cout << "--------" << endl;
-					//~ cout << temp_A << endl;
 					EmbeddedLinearSystemBuilder*  system_A = new EmbeddedLinearSystemBuilder(temp_A,temp_x,temp_b);
 					ls_list.push_back(system_A);
 
@@ -305,20 +317,8 @@ namespace ibex {
 			x.set_ref(it->second,*node2i.find(it->first)->first);
 		}
 
-		/*prueba*/
-		//~ cout << A.nb_rows() << endl;
-		//~ cout << A.nb_cols() << endl;
-		//~ exit (1);
-		//~ if ((A.nb_rows() > 1 ) && (A.nb_cols() > 1))
-			//~ ls_list.push_back(new EmbeddedLinearSystemBuilder(A,x,b));
-		//~ if (ctc_type==LinearSystem::SIMPLEX)
-			find_subsystems(ls_list, A, x, b, nb_rows , nb_cols);
-		//~ else
+		find_subsystems(ls_list, A, x, b, nb_rows , nb_cols);
 
-		//~ if ((A.nb_rows() > 1 ) && (A.nb_cols() > 1))
-			//~ ls_list.push_back(new EmbeddedLinearSystemBuilder(A,x,b));
-		//~ cout << ls_list.size() << endl;
-		//~ cout << "-----------" << endl;
 		list<EmbeddedLinearSystemBuilder *>::iterator it;
 		for(it=ls_list.begin(); it!=ls_list.end(); it++){
 			(*it)->set_node2i(&node2i);
@@ -347,7 +347,6 @@ namespace ibex {
 	    		list<Matrix>::iterator itP=Ps.begin();
 	    		list<IntervalMatrix>::iterator itPA=PAs.begin();
 
-	            //~ cout << Ps.size() << endl;
 	    		for(;itP!=Ps.end();itP++, itPA++){
 	    			(*it)->set_P(&(*itP));
 	    			(*it)->set_PA(&(*itPA));
