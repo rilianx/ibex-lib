@@ -1,0 +1,10 @@
+variables
+x in [-3,3];
+y in [-3,3];
+z in [-3,3];
+
+constraints
+x^2+cos(2*x+2*y+z)-2 = 0;
+y+sin(x+y+z^2)-1 = 0;
+(y+z^2)-1 = 0;
+end
