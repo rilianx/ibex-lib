@@ -1,10 +1,10 @@
-variables
-x in [-3,3];
-y in [-3,3];
-z in [-3,3];
+Variables
 
-constraints
-x^2+cos(2*x+2*y+z)-2 = 0;
-y+sin(x+y+z^2)-1 = 0;
-(y+z^2)-1 = 0;
+x[3] in [-10,10];
+
+Constraints
+//Original System
+-2  + 2*x(2)*sin(x(1)+x(3)) + 3*(x(1) - x(3))^2= 0;
+-3 + 4*x(2) + x(1)+ x(3) = 0;
+10 - 2*sin(2*x(1) - 2*x(3))*sin(x(1) - x(3)) - 4*x(2) - 6*(x(1) - x(3)) = 0;
 end
