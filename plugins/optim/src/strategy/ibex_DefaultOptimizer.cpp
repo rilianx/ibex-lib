@@ -22,8 +22,12 @@
 #include "ibex_LoupFinderCertify.h"
 #include "ibex_LinearizerCombo.h"
 #include "ibex_Array.h"
+#include "ibex_Memory.cpp_"
 #include "ibex_Random.h"
-#include "ibex_DefaultStrategy.cpp_"
+#include "ibex_CellBeamSearch.h"
+#include "ibex_CellHeap.h"
+
+
 
 using namespace std;
 
@@ -63,14 +67,18 @@ ExtendedSystem& get_ext_sys(const System& sys, double eps_h) {
 
 }
 
-DefaultOptimizer::DefaultOptimizer(const System& sys, double eps_x, double rel_eps_f, double abs_eps_f, double eps_h, bool rigor, bool inHC4, double random_seed) :
+DefaultOptimizer::DefaultOptimizer(const System& sys, double rel_eps_f, double abs_eps_f, double eps_h, bool rigor, bool inHC4, double random_seed, double eps_x) :
 		Optimizer(sys.nb_var,
 			  ctc(get_ext_sys(sys,eps_h)), // warning: we don't know which argument is evaluated first
-			  rec(new SmearSumRelative(get_ext_sys(sys,eps_h),eps_x)),
-			  //rec(new LSmear(get_ext_sys(sys,eps_h),eps_x)),
+//			  rec(new SmearSumRelative(get_ext_sys(sys,eps_h),eps_x)),
+			  rec(new LSmear(get_ext_sys(sys,eps_h),eps_x)),
 			  rec(rigor? (LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4))) :
 						 (LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4)),
 			  (CellBufferOptim&) rec(new CellDoubleHeap(get_ext_sys(sys,eps_h))),
+//			  (CellBufferOptim&) rec (new  CellBeamSearch (
+//								       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
+//								       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
+//								       get_ext_sys(sys,eps_h))),
 			  get_ext_sys(sys,eps_h).goal_var(),
 			  eps_x,
 			  rel_eps_f,

@@ -1,11 +1,11 @@
 //============================================================================
 //                                  I B E X                                   
-// File        : Ibex.cpp
+// File        : Ibex_java.cpp.in
 // Author      : Gilles Chabert
 // Copyright   : Ecole des Mines de Nantes (France)
 // License     : See the LICENSE file
 // Created     : Jul 18, 2012
-// Last Update : Feb 03, 2017
+// Last Update : Nov 02, 2017
 //============================================================================
 
 #include "@JAVA_SIGNATURE@_Ibex.h"
@@ -22,6 +22,7 @@
 #include "ibex_VarSet.h"
 #include "ibex_SmearFunction.h"
 #include "ibex_Solver.h"
+#include "ibex_SolverOutputBox.h"
 #include "ibex_CellStack.h"
 
 #include <stdio.h>
@@ -70,8 +71,9 @@ enum {
 };
 
 enum {
-	SYNTAX_ERROR  = -1,
+	//SYNTAX_ERROR  = -1,
 	BAD_DOMAIN    = -2,
+	NOT_BUILT     = -3
 };
 
 class Instance {
@@ -120,7 +122,9 @@ public:
 
 		bis=new SmearSumRelative(*sys, prec);
 		stack=new CellStack();
-		solver = new Solver(*sys, params, *ctc, *bis, *stack);
+
+		Vector eps_max(nb_var,POS_INFINITY);
+		solver = new Solver(*sys, params, *ctc, *bis, *stack, prec, eps_max);
 	}
 
 	IntervalVector read_box(JNIEnv *env, const jdouble* d, int size) {
@@ -223,14 +227,14 @@ const double EPS_CONTRACT=0.01;
 JNIEXPORT void JNICALL Java_@JAVA_SIGNATURE@_Ibex_init(JNIEnv* env, jobject obj, jdoubleArray _prec) {
 	jint size  = env->GetArrayLength(_prec);
 	jdouble* prec = env->GetDoubleArrayElements(_prec, 0);
-	
+
 	jclass clazz = env->GetObjectClass(obj);
 	jfieldID _id = env->GetFieldID(clazz, "id", "I");
 	env->SetIntField(obj ,_id, ibex_instances.size());
 
 	BitSet b(size);
 	Vector prec_vec(size);
-	
+
 	for (int i=0; i<size; i++) {
 		if (prec[i]<0) {
 			b.add(i);
@@ -244,12 +248,35 @@ JNIEXPORT void JNICALL Java_@JAVA_SIGNATURE@_Ibex_init(JNIEnv* env, jobject obj,
 	env->ReleaseDoubleArrayElements(_prec, prec, 0);
 }
 
-JNIEXPORT void JNICALL Java_@JAVA_SIGNATURE@_Ibex_add_1ctr(JNIEnv* env, jobject obj, jstring _syntax) {
+JNIEXPORT jboolean JNICALL Java_@JAVA_SIGNATURE@_Ibex_add_1ctr(JNIEnv* env, jobject obj, jstring _syntax) {
+
+	Instance& inst = *ibex_instances[get_id(env, obj)];
+
+	if (inst.sys!=NULL) return false;
+	
 	const char* syntax = env->GetStringUTFChars(_syntax, 0);
 
-	ibex_instances[get_id(env, obj)]->ctrs_syntax.push_back(strdup(syntax));
+	inst.ctrs_syntax.push_back(strdup(syntax));
 
 	env->ReleaseStringUTFChars(_syntax, syntax);
+	
+	return true;
+}
+
+JNIEXPORT jboolean JNICALL Java_@JAVA_SIGNATURE@_Ibex_build(JNIEnv* env, jobject obj) {
+
+	Instance& inst = *ibex_instances[get_id(env, obj)];
+
+	if (inst.sys==NULL) {
+		try {
+			inst.build();
+			return true;
+		} catch(SyntaxError&) {
+			return false;
+		}
+	} else {
+		return true; 
+	}
 }
 
 JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_contract__I_3DI(JNIEnv* env, jobject obj, jint n, jdoubleArray _d, jint reif) {
@@ -257,11 +284,7 @@ JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_contract__I_3DI(JNIEnv* env, j
 	Instance& inst = *ibex_instances[get_id(env, obj)];
 
 	if (inst.sys==NULL) {
-		try {
-			inst.build();
-		} catch(SyntaxError&) {
-			return SYNTAX_ERROR;
-		}
+		return NOT_BUILT;
 	}
 
 	jint result = NOTHING; // by default
@@ -336,22 +359,16 @@ JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_contract__I_3DI(JNIEnv* env, j
 	return result;
 }
 
-
 JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_contract__I_3D(JNIEnv* env, jobject obj, jint n, jdoubleArray _d) {
 	return Java_@JAVA_SIGNATURE@_Ibex_contract__I_3DI(env,obj,n,_d,1);
 }
-
 
 JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_inflate(JNIEnv* env, jobject obj, jint n, jdoubleArray _din, jdoubleArray _d, jboolean in) {
 
 	Instance& inst = *ibex_instances[get_id(env, obj)];
 
 	if (inst.sys==NULL) {
-		try {
-			inst.build();
-		} catch(SyntaxError&) {
-			return SYNTAX_ERROR;
-		}
+		return NOT_BUILT;
 	}
 
 	jint result;
@@ -441,11 +458,7 @@ JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_start_1solve(JNIEnv* env, jobj
 	Instance& inst = *ibex_instances[get_id(env, obj)];
 
 	if (inst.sys==NULL) {
-		try {
-			inst.build();
-		} catch(SyntaxError&) {
-			return SYNTAX_ERROR;
-		}
+		return NOT_BUILT;
 	}
 
 	jdouble* d = env->GetDoubleArrayElements(_d, 0);
@@ -472,7 +485,7 @@ JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_next_1solution(JNIEnv* env, jo
 	Instance& inst = *ibex_instances[get_id(env, obj)];
 
 	if (inst.sys==NULL) {
-		return NOT_STARTED;
+		return NOT_BUILT;
 	}
 
 	jint result;
@@ -485,11 +498,12 @@ JNIEXPORT jint JNICALL Java_@JAVA_SIGNATURE@_Ibex_next_1solution(JNIEnv* env, jo
 		return BAD_DOMAIN;
 	}
 
-	const Solver::Solution* sol;
+	const SolverOutputBox* sol;
 
-	if (inst.solver->next(sol)) {
+	sol=inst.solver->next();
+	if (sol!=NULL) {
 		inst.write_box(env,sol->existence(),d);
-		result = sol->status==Solver::UNKNOWN? UNKNOWN : SOLUTION;
+		result = sol->status==SolverOutputBox::UNKNOWN? UNKNOWN : SOLUTION;
 	} else {
 		result = SEARCH_OVER;
 	}
