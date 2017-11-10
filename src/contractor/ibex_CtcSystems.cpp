@@ -127,7 +127,9 @@ namespace ibex {
 					b[i] = d[ node2i[ &bn[i]] ].i();
 			}
 		if(ctc_type == PSEUDOINVERSE || ctc_type == GAUSS_JORDAN || ctc_type == GAUSS_PSEUDOINV ) Pb = P*b;
+
 		LinearSystem::contract((is_mult)? logx:x);
+
 		if(((is_mult)? logx:x).is_empty()){ box.set_empty(); return;}
 		for(int i=0;i<xn.size(); i++){
 			if(is_mult){

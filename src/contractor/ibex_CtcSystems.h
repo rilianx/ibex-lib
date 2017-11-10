@@ -66,7 +66,9 @@ public:
 
 	}
 
-
+	/**
+	 * TODO: add comments
+	 */
 	void contract(IntervalVector& box);
 
 	/**
@@ -90,7 +92,12 @@ protected:
 
 };
 
-
+/** \ingroup contractor
+ *
+ * \brief EmbeddedLinearSystem (contractor).
+ *
+ *
+ */
 class EmbeddedLinearSystem : public LinearSystem {
 public:
 
@@ -105,16 +112,33 @@ public:
 					Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
 					ExprDomain& d, bool is_mult, int ctc_type, bool extended);
 
+	//TODO: implement this
+	//static Array<Ctc> get_ctcs(CtcDag& dag_ctc, bool is_mult, int ctc_type, bool extended, int nb_nodes=-1);
 
+	/**
+	 * \brief Maps intervals from the nodes, then contracts them by using
+	 * PA.x=b and then maps the reductions back into the DAG
+	 * \param box
+	 */
 	void contract(IntervalVector& box);
+
+	/**
+	 * TODO: add comments
+	 */
 	int linearize(const IntervalVector& x, LinearSolver& lp_solver);
 
+	/**
+	 * TODO: why public?
+	 */
 	bool is_mult;
 	bool extended;
 
 
 private:
 
+	/**
+	 * TODO: add comments
+	 */
 	Array<const ExprNode> xn; // size:nb_cols
 	Array<const ExprNode> bn; // size:nb_rows
 	IntervalVector x;
@@ -124,6 +148,9 @@ private:
 
 };
 
+/**
+ * TODO: add comments
+ */
 
 class EmbeddedLinearSystemBuilder {
 
@@ -167,15 +194,22 @@ private:
 	bool extended;
 };
 
+	/**
+	 * TODO: add comments
+	 */
 	void create_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x, Array<const ExprNode> &b,
 		vector<pair <set <int>,set <int> > >& subsets);
 
-
+	/**
+	 * TODO: add comments
+	 */
 	void find_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x,
 		Array<const ExprNode> &b, int& nb_rows, int& nb_cols);
 
 
-
+	/**
+	 * TODO: add comments
+	 */
 	template<typename T>
 		void add_row(IntervalMatrix& A, Array<const ExprNode> &b, const T* bi, map<const ExprNode*, int>& xmap,
 				int& nb_rows, int& nb_cols){

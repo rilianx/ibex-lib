@@ -164,7 +164,9 @@ struct lt{
     }
 };
 
-
+/**
+ * TODO: add comments
+ */
 class ExprNode2Dag : public ExprCopy {
 
 public:
@@ -192,8 +194,8 @@ public:
 	}
 
 
-	/*
-	 * \brief
+	/**
+	 * TODO: add comments
 	 */
 	static void get_add_children(const ExprNode& nn, map<const ExprNode*,Interval,lt>& children, Interval sign=Interval(1.0));
 

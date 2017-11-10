@@ -59,7 +59,10 @@ namespace ibex {
 			}
 		}
 
+		//TODO: dejar afuera
 		A=perm*A;
+
+		//TODO: modularizar
 	    IntervalMatrix C = A;
 	    Matrix P_aux = perm;
 	    int rows_A_aux = A.nb_rows();
