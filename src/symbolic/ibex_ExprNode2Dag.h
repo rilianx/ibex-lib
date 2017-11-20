@@ -101,6 +101,10 @@ struct lt{
 	    return subclass;
 	}
 
+	/*
+	 * \brief This function compares lexicographically two expressions in a recursive way.
+	 */
+
     bool operator()(const ExprNode* expr1, const ExprNode* expr2){
 
 
@@ -164,9 +168,7 @@ struct lt{
     }
 };
 
-/**
- * TODO: add comments
- */
+
 class ExprNode2Dag : public ExprCopy {
 
 public:
@@ -184,23 +186,36 @@ public:
 
 		old2new.clear();
 		const ExprNode* a= & ExprCopy::copy(old_vars,new_vars,expr);
-
-		/*for(map< const ExprNode*, const ExprNode*, lt >::iterator it=old2new.begin(); it!=old2new.end();it++){
-			cout << *it->first << ":" << it->first->id ; cout << endl;;
-		}*/
-
 		return *a;
 
 	}
 
 
-	/**
-	 * TODO: add comments
+	/*
+	 * brief: This function obtains the nodes from an expression composed by at least one sum. A map is used to
+	 * detect common subexpressions, where the key is a node of the sum and the factor the mapped value.
+	 *
+	 * \param nn - the expression
+	 * \param children - a map that is used to detect the common subexpressions.
+	 * \param Interval the factor that accompanies the subexpression (defined as [1,1] as default)
 	 */
 	static void get_add_children(const ExprNode& nn, map<const ExprNode*,Interval,lt>& children, Interval sign=Interval(1.0));
 
+	/*
+	 * brief: This function obtains the nodes from an expression composed by at least one multiplication. A map is used to
+	 * detect common subexpressions, where the key is the subexpression and the exponent corresponds to the mapped value.
+	 *
+	 * \param nn - the expression
+	 * \param children - the map that is used to detect the common subexpressions.
+	 * \param sign -  the exponent of the subexpression (defined as [1,1] as default)
+	 */
 	static void get_mul_children(const ExprBinaryOp& op2, map< const ExprNode*, Interval, lt> & children, Interval sig=Interval(1.0));
-
+	/*
+	* brief: This function creates the DAG using the previous functions.
+	*
+	* \param sys - the original system
+	* \param new_vars2 - the new variables, used in the dag
+	*/
 	static const ExprNode& generate(System& sys, Array<const ExprSymbol>& new_vars2);
 
 
