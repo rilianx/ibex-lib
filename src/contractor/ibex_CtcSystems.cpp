@@ -32,7 +32,7 @@ namespace ibex {
 	}
 
 
-	int LinearSystem::linearization(const IntervalVector& x, LinearSolver& lp_solver){
+	int LinearSystem::linearization(const IntervalVector& x, LPSolver& lp_solver){
 		int num=0;
 		for (int i=0; i<A.nb_rows(); i++) {
 
@@ -140,11 +140,6 @@ namespace ibex {
 		}
 		d.read_arg_domains(box);
 	}
-
-	int EmbeddedLinearSystem::linearize(const IntervalVector& x, LinearSolver& lp_solver){
-		return LinearSystem::linearization(x,lp_solver);
-	}
-
 
 
 	void EmbeddedLinearSystemBuilder::set_P(Matrix* P2){

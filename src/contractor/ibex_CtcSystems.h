@@ -50,8 +50,8 @@ public:
 	 */
 	LinearSystem(int nb_var, int ctc_type = SIMPLEX) :
 		Linearizer(nb_var),
-		ctc(*this, LinearSolver::default_max_iter,
-		LinearSolver::default_max_time_out, LinearSolver::default_eps, Interval (1e-14, 1e10)),
+		ctc(*this, LPSolver::default_max_iter,
+		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(nb_var), A(1,1), b(1), P(1,1), PA(1,1), Pb(1) {
 
 	}
@@ -60,8 +60,8 @@ public:
 	 * \brief Create the linear inequalities Ax<=b.
 	 */
 	LinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,  int ctc_type = GAUSS_JORDAN) :
-		Linearizer(A.nb_cols()), ctc(*this, LinearSolver::default_max_iter,
-		LinearSolver::default_max_time_out, LinearSolver::default_eps, Interval (1e-14, 1e10)),
+		Linearizer(A.nb_cols()), ctc(*this, LPSolver::default_max_iter,
+		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(A.nb_cols()), A(A), b(1), P(P), PA(PA), Pb(1) {
 
 	}
@@ -76,7 +76,7 @@ public:
 	 *
 	 * This method is required by the PolytopeHull
 	 */
-	int linearization(const IntervalVector& x, LinearSolver& lp_solver);
+	int linearization(const IntervalVector& x, LPSolver& lp_solver);
 
 
 
@@ -125,7 +125,9 @@ public:
 	/**
 	 * TODO: add comments
 	 */
-	int linearize(const IntervalVector& x, LinearSolver& lp_solver);
+	virtual int linearize(const IntervalVector& x, LPSolver& lp_solver){
+		return LinearSystem::linearization(x,lp_solver);
+	}
 
 	/**
 	 * TODO: why public?
