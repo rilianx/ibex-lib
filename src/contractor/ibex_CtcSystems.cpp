@@ -237,8 +237,4 @@ namespace ibex {
 
 		create_subsystems(ls_list, A,x,b,subsets);
 	}
-
-
-
 }
-

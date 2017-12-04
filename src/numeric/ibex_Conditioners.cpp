@@ -60,8 +60,11 @@ namespace ibex {
 		}
 
 		//TODO: dejar afuera
+		cout << "matriz A" << endl;
+		cout << A.mid() << endl;
 		A=perm*A;
-
+		cout << "post perm" << endl;
+		cout << A.mid() << endl;
 		//TODO: modularizar
 	    IntervalMatrix C = A;
 	    Matrix P_aux = perm;
@@ -77,8 +80,7 @@ namespace ibex {
 	        }
 	        else flag++;
 	    }
-
-		return perm;
+	    return perm;
 	}
 
 

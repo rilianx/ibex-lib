@@ -152,7 +152,6 @@ int main(int argc, char** argv){
 	}
 
 
-
 	Linearizer* lr;
 	if (linearrelaxation=="art")
 	  lr= new LinearizerCombo(*sys,LinearizerCombo::ART);
