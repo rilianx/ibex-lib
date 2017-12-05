@@ -67,7 +67,7 @@ public:
 	}
 
 	/**
-	 * TODO: add comments
+	 * Performs the contraction of the current box using a linear system
 	 */
 	void contract(IntervalVector& box);
 
@@ -197,20 +197,21 @@ private:
 };
 
 	/**
-	 * TODO: add comments
+	 * \brief This function creates the subsystems once is found by the function find_subsystems.
 	 */
 	void create_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x, Array<const ExprNode> &b,
 		vector<pair <set <int>,set <int> > >& subsets);
 
 	/**
-	 * TODO: add comments
+	 * \brief This function finds all the independent subsystems from the matrix A, in order to separate them. Note that
+	 * no information is lost by doing this process.
 	 */
 	void find_subsystems(list<EmbeddedLinearSystemBuilder *> &ls_list, IntervalMatrix& A, Array<const ExprNode> &x,
 		Array<const ExprNode> &b, int& nb_rows, int& nb_cols);
 
 
 	/**
-	 * TODO: add comments
+	 * \brief This function adds a new row to the matrix A once a new subexpression is found.
 	 */
 	template<typename T>
 		void add_row(IntervalMatrix& A, Array<const ExprNode> &b, const T* bi, map<const ExprNode*, int>& xmap,
@@ -306,40 +307,11 @@ private:
 			(*it)->set_extended(extended);
 
 
-	        if(ctc_type==LinearSystem::MULT_GAUSS_JORDAN){
 
-	    		if(extended){
-	    			Vector a= -Vector::ones((*it)->get_bn().size());
-	    			Matrix I = Matrix::diag(a);
-	    			int nb_rows=(*it)->getA().nb_rows();
-	    			int nb_cols=(*it)->getA().nb_cols();
-	    			(*it)->getA().resize(nb_rows, nb_cols+(*it)->get_bn().size());
-	    			(*it)->getA().put(0,nb_cols,I);
-	    			(*it)->get_xn().add((*it)->get_bn());
-	    		}
+	        try{
+	        	linear_systems.add(*(*it)->create());
+	        }catch(SingularMatrixException &e) {cout << "SingularMatrixException" << endl;}
 
-	    		list<Matrix> Ps;
-	    		list<IntervalMatrix> PAs;
-
-	    		gauss_jordan_collection((*it)->getA(),Ps, PAs);
-
-	    		list<Matrix>::iterator itP=Ps.begin();
-	    		list<IntervalMatrix>::iterator itPA=PAs.begin();
-
-	    		for(;itP!=Ps.end();itP++, itPA++){
-	    			(*it)->set_P(&(*itP));
-	    			(*it)->set_PA(&(*itPA));
-	    			linear_systems.add(*(*it)->create());
-	    		}
-				(*it)->set_P(NULL);
-				(*it)->set_PA(NULL);
-
-	        }else{
-
-	        	try{
-	        		linear_systems.add(*(*it)->create());
-	        	}catch(SingularMatrixException &e) {cout << "SingularMatrixException" << endl;}
-	        }
 
 		}
 		return linear_systems;

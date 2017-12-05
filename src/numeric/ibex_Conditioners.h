@@ -19,16 +19,15 @@ namespace ibex {
 
     /**
      * TODO: add comments, cambiar prototipo de funcion
+     * \brief This function performs the Gauss-Jordan elimination to the matrix A. All the row operations are stored
+     * on the matrix P.
+     *
      */
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
 
+	Matrix gauss_jordan_test (IntervalMatrix& A, double prec=1e-7);
     /**
-     * TODO: remove
-     */
-	void gauss_jordan_collection (IntervalMatrix &A, list<Matrix> &list_P, list<IntervalMatrix> &list_PA, double prec=1e-7);
-
-    /**
-     * TODO: add comments
+     * \brief This function computes the pseudoinverse of the Matrix A. It also obtains the conditioner matrix P.
      */
 	bool pseudoinverse(Matrix A, IntervalMatrix& P);
 

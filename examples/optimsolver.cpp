@@ -110,12 +110,11 @@ int main(int argc, char** argv){
 	  ctc= &hc43bcidhc4;
 	else if (filtering =="cse+hc4" || filtering =="cse+hc4+simplex"
 	|| filtering =="cse+hc4+pseudoinverse" || filtering =="cse+hc4+gauss"
-	|| filtering =="cse+hc4+gauss_pseudoinv" || filtering =="cse+hc4+gauss_mult"){
+	|| filtering =="cse+hc4+gauss_pseudoinv" ){
 		int ctc_type=-1;
 		if(filtering =="cse+hc4+simplex") ctc_type=LinearSystem::SIMPLEX;
 		else if(filtering =="cse+hc4+pseudoinverse") ctc_type=LinearSystem::PSEUDOINVERSE;
 		else if(filtering =="cse+hc4+gauss") ctc_type=LinearSystem::GAUSS_JORDAN;
-		else if(filtering =="cse+hc4+gauss_mult") ctc_type=LinearSystem::MULT_GAUSS_JORDAN;
 		else if(filtering =="cse+hc4+gauss_pseudoinv") ctc_type=LinearSystem::GAUSS_PSEUDOINV;
 
 		Array<const ExprSymbol> vars_dag(sys->args.size());
@@ -130,7 +129,7 @@ int main(int argc, char** argv){
 
 			Array<Ctc> a;
 			a.add(getEmbeddedLinearSystems<ExprAdd>(*dagctc, false, ctc_type, extended_embedded_system/*, sys->nb_ctr*/));
-			a.add(getEmbeddedLinearSystems<ExprMul>(*dagctc, true, ctc_type, extended_embedded_system));
+			//a.add(getEmbeddedLinearSystems<ExprMul>(*dagctc, true, ctc_type, extended_embedded_system));
 
 			CtcCompo* linear_systems = (a.size()>0)? new CtcCompo(a) : NULL;
 
