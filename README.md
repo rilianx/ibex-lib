@@ -5,3 +5,17 @@ ibex-lib
 ========
 
 http://www.ibex-lib.org
+
+Instalation
+-----------
+
+./waf configure --with-optim  --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+
+./waf install
+
+export PKG_CONFIG_PATH=/home/directorio_ibex/ibex-2.3.4/share/pkgconfig   -> Esto se tiene que hacer cada vez que se conecta a la maquina
+
+export PKG_CONFIG_PATH=/home/iaraya/github/ibex/ibex-dev-dag/ibex-lib/share/pkgconfig
+
+
+
