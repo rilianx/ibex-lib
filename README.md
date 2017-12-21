@@ -11,23 +11,12 @@ Instalation
 
 Instalar g++, clang, bison, flex, zlib1g-dev
 
-./waf configure --with-optim --with-pso  --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+./waf configure --with-optim --with-pso --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
 
 ./waf install
 
-export PKG_CONFIG_PATH=/directorio_ibex/ibex-lib/share/pkgconfig   -> Esto se tiene que hacer cada vez que se conecta a la maquina
-
-export PKG_CONFIG_PATH=/home/iaraya/github/ibex/ibex-dev-dag/ibex-lib/share/pkgconfig
-
-
-
-Para compilar todo en una sola linea yo hago lo siguiente:
-1. ingreso al directorio raiz de ibex (solo la primera vez)
-2. cd plugins/optim/main (solo la primera vez)
-3. cd -; sudo ./waf install; cd -; rm optimisolver; make optimsolver (cada vez que quiero re-compilar todo)
-
 Para ejecutar:
 
- __build__/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc8.nl --trace
+ __build__/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
  
- __build__/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc8.nl --trace
+ __build__/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
