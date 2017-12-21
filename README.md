@@ -11,7 +11,7 @@ Instalation
 
 Instalar g++, clang, bison, flex, zlib1g-dev
 
-./waf configure --with-optim  --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+./waf configure --with-optim --with-pso  --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
 
 ./waf install
 
