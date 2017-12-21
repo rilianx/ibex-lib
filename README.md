@@ -19,3 +19,7 @@ export PKG_CONFIG_PATH=/home/iaraya/github/ibex/ibex-dev-dag/ibex-lib/share/pkgc
 
 
 
+Para compilar todo en una sola linea yo hago lo siguiente:
+1. ingreso al directorio raiz de ibex (solo la primera vez)
+2. cd plugins/optim/main (solo la primera vez)
+3. cd -; sudo ./waf install; cd -; rm optimizersolver; make optimizersolver (cada vez que quiero re-compilar todo)
