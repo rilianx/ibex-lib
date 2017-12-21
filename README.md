@@ -15,7 +15,7 @@ Instalar g++, clang, bison, flex, zlib1g-dev
 
 ./waf install
 
-export PKG_CONFIG_PATH=/home/directorio_ibex/ibex-2.3.4/share/pkgconfig   -> Esto se tiene que hacer cada vez que se conecta a la maquina
+export PKG_CONFIG_PATH=/directorio_ibex/ibex-lib/share/pkgconfig   -> Esto se tiene que hacer cada vez que se conecta a la maquina
 
 export PKG_CONFIG_PATH=/home/iaraya/github/ibex/ibex-dev-dag/ibex-lib/share/pkgconfig
 
@@ -28,5 +28,6 @@ Para compilar todo en una sola linea yo hago lo siguiente:
 
 Para ejecutar:
 
-en plugins/optim/main:
-./optimsolver ../benchs/coconutbenchmark-library2/dualc1.nl --trace
+ __build__/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc8.nl --trace
+ 
+ __build__/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc8.nl --trace
