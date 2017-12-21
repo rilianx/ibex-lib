@@ -149,9 +149,9 @@ int main(int argc, char** argv){
 
 	Linearizer* lr;
 	if (linearrelaxation=="art")
-	  lr= new LinearizerCombo(*sys,LinearizerCombo::ART);
+		  lr= new LinearizerCombo(*sys,LinearizerCombo::ART);
 	else if  (linearrelaxation=="compo")
-	  lr= new LinearizerCombo(*sys,LinearizerCombo::COMPO);
+		  lr= new LinearizerCombo(*sys,LinearizerCombo::COMPO);
 	else if (linearrelaxation=="xn")
 	  lr= new LinearizerXTaylor (*sys, LinearizerXTaylor::RELAX, LinearizerXTaylor::RANDOM_OPP);
 	//	else {cout << linearrelaxation  <<  " is not an implemented  linear relaxation mode "  << endl; return -1;}
