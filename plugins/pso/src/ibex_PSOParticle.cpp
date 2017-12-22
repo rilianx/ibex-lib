@@ -16,11 +16,9 @@ namespace ibex {
 		this->value = this->calculateFitness(orig_sys);
 		this->pBest = this->position;
 		this->vBest = this->value;
-		this->c1 = c1;
-		this->c2 = c2;
 	}
 
-	void PSOParticle::updateVelocity(PSOParticle gBest) {
+	void PSOParticle::updateVelocity(PSOParticle gBest, double c1, double c2) {
 		double rand1 = (double)random()/(double)RAND_MAX;
 		double rand2 = (double)random()/(double)RAND_MAX;
 		double newV = velocity + c1*rand1*(pBest - position) + c2*rand2*(gBest - position);
@@ -37,6 +35,10 @@ namespace ibex {
 	double PSOParticle::calculateFitness(System* orig_sys){
 		double newValue = orig_sys->goal->eval(position);
 		return newValue;
+	}
+
+	Vector PSOParticle::getPosition(){
+		return this->position;
 	}
 
 	PSOParticle::~PSOParticle() {

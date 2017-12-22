@@ -15,10 +15,11 @@ namespace ibex{
 		PSOParticle(IntervalVector box, System* orig_sys, double c1, double c2);
 		virtual ~PSOParticle();
 
-		void updateVelocity(PSOParticle gBest);
+		void updateVelocity(PSOParticle gBest,double c1, double c2);
 		void updatePosition();
 		void setBestPosition(Vector position, double value);
 		double calculateFitness(System* orig_sys);
+		Vector getPosition();
 
 	protected:
 		double value;
@@ -26,9 +27,6 @@ namespace ibex{
 		Vector position;	// must be box to solve
 		double pBest;		// must be box to solve
 		double velocity;
-		double c1;
-		double c2;
 	};
 }
-
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */
