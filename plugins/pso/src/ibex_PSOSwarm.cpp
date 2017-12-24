@@ -23,7 +23,7 @@ namespace ibex{
 
 		// ** Initialize particles on random places**
 		for(int i=0; i<nParticles; i++){
-			particles[i] = new PSOParticle(orig_sys->box, orig_sys, c1, c2);
+			particles[i] = new PSOParticle(orig_sys, c1, c2);
 			currentFitness = particles[i].calculateFitness(orig_sys);
 			if(currentFitness > gBest.calculateFitness(orig_sys))
 				gBest = particles[i];	//update currentBest particle
