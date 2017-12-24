@@ -10,31 +10,30 @@
 
 namespace ibex {
 
-	PSOParticle::PSOParticle(IntervalVector box, System* orig_sys, double c1, double c2){
+	PSOParticle::PSOParticle(System* orig_sys, double c1, double c2){
 		this->velocity = 0;
-		this->position = box.random();
+		this->position = orig_sys->box.random();
 		this->value = this->calculateFitness(orig_sys);
 		this->pBest = this->position;
-		this->vBest = this->value;
 	}
 
-	void PSOParticle::updateVelocity(PSOParticle gBest, double c1, double c2) {
+	void PSOParticle::updateVelocityAndPosition(System* orig_sys, PSOParticle gBest, double c1, double c2) {
+		double oldFitness = calculateFitness(orig_sys);
+
+		// ** Update Velocity **
 		double rand1 = (double)random()/(double)RAND_MAX;
 		double rand2 = (double)random()/(double)RAND_MAX;
-		double newV = velocity + c1*rand1*(pBest - position) + c2*rand2*(gBest - position);
-		velocity = newV;
+		velocity = velocity + c1*rand1*(pBest - position) + c2*rand2*(gBest - position);
+
+		// ** Update Position based on new Velocity
+		position = position + velocity;
+		if(calculateFitness(orig_sys) > oldFitness)
+			pBest = position;
 	}
-	void PSOParticle::updatePosition(){
-		Vector newP = position + velocity;
-		position = newP;
-	}
-	void PSOParticle::setBestPosition(Vector position, double value){
-		vBest = value;
-		pBest = position;
-	}
+
 	double PSOParticle::calculateFitness(System* orig_sys){
-		double newValue = orig_sys->goal->eval(position);
-		return newValue;
+		double fitness = orig_sys->goal->eval(position);
+		return fitness;
 	}
 
 	Vector PSOParticle::getPosition(){
@@ -42,7 +41,7 @@ namespace ibex {
 	}
 
 	PSOParticle::~PSOParticle() {
-		// TODO Auto-generated destructor stub
+		delete this;
 	}
 
 }

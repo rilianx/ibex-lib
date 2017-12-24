@@ -8,44 +8,53 @@
 #include "ibex_PSOSwarm.h"
 
 namespace ibex{
-	PSOSwarm::PSOSwarm(IntervalVector box, System* orig_sys, double c1, double c2, int nParticles, int limit){
+	PSOSwarm::PSOSwarm(double c1, double c2, int nParticles, int limit){
 		this->c1 = c1;
 		this->c2 = c2;
 		this->nParticles = nParticles;
 		this->particles[nParticles];
 		this->limit = limit;
+	}
 
-		double currentBest;
+	Vector PSOSwarm::executePSO(System* orig_sys){
+		double currentFitness;
+		int iterations = 0;
+		bool exit = false;
 
-		//initializate particles
+		// ** Initialize particles on random places**
 		for(int i=0; i<nParticles; i++){
-			particles[i] = new PSOParticle(box, orig_sys, c1, c2);
-			currentBest = particles[i].calculateFitness(orig_sys);
-			if(currentBest > gBest.calculateFitness(orig_sys))
-				updateGBest(particles[i]);//update currentBest particle
-
+			particles[i] = new PSOParticle(orig_sys->box, orig_sys, c1, c2);
+			currentFitness = particles[i].calculateFitness(orig_sys);
+			if(currentFitness > gBest.calculateFitness(orig_sys))
+				gBest = particles[i];	//update currentBest particle
 		}
+
+		// ** Iterations **
+		do{
+			iterations++;
+			// ** Move particles **
+			for(int i=0; i<nParticles; i++){
+				// ** Update velocity and position of every particle **
+				//MISSING LIMIT MIN-MAX VEL
+				particles[i].updateVelocityAndPosition(orig_sys,gBest,c1,c2);
+				// ** Calculate fitness of every particle **
+				currentFitness = particles[i].calculateFitness(orig_sys);
+				// ** Choose better fitness
+				if(currentFitness > gBest.calculateFitness(orig_sys))
+					gBest = particles[i];	//update currentBest particle
+			}
+		}while(exit == false || iterations >= limit);
+		return getGBestPosition();
 	}
 
-	PSOSwarm::updateParticles(System* orig_sys, double c1, double c2){
-		double currentBest;
-		for(int i=0; i<nParticles; i++){
-			particles[i].updateVelocity(gBest,c1,c2);
-			//MISSING LIMIT MIN-MAX VEL
-			particles[i].updatePosition();
-			currentBest = particles[i].calculateFitness(orig_sys);
-			if(currentBest > gBest.calculateFitness(orig_sys))
-				updateGBest(particles[i]);//update currentBest particle
-		}
-	}
-	PSOSwarm::updateGBest(PSOParticle particle){
-		this->gBest = particle;
-	}
 	Vector PSOSwarm::getGBestPosition(){
 		return gBest.getPosition();
 	}
 
 	PSOSwarm::~PSOSwarm() {
-		// TODO Auto-generated destructor stub
+		for(int i=0; i<nParticles; i++){
+			delete particles[i];
+		}
+		delete this;
 	}
 }

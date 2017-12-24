@@ -13,11 +13,10 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(IntervalVector box, System* orig_sys, double c1, double c2, int nParticles, int limit);
+		PSOSwarm(double c1, double c2, int nParticles, int limit);
 		virtual ~PSOSwarm();
 
-		void updateParticles(System* orig_sys, double c1, double c2);
-		void updateGBest(PSOParticle particle);
+		Vector executePSO(System* orig_sys);
 		Vector getGBestPosition();
 
 	protected:

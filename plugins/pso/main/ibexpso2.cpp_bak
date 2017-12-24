@@ -71,7 +71,7 @@ int main(int argc, char** argv){
 			loupfinder = new  LoupFinderDefault(*norm_sys,true);
 		}
 
-		/*if (trace) cout << *orig_sys << endl;
+		if (trace) cout << *orig_sys << endl;
 
 		IntervalVector box = orig_sys->box; //dominios de las variables
 		if (trace) cout << "dominio de la primera variable: " << box[0] << endl;
@@ -90,10 +90,7 @@ int main(int argc, char** argv){
 				cout << "error("<< i <<"):" << -eval.lb() << endl;
 			else if(orig_sys->ctrs[i].op == EQ )
 				cout << "error("<< i <<"):" << abs(eval).ub() << endl;
-		}*/
-		IntervalVector box = orig_sys->box; //dominios de las variables
-		PSOSwarm swarm = new PSOSwarm(2,2,100,1000);
-		double valueSwarm = swarm.executePSO(box,orig_sys);
+		}
 
 
 

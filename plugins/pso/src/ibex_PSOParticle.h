@@ -12,21 +12,19 @@
 namespace ibex{
 	class PSOParticle {
 	public:
-		PSOParticle(IntervalVector box, System* orig_sys, double c1, double c2);
+		PSOParticle(System* orig_sys, double c1, double c2);
 		virtual ~PSOParticle();
 
-		void updateVelocity(PSOParticle gBest,double c1, double c2);
-		void updatePosition();
-		void setBestPosition(Vector position, double value);
+		void updateVelocityAndPosition(System* orig_sys, PSOParticle gBest,double c1, double c2);
 		double calculateFitness(System* orig_sys);
 		Vector getPosition();
 
 	protected:
 		double value;
-		double vBest;
-		Vector position;	// must be box to solve
-		double pBest;		// must be box to solve
+		Vector position;
+		Vector pBest;
 		double velocity;
+		IntervalVector limits;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */
