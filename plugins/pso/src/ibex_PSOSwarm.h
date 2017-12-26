@@ -19,10 +19,13 @@ namespace ibex{
 		Vector executePSO(System* orig_sys);
 		Vector getGBestPosition();
 
+		static bool trace;
+
 	protected:
 		int nParticles;
 		int limit;
-		PSOParticle** particles; //array of particles
+		//Stock** stockArray = new Stock*[n];
+		PSOParticle** particlesArray; //array of particles
 		PSOParticle* gBest;
 		double c1;
 		double c2;

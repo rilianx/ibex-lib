@@ -49,6 +49,7 @@ int main(int argc, char** argv){
 		if (trace) cout << "Search strategy: " << strategy << endl;
 		int nseed= (_seed)? _seed.Get() : 1 ;
 		if (trace) cout << "seed: " << nseed << endl;
+		PSOSwarm::trace = trace;
 
 		double eqeps= 1.e-8;
 		double default_relax_ratio = 0.2;
@@ -91,9 +92,11 @@ int main(int argc, char** argv){
 			else if(orig_sys->ctrs[i].op == EQ )
 				cout << "error("<< i <<"):" << abs(eval).ub() << endl;
 		}*/
-		IntervalVector box = orig_sys->box; //dominios de las variables
-		PSOSwarm swarm = new PSOSwarm(2,2,100,1000);
-		double valueSwarm = swarm.executePSO(box,orig_sys);
+		if(trace) cout << "cduartes" << endl;
+		PSOSwarm* swarm = new PSOSwarm(2,2,100,1000);
+
+		Vector valueSwarm = swarm->executePSO(orig_sys);
+		if (trace) cout << "pso:" << valueSwarm << endl;
 
 
 
