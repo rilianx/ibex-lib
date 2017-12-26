@@ -22,8 +22,8 @@ namespace ibex{
 	protected:
 		int nParticles;
 		int limit;
-		PSOParticle particles[];
-		PSOParticle gBest;
+		PSOParticle** particles; //array of particles
+		PSOParticle* gBest;
 		double c1;
 		double c2;
 	};

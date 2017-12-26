@@ -6,15 +6,15 @@
  */
 
 #include "ibex_PSOParticle.h"
-#include "stdlib.h"
+//#include "stdlib.h"
 
 namespace ibex {
 
 	PSOParticle::PSOParticle(System* orig_sys, double c1, double c2){
-		this->velocity = 0;
-		this->position = orig_sys->box.random();
-		this->value = this->calculateFitness(orig_sys);
-		this->pBest = this->position;
+		velocity = 0;
+		position = orig_sys->box.random();
+		value = calculateFitness(orig_sys);
+		pBest = position;
 	}
 
 	void PSOParticle::updateVelocityAndPosition(System* orig_sys, PSOParticle gBest, double c1, double c2) {

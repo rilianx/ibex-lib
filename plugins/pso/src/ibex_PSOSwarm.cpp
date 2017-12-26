@@ -8,11 +8,9 @@
 #include "ibex_PSOSwarm.h"
 
 namespace ibex{
-	PSOSwarm::PSOSwarm(double c1, double c2, int nParticles, int limit){
-		this->c1 = c1;
-		this->c2 = c2;
+	PSOSwarm::PSOSwarm(double c1, double c2, int nParticles, int limit) : c1(c1), c2(c2), gBest(NULL){
 		this->nParticles = nParticles;
-		this->particles[nParticles];
+		particles = new PSOParticle*[nParticles];
 		this->limit = limit;
 	}
 
