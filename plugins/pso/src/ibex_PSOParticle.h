@@ -17,13 +17,14 @@ namespace ibex{
 
 		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2);
 		double calculateFitness(System* orig_sys);
-		Vector getPosition();
+		Vector getBestPosition();
 
 	protected:
 		double value;
 		Vector position;
 		Vector pBest;
 		Vector velocity;
+		double constrictor;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */

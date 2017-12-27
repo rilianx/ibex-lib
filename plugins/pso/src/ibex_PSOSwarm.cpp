@@ -22,15 +22,16 @@ namespace ibex{
 		double currentFitness = 0;
 		int iterations = 0;
 		bool exit = false;
+		if (trace) cout << "Particles: " << nParticles << endl;
+		if (trace) cout << "Iterations limit: " << limit << endl;
+		if (trace) cout << "Coef c1: " << c1 << endl;
+		if (trace) cout << "Coef c2: " << c2 << endl;
 
 		// ** Initialize particles on random places**
 		if (trace) cout << "#Initialize particles" << endl;
 		for(int i=0; i<nParticles; i++){
-			if (trace) cout << "particle: " << i << endl;
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
-			if (trace) cout << "pos: " << particlesArray[i]->getPosition() << endl;
 			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
-			if (trace) cout << "fitness: " << particlesArray[i]->calculateFitness(orig_sys) << endl;
 			if(gBest){
 				if(currentFitness > gBest->calculateFitness(orig_sys))
 					gBest = particlesArray[i];	//update currentBest particle
@@ -44,26 +45,24 @@ namespace ibex{
 		do{
 			iterations++;
 			// ** Move particles **
-			if (trace) cout << "#Move particles" << endl;
 			for(int i=0; i<nParticles; i++){
-				if (trace) cout << "particle: " << i << endl;
-				// ** Update velocity and position of every particle **
-				//MISSING LIMIT MIN-MAX VEL
-				//if (trace) cout << "oldPos: " << particlesArray[i]->getPosition() << endl;
+				// ** #Update velocity and position of every particle **
 				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2);
-				//if (trace) cout << "newPos: " << particlesArray[i]->getPosition() << endl;
-				// ** Calculate fitness of every particle **
+				// ** #Calculate fitness of every particle **
 				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
-				// ** Choose better fitness
-				//if(currentFitness > gBest->calculateFitness(orig_sys))
-					//gBest = particlesArray[i];	//update currentBest particle
+				// ** #Choose better fitness
+				if(currentFitness < gBest->calculateFitness(orig_sys)){
+					gBest = particlesArray[i];	//update currentBest particle
+					if (trace) cout << "Current gBest fitness: " << gBest->calculateFitness(orig_sys) << endl;
+					if (trace) cout << "At: " << gBest->getBestPosition() << endl;
+				}
 			}
-		}while(exit == false || iterations >= limit);
+		}while(exit == false && iterations < limit);
 		return getGBestPosition();
 	}
 
 	Vector PSOSwarm::getGBestPosition(){
-		return gBest->getPosition();
+		return gBest->getBestPosition();
 	}
 
 	PSOSwarm::~PSOSwarm() {
