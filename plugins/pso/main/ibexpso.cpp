@@ -95,7 +95,7 @@ int main(int argc, char** argv){
 		if(trace) cout << "cduartes" << endl;
 		PSOSwarm* swarm = new PSOSwarm(2,2,100,1000);
 
-		Vector valueSwarm = swarm->executePSO(orig_sys);
+		Vector valueSwarm = swarm->executePSO(orig_sys, true);
 		if (trace) cout << "PSO result:" << valueSwarm << endl;
 	}
 

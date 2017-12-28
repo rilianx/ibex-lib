@@ -17,7 +17,7 @@ namespace ibex {
 		constrictor = 1;
 	}
 
-	void PSOParticle::updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest, double c1, double c2) {
+	void PSOParticle::updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest, double c1, double c2, bool bounce) {
 		double oldFitness = calculateFitness(orig_sys);
 		// ** Update Velocity **
 		double rand1 = (double)random()/(double)RAND_MAX;
@@ -34,14 +34,20 @@ namespace ibex {
 		// Plus, apply factor of constriction to velocity
 		for(int i=0; i<orig_sys->box.size(); i++){
 			if(position[i] > orig_sys->box[i].ub()){
-				position[i] = orig_sys->box[i].ub() - (position[i] - orig_sys->box[i].ub());
-				//position[i] = orig_sys->box[i].ub();
+				if(bounce == true){
+					position[i] = orig_sys->box[i].ub() - (position[i] - orig_sys->box[i].ub()); // bounces
+				}else{
+					position[i] = orig_sys->box[i].ub(); // stick to edge
+				}
 				velocity[i] = -velocity[i];
 				constrictor = constrictor*0.85;
 			}
 			if(position[i] < orig_sys->box[i].lb()){
-				position[i] = orig_sys->box[i].lb() + (orig_sys->box[i].lb() - position[i]);
-				//position[i] = orig_sys->box[i].lb();
+				if(bounce == true){
+					position[i] = orig_sys->box[i].lb() + (orig_sys->box[i].lb() - position[i]); // bounces
+				}else{
+					position[i] = orig_sys->box[i].lb(); // stick to edge
+				}
 				velocity[i] = -velocity[i];
 				constrictor = constrictor*0.85;
 			}
@@ -51,32 +57,27 @@ namespace ibex {
 	}
 
 	double PSOParticle::calculateFitness(System* orig_sys){
-		bool constrained = true;
 		int countPenalty = 0;
-		Interval eval;
-		if(constrained == false){
-			eval = orig_sys->goal->eval(position);
-			return eval.ub();
-		}else if(constrained == true){
-			for(int i=0; i<orig_sys->ctrs.size();i++){
-				eval = orig_sys->ctrs[i].f.eval(position);
-				if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
-					cout << "error("<< i <<"):" << eval.ub() << endl;
-					countPenalty++;
-				}
-				else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
-					cout << "error("<< i <<"):" << -eval.lb() << endl;
-					countPenalty++;
-				}
-				else if(orig_sys->ctrs[i].op == EQ ){
-					cout << "error("<< i <<"):" << abs(eval).ub() << endl;
-					countPenalty++;
-				}
+		double fitness = orig_sys->goal->eval(position).ub();
+		for(int i=0; i<orig_sys->ctrs.size();i++){
+			Interval eval = orig_sys->ctrs[i].f.eval(position);
+			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
+				//cout << "error("<< i <<"):" << eval.ub() << endl;
+				countPenalty++;
+			}
+			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
+				//cout << "error("<< i <<"):" << -eval.lb() << endl;
+				countPenalty++;
+			}
+			else if(orig_sys->ctrs[i].op == EQ ){
+				//cout << "error("<< i <<"):" << abs(eval).ub() << endl;
+				countPenalty++;
 			}
 		}
 		if(countPenalty != 0){
 			return RAND_MAX;
-		}
+		}else
+			return fitness;
 	}
 
 	Vector PSOParticle::getBestPosition(){

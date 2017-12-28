@@ -18,7 +18,7 @@ namespace ibex{
 		this->limit = limit;
 	}
 
-	Vector PSOSwarm::executePSO(System* orig_sys){
+	Vector PSOSwarm::executePSO(System* orig_sys, bool bounce){
 		double currentFitness = 0;
 		int iterations = 0;
 		bool exit = false;
@@ -28,7 +28,7 @@ namespace ibex{
 		if (trace) cout << "Coef c2: " << c2 << endl;
 
 		// ** Initialize particles on random places**
-		if (trace) cout << "#Initialize particles" << endl;
+		if (trace) cout << "# Initialize population of particles with random position and velocity" << endl;
 		for(int i=0; i<nParticles; i++){
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
 			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
@@ -39,15 +39,17 @@ namespace ibex{
 				gBest = particlesArray[i];
 			}
 		}
+		if (trace) cout << "Current gBest fitness: " << gBest->calculateFitness(orig_sys) << endl;
+		if (trace) cout << "At: " << gBest->getBestPosition() << endl;
 
 		// ** Iterations **
-		if (trace) cout << "#Iterations" << endl;
+		if (trace) cout << "# ITERATIONS" << endl;
 		do{
 			iterations++;
 			// ** Move particles **
 			for(int i=0; i<nParticles; i++){
 				// ** #Update velocity and position of every particle **
-				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2);
+				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, bounce);
 				// ** #Calculate fitness of every particle **
 				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
 				// ** #Choose better fitness
@@ -58,6 +60,7 @@ namespace ibex{
 				}
 			}
 		}while(exit == false && iterations < limit);
+		if (trace) cout << "# END ITERATIONS" << endl;
 		return getGBestPosition();
 	}
 
