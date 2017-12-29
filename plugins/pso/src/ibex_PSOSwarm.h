@@ -34,7 +34,7 @@ namespace ibex{
 		PSOSwarm(double c1, double c2, int nParticles, int limit);
 		virtual ~PSOSwarm();
 
-		Vector executePSO(System* orig_sys, bool bounce);
+		Vector executePSO(System* orig_sys, bool bounce, double constrictor);
 		Vector getGBestPosition();
 
 		static bool trace;

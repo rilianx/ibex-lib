@@ -72,31 +72,22 @@ int main(int argc, char** argv){
 			loupfinder = new  LoupFinderDefault(*norm_sys,true);
 		}
 
-		/*if (trace) cout << *orig_sys << endl;
+		Timer timer;
+		timer.start();
 
-		IntervalVector box = orig_sys->box; //dominios de las variables
-		if (trace) cout << "dominio de la primera variable: " << box[0] << endl;
+		double c1 = 2;
+		double c2 = 2;
+		double constrictorMod = 1;
+		int particles = 200;
+		int iterations = 2000;
+		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
 
-		Vector v = box.random();
-		if (trace) cout << "vector aleatorio:" << v << endl;
+		Vector valueSwarm = swarm->executePSO(orig_sys, false, constrictorMod);
+		cout << "\033[0mPSO result:" << valueSwarm << endl;
 
-
-		if (trace) cout << "eval(obj):" << orig_sys->goal->eval(v).ub() << endl;
-
-		for(int i=0; i<orig_sys->ctrs.size();i++){
-			Interval eval=orig_sys->ctrs[i].f.eval(v);
-			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0)
-				cout << "error("<< i <<"):" << eval.ub() << endl;
-			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0)
-				cout << "error("<< i <<"):" << -eval.lb() << endl;
-			else if(orig_sys->ctrs[i].op == EQ )
-				cout << "error("<< i <<"):" << abs(eval).ub() << endl;
-		}*/
-		if(trace) cout << "cduartes" << endl;
-		PSOSwarm* swarm = new PSOSwarm(2,2,100,1000);
-
-		Vector valueSwarm = swarm->executePSO(orig_sys, true);
-		if (trace) cout << "PSO result:" << valueSwarm << endl;
+		timer.stop();
+		// Display the cpu time used
+		cout << "cpu time used=" << timer.get_time() << "s."<< endl;
 	}
 
 

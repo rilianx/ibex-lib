@@ -18,49 +18,52 @@ namespace ibex{
 		this->limit = limit;
 	}
 
-	Vector PSOSwarm::executePSO(System* orig_sys, bool bounce){
-		double currentFitness = 0;
+	Vector PSOSwarm::executePSO(System* orig_sys, bool bounce, double constrictorMod){
+		double currentFitness;
 		int iterations = 0;
 		bool exit = false;
 		if (trace) cout << "Particles: " << nParticles << endl;
 		if (trace) cout << "Iterations limit: " << limit << endl;
-		if (trace) cout << "Coef c1: " << c1 << endl;
-		if (trace) cout << "Coef c2: " << c2 << endl;
+		if (trace) cout << "Cognitive parameter (c1): " << c1 << endl;
+		if (trace) cout << "Social parameter (c2): " << c2 << endl;
 
 		// ** Initialize particles on random places**
-		if (trace) cout << "# Initialize population of particles with random position and velocity" << endl;
+		if (trace) cout << "\033[0;33m# Initialize population of particles with random position and velocity" << endl;
 		for(int i=0; i<nParticles; i++){
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
 			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
 			if(gBest){
-				if(currentFitness > gBest->calculateFitness(orig_sys))
+				if(currentFitness < gBest->calculateFitness(orig_sys))
 					gBest = particlesArray[i];	//update currentBest particle
 			}else{
 				gBest = particlesArray[i];
 			}
 		}
-		if (trace) cout << "Current gBest fitness: " << gBest->calculateFitness(orig_sys) << endl;
-		if (trace) cout << "At: " << gBest->getBestPosition() << endl;
+		if (trace) cout << "\033[0;32mgBest fitness: " << gBest->calculateFitness(orig_sys) << endl;
+		if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 
 		// ** Iterations **
-		if (trace) cout << "# ITERATIONS" << endl;
+		if (trace) cout << "\033[0;33m# ITERATIONS" << endl;
 		do{
 			iterations++;
-			// ** Move particles **
 			for(int i=0; i<nParticles; i++){
-				// ** #Update velocity and position of every particle **
-				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, bounce);
-				// ** #Calculate fitness of every particle **
+				currentFitness = 0;
+
+				// # Update velocity and position of every particle.
+				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, bounce, constrictorMod);
+
+				// # Evaluate objective (fitness) of every particle.
 				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
-				// ** #Choose better fitness
+
+				// # Select the particle with best fitness (min) and save as gBest.
 				if(currentFitness < gBest->calculateFitness(orig_sys)){
 					gBest = particlesArray[i];	//update currentBest particle
-					if (trace) cout << "Current gBest fitness: " << gBest->calculateFitness(orig_sys) << endl;
-					if (trace) cout << "At: " << gBest->getBestPosition() << endl;
+					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->calculateFitness(orig_sys) << endl;
+					if (trace) cout << "\033[0;31mgAt: " << gBest->getBestPosition() << endl;
 				}
 			}
 		}while(exit == false && iterations < limit);
-		if (trace) cout << "# END ITERATIONS" << endl;
+		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
 		return getGBestPosition();
 	}
 
