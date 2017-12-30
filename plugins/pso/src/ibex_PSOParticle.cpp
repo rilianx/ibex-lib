@@ -14,7 +14,7 @@
 using namespace std; //DELETE THIS
 namespace ibex {
 	PSOParticle::PSOParticle(System* orig_sys, double c1, double c2) : position(orig_sys->box.random()), pBest(position), velocity(Vector::zeros(orig_sys->box.size())){
-		value = calculateFitness(orig_sys);
+		calculateFitness(orig_sys);
 		vBest = value;
 	}
 
@@ -50,7 +50,9 @@ namespace ibex {
 				velocity[i] = -velocity[i]; 			// change direction
 			}
 		}
-		value = calculateFitness(orig_sys);	//update value (fitness)
+
+		calculateFitness(orig_sys);	//update value (fitness)
+
 		// Feasibility rule (K. Deb - 2000)
 		// both feasible: select better fitness.
 		if(vioBest == 0 && violations == 0){
@@ -59,13 +61,15 @@ namespace ibex {
 				vBest = value;
 				vioBest = violations;
 			}
+		}
 		// only one is feasible: select feasible.
-		}else if(vioBest > 0 && violations == 0){
+		if(vioBest > 0 && violations == 0){
 			pBest = position;
 			vBest = value;
 			vioBest = violations;
+		}
 		// both infeasible: select the one with less violations.
-		}else if(vioBest > 0 && violations > 0){
+		if(vioBest > 0 && violations > 0){
 			if(violations < vioBest){
 				pBest = position;
 				vBest = value;
@@ -74,7 +78,7 @@ namespace ibex {
 		}
 	}
 
-	double PSOParticle::calculateFitness(System* orig_sys){
+	void PSOParticle::calculateFitness(System* orig_sys){
 		int sum = 0, M = 100;
 		int countViolations = 0;
 		double fitness;
@@ -103,7 +107,7 @@ namespace ibex {
 		}
 
 		violations = countViolations;
-		return fitness;
+		value = fitness;
 	}
 
 	Vector PSOParticle::getBestPosition(){
@@ -112,6 +116,10 @@ namespace ibex {
 
 	double PSOParticle::getBestValue(){
 		return vBest;
+	}
+
+	double PSOParticle::getValue(){
+		return value;
 	}
 
 	bool PSOParticle::isBestFeasible(){

@@ -84,8 +84,9 @@ int main(int argc, char** argv){
 
 		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
 		Vector valueSwarm = swarm->executePSO(orig_sys, p);
-		cout << "\033[0mPSO result: " << valueSwarm << endl;
-		cout << "PSO fitness: " << orig_sys->goal->eval(valueSwarm).ub() << endl;
+		cout << "\033[0mPSO Vector: " << valueSwarm << endl;
+		cout << "PSO value: " << orig_sys->goal->eval(swarm->getGBestPosition()) << endl;
+		cout << "PSO fitness: " << swarm->getGBestValue() << endl;
 
 		timer.stop();
 		// Display the cpu time used
