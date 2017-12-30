@@ -19,7 +19,7 @@ namespace ibex{
 	}
 
 	Vector PSOSwarm::executePSO(System* orig_sys, double p){
-		double currentFitness;
+		double fitness;
 		int iterations = 0;
 		bool exit = false;
 		if (trace) cout << "Particles: " << nParticles << endl;
@@ -32,9 +32,9 @@ namespace ibex{
 		if (trace) cout << "\033[0;33m# Initialize population of particles with random position and velocity" << endl;
 		for(int i=0; i<nParticles; i++){
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
-			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
+			fitness = particlesArray[i]->calculateFitness(orig_sys);
 			if(gBest){
-				if(currentFitness < gBest->getBestValue())
+				if(fitness < gBest->getBestValue())
 					gBest = particlesArray[i];	//update globalBest particle
 			}else{
 				gBest = particlesArray[i];
@@ -48,23 +48,45 @@ namespace ibex{
 		do{
 			iterations++;
 			for(int i=0; i<nParticles; i++){
-				currentFitness = 0;
+				fitness = 0;
 
 				// # Update velocity and position of every particle.
 				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, p);
 
 				// # Evaluate objective (fitness) of every particle.
-				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
+				fitness = particlesArray[i]->calculateFitness(orig_sys);
 
 				// # Select the particle with best fitness (min) and save as gBest.
-				if(currentFitness < gBest->getBestValue()){
-					gBest = particlesArray[i];	//update globalBest particle
-					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->getBestValue() << endl;
-					if (trace) cout << "\033[0;31mgAt: " << gBest->getBestPosition() << endl;
+
+				// Feasibility rule (K. Deb - 2000)
+				// both feasible: select better fitness.
+				if(gBest->isBestFeasible() == true && particlesArray[i]->isFeasible() == true){
+					if(particlesArray[i]->getValue() < gBest->getBestValue()){
+						gBest = particlesArray[i];	//update globalBest particle
+						if (trace) cout << "\033[0;32mgBest fitness:" << gBest->getBestValue() << "\t Criteria[1]" << endl;
+						if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
+					}
+				// only one is feasible: select feasible.
+				}else{
+					if(gBest->isBestFeasible() == false && particlesArray[i]->isFeasible() == true){
+						gBest = particlesArray[i];	//update globalBest particle
+						if (trace) cout << "\033[0;32mgBest fitness:" << gBest->getBestValue() << "\t Criteria[2]" << endl;
+						if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
+					}else{
+						// both infeasible: select better fitness.
+						if(gBest->isBestFeasible() == false && particlesArray[i]->isFeasible() == false){
+							if(particlesArray[i]->getViolations() < gBest->getBestViolations()){
+								gBest = particlesArray[i];	//update globalBest particle
+								if (trace) cout << "\033[0;32mgBest fitness:" << gBest->getBestValue() << "\t Criteria[3]" << endl;
+								if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
+							}
+						}
+					}
 				}
 			}
 		}while(exit == false && iterations < limit);
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
+		if (trace) cout << "\033[0mvBest["<< gBest->getBestValue() <<"] violBest["<< gBest->getBestViolations() <<"]" << endl;
 		return getGBestPosition();
 	}
 

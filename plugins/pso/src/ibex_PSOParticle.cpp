@@ -51,38 +51,58 @@ namespace ibex {
 			}
 		}
 		value = calculateFitness(orig_sys);	//update value (fitness)
-		if(value < vBest){					//update best position and best fitness
+		// Feasibility rule (K. Deb - 2000)
+		// both feasible: select better fitness.
+		if(vioBest == 0 && violations == 0){
+			if(value < vBest){
+				pBest = position;
+				vBest = value;
+				vioBest = violations;
+			}
+		// only one is feasible: select feasible.
+		}else if(vioBest > 0 && violations == 0){
 			pBest = position;
 			vBest = value;
+			vioBest = violations;
+		// both infeasible: select the one with less violations.
+		}else if(vioBest > 0 && violations > 0){
+			if(violations < vioBest){
+				pBest = position;
+				vBest = value;
+				vioBest = violations;
+			}
 		}
 	}
 
 	double PSOParticle::calculateFitness(System* orig_sys){
-		int sum = 0;
+		int sum = 0, M = 100;
+		int countViolations = 0;
 		double fitness;
 		for(int i=0; i<orig_sys->ctrs.size();i++){
 			Interval eval = orig_sys->ctrs[i].f.eval(position);
 			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
 				sum += eval.ub();
+				countViolations++;
 				//cout << "error("<< i <<"):" << eval.ub() << endl;
 			}
 			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
 				sum += -eval.ub();
+				countViolations++;
 				//cout << "error("<< i <<"):" << -eval.lb() << endl;
 			}
 			else if(orig_sys->ctrs[i].op == EQ ){
 				sum += abs(eval).ub();
+				countViolations++;
 				//cout << "error("<< i <<"):" << abs(eval).ub() << endl;
 			}
 		}
 		if(sum > 0){
-			fitness = sum;
-			feasible = false;
+			fitness = sum*M;
 		}else{
 			fitness = orig_sys->goal->eval(position).ub();
-			feasible = true;
 		}
 
+		violations = countViolations;
 		return fitness;
 	}
 
@@ -92,6 +112,28 @@ namespace ibex {
 
 	double PSOParticle::getBestValue(){
 		return vBest;
+	}
+
+	bool PSOParticle::isBestFeasible(){
+		if(vioBest > 0)
+			return false;
+		else
+			return true;
+	}
+
+	int PSOParticle:: getViolations(){
+		return violations;
+	}
+
+	int PSOParticle:: getBestViolations(){
+		return vioBest;
+	}
+
+	bool PSOParticle::isFeasible(){
+		if(violations > 0)
+			return false;
+		else
+			return true;
 	}
 
 	PSOParticle::~PSOParticle() {

@@ -19,6 +19,10 @@ namespace ibex{
 		double calculateFitness(System* orig_sys);
 		Vector getBestPosition();
 		double getBestValue();
+		bool isFeasible();
+		bool isBestFeasible();
+		int getViolations();
+		int getBestViolations();
 
 	protected:
 		double value;
@@ -26,7 +30,8 @@ namespace ibex{
 		Vector position;
 		Vector pBest;
 		Vector velocity;
-		bool feasible;
+		int violations;
+		int vioBest;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */
