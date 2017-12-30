@@ -17,10 +17,11 @@
  * 		- Select this position as best position for particle.
  * # Select the particle with best fitness (min) and save as gBest.
  * END ITERATIONS
- * 		- In this version: limit of iteration exceeded.
  *
- * Notes: This version limit particles to box boundaries simulating bounce or stick to edges (bounce = true/false).
- *
+ * Notes:
+ * 		This version limit particles to box boundaries simulating stick to edges.
+ * 		Velocity of particles is limited by "p", a ponderation factor for box's diameter, setting as max velocity p*diam.
+ *		Iterations ends when limit are exceeded.
  */
 
 #ifndef PSO_SRC_IBEX_PSOSWARM_H_

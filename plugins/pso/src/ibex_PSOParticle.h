@@ -18,6 +18,7 @@ namespace ibex{
 		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2, double p);
 		double calculateFitness(System* orig_sys);
 		Vector getBestPosition();
+		double getBestValue();
 
 	protected:
 		double value;

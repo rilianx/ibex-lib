@@ -31,7 +31,7 @@ namespace ibex {
 			maxVel = p*orig_sys->box[i].diam();
 			if(velocity[i] > maxVel)
 				velocity[i] = maxVel;
-			else if(abs(velocity[i]) > maxVel)
+			else if(velocity[i] < -maxVel)
 				velocity[i] = -maxVel;
 		}
 
@@ -88,6 +88,10 @@ namespace ibex {
 
 	Vector PSOParticle::getBestPosition(){
 		return pBest;
+	}
+
+	double PSOParticle::getBestValue(){
+		return vBest;
 	}
 
 	PSOParticle::~PSOParticle() {

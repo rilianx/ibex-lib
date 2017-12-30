@@ -34,13 +34,13 @@ namespace ibex{
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
 			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
 			if(gBest){
-				if(currentFitness < gBest->vBest)
+				if(currentFitness < gBest->getBestValue())
 					gBest = particlesArray[i];	//update globalBest particle
 			}else{
 				gBest = particlesArray[i];
 			}
 		}
-		if (trace) cout << "\033[0;32mgBest fitness: " << gBest->vBest << endl;
+		if (trace) cout << "\033[0;32mgBest fitness: " << gBest->getBestValue() << endl;
 		if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 
 		// ** Iterations **
@@ -57,9 +57,9 @@ namespace ibex{
 				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
 
 				// # Select the particle with best fitness (min) and save as gBest.
-				if(currentFitness < gBest->vBest){
+				if(currentFitness < gBest->getBestValue()){
 					gBest = particlesArray[i];	//update globalBest particle
-					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->vBest << endl;
+					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->getBestValue() << endl;
 					if (trace) cout << "\033[0;31mgAt: " << gBest->getBestPosition() << endl;
 				}
 			}

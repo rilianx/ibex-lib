@@ -73,20 +73,19 @@ int main(int argc, char** argv){
 		}
 
 		// ** parameters for PSO algorithm **
-		double c1 = 2;					// cognitive parameter (def 2)
-		double c2 = 2;					// social parameter (def 2)
-		double constrictorMod = 0.85;	// multiplies base-constrictor (1)
+		double c1 = 2;				// cognitive parameter (def. 2)
+		double c2 = 2;				// social parameter (def. 2)
+		double p = 0.1;				// box's diameter ponderator (def. 0.1)
 		int particles = 200;		// amount of particles in pso algorithm
 		int iterations = 2000;		// number of iterations for pso algorithm
-		bool bounce = false;			// particles bounces inside a box if true
-
 
 		Timer timer;
 		timer.start();
 
 		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
-		Vector valueSwarm = swarm->executePSO(orig_sys, bounce, constrictorMod);
-		cout << "\033[0mPSO result:" << valueSwarm << endl;
+		Vector valueSwarm = swarm->executePSO(orig_sys, p);
+		cout << "\033[0mPSO result: " << valueSwarm << endl;
+		cout << "PSO fitness: " << orig_sys->goal->eval(valueSwarm).ub() << endl;
 
 		timer.stop();
 		// Display the cpu time used
