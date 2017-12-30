@@ -72,17 +72,20 @@ int main(int argc, char** argv){
 			loupfinder = new  LoupFinderDefault(*norm_sys,true);
 		}
 
+		// ** parameters for PSO algorithm **
+		double c1 = 2;					// cognitive parameter (def 2)
+		double c2 = 2;					// social parameter (def 2)
+		double constrictorMod = 0.85;	// multiplies base-constrictor (1)
+		int particles = 200;		// amount of particles in pso algorithm
+		int iterations = 2000;		// number of iterations for pso algorithm
+		bool bounce = false;			// particles bounces inside a box if true
+
+
 		Timer timer;
 		timer.start();
 
-		double c1 = 2;
-		double c2 = 2;
-		double constrictorMod = 1;
-		int particles = 200;
-		int iterations = 2000;
 		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
-
-		Vector valueSwarm = swarm->executePSO(orig_sys, false, constrictorMod);
+		Vector valueSwarm = swarm->executePSO(orig_sys, bounce, constrictorMod);
 		cout << "\033[0mPSO result:" << valueSwarm << endl;
 
 		timer.stop();

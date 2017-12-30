@@ -15,16 +15,17 @@ namespace ibex{
 		PSOParticle(System* orig_sys, double c1, double c2);
 		virtual ~PSOParticle();
 
-		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2, bool bounce, double constrictorMod);
+		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2, double p);
 		double calculateFitness(System* orig_sys);
 		Vector getBestPosition();
 
 	protected:
 		double value;
+		double vBest;
 		Vector position;
 		Vector pBest;
 		Vector velocity;
-		double constrictor;
+		bool feasible;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */
