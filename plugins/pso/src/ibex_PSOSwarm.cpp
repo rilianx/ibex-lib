@@ -18,13 +18,13 @@ namespace ibex{
 		this->limit = limit;
 	}
 
-	Vector PSOSwarm::executePSO(System* orig_sys, bool bounce, double constrictorMod){
+	Vector PSOSwarm::executePSO(System* orig_sys, double p){
 		double currentFitness;
 		int iterations = 0;
 		bool exit = false;
 		if (trace) cout << "Particles: " << nParticles << endl;
 		if (trace) cout << "Iterations limit: " << limit << endl;
-		if (trace) cout << "Constrictor modificator: " << constrictorMod << endl;
+		if (trace) cout << "Box's diameter ponderator (p): " << p << endl;
 		if (trace) cout << "Cognitive parameter (c1): " << c1 << endl;
 		if (trace) cout << "Social parameter (c2): " << c2 << endl;
 
@@ -34,13 +34,13 @@ namespace ibex{
 			particlesArray[i] = new PSOParticle(orig_sys, c1, c2);
 			currentFitness = particlesArray[i]->calculateFitness(orig_sys);
 			if(gBest){
-				if(currentFitness < gBest->calculateFitness(orig_sys,gBest->getBestPosition()))
+				if(currentFitness < gBest->vBest)
 					gBest = particlesArray[i];	//update globalBest particle
 			}else{
 				gBest = particlesArray[i];
 			}
 		}
-		if (trace) cout << "\033[0;32mgBest fitness: " << gBest->calculateFitness(orig_sys,gBest->getBestPosition()) << endl;
+		if (trace) cout << "\033[0;32mgBest fitness: " << gBest->vBest << endl;
 		if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 
 		// ** Iterations **
@@ -51,7 +51,7 @@ namespace ibex{
 				currentFitness = 0;
 
 				// # Update velocity and position of every particle.
-				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, bounce, constrictorMod);
+				particlesArray[i]->updateVelocityAndPosition(orig_sys,gBest,c1,c2, p);
 
 				// # Evaluate objective (fitness) of every particle.
 				currentFitness = particlesArray[i]->calculateFitness(orig_sys);
@@ -59,7 +59,7 @@ namespace ibex{
 				// # Select the particle with best fitness (min) and save as gBest.
 				if(currentFitness < gBest->vBest){
 					gBest = particlesArray[i];	//update globalBest particle
-					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->calculateFitness(orig_sys,gBest->getBestPosition()) << endl;
+					if (trace) cout << "\033[0;32mgBest fitness:" << gBest->vBest << endl;
 					if (trace) cout << "\033[0;31mgAt: " << gBest->getBestPosition() << endl;
 				}
 			}
