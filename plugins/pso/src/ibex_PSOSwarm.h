@@ -45,7 +45,6 @@ namespace ibex{
 	protected:
 		int nParticles;
 		int limit;
-		//Stock** stockArray = new Stock*[n];
 		PSOParticle** particlesArray; //array of particles
 		PSOParticle* gBest;
 		double c1;

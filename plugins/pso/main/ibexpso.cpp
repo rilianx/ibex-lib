@@ -76,7 +76,7 @@ int main(int argc, char** argv){
 		double c1 = 2;				// cognitive parameter (def. 2)
 		double c2 = 2;				// social parameter (def. 2)
 		double p = 0.1;				// box's diameter ponderator (def. 0.1)
-		int particles = 200;		// amount of particles in pso algorithm
+		int particles = 30;		// amount of particles in pso algorithm
 		int iterations = 2000;		// number of iterations for pso algorithm
 
 		Timer timer;
