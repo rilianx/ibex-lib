@@ -12,12 +12,19 @@ using namespace std; //DELETE THIS
 namespace ibex{
 	bool PSOSwarm::trace = false;
 
+	/*
+	 * Initialize swarm
+	 * Instance particles and set parameters
+	 */
 	PSOSwarm::PSOSwarm(double c1, double c2, int nParticles, int limit) : c1(c1), c2(c2), gBest(NULL){
 		this->nParticles = nParticles;
 		particlesArray = new PSOParticle*[nParticles];
 		this->limit = limit;
 	}
 
+	/*
+	 * Execute PSO algorithm
+	 */
 	Vector PSOSwarm::executePSO(System* orig_sys, double p){
 		double fitness;
 		int iterations = 0;
@@ -52,18 +59,25 @@ namespace ibex{
 
 				// # Evaluate objective (fitness) of every particle.
 				particlesArray[i]->calculateFitness(orig_sys);
+				// - Select best position of particle and save it internally.
+				particlesArray[i]->selectBestInternal();
+				//if(i == 1)
+					//cout << particlesArray[i]->getPosition() << particlesArray[i]->getValue() << endl; //print position
 
-				// # Select the particle with best fitness (min) and save as gBest.
+				// # Select the particle with best fitness (minimize) and save as gBest.
 				selectParticle(particlesArray[i]);
 			}
+			//cout << "Value:" << this->getGBestValue() << "At: " << this->getGBestPosition()  << endl;
 		}while(exit == false && iterations < limit);
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
 		if (trace) cout << "\033[0mvBest["<< gBest->getBestValue() <<"] violBest["<< gBest->getBestViolations() <<"]" << endl;
 		return getGBestPosition();
 	}
 
+	/*
+	 * Select best particle of the swarm based on Feasibility rule (K. Deb - 2000)
+	 */
 	void PSOSwarm::selectParticle(PSOParticle* particle){
-		// Feasibility rule (K. Deb - 2000)
 		// both feasible: select better fitness.
 		if(gBest->isBestFeasible() == true && particle->isFeasible() == true){
 			if(particle->getValue() < gBest->getBestValue()){
@@ -71,31 +85,38 @@ namespace ibex{
 				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[1]" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 			}
-		}
-
-		// only one is feasible: select feasible.
-		if(gBest->isBestFeasible() == false && particle->isFeasible() == true){
-			gBest = particle;	//update globalBest particle
-			if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[2]" << endl;
-			if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
-		}
-
-		// both infeasible: select better fitness.
-		if(gBest->isBestFeasible() == false && particle->isFeasible() == false){
-			if(particle->getViolations() < gBest->getBestViolations()){
+		}else{
+			// only one is feasible: select feasible.
+			if(gBest->isBestFeasible() == false && particle->isFeasible() == true){
 				gBest = particle;	//update globalBest particle
-				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[3]" << endl;
+				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[2]" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
+			}else{
+				// both infeasible: select better fitness.
+				if(gBest->isBestFeasible() == false && particle->isFeasible() == false){
+					if(particle->getViolations() < gBest->getBestViolations()){
+						gBest = particle;	//update globalBest particle
+						if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[3]" << endl;
+						if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
+					}
+				}
 			}
 		}
 	}
 
+	/*
+	 * GETTER AND SETTER
+	 */
 	Vector PSOSwarm::getGBestPosition(){
 		return gBest->getBestPosition();
 	}
 
 	double PSOSwarm::getGBestValue(){
 		return gBest->getBestValue();
+	}
+
+	int PSOSwarm::getGBestViolations(){
+		return gBest->getBestViolations();
 	}
 
 	PSOSwarm::~PSOSwarm() {

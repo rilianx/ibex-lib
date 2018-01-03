@@ -14,7 +14,7 @@
  * ITERATIONS
  * # Update velocity and position of every particle.
  * # Evaluate objective (fitness) of every particle.
- * 		- Select this position as best position for particle.
+ * 		- Select best position of particle and save it.
  * # Select the particle with best fitness (min) and save as gBest.
  * END ITERATIONS
  *
@@ -38,6 +38,7 @@ namespace ibex{
 		Vector executePSO(System* orig_sys, double p);
 		Vector getGBestPosition();
 		double getGBestValue();
+		int getGBestViolations();
 		void selectParticle(PSOParticle* particle);
 
 		static bool trace;

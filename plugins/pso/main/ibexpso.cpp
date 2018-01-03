@@ -20,8 +20,8 @@ int main(int argc, char** argv){
 		args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
 		args::ValueFlag<int> _seed(parser, "int", "seed", {"seed"});
 		args::Flag trace(parser, "trace", "Activate trace. Updates of loup/uplo are printed while minimizing.", {"trace"});
-
 		args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
+
 
 		try
 		{
@@ -77,18 +77,38 @@ int main(int argc, char** argv){
 		double c2 = 2;				// social parameter (def. 2)
 		double p = 0.1;				// box's diameter ponderator (def. 0.1)
 		int particles = 30;		// amount of particles in pso algorithm
-		int iterations = 2000;		// number of iterations for pso algorithm
+		int iterations = 500;		// number of iterations for pso algorithm
 
 		Timer timer;
 		timer.start();
 
 		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
 		Vector valueSwarm = swarm->executePSO(orig_sys, p);
-		cout << "\033[0mPSO Vector: " << valueSwarm << endl;
-		cout << "PSO value: " << orig_sys->goal->eval(swarm->getGBestPosition()) << endl;
-		cout << "PSO fitness: " << swarm->getGBestValue() << endl;
 
 		timer.stop();
+		cout << "\033[0mPSO Vector: " << valueSwarm << endl;
+		cout << "eval: " << orig_sys->goal->eval(swarm->getGBestPosition()) << endl;
+		double sum = 0;
+		int countViolations = 0;
+		double fitness;
+		for(int i=0; i<orig_sys->ctrs.size();i++){
+			Interval eval = orig_sys->ctrs[i].f.eval(swarm->getGBestPosition());
+			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
+				sum += eval.ub();
+				countViolations++;
+			}
+			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
+				sum += -eval.ub();
+				countViolations++;
+			}
+			else if(orig_sys->ctrs[i].op == EQ ){
+				sum += abs(eval).ub();
+				countViolations++;
+			}
+		}
+		//cout << "fitness: " << swarm->getGBestValue() << endl;
+		cout << "penalty[" << swarm->getGBestViolations() << "/" << orig_sys->ctrs.size() << "]: "  << sum << endl;
+
 		// Display the cpu time used
 		cout << "cpu time used=" << timer.get_time() << "s."<< endl;
 	}

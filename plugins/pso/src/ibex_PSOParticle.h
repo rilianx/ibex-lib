@@ -17,11 +17,14 @@ namespace ibex{
 
 		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2, double p);
 		void calculateFitness(System* orig_sys);
-		Vector getBestPosition();
-		double getBestValue();
-		double getValue();
+		void selectBestInternal();
 		bool isFeasible();
 		bool isBestFeasible();
+
+		Vector getPosition();
+		Vector getBestPosition();
+		double getValue();
+		double getBestValue();
 		int getViolations();
 		int getBestViolations();
 
