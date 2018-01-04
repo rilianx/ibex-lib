@@ -59,7 +59,7 @@ namespace ibex {
 		cout << comb_piv.size() << endl;
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
-		B = A.mid();
+
 		Matrix perm(1,1);
 		perm.resize(B.nb_rows(),B.nb_rows());
 		/*perform the gauss elimination for each comb_piv element*/
@@ -70,7 +70,9 @@ namespace ibex {
 					if (i == j) perm[i][j] = 1;
 					else perm[i][j] = 0;
 			}
-
+			/*Initialize B*/
+			B = A.mid();
+			rows_checked.clear();
 			for (int k = 0 ; k < comb_piv[comb_piv.size()-1].size() ; k++){
 				int actual_col = comb_piv[comb_piv.size()-1][k];
 				temp_piv = -1;
@@ -108,6 +110,8 @@ namespace ibex {
 			comb_piv.pop_back();
 		}
 		cout << permutations.size() << endl;
+		for (int i = 0 ; i < permutations.size() ; i++)
+			cout << permutations[i]*A.mid() << endl;
 		exit(0);
 //		return permutations;
 	}
