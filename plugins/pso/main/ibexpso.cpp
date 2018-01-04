@@ -107,7 +107,7 @@ int main(int argc, char** argv){
 			}
 		}
 		//cout << "fitness: " << swarm->getGBestValue() << endl;
-		cout << "penalty[" << swarm->getGBestViolations() << "/" << orig_sys->ctrs.size() << "]: "  << sum << endl;
+		cout << "penalty[" << swarm->getGBestPenalty() << "/" << orig_sys->ctrs.size() << "]: "  << sum << endl;
 
 		// Display the cpu time used
 		cout << "cpu time used=" << timer.get_time() << "s."<< endl;

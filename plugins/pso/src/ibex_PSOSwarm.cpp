@@ -44,7 +44,7 @@ namespace ibex{
 				selectParticle(particlesArray[i]);
 			}else{
 				gBest = particlesArray[i];
-				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t First" << endl;
+				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestPenalty() <<"]:" << gBest->getBestValue() << "\t First" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 			}
 		}
@@ -70,7 +70,7 @@ namespace ibex{
 			//cout << "Value:" << this->getGBestValue() << "At: " << this->getGBestPosition()  << endl;
 		}while(exit == false && iterations < limit);
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
-		if (trace) cout << "\033[0mvBest["<< gBest->getBestValue() <<"] violBest["<< gBest->getBestViolations() <<"]" << endl;
+		if (trace) cout << "\033[0mvBest["<< gBest->getBestValue() <<"] violBest["<< gBest->getBestPenalty() <<"]" << endl;
 		return getGBestPosition();
 	}
 
@@ -82,21 +82,21 @@ namespace ibex{
 		if(gBest->isBestFeasible() == true && particle->isFeasible() == true){
 			if(particle->getValue() < gBest->getBestValue()){
 				gBest = particle;	//update globalBest particle
-				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[1]" << endl;
+				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestPenalty() <<"]:" << gBest->getBestValue() << "\t Criteria[1]" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 			}
 		}else{
 			// only one is feasible: select feasible.
 			if(gBest->isBestFeasible() == false && particle->isFeasible() == true){
 				gBest = particle;	//update globalBest particle
-				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[2]" << endl;
+				if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestPenalty() <<"]:" << gBest->getBestValue() << "\t Criteria[2]" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 			}else{
 				// both infeasible: select better fitness.
 				if(gBest->isBestFeasible() == false && particle->isFeasible() == false){
-					if(particle->getViolations() < gBest->getBestViolations()){
+					if(particle->getPenalty() < gBest->getBestPenalty()){
 						gBest = particle;	//update globalBest particle
-						if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestViolations() <<"]:" << gBest->getBestValue() << "\t Criteria[3]" << endl;
+						if (trace) cout << "\033[0;32mgBest fitness["<< gBest->getBestPenalty() <<"]:" << gBest->getBestValue() << "\t Criteria[3]" << endl;
 						if (trace) cout << "\033[0;31mAt: " << gBest->getBestPosition() << endl;
 					}
 				}
@@ -115,8 +115,8 @@ namespace ibex{
 		return gBest->getBestValue();
 	}
 
-	int PSOSwarm::getGBestViolations(){
-		return gBest->getBestViolations();
+	double PSOSwarm::getGBestPenalty(){
+		return gBest->getBestPenalty();
 	}
 
 	PSOSwarm::~PSOSwarm() {

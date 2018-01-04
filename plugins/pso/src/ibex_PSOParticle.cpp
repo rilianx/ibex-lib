@@ -15,9 +15,10 @@ using namespace std; //DELETE THIS
 namespace ibex {
 	PSOParticle::PSOParticle(System* orig_sys, double c1, double c2) : position(orig_sys->box.random()), pBest(position), velocity(Vector::zeros(orig_sys->box.size())){
 		calculateFitness(orig_sys);
+		// store best position
 		pBest = position;
 		vBest = value;
-		vioBest = violations;
+		peBest = penalty;
 	}
 
 	/*
@@ -62,60 +63,47 @@ namespace ibex {
 	 */
 	void PSOParticle::calculateFitness(System* orig_sys){
 		double sum = 0, M = 10;
-		int count = 0;
 		for(int i=0; i<orig_sys->ctrs.size();i++){
 			Interval eval = orig_sys->ctrs[i].f.eval(position);
 			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
 				sum += eval.ub();
-				count++;
 				//cout << "error("<< i <<"):" << eval.ub() << endl;
 			}
 			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
 				sum += -eval.ub();
-				count++;
 				//cout << "error("<< i <<"):" << -eval.lb() << endl;
 			}
 			else if(orig_sys->ctrs[i].op == EQ ){
 				sum += abs(eval).ub();
-				count++;
 				//cout << "error("<< i <<"):" << abs(eval).ub() << endl;
 			}
 		}
-		if(sum > 0){
-			value = orig_sys->goal->eval(position).ub()+sum*M;
-		}else{
-			value = orig_sys->goal->eval(position).ub();
-		}
-		violations = count;
+
+		// store results
+		value = orig_sys->goal->eval(position).ub();
+		penalty = sum;
 	}
 
 	/*
 	 * Select best position based on Feasibility rule (K. Deb - 2000)
 	 */
 	void PSOParticle::selectBestInternal(){
-		// both feasible: select better fitness.
-		if(vioBest == 0 && violations == 0){
+		if(peBest == 0 && penalty == 0){		// both feasible: select better fitness.
 			if(value < vBest){
 				pBest = position;
 				vBest = value;
-				vioBest = violations;
-			}
-		}else{
-			// only one is feasible: select feasible.
-			if(vioBest > 0 && violations == 0){
+				peBest = penalty;
+			}	// else: keep
+		}else if(peBest > 0 && penalty == 0){	// only one is feasible: select feasible.
 				pBest = position;
 				vBest = value;
-				vioBest = violations;
-			}else{
-				// both infeasible: select the one with less violations.
-				if(vioBest > 0 && violations > 0){
-					if(violations < vioBest){
-						pBest = position;
-						vBest = value;
-						vioBest = violations;
-					}
-				}
-			}
+				peBest = penalty;
+		}else if(peBest > 0 && penalty > 0){	// both infeasible: select the one with less penalty.
+			if(penalty < peBest){
+				pBest = position;
+				vBest = value;
+				peBest = penalty;
+			}	// else: keep
 		}
 	}
 
@@ -123,7 +111,7 @@ namespace ibex {
 	 * check for violations of best position known, returns boolean
 	 */
 	bool PSOParticle::isBestFeasible(){
-		if(vioBest > 0)
+		if(peBest > 0)
 			return false;
 		else
 			return true;
@@ -133,7 +121,7 @@ namespace ibex {
 	 * check for violations of current position, returns boolean
 	 */
 	bool PSOParticle::isFeasible(){
-		if(violations > 0)
+		if(penalty > 0)
 			return false;
 		else
 			return true;
@@ -158,12 +146,12 @@ namespace ibex {
 		return value;
 	}
 
-	int PSOParticle:: getViolations(){
-		return violations;
+	double PSOParticle:: getPenalty(){
+		return penalty;
 	}
 
-	int PSOParticle:: getBestViolations(){
-		return vioBest;
+	double PSOParticle:: getBestPenalty(){
+		return peBest;
 	}
 
 	PSOParticle::~PSOParticle() {

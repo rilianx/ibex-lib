@@ -25,8 +25,8 @@ namespace ibex{
 		Vector getBestPosition();
 		double getValue();
 		double getBestValue();
-		int getViolations();
-		int getBestViolations();
+		double getPenalty();
+		double getBestPenalty();
 
 	protected:
 		double value;
@@ -34,8 +34,8 @@ namespace ibex{
 		Vector position;
 		Vector pBest;
 		Vector velocity;
-		int violations;
-		int vioBest;
+		double penalty;
+		double peBest;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */

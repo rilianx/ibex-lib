@@ -38,7 +38,7 @@ namespace ibex{
 		Vector executePSO(System* orig_sys, double p);
 		Vector getGBestPosition();
 		double getGBestValue();
-		int getGBestViolations();
+		double getGBestPenalty();
 		void selectParticle(PSOParticle* particle);
 
 		static bool trace;
