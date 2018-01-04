@@ -23,11 +23,15 @@ namespace ibex {
 		}
 
 		if(ctc_type==PSEUDOINVERSE || ctc_type==GAUSS_JORDAN || ctc_type == GAUSS_PSEUDOINV ){
+//			cout << P << endl;
 			IntervalMatrix tmp(PA);
+//			cout << box << endl;
 			if(!bwd_mul(Pb, tmp, box, 1e8)){
 				box.set_empty();
 				return;
 			}
+//			cout << box << endl;
+//			exit(0);
 		}
 	}
 

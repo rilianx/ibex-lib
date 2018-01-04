@@ -13,6 +13,7 @@
 #include "ibex_IntervalMatrix.h"
 #include "ibex_Matrix.h"
 #include "ibex_Linear.h"
+
 using namespace std;
 
 namespace ibex {
@@ -25,11 +26,13 @@ namespace ibex {
      */
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
 
-	Matrix gauss_jordan_test (IntervalMatrix& A, double prec=1e-7);
+	void gauss_jordan_all (IntervalMatrix& A, double prec);
     /**
      * \brief This function computes the pseudoinverse of the Matrix A. It also obtains the conditioner matrix P.
      */
 	bool pseudoinverse(Matrix A, IntervalMatrix& P);
+
+	void combinatorial(IntervalMatrix A,int cols,int rows,std::vector< std::vector <int> > & comb_piv);
 
 }
 

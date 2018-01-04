@@ -99,7 +99,7 @@ int main(int argc, char** argv){
 	CtcCompo hc4acidhc4 (hc4, acidhc4);
 
 
-	string filtering2="acidhc4";
+//	string filtering2="acidhc4";
 
 	Ctc* ctc;
 	if (filtering == "hc4")
@@ -136,11 +136,11 @@ int main(int argc, char** argv){
 			ctc = (linear_systems)? new CtcFixPoint(*new CtcCompo(*dagctc_fp,*linear_systems),0.01) : dagctc_fp;
 
 	    }
-		if(filtering2 == "acidhc4"){
-			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
-			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
-			ctc = new CtcCompo(*ctc, *acid_dagctc);
-		}
+//		if(filtering2 == "acidhc4"){
+//			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
+//			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
+//			ctc = new CtcCompo(*ctc, *acid_dagctc);
+//		}
 
 	}else{cout << filtering <<  " is not an implemented  contraction  mode "  << endl; return -1;}
 
@@ -192,22 +192,23 @@ int main(int argc, char** argv){
 		Solver::Status state=s.solve(sys->box);
 
 
-		cout << state << endl;
-		s.report();
+//		cout << state << endl;
+//		s.report();
 
 
 		// Display the number of boxes (called "cells")
 		// generated during the search
-		cout << "number of cells=" << s.get_nb_cells() << endl;
+//		cout << "number of cells=" << s.get_nb_cells() << endl;
 		// Display the cpu time used
-		cout << "cpu time used=" << s.get_time() << "s."<< endl;
+//		cout << "cpu time used=" << s.get_time() << "s."<< endl;
 
-		cout << argv[1] << " " << s.get_manifold().size() << " " << s.get_time() << " " <<
-		s.get_nb_cells() << " " << (s.get_time()>timelimit) << endl;
+		cout << argv[1] << " " << s.get_manifold().size() << " " << (double)s.get_time() << " " <<
+				(int)s.get_nb_cells() << " " <<  endl;
 
-		return 1;
+
 
 	}
+	else{
 
 
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
@@ -255,7 +256,7 @@ int main(int argc, char** argv){
              double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
 
 
-	return 0;
+	}
 
 	}
 
