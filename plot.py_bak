@@ -1,0 +1,128 @@
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+import matplotlib.animation as animation
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+import math
+import os
+import random
+from stat import *
+import multiprocessing
+from tkinter import *
+import time
+from itertools import islice
+# window=Tk()
+
+def main():
+    global filedate
+    filedate = None
+    q = multiprocessing.Queue()
+
+    #Create and start the simulation process
+    simulate=multiprocessing.Process(None,simulation,args=(q,))
+    simulate.start()
+
+    #Create the base plot
+    plot()
+
+    #Call a function to update the plot when there is new data
+    updateplot(q)
+
+    plt.show()
+    print('Done')
+
+def plot():
+    global line,ax1,canvas
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1,1,1)
+    # plt.ion()
+    # canvas = FigureCanvasTkAgg(fig, master=window)
+    # canvas.show()
+    # canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+    # canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+    line, = ax1.plot([], [])
+
+
+
+def updateplot(q):
+	try:       #Try to check if there is data in the queue
+		result=q.get_nowait()
+
+		if result !='Q':
+			#print(result)
+			particles = result
+			particlesx = []
+			particlesy = []
+			bestx = []
+			besty = []
+			#ax1.clear()
+
+			for p in particles[:-1]:
+				print(append(p[0]))
+				particlesx.append(p[0])
+				particlesy.append(p[1])
+
+			bestx.append(particles[-1])
+			besty.append(particles[-1])
+
+			ax1.plot()
+			plt.plot(particlesx, particlesy, 'r.', markersize=1)
+			plt.plot(bestx, besty, 'b.', markersize=1)
+			plt.pause(1)
+			updateplot(q)
+		     # print(result)
+		         #here get crazy with the plotting, you have access to all the global variables that you defined in the plot function, and have the data that the simulation sent.
+		     # line.set_ydata([1,result,10])
+		     # ax1.draw_artist(line)
+		     # plt.draw()
+		     # plt.pause(0.1)
+		     # updateplot(q)
+		     # window.after(500,updateplot,q)
+		else:
+			print('done')
+	except:
+		# print("empty")
+		plt.pause(1)
+		updateplot(q)
+		# window.after(500,updateplot,q)
+
+def simulation(q):
+	lines = []
+    # print(filedate)
+	while True:
+		try:
+			st = os.stat('output.txt')
+			#if(st[ST_MTIME] == filedate):
+			#	time.sleep(1)
+			#	pass
+			#else:
+				# print(st[ST_MTIME])
+			f = open("output.txt")
+			reader = f.read()
+			reader = reader.replace('inf', "math.inf")
+			reader = reader.replace(' ; ', ",")
+			reader = reader.replace('nan', "0")
+			lines = reader.split("\n")
+			print(lines[1])
+			for line in lines:
+				q.put(line)
+				#print(line)
+			f.close()
+					
+				#particles = eval(reader)
+				#q.put(particles)
+				#f.close()
+		except Exception as e:
+			print(e)
+			pass
+
+    # iterations = range(100)
+    # for i in iterations:
+    #     if not i % 10:
+    #         time.sleep(1)
+    #             #here send any data you want to send to the other process, can be any pickable object
+    #         q.put(random.randint(1,10))
+    # q.put('Q')
+
+
+if __name__ == '__main__':
+    main()
