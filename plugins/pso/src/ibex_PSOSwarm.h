@@ -22,6 +22,7 @@
  * 		This version limit particles to box boundaries simulating stick to edges.
  * 		Velocity of particles is limited by "p", a ponderation factor for box's diameter, setting as max velocity p*diam.
  *		Iterations ends when limit are exceeded.
+ *		with --trace PSO will show in screen when gBest is updated and exporting a file to plot with python
  */
 
 #ifndef PSO_SRC_IBEX_PSOSWARM_H_
