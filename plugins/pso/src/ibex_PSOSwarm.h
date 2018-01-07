@@ -27,6 +27,10 @@
 #ifndef PSO_SRC_IBEX_PSOSWARM_H_
 #define PSO_SRC_IBEX_PSOSWARM_H_
 #include "ibex_System.h"
+#include <fstream> // plot file library
+#include <iostream> // screen text library
+#include <stdlib.h>
+#include <iomanip>
 #include "ibex_PSOParticle.h"
 
 namespace ibex{
@@ -36,10 +40,12 @@ namespace ibex{
 		virtual ~PSOSwarm();
 
 		Vector executePSO(System* orig_sys, double p);
+		void startPlot();
+		void iterationPlot();
+		void closePlot();
 		Vector getGBestPosition();
 		double getGBestValue();
 		double getGBestPenalty();
-		void selectParticle(PSOParticle* particle);
 
 		static bool trace;
 
@@ -50,6 +56,9 @@ namespace ibex{
 		PSOParticle* gBest;
 		double c1;
 		double c2;
+		std::ofstream output;
+
+		void selectParticle(PSOParticle* particle);
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOSWARM_H_ */

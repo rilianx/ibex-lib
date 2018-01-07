@@ -20,7 +20,6 @@ namespace ibex{
 		void selectBestInternal();
 		bool isFeasible();
 		bool isBestFeasible();
-
 		Vector getPosition();
 		Vector getBestPosition();
 		double getValue();

@@ -6,8 +6,6 @@
  */
 
 #include "ibex_PSOParticle.h"
-//#include "ibex_PSOSwarm.h"
-#include <iostream> //DELETE THIS
 #include <climits>
 #include "stdlib.h"
 
@@ -67,15 +65,12 @@ namespace ibex {
 			Interval eval = orig_sys->ctrs[i].f.eval(position);
 			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
 				sum += eval.ub();
-				//cout << "error("<< i <<"):" << eval.ub() << endl;
 			}
 			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
 				sum += -eval.ub();
-				//cout << "error("<< i <<"):" << -eval.lb() << endl;
 			}
 			else if(orig_sys->ctrs[i].op == EQ ){
 				sum += abs(eval).ub();
-				//cout << "error("<< i <<"):" << abs(eval).ub() << endl;
 			}
 		}
 

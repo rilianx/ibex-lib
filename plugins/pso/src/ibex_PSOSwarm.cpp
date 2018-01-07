@@ -6,9 +6,8 @@
  */
 
 #include "ibex_PSOSwarm.h"
-#include <iostream> //DELETE THIS
 
-using namespace std; //DELETE THIS
+using namespace std;
 namespace ibex{
 	bool PSOSwarm::trace = false;
 
@@ -51,7 +50,9 @@ namespace ibex{
 
 		// ** Iterations **
 		if (trace) cout << "\033[0;33m# ITERATIONS" << endl;
+		if (trace) startPlot();				// create file to plot with python
 		do{
+			if (trace) iterationPlot();		//dump iteration to file
 			iterations++;
 			for(int i=0; i<nParticles; i++){
 				// # Update velocity and position of every particle.
@@ -61,16 +62,14 @@ namespace ibex{
 				particlesArray[i]->calculateFitness(orig_sys);
 				// - Select best position of particle and save it internally.
 				particlesArray[i]->selectBestInternal();
-				//if(i == 1)
-					//cout << particlesArray[i]->getPosition() << particlesArray[i]->getValue() << endl; //print position
-
 				// # Select the particle with best fitness (minimize) and save as gBest.
 				selectParticle(particlesArray[i]);
+
 			}
-			//cout << "Value:" << this->getGBestValue() << "At: " << this->getGBestPosition()  << endl;
 		}while(exit == false && iterations < limit);
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
 		if (trace) cout << "\033[0mvBest["<< gBest->getBestValue() <<"] violBest["<< gBest->getBestPenalty() <<"]" << endl;
+		if (trace) closePlot();				// close file
 		return getGBestPosition();
 	}
 
@@ -102,6 +101,22 @@ namespace ibex{
 				}
 			}
 		}
+	}
+
+	void PSOSwarm::startPlot(){
+		output.open("output.txt");
+	}
+
+	void PSOSwarm::iterationPlot(){
+		for(int i=0; i < nParticles ; i++){
+			output << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << ";";
+		}
+		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << endl;
+	}
+
+	void PSOSwarm::closePlot(){
+		output.close();
+		//system("python3 plot.py");
 	}
 
 	/*
