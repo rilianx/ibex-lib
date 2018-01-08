@@ -39,7 +39,7 @@ class LinearSystem : public Linearizer, public Ctc {
 public:
 
 
-	enum {SIMPLEX, PSEUDOINVERSE, GAUSS_JORDAN, GAUSS_PSEUDOINV, MULT_GAUSS_JORDAN};
+	enum {SIMPLEX, PSEUDOINVERSE, GAUSS_JORDAN, GAUSS_PSEUDOINV, MULT_GAUSS_JORDAN, NEW_PSEUDOINV};
 
 	CtcPolytopeHull ctc;
 	int ctc_type;

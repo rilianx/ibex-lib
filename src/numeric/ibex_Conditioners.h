@@ -13,6 +13,7 @@
 #include "ibex_IntervalMatrix.h"
 #include "ibex_Matrix.h"
 #include "ibex_Linear.h"
+#include "ibex_Expr.h"
 
 using namespace std;
 
@@ -27,6 +28,9 @@ namespace ibex {
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
 
 	void gauss_jordan_all (IntervalMatrix& A, double prec);
+
+	void new_pseudoinverse(Array <const ExprNode> & xn,Array <const ExprNode> & bn, Matrix PA_aux, Matrix PA,
+			IntervalMatrix & P, IntervalMatrix & A,IntervalVector & b,double prec);
     /**
      * \brief This function computes the pseudoinverse of the Matrix A. It also obtains the conditioner matrix P.
      */

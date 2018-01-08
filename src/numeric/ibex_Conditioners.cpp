@@ -112,7 +112,6 @@ namespace ibex {
 		cout << permutations.size() << endl;
 		for (int i = 0 ; i < permutations.size() ; i++)
 			cout << permutations[i]*A.mid() << endl;
-		exit(0);
 //		return permutations;
 	}
 
@@ -131,7 +130,7 @@ namespace ibex {
 					if (i == j) perm[i][j] = 1;
 					else perm[i][j] = 0;
 				}
-			gauss_jordan_all (A,prec);
+
 			/*gauss*/
 			int temp_piv;
 				for (int j = 0; j < B.nb_cols() ; j++){
@@ -183,6 +182,46 @@ namespace ibex {
 		    }
 		    return perm;
 		}
+
+	void new_pseudoinverse(Array <const ExprNode>& xn,Array <const ExprNode>& bn, Matrix PA_aux, Matrix PA,
+			IntervalMatrix & P, IntervalMatrix & A, IntervalVector & b, double prec){
+
+		int ind_col;
+		set <int> li_cols;
+		/*look for li columns*/
+		for (int i = 0 ; i < PA_aux.nb_cols() ; i++){
+			int count = 0;
+			for (int j = 0; j < PA_aux.nb_rows() ; j++){
+				if ((PA_aux[j][i] < -prec) || (PA_aux[j][i] > prec)){
+					ind_col = j;
+					count++;
+				}
+				if (count > 1){
+					ind_col = -1;
+					break;
+				}
+			}
+
+			if ((ind_col != -1) && (li_cols.count(i) != 1)){
+				li_cols.insert(i);
+			}
+		}
+		int start= A.nb_rows();
+		A.resize(A.nb_cols(), A.nb_cols());
+		b.resize(A.nb_cols());
+		for (int k = 0 ; k < A.nb_rows() ; k++){
+			if (li_cols.count(k) != 1){
+				cout << k << endl;
+				for (int j = 0; j < A.nb_cols() ; j++){
+					if (j == k) A[start][j] = 1;
+					else A[start][j] = 0;
+
+				}
+				start++;
+				bn.add(xn[k]);
+			}
+		}
+	}
 
 	bool pseudoinverse(Matrix A, IntervalMatrix& P){
 		Matrix tmp=A.transpose()*A;
