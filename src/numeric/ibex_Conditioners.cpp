@@ -48,15 +48,13 @@ namespace ibex {
 	}
 
 	void gauss_jordan_all (IntervalMatrix& A, double prec){
-
-		cout << A << endl;
 		int temp_piv;
 		set <int> rows_checked;
 		vector<Matrix> permutations;
 		std::vector< std::vector <int> > comb_piv;
 		/*get all possible combinations of pivots*/
 		combinatorial(A,A.nb_cols(),A.nb_rows(),comb_piv);
-		cout << comb_piv.size() << endl;
+//		cout << comb_piv.size() << endl;
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
 
@@ -109,10 +107,6 @@ namespace ibex {
 			if (temp_piv!=-1) permutations.push_back(perm);
 			comb_piv.pop_back();
 		}
-		cout << permutations.size() << endl;
-		for (int i = 0 ; i < permutations.size() ; i++)
-			cout << permutations[i]*A.mid() << endl;
-//		return permutations;
 	}
 
 
@@ -152,7 +146,7 @@ namespace ibex {
 						}
 
 					for (int k = 0 ; k < B.nb_rows() ; k++){
-						if (k != temp_piv){
+						if ((k != temp_piv) &&( (B[k][j] < -prec) || (B[k][j] > prec))) {
 							double factor = B[k][j];
 							aux_perm[k][temp_piv] = -factor/coef;
 							for (int l = 0 ; l < B.nb_cols() ; l++)
@@ -183,8 +177,7 @@ namespace ibex {
 		    return perm;
 		}
 
-	void new_pseudoinverse(Array <const ExprNode>& xn,Array <const ExprNode>& bn, Matrix PA_aux, Matrix PA,
-			IntervalMatrix & P, IntervalMatrix & A, IntervalVector & b, double prec){
+	void new_pseudoinverse(Array <const ExprNode>& xn, Array <const ExprNode>& bn, Matrix PA_aux, IntervalMatrix & A, double prec){
 
 		int ind_col;
 		set <int> li_cols;
@@ -208,10 +201,8 @@ namespace ibex {
 		}
 		int start= A.nb_rows();
 		A.resize(A.nb_cols(), A.nb_cols());
-		b.resize(A.nb_cols());
 		for (int k = 0 ; k < A.nb_rows() ; k++){
 			if (li_cols.count(k) != 1){
-				cout << k << endl;
 				for (int j = 0; j < A.nb_cols() ; j++){
 					if (j == k) A[start][j] = 1;
 					else A[start][j] = 0;

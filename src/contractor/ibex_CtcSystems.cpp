@@ -25,9 +25,6 @@ namespace ibex {
 		if(ctc_type==PSEUDOINVERSE || ctc_type==GAUSS_JORDAN || ctc_type == GAUSS_PSEUDOINV || ctc_type == NEW_PSEUDOINV){
 
 			IntervalMatrix tmp(PA);
-			cout << Pb << endl;
-
-
 			if(!bwd_mul(Pb, tmp, box, 1e8)){
 				box.set_empty();
 				return;
@@ -89,21 +86,15 @@ namespace ibex {
 					b=Vector::zeros(bn.size());
 				}
 			   if(ctc_type == PSEUDOINVERSE){
-				   IntervalMatrix PA_aux(A);
-				   gauss_jordan(PA_aux);
-				   new_pseudoinverse(xn,bn,PA_aux.mid(), PA.mid(), P, A,b,1e-7);
-				   Matrix tmp2(A.nb_cols(),A.nb_cols());
-//				   pseudoinverse(A.mid(), P);
-				   real_inverse(A.mid(),tmp2);
-				   P=tmp2;
+				   pseudoinverse(A.mid(),P);
 				   PA=P*A;
-				   for (int i = 0 ; i < bn.size() ; i++) cout <<bn[i]<< endl;
 //				   cout << PA.mid() << endl;
 			   }
 			   else if(ctc_type == GAUSS_PSEUDOINV ){
 				   //A is the matrix A after performing gauss elimination
 				   //A <-- G*A : A is a diagonal matrix
 				   //A = G*b
+
 				   bool exist;
 				   exist = pseudoinverse(A.mid(), P);
 				   if (exist)
@@ -111,29 +102,20 @@ namespace ibex {
 				   else{
 					   PA=A;
 					   P = gauss_jordan(PA);
-
 				   }
 				   // after this: PA*x = P*b
 			   }else if(ctc_type == GAUSS_JORDAN ){
 				   PA=A;
 				   P = gauss_jordan(PA);
-//				   cout << P << endl;
+//				   cout << PA.mid() << endl;
 			   }
-			   else if(ctc_type == NEW_PSEUDOINV ){
-				   IntervalMatrix PA_aux(A);
-				   PA = A;
-				   gauss_jordan(PA_aux);
-
-//				   new_pseudoinverse(PA_aux.mid(), PA.mid(), P, A,b,1e-7);
-
-			   }
-
 			   cout.precision(3);
 			}
 
 
 
 	void EmbeddedLinearSystem::contract(IntervalVector& box){
+
 		IntervalVector logx(xn.size()), absx(xn.size());
 		for(int i=0;i<xn.size(); i++){
 		     x[i] = d[ node2i[ &xn[i]] ].i();
@@ -209,7 +191,11 @@ namespace ibex {
 				}
 				for (it2=subsets[i].first.begin(); it2!=subsets[i].first.end(); it2++)
 					temp_x.add(x[*it2]);
-
+					/*test pseudoinverse*/
+					IntervalMatrix PA_aux(temp_A);
+					gauss_jordan(PA_aux);
+					new_pseudoinverse(temp_x,temp_b,PA_aux.mid(),temp_A,1e-7);
+					/*end test*/
 					EmbeddedLinearSystemBuilder*  system_A = new EmbeddedLinearSystemBuilder(temp_A,temp_x,temp_b);
 					ls_list.push_back(system_A);
 
@@ -258,7 +244,6 @@ namespace ibex {
 				i++;
 			}
 		}
-
 		create_subsystems(ls_list, A,x,b,subsets);
 	}
 }

@@ -136,7 +136,7 @@ public:
 	bool extended;
 
 
-private:
+
 
 	/**
 	 * TODO: add comments
@@ -297,7 +297,6 @@ private:
 		}
 
 		find_subsystems(ls_list, A, x, b, nb_rows , nb_cols);
-//		cout<< ls_list.size() << endl;
 		list<EmbeddedLinearSystemBuilder *>::iterator it;
 		for(it=ls_list.begin(); it!=ls_list.end(); it++){
 			(*it)->set_node2i(&node2i);

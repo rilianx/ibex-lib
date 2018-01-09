@@ -29,8 +29,8 @@ namespace ibex {
 
 	void gauss_jordan_all (IntervalMatrix& A, double prec);
 
-	void new_pseudoinverse(Array <const ExprNode> & xn,Array <const ExprNode> & bn, Matrix PA_aux, Matrix PA,
-			IntervalMatrix & P, IntervalMatrix & A,IntervalVector & b,double prec);
+	void new_pseudoinverse(Array <const ExprNode>& xn, Array <const ExprNode>& bn, Matrix PA_aux,
+			IntervalMatrix & A, double prec);
     /**
      * \brief This function computes the pseudoinverse of the Matrix A. It also obtains the conditioner matrix P.
      */
