@@ -53,7 +53,7 @@ int main(int argc, char** argv){
 
 		double eqeps= 1.e-8;
 		double default_relax_ratio = 0.2;
-		srand(nseed);
+		RNG::srand(nseed);
 
 		System* orig_sys,*sys;
 		LoupFinderDefault* loupfinder;
@@ -76,8 +76,8 @@ int main(int argc, char** argv){
 		double c1 = 2;				// cognitive parameter (def. 2)
 		double c2 = 2;				// social parameter (def. 2)
 		double p = 0.1;				// box's diameter ponderator (def. 0.1)
-		int particles = 30;		// amount of particles in pso algorithm
-		int iterations = 500;		// number of iterations for pso algorithm
+		int particles = 10;		// amount of particles in pso algorithm
+		int iterations = 100;		// number of iterations for pso algorithm
 
 		Timer timer;
 		timer.start();

@@ -16,14 +16,13 @@ from itertools import islice
 
 def main():
 
-    #Create the base plot
-    plot()
+	#Create the base plot
+	plot()
 
-    #Call a function that reads a file and draws on plot
-    plotdata()
-
-    plt.show()
-    print('Done')
+	#Call a function that reads a file and draws on plot
+	plotdata()
+	plt.show()
+	print('Done')
 
 def plot():
 	global line,ax1,canvas,fig
@@ -57,6 +56,10 @@ def plotdata():
 
 			fig.clear() #clear plot for next iteration
 			ax1.plot()
+			plt.ylim(-5,5)	
+			plt.xlim(-5,5)
+			plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
+			#plt.plot([-5,5],[-2,8]) # x - y > -3
 			plt.plot(Px,Py, 'r.', markersize=1)
 			plt.plot(bestx,besty, 'b.', markersize=2) #best in blue
 			plt.pause(0.5) #wait	

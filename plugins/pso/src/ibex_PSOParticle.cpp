@@ -6,6 +6,7 @@
  */
 
 #include "ibex_PSOParticle.h"
+#include "ibex_Random.h"
 #include <climits>
 #include "stdlib.h"
 
@@ -26,8 +27,8 @@ namespace ibex {
 		double maxVel;	//max velocity value
 
 		// ** Update Velocity **
-		double rand1 = (double)random()/(double)RAND_MAX;
-		double rand2 = (double)random()/(double)RAND_MAX;
+		double rand1 = RNG::rand(0,1);
+		double rand2 = RNG::rand(0,1);
 		Vector newV = velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest->getBestPosition()-position)));
 		velocity = newV;
 
