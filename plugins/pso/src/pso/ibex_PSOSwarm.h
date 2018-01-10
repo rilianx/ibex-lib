@@ -37,27 +37,29 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(double c1, double c2, int nParticles, int limit);
+		PSOSwarm(System* orig_sys, double c1, double c2, int nParticles, int limit);
 		virtual ~PSOSwarm();
 
-		Vector executePSO(System* orig_sys, double p);
+		Vector executePSO(double p);
 		void startPlot();
 		void iterationPlot();
 		void closePlot();
 		Vector getGBestPosition();
 		double getGBestValue();
 		double getGBestPenalty();
-
+		bool isGBestFeasible();
+		int getGBestCountViolations();
 		static bool trace;
 
 	protected:
 		int nParticles;
 		int limit;
 		PSOParticle** particlesArray; //array of particles
-		PSOParticle* gBest;
+		Vector gBest;
 		double c1;
 		double c2;
 		std::ofstream output;
+		System* orig_sys;
 
 		void selectParticle(PSOParticle* particle);
 	};

@@ -82,32 +82,14 @@ int main(int argc, char** argv){
 		Timer timer;
 		timer.start();
 
-		PSOSwarm* swarm = new PSOSwarm(c1,c2,particles,iterations);
-		Vector valueSwarm = swarm->executePSO(orig_sys, p);
+		PSOSwarm* swarm = new PSOSwarm(orig_sys,c1,c2,particles,iterations);
+		Vector valueSwarm = swarm->executePSO(p);
 
 		timer.stop();
 		cout << "\033[0mPSO Vector: " << valueSwarm << endl;
 		cout << "eval: " << orig_sys->goal->eval(swarm->getGBestPosition()) << endl;
-		double sum = 0;
-		int countViolations = 0;
-		double fitness;
-		for(int i=0; i<orig_sys->ctrs.size();i++){
-			Interval eval = orig_sys->ctrs[i].f.eval(swarm->getGBestPosition());
-			if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
-				sum += eval.ub();
-				countViolations++;
-			}
-			else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
-				sum += -eval.ub();
-				countViolations++;
-			}
-			else if(orig_sys->ctrs[i].op == EQ ){
-				sum += abs(eval).ub();
-				countViolations++;
-			}
-		}
 		//cout << "fitness: " << swarm->getGBestValue() << endl;
-		cout << "penalty[" << countViolations++ << "/" << orig_sys->ctrs.size() << "]: "  << swarm->getGBestPenalty() << endl;
+		cout << "penalty[" << swarm->getGBestCountViolations() << "/" << orig_sys->ctrs.size() << "]: "  << swarm->getGBestPenalty() << endl;
 
 		// Display the cpu time used
 		cout << "cpu time used=" << timer.get_time() << "s."<< endl;

@@ -15,7 +15,7 @@ namespace ibex{
 		PSOParticle(System* orig_sys, double c1, double c2);
 		virtual ~PSOParticle();
 
-		void updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest,double c1, double c2, double p);
+		void updateVelocityAndPosition(System* orig_sys, Vector gBest,double c1, double c2, double p);
 		void calculateFitness(System* orig_sys);
 		void selectBestInternal();
 		bool isFeasible();

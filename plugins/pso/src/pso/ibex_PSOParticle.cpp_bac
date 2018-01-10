@@ -6,7 +6,6 @@
  */
 
 #include "ibex_PSOParticle.h"
-#include "ibex_Interval.h"
 #include "ibex_Random.h"
 #include <climits>
 #include "stdlib.h"
@@ -24,13 +23,13 @@ namespace ibex {
 	/*
 	 * updates current velocity and position of a particle
 	 */
-	void PSOParticle::updateVelocityAndPosition(System* orig_sys, Vector gBest, double c1, double c2, double p) {
+	void PSOParticle::updateVelocityAndPosition(System* orig_sys, PSOParticle* gBest, double c1, double c2, double p) {
 		double maxVel;	//max velocity value
 
 		// ** Update Velocity **
 		double rand1 = RNG::rand(0,1);
 		double rand2 = RNG::rand(0,1);
-		Vector newV = velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position)));
+		Vector newV = velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest->getBestPosition()-position)));
 		velocity = newV;
 
 		// check for max velocity exceeded
@@ -60,8 +59,6 @@ namespace ibex {
 
 	/*
 	 * update value (fitness) and violations for current position
-	 * fitness = 0 + error; f(x) < f(bestx)
-	 * fitness = (f(x)-f(bestx)) + error; f(x) >= f(bestx)
 	 */
 	void PSOParticle::calculateFitness(System* orig_sys){
 		double sum = 0, M = 10;
@@ -78,36 +75,15 @@ namespace ibex {
 			}
 		}
 
-		//eval
-		double fx = orig_sys->goal->eval(position).ub();
-		double bx = orig_sys->goal->eval(pBest).ub();
-
-		//calculate fitness
-		double fitness;
-		if(fx < bx)
-			fitness = 0;
-		else
-			fitness = fx - bx;
-
-		//store results
-		value = fitness + sum;
+		// store results
+		value = orig_sys->goal->eval(position).ub();
 		penalty = sum;
 	}
 
 	/*
-	 * Select best position based on fitness previous calculation
+	 * Select best position based on Feasibility rule (K. Deb - 2000)
 	 */
 	void PSOParticle::selectBestInternal(){
-		if(value < vBest){
-			pBest = position;
-			vBest = value;
-			peBest = penalty;
-		} //else: keep
-	}
-	/*
-	 * Another strategy to select best particle based on Feasibility rule (K. Deb - 2000)
-	 */
-	/*void PSOParticle::selectBestInternal(){
 		if(peBest == 0 && penalty == 0){		// both feasible: select better fitness.
 			if(value < vBest){
 				pBest = position;
@@ -125,7 +101,7 @@ namespace ibex {
 				peBest = penalty;
 			}	// else: keep
 		}
-	}*/
+	}
 
 	/*
 	 * check for violations of best position known, returns boolean
