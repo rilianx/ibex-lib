@@ -12,106 +12,101 @@
 #include "ibex_CellBufferOptim.h"
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
+#include "ibex_Interval.h"
 #include <map>
 
 namespace ibex {
+	class CellPSO : public Backtrackable {
+		public:
+			/**
+			 * \brief Constructor for the root node (followed by a call to init_root).
+			 */
+			CellPSO() : p(NULL), left(NULL), right(NULL) {}
 
+			/**
+			 * \brief Duplicate the structure into the left/right nodes
+			 */
+			std::pair<Backtrackable*,Backtrackable*> down(){
+				CellPSO* c1 = new CellPSO();
+				CellPSO* c2 = new CellPSO();
 
-class CellPSO : public Backtrackable {
-	public:
-		/**
-		 * \brief Constructor for the root node (followed by a call to init_root).
-		 */
-		CellPSO() : p(NULL), left(NULL), right(NULL) {}
+				return std::pair<Backtrackable*,Backtrackable*>(c1,c2);
+			}
 
+			/** parent of the node **/
+			const Cell* p;
 
-		/**
-		 * \brief Constructor for the root node (followed by a call to init_root).
-		 */
-		CellPSO(const CellPSO &c) : p(&c), left(NULL), right(NULL) {}
-
-		/**
-		 * \brief Duplicate the structure into the left/right nodes
-		 */
-		std::pair<Backtrackable*,Backtrackable*> down(){
-
-			CellPSO* c1=new CellPSO(*this);
-			CellPSO* c2=new CellPSO(*this);
-
-			left=c1;
-			right=c2;
-
-			return std::pair<Backtrackable*,Backtrackable*>(c1,c2);
-		}
-
-
-
-		/** parent of the node **/
-		Cell* p;
-
-		/** children of the node **/
-		Cell* left;
-		Cell* right;
-
-
+			/** childrens of the node **/
+			Cell* left;
+			Cell* right;
 	};
 
+	class BufferPSO : public CellBufferOptim {
+		public:
+			BufferPSO();
 
+			~BufferPSO();
 
-  class BufferPSO : public CellBufferOptim {
-  public:
+			virtual void add_backtrackable(Cell& root) {
+				  root.add<CellPSO>();
+			}
 
-	BufferPSO();
+			//es importante, pero para el final
+			virtual void flush();
 
-    ~BufferPSO();
+			//no es importante (retornar 1)
+			virtual unsigned int size() const{
+				return 1;
+			}
 
+			//root = NULL
+			virtual bool empty() const;
 
-    virtual void add_backtrackable(Cell& root) {
-	      root.add<CellPSO>();
-	}
+			virtual void push(Cell* cell){
+				//nada mas que hacer
+				if(!root) root = cell;
+			}
 
-    //es importante, pero para el final
-    virtual void flush();
+			virtual Cell* pop(){
+				//Eliminar last_nodo y actualizar padre (recursiva)
+				return last_node;
+			}
 
-    //no es importante (retornar 1)
-    virtual unsigned int size() const;
+			virtual Cell* top() {
+				//retornar nodo que contiene gb
+				//Cell* aux = root->get<CellPSO>().left;
+				Cell* aux = root;
+				if(!aux->box.contains(gb)) { return NULL; }
+				while(aux){
+					if(aux->get<CellPSO>().right && aux->get<CellPSO>().right->box.contains(gb)){
+						aux = aux->get<CellPSO>().right;
+						last_node = aux;
+					}else if(aux->get<CellPSO>().left && aux->get<CellPSO>().left->box.contains(gb)){
+						aux = aux->get<CellPSO>().left;
+						last_node = aux;
+					}else{
+						break;
+					}
+				}
 
-    //root = NULL
-  	virtual bool empty() const;
+				return aux;
+			}
 
-  	virtual void push(Cell* cell){
-  		//nada mas que hacer
-  		if(!root) root=cell;
-  	}
+			virtual std::ostream& print(std::ostream& os) const;
 
-  	virtual Cell* pop(){
-  		//Eliminar last_nodo y actualizar padre (recursiva)
-  	}
+			virtual double minimum() const {return NEG_INFINITY;}
 
-  	virtual Cell* top() const{
-  		//retornar nodo que contiene gb
+			//TODO: no es importante!! pero hay que hacer algo al respecto
+			virtual void contract(double loup) { ;}
 
-  		root->get<CellPSO>().right;
+			void set_gbest(Vector& gbest) { gb=gbest; }
 
-  		//guardar last_node
-  	}
+		protected:
+			Cell *root;
+			Vector gb;
 
-  	virtual std::ostream& print(std::ostream& os) const;
-
-  	virtual double minimum() const {return NEG_INFINITY;}
-
-  	//TODO: no es importante!! pero hay que hacer algo al respecto
-  	virtual void contract(double loup) { ;}
-
-    void set_gbest(Vector& gbest) { gb=gbest; }
-
-    protected:
-
-        Cell *root;
-        Vector gb;
-
-        Cell* last_node;
-  };
+			Cell* last_node;
+	};
 
 } // namespace ibex
 
