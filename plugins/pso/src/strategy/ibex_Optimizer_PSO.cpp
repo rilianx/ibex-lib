@@ -7,7 +7,8 @@
 // Last Update : December 24, 2012
 //============================================================================
 
-#include "ibex_Optimizer.h"
+#include "ibex_Optimizer_PSO.h"
+#include "ibex_BufferPSO.h"
 #include "ibex_Timer.h"
 #include "ibex_Function.h"
 #include "ibex_NoBisectableVariableException.h"
@@ -22,11 +23,11 @@ using namespace std;
 
 namespace ibex {
 
-const double Optimizer::default_eps_x = 0;
-const double Optimizer::default_rel_eps_f = 1e-03;
-const double Optimizer::default_abs_eps_f = 1e-07;
+const double OptimizerPSO::default_eps_x = 0;
+const double OptimizerPSO::default_rel_eps_f = 1e-03;
+const double OptimizerPSO::default_abs_eps_f = 1e-07;
 
-void Optimizer::write_ext_box(const IntervalVector& box, IntervalVector& ext_box) {
+void OptimizerPSO::write_ext_box(const IntervalVector& box, IntervalVector& ext_box) {
 	int i2=0;
 	for (int i=0; i<n; i++,i2++) {
 		if (i2==goal_var) i2++; // skip goal variable
@@ -34,7 +35,7 @@ void Optimizer::write_ext_box(const IntervalVector& box, IntervalVector& ext_box
 	}
 }
 
-void Optimizer::read_ext_box(const IntervalVector& ext_box, IntervalVector& box) {
+void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& box) {
 	int i2=0;
 	for (int i=0; i<n; i++,i2++) {
 		if (i2==goal_var) i2++; // skip goal variable
@@ -42,7 +43,7 @@ void Optimizer::read_ext_box(const IntervalVector& ext_box, IntervalVector& box)
 	}
 }
 
-Optimizer::Optimizer(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
+OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
 		CellBufferOptim& buffer,
 		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f) :
                 				n(n), goal_var(goal_var),
@@ -58,20 +59,20 @@ Optimizer::Optimizer(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
 	if (trace) cout.precision(12);
 }
 
-Optimizer::~Optimizer() {
+OptimizerPSO::~OptimizerPSO() {
 
 }
 
 // compute the value ymax (decreasing the loup with the precision)
 // the heap and the current box are contracted with y <= ymax
-double Optimizer::compute_ymax() {
+double OptimizerPSO::compute_ymax() {
 	double ymax = loup - rel_eps_f*fabs(loup);
 	if (loup - abs_eps_f < ymax)
 		ymax = loup - abs_eps_f;
 	return ymax;
 }
 
-bool Optimizer::update_loup(const IntervalVector& box) {
+bool OptimizerPSO::update_loup(const IntervalVector& box) {
 
 	try {
 		pair<IntervalVector,double> p=loup_finder.find(box,loup_point,loup);
@@ -108,7 +109,7 @@ bool Optimizer::update_loup(const IntervalVector& box) {
 //	return true;
 //}
 
-void Optimizer::update_uplo() {
+void OptimizerPSO::update_uplo() {
 	double new_uplo=POS_INFINITY;
 
 	if (! buffer.empty()) {
@@ -146,7 +147,7 @@ void Optimizer::update_uplo() {
 
 }
 
-void Optimizer::update_uplo_of_epsboxes(double ymin) {
+void OptimizerPSO::update_uplo_of_epsboxes(double ymin) {
 
 	// the current box cannot be bisected.  ymin is a lower bound of the objective on this box
 	// uplo of epsboxes can only go down, but not under uplo : it is an upperbound for uplo,
@@ -162,7 +163,7 @@ void Optimizer::update_uplo_of_epsboxes(double ymin) {
 	}
 }
 
-void Optimizer::handle_cell(Cell& c, const IntervalVector& init_box ){
+void OptimizerPSO::handle_cell(Cell& c, const IntervalVector& init_box ){
 
 	contract_and_bound(c, init_box);
 
@@ -176,7 +177,7 @@ void Optimizer::handle_cell(Cell& c, const IntervalVector& init_box ){
 	}
 }
 
-void Optimizer::contract_and_bound(Cell& c, const IntervalVector& init_box) {
+void OptimizerPSO::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 
 	/*======================== contract y with y<=loup ========================*/
 	Interval& y=c.box[goal_var];
@@ -256,7 +257,7 @@ void Optimizer::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 	}
 }
 
-Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj_init_bound) {
+OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, double obj_init_bound) {
 
 
 	loup=obj_init_bound; //UB
@@ -325,6 +326,11 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 
 				nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was the number of cells put into the buffer after being handled)
                 
+				c->get<CellPSO>().left=new_cells.first;
+				c->get<CellPSO>().right=new_cells.second;
+				new_cells.first->get<CellPSO>().p = c;
+				new_cells.second->get<CellPSO>().p = c;
+
 				handle_cell(*new_cells.first, init_box);
 				handle_cell(*new_cells.second, init_box);
 
@@ -388,7 +394,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 	return status;
 }
 
-void Optimizer::report(bool verbose) {
+void OptimizerPSO::report(bool verbose) {
 
 	if (!verbose) {
 		cout << get_status() << endl;

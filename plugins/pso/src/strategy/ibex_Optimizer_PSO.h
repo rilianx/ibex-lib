@@ -8,8 +8,8 @@
 // Last Update : Jul 24, 2017
 //============================================================================
 
-#ifndef __IBEX_OPTIMIZER_H__
-#define __IBEX_OPTIMIZER_H__
+#ifndef __PSO_SRC_STRATEGY_IBEX_OPTIMIZER_PSO_H__
+#define __PSO_SRC_STRATEGY_IBEX_OPTIMIZER_PSO_H__
 
 #include "ibex_Ctc.h"
 #include "ibex_Bsc.h"
@@ -44,7 +44,7 @@ namespace ibex {
  * \remark In all the comments of this class, "loup" means "lowest upper bound" of the criterion f
  * and "uplo" means "uppermost lower bound" of the criterion.
  */
-class Optimizer {
+class OptimizerPSO {
 
 public:
 
@@ -76,7 +76,7 @@ public:
 	 *          the optimizer will only rely on the evaluation of f and will be very slow.
 	 *
 	 */
-	Optimizer(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
+	OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
 			int goal_var,
 			double eps_x=default_eps_x,
 			double rel_eps_f=default_rel_eps_f,
@@ -85,7 +85,7 @@ public:
 	/**
 	 * \brief Delete *this.
 	 */
-	virtual ~Optimizer();
+	virtual ~OptimizerPSO();
 
 	/**
 	 * \brief Run the optimization.
@@ -396,19 +396,19 @@ private:
 	int nb_cells;
 };
 
-inline Optimizer::Status Optimizer::get_status() const { return status; }
+inline OptimizerPSO::Status OptimizerPSO::get_status() const { return status; }
 
-inline double Optimizer::get_uplo() const { return uplo; }
+inline double OptimizerPSO::get_uplo() const { return uplo; }
 
-inline double Optimizer::get_loup() const { return loup; }
+inline double OptimizerPSO::get_loup() const { return loup; }
 
-inline const IntervalVector& Optimizer::get_loup_point() const { return loup_point; }
+inline const IntervalVector& OptimizerPSO::get_loup_point() const { return loup_point; }
 
-inline double Optimizer::get_time() const { return time; }
+inline double OptimizerPSO::get_time() const { return time; }
 
-inline double Optimizer::get_nb_cells() const { return nb_cells; }
+inline double OptimizerPSO::get_nb_cells() const { return nb_cells; }
 
-inline double Optimizer::get_obj_rel_prec() const {
+inline double OptimizerPSO::get_obj_rel_prec() const {
 	if (loup==POS_INFINITY)
 		return POS_INFINITY;
 	else if (loup==0)
@@ -418,10 +418,9 @@ inline double Optimizer::get_obj_rel_prec() const {
 		return (loup-uplo)/(fabs(loup));
 }
 
-inline double Optimizer::get_obj_abs_prec() const {
+inline double OptimizerPSO::get_obj_abs_prec() const {
 	return loup-uplo;
 }
 
 } // end namespace ibex
-
-#endif // __IBEX_OPTIMIZER_H__
+#endif // __PSO_SRC_STRATEGY_IBEX_OPTIMIZER_PSO_H__
