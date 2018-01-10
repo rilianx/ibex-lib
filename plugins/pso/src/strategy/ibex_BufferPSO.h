@@ -13,7 +13,10 @@
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
 #include "ibex_Interval.h"
+
 #include <map>
+
+using namespace std;
 
 namespace ibex {
 	class CellPSO : public Backtrackable {
@@ -51,45 +54,64 @@ namespace ibex {
 				  root.add<CellPSO>();
 			}
 
-			//es importante, pero para el final
-			virtual void flush();
+			/*
+			 * Deletes every node from tree.
+			 */
+			virtual void flush(){
+				//es importante, pero para el final
+				//TODO Make a better solution
+				delete root;
+			}
 
-			//no es importante (retornar 1)
+			/*
+			 *TODO Count every node in tree?
+			 */
 			virtual unsigned int size() const{
+				//no es importante (retornar 1)
 				return 1;
 			}
 
-			//root = NULL
-			virtual bool empty() const;
+			/*
+			 * Is tree empty?
+			 */
+			virtual bool empty(){
+				if(!root) return true;
+				else return false;
+			}
 
+			/*
+			 * Allows to add the root of the tree
+			 */
 			virtual void push(Cell* cell){
-				//nada mas que hacer
 				if(!root) root = cell;
 			}
 
+			/*
+			 * Deletes last node accessed.
+			 * Additionally deletes father knowledge of this child.
+			 */
 			virtual Cell* pop(){
-				//Eliminar last_nodo y actualizar padre (recursiva)
-				return last_node;
+				if(last_node == NULL) { cout << "Deleting last_node more than once or last_node NULL." << endl;}
+				const Cell* father = last_node->get<CellPSO>().p;
+				Cell* aux;
+				if(father == NULL) {
+					root = NULL;
+				}else{
+					if(father->get<CellPSO>().right == last_node)
+						father->get<CellPSO>().right == NULL;
+					if(father->get<CellPSO>().left == last_node)
+						father->get<CellPSO>().left == NULL;
+				}
+				aux = last_node;
+				last_node = NULL;
+				return aux;
 			}
 
+			/*
+			 * Returns node who contains gBest.
+			 */
 			virtual Cell* top() {
-				//retornar nodo que contiene gb
-				//Cell* aux = root->get<CellPSO>().left;
-				Cell* aux = root;
-				if(!aux->box.contains(gb)) { return NULL; }
-				while(aux){
-					if(aux->get<CellPSO>().right && aux->get<CellPSO>().right->box.contains(gb)){
-						aux = aux->get<CellPSO>().right;
-						last_node = aux;
-					}else if(aux->get<CellPSO>().left && aux->get<CellPSO>().left->box.contains(gb)){
-						aux = aux->get<CellPSO>().left;
-						last_node = aux;
-					}else{
-						break;
-					}
-				}
-
-				return aux;
+				return nodeContainer(gb);
 			}
 
 			virtual std::ostream& print(std::ostream& os) const;
@@ -99,7 +121,28 @@ namespace ibex {
 			//TODO: no es importante!! pero hay que hacer algo al respecto
 			virtual void contract(double loup) { ;}
 
-			void set_gbest(Vector& gbest) { gb=gbest; }
+			virtual void set_gbest(Vector& gbest) { gb = gbest; }
+
+			/*
+			 * Return the node who contains Vector
+			 */
+			virtual Cell* nodeContainer(Vector x) {
+				Cell* aux = root;
+				if(!aux->box.contains(x)) { return NULL; }
+				while(aux){
+					if(aux->get<CellPSO>().right && aux->get<CellPSO>().right->box.contains(x)){
+						aux = aux->get<CellPSO>().right;
+						last_node = aux;
+					}else if(aux->get<CellPSO>().left && aux->get<CellPSO>().left->box.contains(x)){
+						aux = aux->get<CellPSO>().left;
+						last_node = aux;
+					}else{
+						last_node = aux;
+						break;
+					}
+				}
+				return aux;
+			}
 
 		protected:
 			Cell *root;
