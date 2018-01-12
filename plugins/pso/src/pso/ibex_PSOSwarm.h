@@ -30,6 +30,7 @@
 #include "ibex_System.h"
 #include <fstream> // plot file library
 #include <iostream> // screen text library
+#include "ibex_BufferPSO.h"
 #include <stdlib.h>
 #include <iomanip>
 #include "ibex_PSOParticle.h"
@@ -37,19 +38,23 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(System* orig_sys, double c1, double c2, int nParticles, int limit);
+		PSOSwarm(BufferPSO* buffer, System* orig_sys, double c1, double c2, int nParticles, int limit, double p);
 		virtual ~PSOSwarm();
 
-		Vector executePSO(double p);
+		void executePSO(BufferPSO* buffer);
 		void startPlot();
 		void iterationPlot();
 		void closePlot();
 		Vector getGBestPosition();
 		double getGBestValue();
 		double getGBestPenalty();
+		void setGBest(Vector pos);
 		bool isGBestFeasible();
 		int getGBestCountViolations();
 		static bool trace;
+		void validateParticles(BufferPSO* buffer);
+		bool validateGBest(BufferPSO* buffer);
+		void selectParticle(BufferPSO* buffer, PSOParticle* particle);
 
 	protected:
 		int nParticles;
@@ -58,10 +63,9 @@ namespace ibex{
 		Vector gBest;
 		double c1;
 		double c2;
+		double p;
 		std::ofstream output;
 		System* orig_sys;
-
-		void selectParticle(PSOParticle* particle);
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOSWARM_H_ */

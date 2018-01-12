@@ -8,16 +8,17 @@
 #ifndef PSO_SRC_IBEX_PSOPARTICLE_H_
 #define PSO_SRC_IBEX_PSOPARTICLE_H_
 #include "ibex_System.h"
+#include "ibex_BufferPSO.h"
 
 namespace ibex{
 	class PSOParticle {
 	public:
-		PSOParticle(System* orig_sys, double c1, double c2);
+		PSOParticle(BufferPSO* buffer, System* orig_sys, double c1, double c2);
 		virtual ~PSOParticle();
 
-		void updateVelocityAndPosition(System* orig_sys, Vector gBest,double c1, double c2, double p);
+		void updateVelocityAndPosition(BufferPSO* buffer, System* orig_sys, Vector gBest,double c1, double c2, double p);
 		void calculateFitness(System* orig_sys);
-		void selectBestInternal();
+		void selectBestInternal(BufferPSO* buffer);
 		bool isFeasible();
 		bool isBestFeasible();
 		Vector getPosition();
@@ -26,6 +27,7 @@ namespace ibex{
 		double getBestValue();
 		double getPenalty();
 		double getBestPenalty();
+		bool isValid(BufferPSO* buffer);
 
 	protected:
 		double value;

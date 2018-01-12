@@ -11,20 +11,26 @@
 #include <climits>
 #include "stdlib.h"
 
-using namespace std; //DELETE THIS
+using namespace std; //delete
 namespace ibex {
-	PSOParticle::PSOParticle(System* orig_sys, double c1, double c2) : position(orig_sys->box.random()), pBest(position), velocity(Vector::zeros(orig_sys->box.size())){
-		calculateFitness(orig_sys);
-		// store best position
+	PSOParticle::PSOParticle(BufferPSO* buffer, System* orig_sys, double c1, double c2) : position(orig_sys->box.random()), pBest(position), velocity(Vector::zeros(orig_sys->box.size())){
+		// Randomize particle position into valid place
+		if(buffer){
+			Cell* c = buffer->nodeSelection();
+			position = c->box.random();
+		}
 		pBest = position;
+		calculateFitness(orig_sys); //needs position and pBest
+		// store best values
 		vBest = value;
 		peBest = penalty;
 	}
 
 	/*
+	 * \param function(Vector pos) external function to check if position is inside a node from a tree
 	 * updates current velocity and position of a particle
 	 */
-	void PSOParticle::updateVelocityAndPosition(System* orig_sys, Vector gBest, double c1, double c2, double p) {
+	void PSOParticle::updateVelocityAndPosition(BufferPSO* buffer, System* orig_sys, Vector gBest, double c1, double c2, double p) {
 		double maxVel;	//max velocity value
 
 		// ** Update Velocity **
@@ -56,6 +62,14 @@ namespace ibex {
 				velocity[i] = -velocity[i]; 			// change direction
 			}
 		}
+
+		//TODO ask if particle is inside a box
+		if(buffer)
+			if(BufferPSO::isContained(buffer,position) && BufferPSO::isContained(buffer,pBest)){
+				cout << "is inside" << endl;
+			}else{
+				cout << "outside -> reset" << endl;
+			}
 	}
 
 	/*
@@ -96,13 +110,32 @@ namespace ibex {
 
 	/*
 	 * Select best position based on fitness previous calculation
+	 * Considering pBest can't be outside a box
 	 */
-	void PSOParticle::selectBestInternal(){
-		if(value < vBest){
-			pBest = position;
-			vBest = value;
-			peBest = penalty;
-		} //else: keep
+	void PSOParticle::selectBestInternal(BufferPSO* buffer){
+		if(buffer){
+			if(BufferPSO::isContained(buffer,position))
+				if(value < vBest){
+					pBest = position;
+					vBest = value;
+					peBest = penalty;
+				} //else: keep
+		}else{
+			if(value < vBest){
+				pBest = position;
+				vBest = value;
+				peBest = penalty;
+			} //else: keep
+		}
+	}
+
+	bool PSOParticle::isValid(BufferPSO* buffer){
+		if(BufferPSO::isContained(buffer,position) && BufferPSO::isContained(buffer,pBest))
+			return true;
+		else if (BufferPSO::isContained(buffer,pBest))
+			return true;
+		else
+			return false;
 	}
 	/*
 	 * Another strategy to select best particle based on Feasibility rule (K. Deb - 2000)
