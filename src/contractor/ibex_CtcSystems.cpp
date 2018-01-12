@@ -105,8 +105,20 @@ namespace ibex {
 				   }
 				   // after this: PA*x = P*b
 			   }else if(ctc_type == GAUSS_JORDAN ){
+				   cout << A << endl;
+				   cout << "%%%%" << endl;
+				   for (int i = 0 ; i < bn.size() ; i++) cout << bn[i] << endl;
+				   cout << "%%%%" << endl;
+				   for (int i = 0 ; i < xn.size() ; i++) cout << xn[i] << endl;
 				   PA=A;
+//				   cout << PA.nb_cols() << endl;
+//				   cout << PA.nb_rows() << endl;
+//				   getchar();
+//				   if (PA.nb_cols()>PA.nb_rows())
+//					   gauss_jordan_all (PA,1e-8);
+//				   exit (1);
 				   P = gauss_jordan(PA);
+//				   	   exit(1);
 //				   cout << PA.mid() << endl;
 			   }
 			   cout.precision(3);
@@ -191,10 +203,10 @@ namespace ibex {
 				}
 				for (it2=subsets[i].first.begin(); it2!=subsets[i].first.end(); it2++)
 					temp_x.add(x[*it2]);
-					/*test pseudoinverse*/
-					IntervalMatrix PA_aux(temp_A);
-					gauss_jordan(PA_aux);
-					new_pseudoinverse(temp_x,temp_b,PA_aux.mid(),temp_A,1e-7);
+					/*test pseudoinverse (falta experimentos)*/
+//					IntervalMatrix PA_aux(temp_A);
+//					gauss_jordan(PA_aux);
+//					new_pseudoinverse(temp_x,temp_b,PA_aux.mid(),temp_A,1e-7);
 					/*end test*/
 					EmbeddedLinearSystemBuilder*  system_A = new EmbeddedLinearSystemBuilder(temp_A,temp_x,temp_b);
 					ls_list.push_back(system_A);

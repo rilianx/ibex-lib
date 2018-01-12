@@ -12,7 +12,6 @@ using namespace std;
 namespace ibex {
 
 	void combinatorial(IntervalMatrix A, int cols,int rows,std::vector< std::vector <int> > & comb_piv){
-
 		vector<int> pivots;
 		/*Initialize the possible pivot combination*/
 		for (int i = 0; i < rows ; i++)
@@ -43,17 +42,16 @@ namespace ibex {
 				}
 
 			}
-
 		}
 	}
 
-	void gauss_jordan_all (IntervalMatrix& A, double prec){
+	void gauss_jordan_all (IntervalMatrix& A, vector<Matrix>& permutations, double prec){
 		int temp_piv;
 		set <int> rows_checked;
-		vector<Matrix> permutations;
 		std::vector< std::vector <int> > comb_piv;
 		/*get all possible combinations of pivots*/
 		combinatorial(A,A.nb_cols(),A.nb_rows(),comb_piv);
+
 //		cout << comb_piv.size() << endl;
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
@@ -82,6 +80,9 @@ namespace ibex {
 					}
 				if (temp_piv==-1) break;
 				else{
+					double ppp = B[temp_piv][actual_col];
+//					for (int i = 0 ; i < B.nb_cols() ; i++)
+//						B[temp_piv][i] = B[temp_piv][i]/B[temp_piv][actual_col];
 					double coef = B[temp_piv][actual_col];
 					Matrix aux_perm(1,1);
 					aux_perm.resize(A.nb_rows(),A.nb_rows());
@@ -147,6 +148,7 @@ namespace ibex {
 
 					for (int k = 0 ; k < B.nb_rows() ; k++){
 						if ((k != temp_piv) &&( (B[k][j] < -prec) || (B[k][j] > prec))) {
+//							if ((k != temp_piv)){
 							double factor = B[k][j];
 							aux_perm[k][temp_piv] = -factor/coef;
 							for (int l = 0 ; l < B.nb_cols() ; l++)

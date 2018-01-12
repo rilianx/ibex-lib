@@ -27,7 +27,7 @@ namespace ibex {
      */
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
 
-	void gauss_jordan_all (IntervalMatrix& A, double prec);
+	void gauss_jordan_all (IntervalMatrix& A, vector<Matrix>& permutations, double prec);
 
 	void new_pseudoinverse(Array <const ExprNode>& xn, Array <const ExprNode>& bn, Matrix PA_aux,
 			IntervalMatrix & A, double prec);
