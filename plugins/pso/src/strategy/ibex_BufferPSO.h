@@ -13,6 +13,7 @@
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
 #include "ibex_Interval.h"
+#include "ibex_Random.h"
 
 #include <map>
 
@@ -144,10 +145,41 @@ namespace ibex {
 				return aux;
 			}
 
+
+			/*
+			 * Return true if Vector is contained by any node
+			 */
+			static bool isContained(BufferPSO* buffer, Vector x){
+				Cell* aux = buffer->nodeContainer(x);
+				if(aux != NULL)
+					return false;
+				else
+					return true;
+			}
+
+			virtual Cell* nodeSelection(){
+				double sel = RNG::rand(0,1);
+
+				Cell* aux = root;
+				if(!aux) { return NULL; }
+				while(aux){
+					if(sel > 0.5)
+						if(aux->get<CellPSO>().right)
+							aux = aux->get<CellPSO>().right;
+						else if (aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+					else
+						if(aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+						else if(aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+				}
+				return aux;
+			}
+
 		protected:
 			Cell *root;
 			Vector gb;
-
 			Cell* last_node;
 	};
 
