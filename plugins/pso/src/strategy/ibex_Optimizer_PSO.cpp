@@ -15,6 +15,8 @@
 #include "ibex_Backtrackable.h"
 #include "ibex_OptimData.h"
 
+#include "ibex_PSOSwarm.h"
+
 #include <float.h>
 #include <stdlib.h>
 #include <iomanip>
@@ -43,7 +45,7 @@ void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& b
 	}
 }
 
-OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
+OptimizerPSO::OptimizerPSO(PSOSwarm* s,int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
 		CellBufferOptim& buffer,
 		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f) :
                 				n(n), goal_var(goal_var),
@@ -54,7 +56,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
                 				//kkt(normalized_user_sys),
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
-                                                time(0), nb_cells(0) {
+                                                time(0), nb_cells(0), swarm(s) {
 
 	if (trace) cout.precision(12);
 }
@@ -299,7 +301,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	timer.start();
 	handle_cell(*root,init_box);
 	
-	//PSO?
+	//PSO swarm must exist
+	if(swarm == NULL) system("exit");
 
 	update_uplo();
 
@@ -311,7 +314,18 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			//seleccion del mejor nodo
 			Cell *c = buffer.top(); 
 
-			//PSO
+			/** Check position of particles, then update positions*/
+			BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+			if(swarm->validateGBest(buff))
+				swarm->validateParticles(buff);
+
+			swarm->executePSO(buff);
+			/* if swarm has better solution, exchange */
+			if(swarm->getGBestValue() < loup){ //loup, loup_point <-- gbest?
+				loup = swarm->getGBestValue();
+				loup_point = swarm->getGBestPosition();
+				loup_changed = true;
+			}
 
 			if (trace >= 2) cout << " current box " << c->box << endl;
 
@@ -340,6 +354,13 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 					break;
 				}
 				if (loup_changed) {
+
+					/* if upperbounding has better solution, exchange */
+					//gbest <-- loup_point?
+					if(loup < swarm->getGBestValue())
+						swarm->setGBest(loup_point.min_diam());
+
+
 					// In case of a new upper bound (loup_changed == true), all the boxes
 					// with a lower bound greater than (loup - goal_prec) are removed and deleted.
 					// Note: if contraction was before bisection, we could have the problem

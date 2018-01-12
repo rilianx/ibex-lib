@@ -20,6 +20,7 @@ int main(int argc, char** argv){
 		args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
 		args::ValueFlag<int> _seed(parser, "int", "seed", {"seed"});
 		args::Flag trace(parser, "trace", "Activate trace. Updates of loup/uplo are printed while minimizing.", {"trace"});
+		args::Flag _plot(parser, "plot", "Save a file to be plotted by plot.py.", {"plot"});
 		args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
 
 
@@ -82,13 +83,15 @@ int main(int argc, char** argv){
 		Timer timer;
 		timer.start();
 
-		PSOSwarm* swarm = new PSOSwarm(orig_sys,c1,c2,particles,iterations);
-		Vector valueSwarm = swarm->executePSO(p);
+		PSOSwarm* swarm = new PSOSwarm(NULL,orig_sys,c1,c2,particles,iterations,p);
+		Vector valueSwarm = swarm->executePSO(NULL);
+
+
 
 		timer.stop();
 		cout << "\033[0mPSO Vector: " << valueSwarm << endl;
 		cout << "eval: " << orig_sys->goal->eval(swarm->getGBestPosition()) << endl;
-		//cout << "fitness: " << swarm->getGBestValue() << endl;
+		cout << "fitness: " << swarm->getGBestValue() << endl;
 		cout << "penalty[" << swarm->getGBestCountViolations() << "/" << orig_sys->ctrs.size() << "]: "  << swarm->getGBestPenalty() << endl;
 
 		// Display the cpu time used

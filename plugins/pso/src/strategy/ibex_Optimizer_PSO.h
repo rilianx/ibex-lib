@@ -15,6 +15,7 @@
 #include "ibex_Bsc.h"
 #include "ibex_LoupFinder.h"
 #include "ibex_CellBufferOptim.h"
+#include "ibex_PSOSwarm.h"
 //#include "ibex_EntailedCtr.h"
 #include "ibex_CtcKhunTucker.h"
 
@@ -59,6 +60,7 @@ public:
 	 *  \brief Create an optimizer.
 	 *
 	 * Inputs:
+	 *   \param swarm    - PSO algorithm swarm to process
 	 *   \param n        - number of variables or the <b>original system</b>
 	 *   \param ctc      - contractor for <b>extended<b> boxes (of size n+1)
 	 *   \param bsc      - bisector for <b>extended<b> boxes (of size n+1)
@@ -76,7 +78,7 @@ public:
 	 *          the optimizer will only rely on the evaluation of f and will be very slow.
 	 *
 	 */
-	OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
+	OptimizerPSO(PSOSwarm* s, int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
 			int goal_var,
 			double eps_x=default_eps_x,
 			double rel_eps_f=default_rel_eps_f,
@@ -394,6 +396,9 @@ private:
 
 	/** Number of cells pushed into the heap (which passed through the contractors) */
 	int nb_cells;
+
+	/** PSO Swarm */
+	PSOSwarm* swarm;
 };
 
 inline OptimizerPSO::Status OptimizerPSO::get_status() const { return status; }
