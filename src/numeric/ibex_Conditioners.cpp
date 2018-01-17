@@ -59,7 +59,11 @@ namespace ibex {
 		Matrix perm(1,1);
 		perm.resize(B.nb_rows(),B.nb_rows());
 		/*perform the gauss elimination for each comb_piv element*/
-		while(comb_piv.size() != 0){
+//		comb_piv.clear();
+//		std::vector<int> aux;
+//		aux.push_back(3); aux.push_back(1);
+//		comb_piv.push_back(aux);
+		while(comb_piv.size() > 0){
 			/*Initialize the permutation matrix*/
 			for (int i = 0; i<A.nb_rows() ; i++)
 				for (int j = 0; j<A.nb_rows() ; j++){
@@ -80,9 +84,6 @@ namespace ibex {
 					}
 				if (temp_piv==-1) break;
 				else{
-					double ppp = B[temp_piv][actual_col];
-//					for (int i = 0 ; i < B.nb_cols() ; i++)
-//						B[temp_piv][i] = B[temp_piv][i]/B[temp_piv][actual_col];
 					double coef = B[temp_piv][actual_col];
 					Matrix aux_perm(1,1);
 					aux_perm.resize(A.nb_rows(),A.nb_rows());
@@ -91,7 +92,6 @@ namespace ibex {
 							if (m == l) aux_perm[m][l] = 1;
 							else aux_perm[m][l] = 0;
 						}
-
 					for (int m = 0 ; m < B.nb_rows() ; m++){
 						if (m != temp_piv){
 							double factor = B[m][actual_col];
@@ -100,6 +100,11 @@ namespace ibex {
 								B[m][l]	= B[m][l]-(B[temp_piv][l]*factor/coef);
 						}
 					}
+					/*new:dejar con 1 test*/
+//					for (int i = 0 ; i < B.nb_cols() ; i++)
+//						B[temp_piv][i] = B[temp_piv][i]/coef;
+//					aux_perm[temp_piv][temp_piv] = 1/coef;
+					/*end: dejar con 1 test*/
 					perm = aux_perm*perm;
 				}
 			}
@@ -108,6 +113,80 @@ namespace ibex {
 			if (temp_piv!=-1) permutations.push_back(perm);
 			comb_piv.pop_back();
 		}
+	}
+
+	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,double prec){
+		bool exist = false;
+		for (int i = 0 ; i < B.nb_rows() ; i++){
+			double max = 0;
+			if (ban_rows.count(i) != 1){
+				for (int j = 0 ; j < B.nb_cols() ; j++){
+					if (ban_cols.count(j) != 1){
+						if ((B[i][j] > prec) || (B[i][j] < -prec)){
+							if (std::abs(B[i][j]) > max){
+								exist = true;
+								max = B[i][j];
+								max_values.first = i ;
+								max_values.second = j;
+							}
+
+						}
+					}
+				}
+			}
+		}
+		ban_rows.insert(max_values.first);
+		ban_cols.insert(max_values.second);
+		return exist;
+	}
+
+	Matrix best_gauss_jordan (IntervalMatrix& A, double prec){
+		Matrix B(1,1);
+		B.resize(A.nb_rows(),A.nb_cols());
+		Matrix perm(1,1);
+		set<int> ban_rows;
+		set<int> ban_cols;
+		perm.resize(B.nb_rows(),B.nb_rows());
+		pair<int,int> max_values;
+		/*Initialize the permutation matrix*/
+		for (int i = 0; i<A.nb_rows() ; i++)
+			for (int j = 0; j<A.nb_rows() ; j++){
+				if (i == j) perm[i][j] = 1;
+				else perm[i][j] = 0;
+			}
+		/*Initialize B*/
+		B = A.mid();
+		bool exist = true;
+		while (exist){
+			exist = max_piv(B,ban_rows,ban_cols,max_values,prec);
+			if (exist){
+				int temp_piv = max_values.first;
+				int actual_col = max_values.second;
+				double coef = B[temp_piv][actual_col];
+				Matrix aux_perm(1,1);
+				aux_perm.resize(A.nb_rows(),A.nb_rows());
+				for (int m = 0; m<A.nb_rows() ; m++)
+				for (int l = 0; l<A.nb_rows() ; l++){
+					if (m == l) aux_perm[m][l] = 1;
+					else aux_perm[m][l] = 0;
+				}
+				for (int m = 0 ; m < B.nb_rows() ; m++){
+					if (m != temp_piv){
+						double factor = B[m][actual_col];
+						aux_perm[m][temp_piv] = -factor/coef;
+						for (int l = 0 ; l < B.nb_cols() ; l++)
+							B[m][l]	= B[m][l]-(B[temp_piv][l]*factor/coef);
+					}
+				}
+				/*new:dejar con 1 test*/
+					for (int i = 0 ; i < B.nb_cols() ; i++)
+						B[temp_piv][i] = B[temp_piv][i]/coef;
+					aux_perm[temp_piv][temp_piv] = 1/coef;
+				/*end: dejar con 1 test*/
+				perm = aux_perm*perm;
+			}
+		}
+		return perm;
 	}
 
 
