@@ -99,7 +99,7 @@ int main(int argc, char** argv){
 	CtcCompo hc4acidhc4 (hc4, acidhc4);
 
 
-//	string filtering2="acidhc4";
+	string filtering2="acidhc4";
 
 	Ctc* ctc;
 	if (filtering == "hc4")
@@ -136,11 +136,11 @@ int main(int argc, char** argv){
 			ctc = (linear_systems)? new CtcFixPoint(*new CtcCompo(*dagctc_fp,*linear_systems),0.01) : dagctc_fp;
 
 	    }
-//		if(filtering2 == "acidhc4"){
-//			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
-//			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
-//			ctc = new CtcCompo(*ctc, *acid_dagctc);
-//		}
+		if(filtering2 == "acidhc4"){
+			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
+			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
+			ctc = new CtcCompo(*ctc, *acid_dagctc);
+		}
 
 	}else{cout << filtering <<  " is not an implemented  contraction  mode "  << endl; return -1;}
 

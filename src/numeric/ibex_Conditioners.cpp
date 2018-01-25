@@ -259,7 +259,6 @@ namespace ibex {
 		}
 
 	void new_pseudoinverse(Array <const ExprNode>& xn, Array <const ExprNode>& bn, Matrix PA_aux, IntervalMatrix & A, double prec){
-
 		int ind_col;
 		set <int> li_cols;
 		/*look for li columns*/
