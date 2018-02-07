@@ -78,7 +78,7 @@ public:
 	 *          the optimizer will only rely on the evaluation of f and will be very slow.
 	 *
 	 */
-	OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
+	OptimizerPSO(PSOSwarm* s, int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
 			int goal_var,
 			double eps_x=default_eps_x,
 			double rel_eps_f=default_rel_eps_f,
@@ -397,6 +397,8 @@ private:
 	/** Number of cells pushed into the heap (which passed through the contractors) */
 	int nb_cells;
 
+	/** PSO Swarm */
+	PSOSwarm* swarm;
 };
 
 inline OptimizerPSO::Status OptimizerPSO::get_status() const { return status; }

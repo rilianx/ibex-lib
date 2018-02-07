@@ -1,0 +1,320 @@
+/*
+ * ibex_BufferPSO.h
+ *
+ *  Created on: 9 ene. 2018
+ *      Author: iaraya
+ */
+
+#ifndef PSO_SRC_STRATEGY_IBEX_BUFFERPSO_H_
+#define PSO_SRC_STRATEGY_IBEX_BUFFERPSO_H_
+
+
+#include "ibex_CellBufferOptim.h"
+#include "ibex_ExtendedSystem.h"
+#include "ibex_CellCostFunc.h"
+#include "ibex_Interval.h"
+#include "ibex_Random.h"
+
+#include <map>
+
+using namespace std;
+
+namespace ibex {
+	class CellPSO : public Backtrackable {
+		public:
+			/**
+			 * \brief Constructor for the root node (followed by a call to init_root).
+			 */
+			CellPSO() : p(NULL), left(NULL), right(NULL) {}
+
+			/**
+			 * \brief Duplicate the structure into the left/right nodes
+			 */
+			std::pair<Backtrackable*,Backtrackable*> down(){
+				CellPSO* c1 = new CellPSO();
+				CellPSO* c2 = new CellPSO();
+
+				return std::pair<Backtrackable*,Backtrackable*>(c1,c2);
+			}
+
+			/** parent of the node **/
+			Cell* p;
+
+			/** childrens of the node **/
+			Cell* left;
+			Cell* right;
+	};
+
+	class BufferPSO : public CellBufferOptim {
+		public:
+			BufferPSO(System* orig_sys) : orig_sys(orig_sys), root(NULL), last_node(NULL), gb(1){ }
+			virtual ~BufferPSO(){}
+
+			virtual void add_backtrackable(Cell& root) {
+				  root.add<CellPSO>();
+			}
+
+			/*
+			 * Deletes every node from tree.
+			 */
+			virtual void flush(){
+				//es importante, pero para el final
+				//TODO Make a better solution
+				delete root;
+			}
+
+			/*
+			 *TODO Count every node in tree?
+			 */
+			virtual unsigned int size() const{
+				//no es importante (retornar 1)
+				return 1;
+			}
+
+			/*
+			 * Is tree empty?
+			 */
+			virtual bool empty() const{
+				std::cout << "root: " << root;
+				if(root == NULL){
+					std::cout << " [NULL?]" << endl;
+					return true;
+				}else{
+					std::cout << " [NOTNULL]" << endl;
+					return false;
+				}
+			}
+
+			/*
+			 * Introduces root into tree;
+			 * If root exist, give it as children to the last cell top-ed.
+			 */
+			virtual void push(Cell* cell){
+				std::cout << "push( " << cell << ") : " << cell->box << endl;
+				if(!root){
+					root = cell;
+				}else if (last_node){
+					if(!last_node->get<CellPSO>().left){
+						std::cout << "left of " << last_node << endl;
+						last_node->get<CellPSO>().left = cell;
+						cell->get<CellPSO>().p = last_node;
+					}else if(!last_node->get<CellPSO>().right){
+						std::cout << "right of " << last_node << endl;
+						last_node->get<CellPSO>().right = cell;
+						cell->get<CellPSO>().p = last_node;
+					}else{
+						std::cout << "no-where to assign cell" << endl;
+					}
+				}
+ 			}
+
+			virtual Cell* pop() { return NULL; }
+
+			/*
+			 * This method is more like trim a tree.
+			 * For last_node
+			 * Delete his childrens if they're empty
+			 * repeteat:
+			 * Delete last_node if father has another children
+			 * Delete father if no other children
+			 * end:
+			 *
+			 */
+			virtual void trim(){
+				if(last_node == NULL) { cout << "Deleting last_node more than once or last_node NULL." << endl;}
+				Cell* father = last_node->get<CellPSO>().p;
+				Cell* aux;
+				int count = 0;
+				if(last_node != NULL){
+					//check children's box
+					if(last_node->get<CellPSO>().left){
+						aux = last_node->get<CellPSO>().left;
+						if(aux->box.is_empty()){
+							std::cout << "left of (" << last_node << ") is empty" << endl;
+							last_node->get<CellPSO>().left = NULL;
+							std::cout << "trim(" << aux << ") : " << aux->box << endl;
+							count++;
+							delete aux;
+						}
+					}
+					if(last_node->get<CellPSO>().right){
+						aux = last_node->get<CellPSO>().right;
+						if(aux->box.is_empty()){
+							std::cout << "right of (" << last_node << ") is empty" << endl;
+							last_node->get<CellPSO>().right = NULL;
+							std::cout << "trim(" << aux << ") : " << aux->box << endl;
+							count++;
+							delete aux;
+						}
+					}
+					aux = last_node;
+
+					while(aux){
+						if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+							father = aux->get<CellPSO>().p;
+							if(father){
+								std::cout << "(" << aux << ") has father (" << father  << ")" << endl;
+								//delete last_node from his father
+								if(father->get<CellPSO>().left == aux){
+									father->get<CellPSO>().left = NULL;
+								}else if(father->get<CellPSO>().right == aux){
+									father->get<CellPSO>().right = NULL;
+								}
+								std::cout << "trim(" << aux << ") : " << aux->box << endl;
+								count++;
+								delete aux;
+								aux = father;
+								last_node = NULL;
+							}else{
+								std::cout << "trim(" << aux << ") : " << aux->box << endl;
+								count++;
+								delete root;
+								root = NULL;
+								last_node = NULL;
+							}
+						}else{
+							std::cout << "(" << aux << ") has childrens";
+							if(aux->get<CellPSO>().left)
+								std::cout << " (" << aux->get<CellPSO>().left << ")";
+							if(aux->get<CellPSO>().right)
+								std::cout << " (" << aux->get<CellPSO>().right << ")";
+							std::cout << endl;
+							std::cout << "trim(" << aux << ") : " << aux->box << endl;
+							break;
+						}
+					}
+
+				}else aux = NULL;
+				std::cout << "trim(" << count << ")" << endl;
+			}
+
+			/*
+			 * Returns node who contains gBest and update last_node.
+			 */
+			virtual Cell* top() const{
+				std::cout << "get gb: " << gb << endl;
+				Cell* aux = nodeContainer(gb);
+				if(!aux){ std::cout << "not found" << endl; }
+				std::cout << "top(" << aux << ") : " << aux->box[0] << aux->box[1] << endl;
+				last_node = aux;
+				return aux;
+			}
+
+			virtual std::ostream& print(std::ostream& os) const { return os;}
+
+			virtual double minimum() const {return NEG_INFINITY;}
+
+			//TODO: no es importante!! pero hay que hacer algo al respecto
+			virtual void contract(double loup) { ;}
+
+			virtual void set_gbest(Vector gbest) { gb = gbest; }
+
+			/*
+			 * Return the node who contains Vector
+			 */
+			virtual Cell* nodeContainer(const Vector& x) const{
+				Cell* aux = root;
+				bool have;
+				while(aux){
+					if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+						// is a leaf
+						std::cout << "(" << aux << ") is leaf" << endl;
+						return aux;
+					}else{
+						if(aux->get<CellPSO>().left){
+							std::cout << "(" << aux << ") has left (" << aux->get<CellPSO>().left << ")" << endl;
+							have = true;
+							for(int i=0; i<orig_sys->box.size(); i++){
+								if(!aux->get<CellPSO>().left->box[i].contains(x[i])){
+									have = false;
+									break;
+								}
+							}
+							if(have){
+								aux = aux->get<CellPSO>().left;
+							}
+						}
+						if(aux->get<CellPSO>().right){
+							std::cout << "(" << aux << ") has right (" << aux->get<CellPSO>().right << ")" << endl;
+							have = true;
+							for(int i=0; i<orig_sys->box.size(); i++){
+								if(!aux->get<CellPSO>().right->box[i].contains(x[i])){
+									have = false;
+									break;
+								}
+							}
+							if(have){
+								aux = aux->get<CellPSO>().right;
+							}
+						}
+					}
+				}
+				std::cout << "root_null" << endl;
+				return aux;
+			}
+
+			/*
+			 * Return true if Vector is contained by any node
+			 */
+			static bool isContained(BufferPSO* buffer, const Vector& x){
+				Cell* aux = buffer->nodeContainer(x);
+				if(aux)
+					return true;
+				else
+					return false;
+			}
+
+			/*
+			 * Random selection of leafs
+			 */
+			virtual Cell* nodeSelection(){
+				Cell* aux = root;
+				if(aux == NULL) { std::cout << "aux==NULL" << endl; return NULL; }
+				while(aux){
+					float sel = RNG::rand(0,1);
+					//std::cout << "nodeSelection(" << sel << ")" << endl;
+					if(sel > 0.5){
+						if(aux->get<CellPSO>().right)
+							aux = aux->get<CellPSO>().right;
+						else if (aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+						else
+							break;
+					}else{
+						if(aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+						else if(aux->get<CellPSO>().left)
+							aux = aux->get<CellPSO>().left;
+						else
+							break;
+					}
+				}
+				return aux;
+			}
+
+			virtual Vector getGB(){
+				return gb;
+			}
+
+			virtual bool hasGB(Cell* cell){
+				bool have = true;
+				for(int i=0; i<orig_sys->box.size(); i++){
+					if(!cell->box[i].contains(gb[i])){
+						have = false;
+						//break;
+					}
+				}
+				std::cout << "(" << cell << ") have::" << have << ":" << gb << endl;
+				return have;
+			}
+
+		protected:
+			Cell *root;
+			Vector gb;
+			System* orig_sys;
+			mutable Cell* last_node;
+	};
+
+} // namespace ibex
+
+#endif

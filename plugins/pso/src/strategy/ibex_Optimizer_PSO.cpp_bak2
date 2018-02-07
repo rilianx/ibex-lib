@@ -45,7 +45,8 @@ void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& b
 	}
 }
 
-OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
+OptimizerPSO::OptimizerPSO(PSOSwarm* s,int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
+		CellBufferOptim& buffer,
 		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f) :
                 				n(n), goal_var(goal_var),
                 				ctc(ctc), bsc(bsc), loup_finder(finder), buffer(buffer),
@@ -55,7 +56,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
                 				//kkt(normalized_user_sys),
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
-                                                time(0), nb_cells(0){
+                                                time(0), nb_cells(0), swarm(s) {
 
 	if (trace) cout.precision(12);
 }
@@ -298,18 +299,65 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	bool aux_bool;
 
 	bool children_has_gb;
+
+	aux_bool = buff->hasGB(root);
 	handle_cell(*root,init_box);
+	if(root){
+		if(aux_bool != buff->hasGB(root))
+			std::cout << "root no matching -> reset gb" << endl;
+	}else{
+		if(aux_bool)
+			std::cout << "no root -> reset gb" << endl;
+	}
 	buffer.push(root);
+	// ** PSO swarm must exist */
+	if(swarm == NULL) system("exit");
+	buff = dynamic_cast<BufferPSO*>(&buffer);
+	// ** Initialize Swarm of particles */
+	swarm->initializePSO(buff);
+	if(trace) std::cout << "Swarm initialized" << endl;
+	if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+	if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
 	update_uplo();
+	buff->set_gbest(loup_point.mid());
+	std::cout << "gb: " << buff->getGB() << endl;
 	int count = 0;
 	try {
 	     while (!buffer.empty() && count < 100) {
-	    	count++;
-			if(trace)std::cout << "FLAG INIT" << "=============================================================" << endl;
-
+	    	 count++;
+			std::cout << "FLAG INIT" << "=============================================================" << endl;
 			loup_changed=false;
-
+			// Select best node
 			Cell *c = buffer.top();
+
+			// reset Swarm when there's no top node or gBest from swarm isn't inside a box.
+			if(!c || !swarm->validateGBest(buff)){
+				if (trace) std::cout << "top null or gBest outside a box." << endl;
+				swarm->initializePSO(buff);
+				if (trace) std::cout << "new swarm" << endl;
+				//if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+				//if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+				//getchar();
+			}else{
+
+				/** Check position of particles, then update positions*/
+				swarm->validateParticles(buff);
+				swarm->executePSO(buff);
+				if (trace) std::cout << "executedPSO" << endl;
+
+				/* if swarm has better solution, exchange */
+				/*if(swarm->getGBestValue() < loup){ //loup, loup_point <-- gbest?
+					if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+					if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+					if(trace) std::cout << "loup_point -> gBest" << endl;
+					loup = swarm->getGBestValue();
+					loup_point = swarm->getGBestPosition();
+					if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+					if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+					loup_changed = true;
+					if(trace) getchar();
+				}*/
+
 				if (trace >= 2) cout << " current box " << c->box << endl;
 
 				try {
@@ -323,10 +371,29 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 					nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was the number of cells put into the buffer after being handled)
 
+					//std::cout << "handling childrens: " << endl;
 					handle_cell(*new_cells.first, init_box);
 					handle_cell(*new_cells.second, init_box);
 
 					if (loup_changed) {
+						//ask if loup_point is inside a box
+						std::cout << "loup_changed loup_point contained:: ";
+						if(BufferPSO::isContained(buff,loup_point.mid())){
+							//update gb from buffer
+							buff->set_gbest(loup_point.mid());
+							/* if loup_point has better solution, exchange information with swarm*/
+							/*if(loup < swarm->getGBestValue()){
+								if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+								if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+								if(trace) std::cout << "gBest -> loup_point" << endl;
+								swarm->setGBest(loup_point.mid());
+								if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+								if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+								if(trace) getchar();
+							}*/
+						}//else do nothing to swarm
+
+
 						// In case of a new upper bound (loup_changed == true), all the boxes
 						// with a lower bound greater than (loup - goal_prec) are removed and deleted.
 						// Note: if contraction was before bisection, we could have the problem
@@ -354,7 +421,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 					update_uplo();
 					if (timeout>0) timer.check(timeout); // TODO: not reentrant, JN: done
-						time = timer.get_time();
+					time = timer.get_time();
 				}
 				catch (NoBisectableVariableException& ) {
 					std::cout << "catch" << endl;
@@ -362,7 +429,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 					update_uplo(); // the heap has changed -> recalculate the uplo (eg: if not in best-first search)
 
 				}
-			if(trace) std::cout << "FLAG END: empty::" << buffer.empty() << "====================================================" << endl;
+			}
+			std::cout << "FLAG END: empty::" << buffer.empty() << "====================================================" << endl;
 		}
 	}
 	catch (TimeOutException& ) {

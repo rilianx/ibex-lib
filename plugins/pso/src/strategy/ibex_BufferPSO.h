@@ -12,175 +12,109 @@
 #include "ibex_CellBufferOptim.h"
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
+#include "ibex_TreeCellOpt.h"
+#include "ibex_PSOSwarm.h"
 #include "ibex_Interval.h"
 #include "ibex_Random.h"
-
 #include <map>
 
 using namespace std;
 
 namespace ibex {
-	class CellPSO : public Backtrackable {
-		public:
-			/**
-			 * \brief Constructor for the root node (followed by a call to init_root).
-			 */
-			CellPSO() : p(NULL), left(NULL), right(NULL) {}
-
-			/**
-			 * \brief Duplicate the structure into the left/right nodes
-			 */
-			std::pair<Backtrackable*,Backtrackable*> down(){
-				CellPSO* c1 = new CellPSO();
-				CellPSO* c2 = new CellPSO();
-
-				return std::pair<Backtrackable*,Backtrackable*>(c1,c2);
-			}
-
-			/** parent of the node **/
-			const Cell* p;
-
-			/** childrens of the node **/
-			Cell* left;
-			Cell* right;
-	};
-
 	class BufferPSO : public CellBufferOptim {
 		public:
-			BufferPSO();
-
-			~BufferPSO();
-
-			virtual void add_backtrackable(Cell& root) {
-				  root.add<CellPSO>();
+			BufferPSO(System* orig_sys, double c1, double c2, int particles, int iterations, double p) :
+				last_node(NULL), swarm(new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations,p)), loup_point(NULL),
+				loup_value(NULL), tree(new TreeCellOpt(orig_sys)), loup_cell(NULL){
 			}
+			virtual ~BufferPSO(){}
 
 			/*
-			 * Deletes every node from tree.
+			 * Deletes everything from buffer.
 			 */
 			virtual void flush(){
-				//es importante, pero para el final
-				//TODO Make a better solution
-				delete root;
+				tree->cleanTree();
 			}
 
 			/*
-			 *TODO Count every node in tree?
+			 * Returns amount of nodes in buffer.
 			 */
 			virtual unsigned int size() const{
-				//no es importante (retornar 1)
-				return 1;
+				//TODO better approach
+				if(!empty())
+					return 1;
+				else
+					return 0;
+			}
+
+			virtual bool empty() const{
+				return tree->empty();
 			}
 
 			/*
-			 * Is tree empty?
-			 */
-			virtual bool empty(){
-				if(!root) return true;
-				else return false;
-			}
-
-			/*
-			 * Allows to add the root of the tree
+			 * Pushes a cell into buffer.
 			 */
 			virtual void push(Cell* cell){
-				if(!root) root = cell;
-			}
+				tree->add(cell);
+ 			}
+
+			virtual Cell* pop() { return NULL; }
 
 			/*
-			 * Deletes last node accessed.
-			 * Additionally deletes father knowledge of this child.
+			 * Clean tree.
+			 * PSO movement
+			 * Returns node who contains gBest and update last_node.
 			 */
-			virtual Cell* pop(){
-				if(last_node == NULL) { cout << "Deleting last_node more than once or last_node NULL." << endl;}
-				const Cell* father = last_node->get<CellPSO>().p;
+			virtual Cell* top() const{
 				Cell* aux;
-				if(father == NULL) {
-					root = NULL;
-				}else{
-					if(father->get<CellPSO>().right == last_node)
-						father->get<CellPSO>().right == NULL;
-					if(father->get<CellPSO>().left == last_node)
-						father->get<CellPSO>().left == NULL;
+				if(tree->trim()){
+					loup_cell = tree->nodeContainer(loup_point.mid());
+					if(!tree->nodeContainer(swarm->getGBestPosition()))
+						swarm->initializePSO();
 				}
-				aux = last_node;
-				last_node = NULL;
+				std::cout << "get gb: " << loup_point.mid() << endl;
+				if(loup_cell && loup_value < swarm->getGBestValue())
+					aux = loup_cell;
+				else
+					aux = tree->nodeContainer(swarm->getGBestPosition());
+				last_node = aux;
 				return aux;
 			}
 
-			/*
-			 * Returns node who contains gBest.
-			 */
-			virtual Cell* top() {
-				return nodeContainer(gb);
-			}
-
-			virtual std::ostream& print(std::ostream& os) const;
+			virtual std::ostream& print(std::ostream& os) const { return os;}
 
 			virtual double minimum() const {return NEG_INFINITY;}
 
-			//TODO: no es importante!! pero hay que hacer algo al respecto
-			virtual void contract(double loup) { ;}
-
-			virtual void set_gbest(Vector& gbest) { gb = gbest; }
-
 			/*
-			 * Return the node who contains Vector
+			 * Update cell who contains loup_point, then contract tree.
 			 */
-			virtual Cell* nodeContainer(Vector x) {
-				Cell* aux = root;
-				if(!aux->box.contains(x)) { return NULL; }
-				while(aux){
-					if(aux->get<CellPSO>().right && aux->get<CellPSO>().right->box.contains(x)){
-						aux = aux->get<CellPSO>().right;
-						last_node = aux;
-					}else if(aux->get<CellPSO>().left && aux->get<CellPSO>().left->box.contains(x)){
-						aux = aux->get<CellPSO>().left;
-						last_node = aux;
-					}else{
-						last_node = aux;
-						break;
-					}
-				}
-				return aux;
+			virtual void contract(double loup) {
+				loup_cell = tree->nodeContainer(loup_point.mid());
+				tree->contract(loup);
 			}
 
-
-			/*
-			 * Return true if Vector is contained by any node
-			 */
-			static bool isContained(BufferPSO* buffer, Vector x){
-				Cell* aux = buffer->nodeContainer(x);
-				if(aux != NULL)
-					return false;
-				else
-					return true;
+			virtual void set_loup_point(IntervalVector &loup_point){
+				this->loup_point = loup_point;
+				Cell* aux = tree->nodeContainer(swarm->getGBestPosition());
+				if(aux)
+					loup_cell = aux;
 			}
 
-			virtual Cell* nodeSelection(){
-				double sel = RNG::rand(0,1);
-
-				Cell* aux = root;
-				if(!aux) { return NULL; }
-				while(aux){
-					if(sel > 0.5)
-						if(aux->get<CellPSO>().right)
-							aux = aux->get<CellPSO>().right;
-						else if (aux->get<CellPSO>().left)
-							aux = aux->get<CellPSO>().left;
-					else
-						if(aux->get<CellPSO>().left)
-							aux = aux->get<CellPSO>().left;
-						else if(aux->get<CellPSO>().left)
-							aux = aux->get<CellPSO>().left;
-				}
-				return aux;
+			virtual void set_loup_value(double &loup_value){
+				this->loup_value = loup_value;
 			}
+
 
 		protected:
-			Cell *root;
-			Vector gb;
-			Cell* last_node;
+			/* loup info */
+			IntervalVector &loup_point;
+			double &loup_value;
+			mutable Cell* loup_cell;
+
+			/* structures */
+			mutable Cell* last_node;
+			TreeCellOpt* tree;
+			PSOSwarm* swarm;
 	};
 
 } // namespace ibex

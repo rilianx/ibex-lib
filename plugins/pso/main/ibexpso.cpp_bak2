@@ -208,15 +208,18 @@ int main(int argc, char** argv){
 
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
 	OptimizerPSO* o=NULL;
-	//double c1, double c2, int particles, int iterations, double p) :
+
+	BufferPSO* buffer = new BufferPSO(orig_sys);
 	// ** parameters for PSO algorithm **
 	double c1 = 2;				// cognitive parameter (def. 2)
 	double c2 = 2;				// social parameter (def. 2)
 	double p = 0.1;				// box's diameter ponderator (def. 0.1)
 	int particles = 10;		// amount of particles in pso algorithm
 	int iterations = 10;		// number of iterations for pso algorithm
-	BufferPSO* buffer = new BufferPSO(orig_sys,c1,c2,particles,iterations,p);
-
+	//BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+	std::cout << "swarm start" << endl;
+	PSOSwarm* swarm = new PSOSwarm(buffer,orig_sys,c1,c2,particles,iterations,p);
+	std::cout << "swarm end" << endl;
 	/*
 	if(strategy=="lbub")
 		buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
@@ -229,8 +232,10 @@ int main(int argc, char** argv){
 	cout << orig_sys->box << endl;
 	cout << sys->box << endl;
 
-	o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	o=new OptimizerPSO(swarm,orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 	    		prec,goalprec,goalprec);
+
+
 
 	// the trace
 	o->trace=_trace;

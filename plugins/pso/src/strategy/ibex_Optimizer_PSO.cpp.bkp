@@ -45,7 +45,8 @@ void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& b
 	}
 }
 
-OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
+OptimizerPSO::OptimizerPSO(PSOSwarm* s,int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder,
+		CellBufferOptim& buffer,
 		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f) :
                 				n(n), goal_var(goal_var),
                 				ctc(ctc), bsc(bsc), loup_finder(finder), buffer(buffer),
@@ -55,7 +56,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
                 				//kkt(normalized_user_sys),
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
-                                                time(0), nb_cells(0){
+                                                time(0), nb_cells(0), swarm(s) {
 
 	if (trace) cout.precision(12);
 }
@@ -162,17 +163,12 @@ void OptimizerPSO::update_uplo_of_epsboxes(double ymin) {
 
 /*
  * Contract and bound the cell according to interval.
- * If contracted cell has no solutions it's doesn't get push into buffer.
+ * If contracted cell has no solutions must be deleted from buffer.
+ * Else cell must be introduced in tree as children of last cell toped
  */
 void OptimizerPSO::handle_cell(Cell& c, const IntervalVector& init_box ){
 	contract_and_bound(c, init_box);
-	//std::cout << "handling cell(" << &c << ") contracted: " << c.box << endl;
-	if(c.box.is_empty()){
-		std::cout << "delete(" << &c << ")" << endl;
-		delete &c;
-	}else{
-		buffer.push(&c);
-	}
+	std::cout << "handling cell(" << &c << ") contracted: " << c.box << endl;
 }
 
 void OptimizerPSO::contract_and_bound(Cell& c, const IntervalVector& init_box) {
@@ -298,71 +294,194 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	bool aux_bool;
 
 	bool children_has_gb;
+
+	aux_bool = buff->hasGB(root);
 	handle_cell(*root,init_box);
+	if(root){
+		if(aux_bool != buff->hasGB(root))
+			std::cout << "root no matching -> reset gb" << endl;
+	}else{
+		if(aux_bool)
+			std::cout << "no root -> reset gb" << endl;
+	}
 	buffer.push(root);
+	// ** PSO swarm must exist */
+	if(swarm == NULL) system("exit");
+	//buff = dynamic_cast<BufferPSO*>(&buffer);
+	// ** Initialize Swarm of particles */
+	//swarm->initializePSO(buff);
+	//if(trace) std::cout << "Swarm initialized" << endl;
+	//if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+	//if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
 	update_uplo();
-	int count = 0;
+	buff->set_gbest(loup_point.mid());
+	std::cout << "loup: " << loup << "loup_point: " << loup_point.mid() << endl;
+	std::cout << "gb: " << buff->getGB() << endl;
 	try {
-	     while (!buffer.empty() && count < 100) {
-	    	count++;
-			if(trace)std::cout << "FLAG INIT" << "=============================================================" << endl;
-
+	     while (!buffer.empty()) {
+			std::cout << "FLAG INIT" << "====================================================" << endl;
+	    	//std::cout << "iteration->";
 			loup_changed=false;
-
+			//std::cout << "dyncast->";
+			// BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+			// Select best node
+			//std::cout << "getting top->" << endl;
 			Cell *c = buffer.top();
-				if (trace >= 2) cout << " current box " << c->box << endl;
+			if(!c){ std::cout << "top null" << endl; getchar(); }
+			else{ std::cout << "current node: (" << c << ")" << endl; }
+			//TODO DELETE COUT
+			/** Check position of particles, then update positions*/
+			//if(swarm->validateGBest(buff))
+			//	swarm->validateParticles(buff);
+			//swarm->executePSO(buff);
+			//if(trace) std::cout << "executedPSO" << endl;
+			/* if swarm has better solution, exchange */
+			/*if(swarm->getGBestValue() < loup){ //loup, loup_point <-- gbest?
+				if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+				if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+				if(trace) std::cout << "loup_point -> gBest" << endl;
+				loup = swarm->getGBestValue();
+				loup_point = swarm->getGBestPosition();
+				if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+				if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+				loup_changed = true;
+				if(trace) getchar();
+			}*/
 
-				try {
+			if (trace >= 2) cout << " current box " << c->box << endl;
 
-					// Bisect
-					pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
-					pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);
-					std::cout << "cell: " << c;
-					std::cout << " bisected: first->" << new_cells.first;
-					std::cout << " second->" << new_cells.second << endl;
+			try {
 
-					nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was the number of cells put into the buffer after being handled)
-
-					handle_cell(*new_cells.first, init_box);
-					handle_cell(*new_cells.second, init_box);
-
-					if (loup_changed) {
-						// In case of a new upper bound (loup_changed == true), all the boxes
-						// with a lower bound greater than (loup - goal_prec) are removed and deleted.
-						// Note: if contraction was before bisection, we could have the problem
-						// that the current cell is removed by contractHeap. See comments in
-						// older version of the code (before revision 284).
-
-						double ymax=compute_ymax();
+				pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
 
 
-						buffer.contract(ymax);
+				pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);
+				std::cout << "cell: " << c;
+				std::cout << " bisected: first->" << new_cells.first;
+				std::cout << " second->" << new_cells.second << endl;
 
-						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
+				nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was the number of cells put into the buffer after being handled)
 
-						// TODO: check if happens. What is the return code in this case?
-						if (ymax <= NEG_INFINITY) {
-							if (trace) cout << " infinite value for the minimum " << endl;
-							break;
-						}
+				buffer.push(new_cells.first);
+				buffer.push(new_cells.second);
+				std::cout << "handling childrens: " << endl;
+
+				children_has_gb = false;
+
+				// left children
+				//aux_bool = buff->hasGB(c->get<CellPSO>().left);
+				handle_cell(*c->get<CellPSO>().left, init_box);
+				/*if(c->get<CellPSO>().left){
+					if (loup_changed)
+						if(BufferPSO::isContained(buff,loup_point.mid()))
+							buff->set_gbest(loup_point.mid());
+					if(aux_bool != buff->hasGB(c->get<CellPSO>().left)){
+						std::cout << "no matching -> reset gb" << endl;
+						//TODO RESET SWARM
 					}
+				}else{
+					if(aux_bool){
+						std::cout << "no left -> reset gb" << endl;
+						//TODO RESET SWARM
+					}
+				}*/
+				// right children
+				//aux_bool = buff->hasGB(c->get<CellPSO>().right);
+				handle_cell(*c->get<CellPSO>().right, init_box);
+				/*if(c->get<CellPSO>().right){
+					if (loup_changed)
+						if(BufferPSO::isContained(buff,loup_point.mid()))
+							buff->set_gbest(loup_point.mid());
+					if(aux_bool != buff->hasGB(c->get<CellPSO>().right)){
+						std::cout << "no matching -> reset gb" << endl;
+						//TODO RESET SWARM
+					}
+				}else{
+					if(aux_bool){
+						std::cout << "no right -> reset gb" << endl;
+						//TODO RESET SWARM
+					}
+				}*/
+				if (loup_changed) {
+					//ask if loup_point is inside a box
+					if(BufferPSO::isContained(buff,loup_point.mid())){
+						//update gb from buffer
+						buff->set_gbest(loup_point.mid());
+						/* if loup_point has better solution, exchange information with swarm*/
+						/*if(loup < swarm->getGBestValue()){
+							if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+							if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+							if(trace) std::cout << "gBest -> loup_point" << endl;
+							swarm->setGBest(loup_point.mid());
+							if(trace) std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid() << "::" << BufferPSO::isContained(buff,loup_point.mid()) << endl;
+							if(trace) std::cout << "[PSO] fitness:" << swarm->getGBestValue() << "at" << swarm->getGBestPosition() << "::" << BufferPSO::isContained(buff,swarm->getGBestPosition()) << endl;
+							if(trace) getchar();
+						}*/
+					}//else do nothing to swarm
 
-					if (uplo_of_epsboxes == NEG_INFINITY) {
-						cout << " possible infinite minimum " << endl;
+
+					// In case of a new upper bound (loup_changed == true), all the boxes
+					// with a lower bound greater than (loup - goal_prec) are removed and deleted.
+					// Note: if contraction was before bisection, we could have the problem
+					// that the current cell is removed by contractHeap. See comments in
+					// older version of the code (before revision 284).
+
+					double ymax=compute_ymax();
+
+					buffer.contract(ymax);
+
+					//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
+
+					// TODO: check if happens. What is the return code in this case?
+					if (ymax <= NEG_INFINITY) {
+						if (trace) cout << " infinite value for the minimum " << endl;
 						break;
 					}
-
-					update_uplo();
-					if (timeout>0) timer.check(timeout); // TODO: not reentrant, JN: done
-						time = timer.get_time();
 				}
-				catch (NoBisectableVariableException& ) {
-					std::cout << "catch" << endl;
-					update_uplo_of_epsboxes((c->box)[goal_var].lb());
-					update_uplo(); // the heap has changed -> recalculate the uplo (eg: if not in best-first search)
 
+				//check if gb still inside a children; else reset swarm
+				if(c->get<CellPSO>().left && c->get<CellPSO>().right){
+					if(buff->hasGB(c->get<CellPSO>().left) || buff->hasGB(c->get<CellPSO>().right))
+						children_has_gb = true;
+				}else if(c->get<CellPSO>().left){
+					if(buff->hasGB(c->get<CellPSO>().left))
+						children_has_gb = true;
+				}else if(c->get<CellPSO>().right){
+					if(buff->hasGB(c->get<CellPSO>().right))
+						children_has_gb = true;
+				}else{
+					//c doesnt have children, ergo no solutions.
+					if(trace) std::cout << "no children left for (" << c << ")-> pop" << endl;
+					buff->trim();
 				}
-			if(trace) std::cout << "FLAG END: empty::" << buffer.empty() << "====================================================" << endl;
+				if(!children_has_gb){
+					std::cout << "no gb on children -> make pop" << endl;
+					getchar();
+					std::cout << "[B&B] loup:" << loup << "loup_point" << loup_point.mid()<< endl;
+					getchar();
+					//break;
+					//TODO RESET SWARM
+				}
+
+				if (uplo_of_epsboxes == NEG_INFINITY) {
+					cout << " possible infinite minimum " << endl;
+					break;
+				}
+
+				update_uplo();
+				if (timeout>0) timer.check(timeout); // TODO: not reentrant, JN: done
+				time = timer.get_time();
+			}
+			catch (NoBisectableVariableException& ) {
+				std::cout << "catch" << endl;
+				update_uplo_of_epsboxes((c->box)[goal_var].lb());
+				//buffer.pop();
+				//delete c; // deletes the cell.
+				update_uplo(); // the heap has changed -> recalculate the uplo (eg: if not in best-first search)
+
+			}
+			std::cout << "FLAG END: empty::" << buffer.empty() << "====================================================" << endl;
+			//getchar();
 		}
 	}
 	catch (TimeOutException& ) {
