@@ -24,6 +24,9 @@ Para ejecutar:
 Prueba sin restricciones
 __build__/plugins/pso/ibexpso plugins/optim/benchs/benchs-unconstrainedoptim/dixon-price5.bch --trace
 
+Prueba para configuracion de comportamiento
+__build__/plugins/pso/ibexpso plugins/pso/benchs/cristian-price2.bch --trace
+
 Graficar con matplotlib y python3
 ejecutar pso con --trace para crear archivo con posiciones en raíz y luego ejecutar script
 -> python3 plot.py
