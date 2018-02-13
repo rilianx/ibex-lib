@@ -9,10 +9,12 @@
 #define PSO_SRC_STRATEGY_IBEX_TREECELLOPT_H_
 
 #include "ibex_CellBufferOptim.h"
+#include "ibex_Backtrackable.h"
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
 #include "ibex_Interval.h"
 #include "ibex_Random.h"
+#include "ibex_System.h"
 
 #include <map>
 
@@ -46,9 +48,9 @@ class CellPSO : public Backtrackable {
 //TODO create base class TreeCell and extend TreeCellOpt
 class TreeCellOpt {
 	public:
-	TreeCellOpt();
+	TreeCellOpt(System* orig_sys) : orig_sys(orig_sys), root(NULL){}
 
-	virtual void add_backtrackable(Cell& root) {
+	void add_backtrackable(Cell& root) {
 		  root.add<CellPSO>();
 	}
 	/*
@@ -68,7 +70,7 @@ class TreeCellOpt {
 	 * Introduces root into tree;
 	 * If root exist, give it as children to the last cell top-ed.
 	 */
-	void add(Cell* cell){
+	void add(Cell* cell, Cell* last_node){
 		cout << "push(" << cell << ")" << endl;
 		if(!root){
 			root = cell;
@@ -91,7 +93,7 @@ class TreeCellOpt {
 	 * Trim this tree
 	 * Delete every node that has no children left starting from last_node.
 	 */
-	bool trim(){
+	bool trim(Cell* last_node){
 		int count = 0;
 		if(last_node){
 			Cell* father = last_node->get<CellPSO>().p;
@@ -142,7 +144,7 @@ class TreeCellOpt {
 	/*
 	 * Random selection of leaf-node.
 	 */
-	virtual Cell* nodeSelection(){
+	Cell* nodeSelection(){
 		Cell* aux = root;
 		if(aux == NULL) { std::cout << "root is NULL" << endl; return NULL; }
 		while(aux){
@@ -169,7 +171,7 @@ class TreeCellOpt {
 	/*
 	 * Return true if Vector is contained by any node
 	 */
-	virtual bool isContained(const Vector& x){
+	bool isContained(const Vector& x){
 		Cell* aux = nodeContainer(x);
 		std::cout << "found in (" << aux << ")" << endl;
 		if(aux)
@@ -181,7 +183,7 @@ class TreeCellOpt {
 	/*
 	 * Return the node who contains Vector
 	 */
-	virtual Cell* nodeContainer(const Vector& x) const{
+	Cell* nodeContainer(const Vector& x) const{
 		Cell* aux = root;
 		bool bool_gb_found;
 		bool bool_have;
@@ -252,19 +254,19 @@ class TreeCellOpt {
 	/*
 	 * Deletes every node from tree.
 	 */
-	virtual void cleanTree(){
+	void cleanTree(){
 		//TODO better approach
-		root = NULL;
+		//root = NULL;
 	}
 
-	virtual void contract(double loup) {
+	void contract(double loup) {
 		//TODO contraction method
 	}
 
-	virtual ~TreeCellOpt();
+	~TreeCellOpt();
 
 protected:
-	Cell* last_node;
+	//Cell* last_node;
 	Cell* root;
 	System* orig_sys;
 };

@@ -16,6 +16,7 @@
 #include "ibex_PSOSwarm.h"
 #include "ibex_Interval.h"
 #include "ibex_Random.h"
+#include "ibex_System.h"
 #include <map>
 
 using namespace std;
@@ -24,8 +25,10 @@ namespace ibex {
 	class BufferPSO : public CellBufferOptim {
 		public:
 			BufferPSO(System* orig_sys, double c1, double c2, int particles, int iterations, double p) :
-				last_node(NULL), swarm(new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations,p)), loup_point(NULL),
-				loup_value(NULL), tree(new TreeCellOpt(orig_sys)), loup_cell(NULL){
+				last_node(NULL), loup_point(new IntervalVector(0)), loup_cell(NULL), tree(new TreeCellOpt(orig_sys)){
+				double aux = 0.0;
+				loup_value = &aux;
+				swarm = new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations,p);
 			}
 			virtual ~BufferPSO(){}
 
@@ -55,7 +58,7 @@ namespace ibex {
 			 * Pushes a cell into buffer.
 			 */
 			virtual void push(Cell* cell){
-				tree->add(cell);
+				tree->add(cell,last_node);
  			}
 
 			virtual Cell* pop() { return NULL; }
@@ -67,13 +70,13 @@ namespace ibex {
 			 */
 			virtual Cell* top() const{
 				Cell* aux;
-				if(tree->trim()){
-					loup_cell = tree->nodeContainer(loup_point.mid());
+				if(tree->trim(last_node)){
+					loup_cell = tree->nodeContainer(loup_point->mid());
 					if(!tree->nodeContainer(swarm->getGBestPosition()))
 						swarm->initializePSO();
 				}
-				std::cout << "get gb: " << loup_point.mid() << endl;
-				if(loup_cell && loup_value < swarm->getGBestValue())
+				std::cout << "get gb: " << loup_point->mid() << endl;
+				if(loup_cell && *loup_value < swarm->getGBestValue())
 					aux = loup_cell;
 				else
 					aux = tree->nodeContainer(swarm->getGBestPosition());
@@ -89,26 +92,26 @@ namespace ibex {
 			 * Update cell who contains loup_point, then contract tree.
 			 */
 			virtual void contract(double loup) {
-				loup_cell = tree->nodeContainer(loup_point.mid());
+				loup_cell = tree->nodeContainer(loup_point->mid());
 				tree->contract(loup);
 			}
 
-			virtual void set_loup_point(IntervalVector &loup_point){
+			virtual void set_loup_point(IntervalVector* loup_point){
 				this->loup_point = loup_point;
 				Cell* aux = tree->nodeContainer(swarm->getGBestPosition());
 				if(aux)
 					loup_cell = aux;
 			}
 
-			virtual void set_loup_value(double &loup_value){
+			virtual void set_loup_value(double* loup_value){
 				this->loup_value = loup_value;
 			}
 
 
 		protected:
 			/* loup info */
-			IntervalVector &loup_point;
-			double &loup_value;
+			IntervalVector *loup_point;
+			double *loup_value;
 			mutable Cell* loup_cell;
 
 			/* structures */
