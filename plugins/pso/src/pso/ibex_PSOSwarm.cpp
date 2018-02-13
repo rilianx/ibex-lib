@@ -17,7 +17,7 @@ namespace ibex{
 	 * Initialize particles
 	 */
 	//TODO pair array ExtArray<c_i,&vector_i>
-	PSOSwarm::PSOSwarm(TreeCellOpt &tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p) :
+	PSOSwarm::PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p) :
 			tree(tree), c1(c1), c2(c2), gBest(Vector::zeros(orig_sys->box.size())), p(p){
 		this->nParticles = nParticles;
 		particlesArray = new PSOParticle*[nParticles];
@@ -32,7 +32,7 @@ namespace ibex{
 		if (trace) std::cout << "\033[0;33m# Initialize population of particles with random position and velocity" << endl;
 		// ** Initialize particles on random places**
 		for(int i=0; i<nParticles; i++){
-			particlesArray[i] = new PSOParticle(&tree, orig_sys, c1, c2);
+			particlesArray[i] = new PSOParticle(tree, orig_sys, c1, c2);
 			particlesArray[i]->calculateFitness(orig_sys);
 			if( gBest != (Vector::zeros(orig_sys->box.size())) ){
 				selectParticle(particlesArray[i]);
@@ -66,12 +66,12 @@ namespace ibex{
 			iterations++;
 			for(int i=0; i<nParticles; i++){
 				// # Update velocity and position of every particle.
-				particlesArray[i]->updateVelocityAndPosition(&tree,orig_sys,gBest,c1,c2,p);
+				particlesArray[i]->updateVelocityAndPosition(tree,orig_sys,gBest,c1,c2,p);
 
 				// # Evaluate objective (fitness) of every particle.
 				particlesArray[i]->calculateFitness(orig_sys);
 				// - Select best position of particle and save it internally.
-				particlesArray[i]->selectBestInternal(&tree);
+				particlesArray[i]->selectBestInternal(tree);
 				// # Select the particle with best fitness (minimize) and save as gBest.
 				selectParticle(particlesArray[i]);
 
@@ -86,8 +86,8 @@ namespace ibex{
 	 * Select best particle of the swarm based on a modified Feasibility rule (K. Deb - 2000)
 	 */
 	void PSOSwarm::selectParticle(PSOParticle* particle){
-		if(tree){
-			if(tree.nodeContainer(particle->getBestPosition())){
+		/*if(**tree){*/
+			if(tree->nodeContainer(particle->getBestPosition())){
 				// both feasible: select better fitness.
 				if(isGBestFeasible() == true && particle->isFeasible() == true){
 					if(particle->getValue() < getGBestValue()){
@@ -113,7 +113,7 @@ namespace ibex{
 					}
 				}
 			}
-		}else{
+		/*}else{
 			// both feasible: select better fitness.
 			if(isGBestFeasible() == true && particle->isFeasible() == true){
 				if(particle->getValue() < getGBestValue()){
@@ -138,7 +138,7 @@ namespace ibex{
 					}
 				}
 			}
-		}
+		}*/
 	}
 
 	/*
@@ -148,8 +148,8 @@ namespace ibex{
 	void PSOSwarm::validateParticles(){
 		for(int i=0; i<this->nParticles; i++){
 			std::cout << "particle[" << i << "] ";
-			if(!tree.nodeContainer(particlesArray[i]->getPosition())){
-				particlesArray[i] = new PSOParticle(&tree,orig_sys, c1, c2);
+			if(!tree->nodeContainer(particlesArray[i]->getPosition())){
+				particlesArray[i] = new PSOParticle(tree,orig_sys, c1, c2);
 				selectParticle(particlesArray[i]);
 				std::cout << "reset particle[" << i << "]" << endl;
 			}
@@ -162,13 +162,13 @@ namespace ibex{
 	bool PSOSwarm::validateGBest(){
 		//TODO DELETE COUT
 		std::cout << "validateGBest(" << gBest << ") ";
-		if(!tree.nodeContainer(gBest)){
+		if(!tree->nodeContainer(gBest)){
 			std::cout << "RESET SWARM" << endl;
 			double fit = POS_INFINITY;
 			// ** Initialize particles on random places**
 			for(int i=0; i<nParticles; i++){
 				//delete particlesArray[i];
-				particlesArray[i] = new PSOParticle(&tree, orig_sys, c1, c2);
+				particlesArray[i] = new PSOParticle(tree, orig_sys, c1, c2);
 				particlesArray[i]->calculateFitness(orig_sys);
 				if( gBest != (Vector::zeros(orig_sys->box.size())) ){
 					selectParticle(particlesArray[i]);
@@ -256,12 +256,12 @@ namespace ibex{
 		return countViolations;
 	}
 
-	/*bool PSOSwarm::isGBestFeasible(){
+	bool PSOSwarm::isGBestFeasible(){
 		if (getGBestCountViolations() > 0)
 			return false;
 		else
 			return true;
-	}*/
+	}
 
 	PSOSwarm::~PSOSwarm() {
 		for(int i=0; i<nParticles; i++){

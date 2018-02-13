@@ -38,7 +38,7 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(TreeCellOpt &tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p);
+		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p);
 		virtual ~PSOSwarm();
 
 		void initializePSO();
@@ -67,7 +67,7 @@ namespace ibex{
 		double p;
 		std::ofstream output;
 		System* orig_sys;
-		TreeCellOpt &tree;
+		TreeCellOpt* tree;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOSWARM_H_ */

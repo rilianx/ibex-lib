@@ -6,6 +6,7 @@
  */
 
 #include "ibex.h"
+#include "ibex_System.h"
 #include "args.hxx"
 
 using namespace std;
