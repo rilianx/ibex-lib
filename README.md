@@ -17,14 +17,16 @@ Instalar g++, clang, bison, flex, zlib1g-dev
 
 Para ejecutar:
 
- __build__/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
+\_\_build\_\_/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
  
- __build__/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
+\_\_build\_\_/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
  
 Prueba sin restricciones
-__build__/plugins/pso/ibexpso plugins/optim/benchs/benchs-unconstrainedoptim/dixon-price5.bch --trace
+
+\_\_build\_\_/plugins/pso/ibexpso plugins/optim/benchs/benchs-unconstrainedoptim/dixon-price5.bch --trace
 
 Prueba para configuracion de comportamiento
+
 \_\_build\_\_/plugins/pso/ibexpso plugins/pso/benchs/cristian-price2.bch --trace
 
 Graficar con matplotlib y python3
