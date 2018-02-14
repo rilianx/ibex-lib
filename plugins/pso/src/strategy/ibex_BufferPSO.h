@@ -32,6 +32,10 @@ namespace ibex {
 			}
 			virtual ~BufferPSO(){}
 
+			virtual void add_backtrackable(Cell& root) {
+				  root.add<CellPSO>();
+			}
+
 			/*
 			 * Deletes everything from buffer.
 			 */
@@ -70,16 +74,24 @@ namespace ibex {
 			 */
 			virtual Cell* top() const{
 				Cell* aux;
-				if(tree->trim(last_node)){
-					loup_cell = tree->nodeContainer(loup_point->mid());
-					if(!tree->nodeContainer(swarm->getGBestPosition()))
-						swarm->initializePSO();
+				if(!swarm->isInitialized()){
+					swarm->resetPSO();
+				}else if(tree->trim(last_node)){
+					if(!tree->nodeContainer(swarm->getGBestPosition())){
+						swarm->resetPSO();
+					}
 				}
+				//swarm->executePSO();
+				loup_cell = tree->nodeContainer(loup_point->mid());
 				std::cout << "get gb: " << loup_point->mid() << endl;
-				if(loup_cell && *loup_value < swarm->getGBestValue())
+				if(loup_cell && *loup_value < swarm->getGBestValue()){
+					std::cout << "loup_cell" << endl;
 					aux = loup_cell;
-				else
+				}else{
+					std::cout << "get gbest: " << swarm->getGBestPosition() << endl;
 					aux = tree->nodeContainer(swarm->getGBestPosition());
+				}
+				std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;
 				last_node = aux;
 				return aux;
 			}
@@ -107,11 +119,16 @@ namespace ibex {
 				this->loup_value = loup_value;
 			}
 
+			void set_values(IntervalVector* lp_point, double* lp_value){
+				loup_point = lp_point;
+				loup_value = lp_value;
+			}
+
 
 		protected:
 			/* loup info */
-			IntervalVector *loup_point;
-			double *loup_value;
+			IntervalVector* loup_point;
+			double* loup_value;
 			mutable Cell* loup_cell;
 
 			/* structures */

@@ -56,7 +56,8 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
                                                 time(0), nb_cells(0){
-
+	BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+	buff->set_values(&loup_point,&loup);
 	if (trace) cout.precision(12);
 }
 
@@ -299,7 +300,6 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 	bool children_has_gb;
 	handle_cell(*root,init_box);
-	buffer.push(root);
 	update_uplo();
 	int count = 0;
 	try {

@@ -18,19 +18,14 @@ namespace ibex{
 	 */
 	//TODO pair array ExtArray<c_i,&vector_i>
 	PSOSwarm::PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p) :
-			tree(tree), c1(c1), c2(c2), gBest(Vector::zeros(orig_sys->box.size())), p(p){
+			tree(tree), c1(c1), c2(c2), gBest(Vector::zeros(orig_sys->box.size())), p(p), initialized(false){
 		this->nParticles = nParticles;
 		particlesArray = new PSOParticle*[nParticles];
 		this->limit = limit;
 		this->orig_sys = orig_sys;
-	}
 
-	/*
-	 * Initialize swarm
-	 */
-	void PSOSwarm::initializePSO(){
-		if (trace) std::cout << "\033[0;33m# Initialize population of particles with random position and velocity" << endl;
 		// ** Initialize particles on random places**
+		if (trace) std::cout << "\033[0;33m# Initialize population of particles with random position and velocity" << endl;
 		for(int i=0; i<nParticles; i++){
 			particlesArray[i] = new PSOParticle(tree, orig_sys, c1, c2);
 			particlesArray[i]->calculateFitness(orig_sys);
@@ -41,8 +36,33 @@ namespace ibex{
 				if (trace) cout << "\033[0;32mgBest fitness["<< getGBestCountViolations() <<"]:" << getGBestValue() << "\t First" << endl;
 				if (trace) cout << "\033[0;31mAt: " << gBest << endl;
 			}
+			cout << "p_b[" << i << "]: " << particlesArray[i]->getBestPosition() << " - g_b: " << this->getGBestPosition() << endl;
+			cout << "p_bv = " << particlesArray[i]->getBestValue() << " - g_bv = " << this->getGBestValue() << endl;
 		}
-		std::cout << "IJ" << endl;
+
+	}
+
+	/*
+	 * Reset particles data and information of swarm
+	 */
+	void PSOSwarm::resetPSO(){
+		gBest = Vector::zeros(orig_sys->box.size());
+		for(int i=0; i<nParticles; i++){
+			//TODO reset particle[i]
+			particlesArray[i] = new PSOParticle(tree, orig_sys, c1, c2);
+			//TODO particle must calculate his own fitness
+			particlesArray[i]->calculateFitness(orig_sys);
+			if( gBest != (Vector::zeros(orig_sys->box.size())) ){
+				selectParticle(particlesArray[i]);
+			}else{
+				gBest = particlesArray[i]->getPosition();
+				if (trace) cout << "\033[0;32mgBest fitness["<< getGBestCountViolations() <<"]:" << getGBestValue() << "\t First" << endl;
+				if (trace) cout << "\033[0;31mAt: " << gBest << endl;
+			}
+			cout << "p_b[" << i << "]: " << particlesArray[i]->getBestPosition() << " - g_b: " << this->getGBestPosition() << endl;
+			cout << "p_bv = " << particlesArray[i]->getBestValue() << " - g_bv = " << this->getGBestValue() << endl;
+		}
+		initialized = true;
 	}
 
 	/*
@@ -261,6 +281,10 @@ namespace ibex{
 			return false;
 		else
 			return true;
+	}
+
+	bool PSOSwarm::isInitialized(){
+		return initialized;
 	}
 
 	PSOSwarm::~PSOSwarm() {

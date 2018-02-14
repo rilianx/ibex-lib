@@ -41,7 +41,7 @@ namespace ibex{
 		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p);
 		virtual ~PSOSwarm();
 
-		void initializePSO();
+		void resetPSO();
 		void executePSO();
 		void startPlot();
 		void iterationPlot();
@@ -56,6 +56,7 @@ namespace ibex{
 		void validateParticles();
 		bool validateGBest();
 		void selectParticle(PSOParticle* particle);
+		bool isInitialized();
 
 	protected:
 		int nParticles;
@@ -68,6 +69,8 @@ namespace ibex{
 		std::ofstream output;
 		System* orig_sys;
 		TreeCellOpt* tree;
+
+		bool initialized;
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOSWARM_H_ */

@@ -50,9 +50,6 @@ class TreeCellOpt {
 	public:
 	TreeCellOpt(System* orig_sys) : orig_sys(orig_sys), root(NULL){}
 
-	void add_backtrackable(Cell& root) {
-		  root.add<CellPSO>();
-	}
 	/*
 	 * Is tree empty?
 	 */
@@ -76,11 +73,11 @@ class TreeCellOpt {
 			root = cell;
 		}else if (last_node){
 			if(!last_node->get<CellPSO>().left){
-				//std::cout << "left of " << last_node << endl;
+				std::cout << "left of " << last_node << endl;
 				last_node->get<CellPSO>().left = cell;
 				cell->get<CellPSO>().p = last_node;
 			}else if(!last_node->get<CellPSO>().right){
-				//std::cout << "right of " << last_node << endl;
+				std::cout << "right of " << last_node << endl;
 				last_node->get<CellPSO>().right = cell;
 				cell->get<CellPSO>().p = last_node;
 			}else{
@@ -195,11 +192,11 @@ class TreeCellOpt {
 			bool_gb_found = false;
 			if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
 				// is a leaf
-				//std::cout << "(" << aux << ") is leaf" << endl;
+				std::cout << "(" << aux << ") is leaf" << endl;
 				return aux;
 			}else{
 				if(aux->get<CellPSO>().left){
-					//std::cout << "(" << aux << ") has left (" << aux->get<CellPSO>().left << ")" << endl;
+					std::cout << "(" << aux << ") has left (" << aux->get<CellPSO>().left << ")" << endl;
 					bool_have = true;
 					for(int i=0; i<orig_sys->box.size(); i++){
 						if(!aux->get<CellPSO>().left->box[i].contains(x[i])){
@@ -209,12 +206,12 @@ class TreeCellOpt {
 					}
 					if(bool_have){
 						aux = aux->get<CellPSO>().left;
-						//std::cout << "left has it" << endl;
+						std::cout << "left has it" << endl;
 						bool_gb_found = true;
 					}
 				}
 				if(!bool_gb_found && aux->get<CellPSO>().right){
-					//std::cout << "(" << aux << ") has right (" << aux->get<CellPSO>().right << ")" << endl;
+					std::cout << "(" << aux << ") has right (" << aux->get<CellPSO>().right << ")" << endl;
 					bool_have = true;
 					for(int i=0; i<orig_sys->box.size(); i++){
 						if(!aux->get<CellPSO>().right->box[i].contains(x[i])){
@@ -224,7 +221,7 @@ class TreeCellOpt {
 					}
 					if(bool_have){
 						aux = aux->get<CellPSO>().right;
-						//std::cout << "right has it" << endl;
+						std::cout << "right has it" << endl;
 						bool_gb_found = true;
 					}
 				}
