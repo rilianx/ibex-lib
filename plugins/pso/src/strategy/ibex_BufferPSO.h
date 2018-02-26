@@ -25,9 +25,8 @@ namespace ibex {
 	class BufferPSO : public CellBufferOptim {
 		public:
 			BufferPSO(System* orig_sys, double c1, double c2, int particles, int iterations, double p) :
-				last_node(NULL), loup_point(new IntervalVector(0)), loup_cell(NULL), tree(new TreeCellOpt(orig_sys)){
+				last_node(NULL), tree(new TreeCellOpt(orig_sys)){
 				double aux = 0.0;
-				loup_value = &aux;
 				swarm = new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations,p);
 			}
 			virtual ~BufferPSO(){}
@@ -55,14 +54,14 @@ namespace ibex {
 			}
 
 			virtual bool empty() const{
-				return tree->empty();
+				return tree->is_empty();
 			}
 
 			/*
 			 * Pushes a cell into buffer.
 			 */
 			virtual void push(Cell* cell){
-				tree->add(cell,last_node);
+				tree->insert(cell,last_node);
  			}
 
 			virtual Cell* pop() { return NULL; }
@@ -77,20 +76,21 @@ namespace ibex {
 				if(!swarm->isInitialized()){
 					swarm->resetPSO();
 				}else if(tree->trim(last_node)){
-					if(!tree->nodeContainer(swarm->getGBestPosition())){
+					if(!tree->search(swarm->getGBestPosition())){
 						swarm->resetPSO();
 					}
 				}
+
 				//swarm->executePSO();
-				loup_cell = tree->nodeContainer(loup_point->mid());
-				std::cout << "get gb: " << loup_point->mid() << endl;
-				if(loup_cell && *loup_value < swarm->getGBestValue()){
-					std::cout << "loup_cell" << endl;
-					aux = loup_cell;
-				}else{
-					std::cout << "get gbest: " << swarm->getGBestPosition() << endl;
-					aux = tree->nodeContainer(swarm->getGBestPosition());
-				}
+
+
+				std::cout << "get gbest: " << swarm->getGBestPosition() << endl;
+				aux = tree->search(swarm->getGBestPosition());
+
+
+				//el gbest debeería estar en un nodo
+				assert(aux);
+
 				std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;
 				last_node = aux;
 				return aux;
@@ -100,37 +100,31 @@ namespace ibex {
 
 			virtual double minimum() const {return NEG_INFINITY;}
 
+			virtual pair<double, Vector> get_gbest()  {
+				if(swarm->getGBestCountViolations()==0){
+					return make_pair(swarm->getGBestValue(), swarm->getGBestPosition());
+				}else
+					return make_pair(POS_INFINITY, Vector(1));
+			}
+
+			virtual void update_gbest(Vector loup_point, double loup){
+				if(loup<swarm->getGBestValue()){
+					if (tree->search(loup_point))
+						swarm->setGBest(loup_point);
+				}
+			}
+
 			/*
-			 * Update cell who contains loup_point, then contract tree.
+			 * Contract the tree.
 			 */
 			virtual void contract(double loup) {
-				loup_cell = tree->nodeContainer(loup_point->mid());
 				tree->contract(loup);
 			}
 
-			virtual void set_loup_point(IntervalVector* loup_point){
-				this->loup_point = loup_point;
-				Cell* aux = tree->nodeContainer(swarm->getGBestPosition());
-				if(aux)
-					loup_cell = aux;
-			}
 
-			virtual void set_loup_value(double* loup_value){
-				this->loup_value = loup_value;
-			}
-
-			void set_values(IntervalVector* lp_point, double* lp_value){
-				loup_point = lp_point;
-				loup_value = lp_value;
-			}
 
 
 		protected:
-			/* loup info */
-			IntervalVector* loup_point;
-			double* loup_value;
-			mutable Cell* loup_cell;
-
 			/* structures */
 			mutable Cell* last_node;
 			TreeCellOpt* tree;

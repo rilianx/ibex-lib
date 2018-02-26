@@ -107,7 +107,7 @@ namespace ibex{
 	 */
 	void PSOSwarm::selectParticle(PSOParticle* particle){
 		/*if(**tree){*/
-			if(tree->nodeContainer(particle->getBestPosition())){
+			if(tree->search(particle->getBestPosition())){
 				// both feasible: select better fitness.
 				if(isGBestFeasible() == true && particle->isFeasible() == true){
 					if(particle->getValue() < getGBestValue()){
@@ -168,7 +168,7 @@ namespace ibex{
 	void PSOSwarm::validateParticles(){
 		for(int i=0; i<this->nParticles; i++){
 			std::cout << "particle[" << i << "] ";
-			if(!tree->nodeContainer(particlesArray[i]->getPosition())){
+			if(!tree->search(particlesArray[i]->getPosition())){
 				particlesArray[i] = new PSOParticle(tree,orig_sys, c1, c2);
 				selectParticle(particlesArray[i]);
 				std::cout << "reset particle[" << i << "]" << endl;
@@ -182,7 +182,7 @@ namespace ibex{
 	bool PSOSwarm::validateGBest(){
 		//TODO DELETE COUT
 		std::cout << "validateGBest(" << gBest << ") ";
-		if(!tree->nodeContainer(gBest)){
+		if(!tree->search(gBest)){
 			std::cout << "RESET SWARM" << endl;
 			double fit = POS_INFINITY;
 			// ** Initialize particles on random places**

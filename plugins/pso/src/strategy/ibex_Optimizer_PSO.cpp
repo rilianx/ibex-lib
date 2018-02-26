@@ -57,7 +57,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
                                                 time(0), nb_cells(0){
 	BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
-	buff->set_values(&loup_point,&loup);
+	//buff->set_values(&loup_point,&loup);
 	if (trace) cout.precision(12);
 }
 
@@ -219,6 +219,8 @@ void OptimizerPSO::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 	//upperbounding
 	bool loup_ch=update_loup(tmp_box);
 
+	//TODO: Lanzar PSO para version Ibex + PSOxnodo
+
 	// update of the upper bound of y in case of a new loup found
 	if (loup_ch) y &= Interval(NEG_INFINITY,compute_ymax());
 
@@ -310,7 +312,20 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			loup_changed=false;
 
 			Cell *c = buffer.top();
-				if (trace >= 2) cout << " current box " << c->box << endl;
+
+			//The loup is updated if gbest < loup
+			BufferPSO* buffPSO = dynamic_cast<BufferPSO*>(&buffer);
+			if(buffPSO){
+				pair<double, Vector> gbest=buffPSO->get_gbest();
+				if(gbest.first < loup){
+					loup=gbest.first;
+					loup_point=gbest.second;
+					loup_changed = true;
+				}
+			}
+
+
+			if (trace >= 2) cout << " current box " << c->box << endl;
 
 				try {
 
@@ -333,10 +348,12 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 						// that the current cell is removed by contractHeap. See comments in
 						// older version of the code (before revision 284).
 
+
 						double ymax=compute_ymax();
 
 
 						buffer.contract(ymax);
+						if(buffPSO) buffPSO->update_gbest(loup_point.mid(), loup);
 
 						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
 

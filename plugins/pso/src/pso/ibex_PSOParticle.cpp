@@ -15,9 +15,9 @@ using namespace std; //delete
 namespace ibex {
 	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, double c1, double c2) : position(orig_sys->box.random()), pBest(position), velocity(Vector::zeros(orig_sys->box.size())){
 		// Randomize particle position into valid place
-		if(!tree->empty()){
+		if(!tree->is_empty()){
 			std::cout << "select node"<< endl;
-			Cell* c = tree->nodeSelection();
+			Cell* c = tree->random_node();
 			std::cout << "created in (" << c << ")" << endl;
 			position = c->box.random();
 			position.resize(orig_sys->box.size());
@@ -114,7 +114,7 @@ namespace ibex {
 	void PSOParticle::selectBestInternal(TreeCellOpt* tree){
 		//TODO DELETE COUT
 		//if(tree){
-			if(tree->nodeContainer(position)){
+			if(tree->search(position)){
 				//cout << "position inside -> update pBest" << endl;
 				if(value < vBest){
 					pBest = position;
