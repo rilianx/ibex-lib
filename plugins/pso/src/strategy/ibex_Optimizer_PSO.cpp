@@ -288,7 +288,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 //	entailed=&root->get<EntailedCtr>();
 //	entailed->init_root(user_sys,sys);
 
-	BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+	BufferPSO* buffPSO = dynamic_cast<BufferPSO*>(&buffer);
 
 	loup_changed=false;
 	initial_loup=obj_init_bound;
@@ -314,7 +314,6 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			Cell *c = buffer.top();
 
 			//The loup is updated if gbest < loup
-			BufferPSO* buffPSO = dynamic_cast<BufferPSO*>(&buffer);
 			if(buffPSO){
 				pair<double, Vector> gbest=buffPSO->get_gbest();
 				if(gbest.first < loup){
