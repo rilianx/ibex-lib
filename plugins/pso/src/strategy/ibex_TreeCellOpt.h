@@ -48,7 +48,7 @@ class CellPSO : public Backtrackable {
 //TODO create base class TreeCell and extend TreeCellOpt
 class TreeCellOpt {
 	public:
-	TreeCellOpt(System* orig_sys) : orig_sys(orig_sys), root(NULL){}
+	TreeCellOpt(System* orig_sys) : orig_sys(orig_sys), root(NULL), min(NEG_INFINITY){}
 
 	/*
 	 * Is tree empty?
@@ -59,7 +59,7 @@ class TreeCellOpt {
 	 * Insert a new node into the tree
 	 * If root exists, give it as children of last_node.
 	 */
-	void insert(Cell* cell, Cell* last_node);
+	void insert(Cell* cell, Cell* last_node=NULL);
 
 	/*
 	 * Trim the tree
@@ -106,8 +106,20 @@ class TreeCellOpt {
 	 * Deletes every node from tree.
 	 */
 	void cleanTree(){
-		//TODO better approach
-		//root = NULL;
+		stack<Cell*> S;
+		if(root) S.push(root);
+		else return;
+
+		min = POS_INFINITY;
+		while(!S.empty()){
+			Cell* c = S.top(); S.pop();
+			if(c->get<CellPSO>().left || c->get<CellPSO>().right){
+				if(c->get<CellPSO>().left) S.push(c->get<CellPSO>().left);
+				if(c->get<CellPSO>().right) S.push(c->get<CellPSO>().right);
+			}else{
+				trim(c);
+			}
+		}
 	}
 
 	/*
@@ -115,12 +127,18 @@ class TreeCellOpt {
 	 */
 	void contract(double loup);
 
+	double minimum(){return min;}
+
 	~TreeCellOpt();
+
+	Cell* root;
 
 protected:
 	//Cell* last_node;
-	Cell* root;
+
 	System* orig_sys;
+
+	double min;
 };
 
 } /* namespace ibex */

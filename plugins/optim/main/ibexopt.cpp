@@ -59,7 +59,7 @@ int main(int argc, char** argv){
 	cout << "Bisector: " << bisection << endl;
 	string strategy= (_strategy)? _strategy.Get() : "feasdiv";
 	cout << "Search strategy: " << strategy << endl;
-	double prec= (_eps_x)? _eps_x.Get() : 1e-7 ;
+	double prec= (_eps_x)? _eps_x.Get() : 1e-7;
 	cout << "prec_x: " << prec << endl;
 	double goalprec= (_eps)? _eps.Get() : 1e-6 ;
 	cout << "prec_goal: " << goalprec << endl;

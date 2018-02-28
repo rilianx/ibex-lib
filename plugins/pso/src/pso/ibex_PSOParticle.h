@@ -13,11 +13,12 @@
 namespace ibex{
 	class PSOParticle {
 		public:
-			PSOParticle(TreeCellOpt* tree, System* orig_sys, double c1, double c2);
+			PSOParticle(TreeCellOpt* tree, System* orig_sys, double c1, double c2, double eqeps=1e-8);
 			virtual ~PSOParticle();
 
-			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double p);
-			void calculateFitness(System* orig_sys);
+			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2);
+
+			double computePenalty(System* orig_sys);
 			void selectBestInternal(TreeCellOpt* tree);
 			bool isFeasible();
 			bool isBestFeasible();
@@ -28,14 +29,66 @@ namespace ibex{
 			double getPenalty();
 			double getBestPenalty();
 
+			void initialize(TreeCellOpt* tree, System* orig_sys){
+				// Randomize particle position into valid place
+				if(tree->is_empty()) return;
+
+				Cell* c = tree->random_node();
+				position = c->box.random();
+				position.resize(orig_sys->box.size());
+
+				value = orig_sys->goal->eval(position).ub();
+				penalty = computePenalty(orig_sys);
+
+				// store best values
+				pBest = position;
+				vBest = value;
+				peBest = penalty;
+			}
+
+			void update_pBest(TreeCellOpt* tree, System* orig_sys, double loup){
+				if(tree->search(position)){
+					value = orig_sys->goal->eval(position).ub();
+					penalty = computePenalty(orig_sys);
+
+					bool improve=false;
+					if(penalty == 0.0 && peBest > 0.0) improve = true;
+					if(peBest > 0.0 && penalty > 0.0 && (penalty < peBest)) improve = true;
+					if(peBest == 0.0 && penalty == 0.0 && (value < vBest )) improve = true;
+
+
+					if(compute_fitness(value, penalty, loup) < compute_fitness(vBest, peBest, loup)){
+						pBest = position;
+						vBest = value;
+						peBest = penalty;
+					}
+				}
+
+			}
+
+			static double compute_fitness(double val, double viol, double loup){
+				if(loup==POS_INFINITY) return viol;
+
+				if(viol>0.0){
+					return viol + std::max(0.0,val-loup);
+				}else
+					return val - loup;
+			}
+
+
 		protected:
 			double value;
-			double vBest;
-			Vector position;
-			Vector pBest;
-			Vector velocity;
 			double penalty;
+			Vector position;
+
+			double vBest;
 			double peBest;
+			Vector pBest;
+
+			double eqeps;
+
+			Vector velocity;
+
 	};
 }
 #endif /* PSO_SRC_IBEX_PSOPARTICLE_H_ */

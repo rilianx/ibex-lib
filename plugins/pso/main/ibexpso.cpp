@@ -58,7 +58,7 @@ int main(int argc, char** argv){
 	cout << "Relax method: " << linearrelaxation << endl;
 	string bisection= (_bisector)? _bisector.Get() : "lsmear";
 	cout << "Bisector: " << bisection << endl;
-	string strategy= (_strategy)? _strategy.Get() : "feasdiv";
+	string strategy= (_strategy)? _strategy.Get() : "ibex_pso";
 	cout << "Search strategy: " << strategy << endl;
 	double prec= (_eps_x)? _eps_x.Get() : 1e-7 ;
 	cout << "prec_x: " << prec << endl;
@@ -214,9 +214,27 @@ int main(int argc, char** argv){
 	double c1 = 2;				// cognitive parameter (def. 2)
 	double c2 = 2;				// social parameter (def. 2)
 	double p = 0.1;				// box's diameter ponderator (def. 0.1)
-	int particles = 10;		// amount of particles in pso algorithm
-	int iterations = 10;		// number of iterations for pso algorithm
-	BufferPSO* buffer = new BufferPSO(orig_sys,c1,c2,particles,iterations,p);
+	int particles = 5;		// amount of particles in pso algorithm
+	int iterations = 5;		// number of iterations for pso algorithm
+
+	int particles_node = 100;
+	int iterations_node = 0;
+
+	CellBufferOptim* buffer;
+	TreeCellOpt* tree = new TreeCellOpt(orig_sys);
+	TreeCellOpt* tree_single_node = new TreeCellOpt(orig_sys);
+
+	PSOSwarm* swarm = new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations);
+	PSOSwarm* swarm_node = new PSOSwarm(tree_single_node,orig_sys,c1,c2,particles_node,iterations_node);
+
+	if(strategy=="ibex_pso"){
+		buffer = new BufferPSO(swarm);
+	}else if(strategy=="ibex_nodepso"){
+		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
+				*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
+	}
+
+
 
 	/*
 	if(strategy=="lbub")
@@ -230,8 +248,13 @@ int main(int argc, char** argv){
 	cout << orig_sys->box << endl;
 	cout << sys->box << endl;
 
-	o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec);
+	if(strategy=="ibex_pso"){
+		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec,swarm_node,false);
+	}else if(strategy=="ibex_nodepso"){
+		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec,swarm_node,true);
+	}
 
 	// the trace
 	o->trace=_trace;

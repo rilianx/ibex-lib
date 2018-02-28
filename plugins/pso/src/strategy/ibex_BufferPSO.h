@@ -24,10 +24,9 @@ using namespace std;
 namespace ibex {
 	class BufferPSO : public CellBufferOptim {
 		public:
-			BufferPSO(System* orig_sys, double c1, double c2, int particles, int iterations, double p) :
-				last_node(NULL), tree(new TreeCellOpt(orig_sys)){
+			BufferPSO(PSOSwarm* swarm) :
+				last_node(NULL), tree(swarm->getTree()), swarm(swarm){
 				double aux = 0.0;
-				swarm = new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations,p);
 			}
 			virtual ~BufferPSO(){}
 
@@ -64,54 +63,56 @@ namespace ibex {
 				tree->insert(cell,last_node);
  			}
 
-			virtual Cell* pop() { return NULL; }
+			virtual Cell* pop() { tree->trim(last_node); last_node=NULL; return NULL; }
 
+
+			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl;}
 			/*
 			 * Clean tree.
 			 * PSO movement
 			 * Returns node who contains gBest and update last_node.
 			 */
-			virtual Cell* top() const{
+			virtual Cell* top(double loup) const{
 				Cell* aux;
 				if(!swarm->isInitialized()){
-					swarm->resetPSO();
-				}else if(tree->trim(last_node)){
-					if(!tree->search(swarm->getGBestPosition())){
-						swarm->resetPSO();
-					}
+					swarm->resetPSO(loup);
 				}
 
-				//swarm->executePSO();
+				if(!tree->search(swarm->getGBestPosition())){
+				//	cout << "gbest removed!: resetPSO" << endl;
+					swarm->resetPSO(loup);
+				}
 
+				//cout << "box_gb:" <<  tree->search(swarm->getGBestPosition()) << endl;
+				swarm->executePSO(loup);
 
-				std::cout << "get gbest: " << swarm->getGBestPosition() << endl;
+				//std::cout << "gbest: " << swarm->getGBestPosition() << endl;
+				//std::cout << "gbest: " << swarm->getGBestValue() << "+" << swarm->getGBestPenalty() << endl;
 				aux = tree->search(swarm->getGBestPosition());
 
 
 				//el gbest debeería estar en un nodo
 				assert(aux);
 
-				std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;
+				//std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;
 				last_node = aux;
 				return aux;
 			}
 
 			virtual std::ostream& print(std::ostream& os) const { return os;}
 
-			virtual double minimum() const {return NEG_INFINITY;}
+			virtual double minimum() const {return tree->minimum();}
 
 			virtual pair<double, Vector> get_gbest()  {
-				if(swarm->getGBestCountViolations()==0){
+				if(swarm->getGBestPenalty()==0){
 					return make_pair(swarm->getGBestValue(), swarm->getGBestPosition());
 				}else
-					return make_pair(POS_INFINITY, Vector(1));
+					return make_pair(POS_INFINITY, swarm->getGBestPosition());
 			}
 
 			virtual void update_gbest(Vector loup_point, double loup){
-				if(loup<swarm->getGBestValue()){
-					if (tree->search(loup_point))
-						swarm->setGBest(loup_point);
-				}
+				//cout << "changing the gbest " <<  swarm->getGBestValue() << "-->" << loup << endl;
+				swarm->update_gbest(loup_point, loup);
 			}
 
 			/*

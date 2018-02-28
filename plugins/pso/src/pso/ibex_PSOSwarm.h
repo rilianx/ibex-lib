@@ -38,34 +38,69 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit, double p);
+		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit);
 		virtual ~PSOSwarm();
 
-		void resetPSO();
-		void executePSO();
+		void resetPSO(double loup);
+		void executePSO(double loup);
+
+		void executePSO(Vector loup_point, double loup, Cell& c){
+			tree->root=&c;
+			resetPSO(loup);
+			update_gbest(loup_point, loup);
+			executePSO(loup);
+			tree->root=NULL;
+		}
+
 		void startPlot();
 		void iterationPlot();
 		void closePlot();
 		Vector getGBestPosition();
 		double getGBestValue();
 		double getGBestPenalty();
-		void setGBest(Vector pos);
+
+		void update_gbest(Vector& loup_point, double loup){
+			if(loup<gValue || gpenalty != 0.0){
+				if (tree->search(loup_point)){
+					gBest = loup_point;
+					gValue = loup;
+					gpenalty = 0.0;
+				}
+				else cout << "loup is not in the tree" << endl;
+			}
+		}
+
+		void setGBest(Vector pos){
+			gBest = pos;
+		}
+
+		void setGValue(double val){
+			gValue = val;
+		}
+
+		void setGPenalty(double pen){
+			gpenalty = pen;
+		}
+
 		bool isGBestFeasible();
-		int getGBestCountViolations();
 		static bool trace;
-		void validateParticles();
-		bool validateGBest();
-		void selectParticle(PSOParticle* particle);
+
 		bool isInitialized();
+
+		TreeCellOpt* getTree() {return tree;}
 
 	protected:
 		int nParticles;
 		int limit;
 		PSOParticle** particlesArray; //array of particles
+
 		Vector gBest;
+		double gValue;
+		double gpenalty;
+
 		double c1;
 		double c2;
-		double p;
+
 		std::ofstream output;
 		System* orig_sys;
 		TreeCellOpt* tree;
