@@ -13,10 +13,10 @@
 namespace ibex{
 	class PSOParticle {
 		public:
-			PSOParticle(TreeCellOpt* tree, System* orig_sys, double c1, double c2, double eqeps=1e-8);
+			PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps=1e-8);
 			virtual ~PSOParticle();
 
-			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2);
+			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x);
 
 			double computePenalty(System* orig_sys);
 			void selectBestInternal(TreeCellOpt* tree);
@@ -34,28 +34,29 @@ namespace ibex{
 				if(tree->is_empty()) return;
 
 				Cell* c = tree->random_node();
+
 				position = c->box.random();
 				position.resize(orig_sys->box.size());
 
 				value = orig_sys->goal->eval(position).ub();
+				//cout << value << endl;
 				penalty = computePenalty(orig_sys);
+				//cout << penalty << endl;
 
 				// store best values
 				pBest = position;
 				vBest = value;
 				peBest = penalty;
+
+				if(!tree->search(position)){
+				   cout << "ERROR: The new particle "<< position <<" is not in the tree" << endl;
+				}
 			}
 
 			void update_pBest(TreeCellOpt* tree, System* orig_sys, double loup){
 				if(tree->search(position)){
 					value = orig_sys->goal->eval(position).ub();
 					penalty = computePenalty(orig_sys);
-
-					bool improve=false;
-					if(penalty == 0.0 && peBest > 0.0) improve = true;
-					if(peBest > 0.0 && penalty > 0.0 && (penalty < peBest)) improve = true;
-					if(peBest == 0.0 && penalty == 0.0 && (value < vBest )) improve = true;
-
 
 					if(compute_fitness(value, penalty, loup) < compute_fitness(vBest, peBest, loup)){
 						pBest = position;

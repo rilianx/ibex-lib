@@ -27,6 +27,15 @@ int main(int argc, char** argv){
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
 	args::ValueFlag<int> _seed(parser, "int", "seed", {"seed"});
 	args::Flag _trace(parser, "trace", "Activate trace. Updates of loup/uplo are printed while minimizing.", {"trace"});
+	args::ValueFlag<double> _c1(parser, "double", "cognitive parameter", {"c1"});
+	args::ValueFlag<double> _c2(parser, "double", "social parameter", {"c2"});
+	args::ValueFlag<double> _x(parser, "double", "constriction factor", {"x"});
+	args::ValueFlag<int> _np(parser, "int", "number of particles (inner pso)", {"np"});
+	args::ValueFlag<int> _iter(parser, "int", "number of iterations per node (inner pso)", {"iter"});
+	args::ValueFlag<int> _np_node(parser, "int", "number of particles (node pso)", {"np0"});
+	args::ValueFlag<int> _iter_node(parser, "int", "number of iterations per node (node pso)", {"iter0"});
+
+
 
 	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
 
@@ -209,27 +218,50 @@ int main(int argc, char** argv){
 
 	// the optimizer : the same precision goalprec is used as relative and absolute precision
 	OptimizerPSO* o=NULL;
+	Optimizer* oo=NULL;
 	//double c1, double c2, int particles, int iterations, double p) :
 	// ** parameters for PSO algorithm **
-	double c1 = 2;				// cognitive parameter (def. 2)
-	double c2 = 2;				// social parameter (def. 2)
-	double p = 0.1;				// box's diameter ponderator (def. 0.1)
-	int particles = 5;		// amount of particles in pso algorithm
+	double c1 = 2.05;				// cognitive parameter (def. 2)
+	double c2 = 2.05;				// social parameter (def. 2)
+	double x=0.72984;
+	int particles = 10;		// amount of particles in pso algorithm
 	int iterations = 5;		// number of iterations for pso algorithm
 
-	int particles_node = 100;
-	int iterations_node = 0;
+	int particles_node = 10;
+	int iterations_node = 5;
+
+	if(_c1) c1 =_c1.Get();
+	cout << "cognitive parameter (c1):" << c1 << endl;
+	if(_c2) c2 =_c2.Get();
+	cout << "social parameter (c2):" << c2 << endl;
+	if(_x) x =_x.Get();
+	cout << "constrinction factor (x):" << x << endl;
+	if(_np) particles =_np.Get();
+	cout << "number of particles (inner pso):" << particles << endl;
+	if(_iter) iterations =_iter.Get();
+	cout << "number of iterations per node (inner pso):" << iterations << endl;
+	if(_np_node) particles_node =_np_node.Get();
+	cout << "number of particles (node pso):" << particles_node << endl;
+	if(_iter_node) iterations_node =_iter_node.Get();
+	cout << "number of iterations per node (node pso):" << iterations_node << endl;
+
+
 
 	CellBufferOptim* buffer;
+	BufferPSO* bufferPSO;
 	TreeCellOpt* tree = new TreeCellOpt(orig_sys);
 	TreeCellOpt* tree_single_node = new TreeCellOpt(orig_sys);
 
-	PSOSwarm* swarm = new PSOSwarm(tree,orig_sys,c1,c2,particles,iterations);
-	PSOSwarm* swarm_node = new PSOSwarm(tree_single_node,orig_sys,c1,c2,particles_node,iterations_node);
+	PSOSwarm* swarm = new PSOSwarm(tree,orig_sys,c1,c2,x,particles,iterations);
+	PSOSwarm* swarm_node = new PSOSwarm(tree_single_node,orig_sys,c1,c2,x,particles_node,iterations_node);
 
 	if(strategy=="ibex_pso"){
-		buffer = new BufferPSO(swarm);
-	}else if(strategy=="ibex_nodepso"){
+		bufferPSO = new BufferPSO(swarm);
+	}else if(strategy=="ibex_psodiv"){
+		bufferPSO = new BufferPSO(swarm);
+		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
+						*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
+	}else if(strategy == "ibex_opt" || strategy=="ibex_nodepso" || strategy=="ibex_rootpso"){
 		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
 				*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
 	}
@@ -249,30 +281,44 @@ int main(int argc, char** argv){
 	cout << sys->box << endl;
 
 	if(strategy=="ibex_pso"){
+		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *bufferPSO, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec, NULL, swarm_node,false);
+	}else if(strategy=="ibex_psodiv"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec,swarm_node,false);
+	    		prec,goalprec,goalprec, bufferPSO, swarm_node,false);
 	}else if(strategy=="ibex_nodepso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec,swarm_node,true);
+	    		prec,goalprec,goalprec, NULL, swarm_node,true);
+	}else if(strategy=="ibex_rootpso"){
+		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec, NULL, swarm_node,false);
+	}else if(strategy=="ibex_opt"){
+		oo=new Optimizer(sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+			    		prec,goalprec,goalprec);
 	}
 
 	// the trace
-	o->trace=_trace;
+	if(o) o->trace=_trace;
+	else oo->trace=_trace;
 
 	if (o && o->trace)	cout << " sys.box " << sys->box << endl;
 
 	// the allowed time for search
-	o->timeout=timelimit;
+	if(o) o->timeout=timelimit;
+	else oo->timeout=timelimit;
 
     vector<IntervalVector> sols;
     cout.precision(10);
 	// the search itself
     std::cout << "optimize" << endl;
-	o->optimize(orig_sys->box);
+    if(o) o->optimize(orig_sys->box);
+    else oo->optimize(orig_sys->box);
 
 	// printing the results
-	if (o->trace)
+	if (o && o->trace)
 	  o->report();
+	else if(oo->trace)
+	  oo->report();
 
 
 	delete bs;
@@ -285,9 +331,12 @@ int main(int argc, char** argv){
 
 
 
-
+  if(o)
     cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
              double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
+  else
+	    cout << argv[1] << " " << oo->get_uplo() << "," << oo->get_loup() << " " << double(oo->get_time()) << " " <<
+	             double(oo->get_nb_cells()) << " " << (oo->get_time()>timelimit) << endl;
 
 
 	return 0;

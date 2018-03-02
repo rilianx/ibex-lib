@@ -13,7 +13,7 @@
 
 using namespace std; //delete
 namespace ibex {
-	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, double c1, double c2, double eqeps) :
+	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps) :
 			position(orig_sys->box.random()), pBest(position),
 			velocity(Vector::zeros(orig_sys->box.size())), eqeps(eqeps){
 		initialize(tree, orig_sys);
@@ -23,33 +23,18 @@ namespace ibex {
 	 * \param function(Vector pos) external function to check if position is inside a node from a tree
 	 * updates current velocity and position of a particle
 	 */
-	void PSOParticle::updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2) {
+	void PSOParticle::updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x) {
 		double maxVel;	//max velocity value
 
 		// ** Update Velocity **
 		double rand1 = RNG::rand(0,1);
 		double rand2 = RNG::rand(0,1);
-		Vector newV = velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position)));
+		Vector newV = x* (velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
 		velocity = newV;
 
 		// ** Update Position based on new Velocity **
 		position = position + velocity;
 
-
-		// check if buffer's tree exist (B&B-PSO strategy)
-		if(!tree){
-			// check for position exceed box size, stop particle and change velocity's direction
-			for(int i=0; i<orig_sys->box.size(); i++){
-				if(position[i] > orig_sys->box[i].ub()){
-					position[i] = orig_sys->box[i].ub();	// stick to edge (ub)
-					velocity[i] = -velocity[i];				// change direction
-				}
-				if(position[i] < orig_sys->box[i].lb()){
-					position[i] = orig_sys->box[i].lb();	// stick to edge (lb)
-					velocity[i] = -velocity[i]; 			// change direction
-				}
-			}
-		}
 	}
 
 	double PSOParticle::computePenalty(System* orig_sys){

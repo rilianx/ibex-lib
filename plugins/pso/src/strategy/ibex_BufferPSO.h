@@ -31,7 +31,7 @@ namespace ibex {
 			virtual ~BufferPSO(){}
 
 			virtual void add_backtrackable(Cell& root) {
-				  root.add<CellPSO>();
+				 // root.add<CellPSO>();
 			}
 
 			/*
@@ -63,7 +63,9 @@ namespace ibex {
 				tree->insert(cell,last_node);
  			}
 
-			virtual Cell* pop() { tree->trim(last_node); last_node=NULL; return NULL; }
+			virtual Cell* pop() { cout << "BufferPSO::pop() function is not implemented, use trim instead" << endl; return NULL; }
+
+			virtual void trim() { tree->trim(last_node); last_node=NULL; }
 
 
 			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl;}
@@ -81,14 +83,16 @@ namespace ibex {
 				if(!tree->search(swarm->getGBestPosition())){
 				//	cout << "gbest removed!: resetPSO" << endl;
 					swarm->resetPSO(loup);
+
 				}
 
-				//cout << "box_gb:" <<  tree->search(swarm->getGBestPosition()) << endl;
+
 				swarm->executePSO(loup);
 
 				//std::cout << "gbest: " << swarm->getGBestPosition() << endl;
 				//std::cout << "gbest: " << swarm->getGBestValue() << "+" << swarm->getGBestPenalty() << endl;
 				aux = tree->search(swarm->getGBestPosition());
+				//cout << aux << endl;
 
 
 				//el gbest debeería estar en un nodo
@@ -123,11 +127,11 @@ namespace ibex {
 			}
 
 
-
+			mutable Cell* last_node;
 
 		protected:
 			/* structures */
-			mutable Cell* last_node;
+
 			TreeCellOpt* tree;
 			PSOSwarm* swarm;
 	};

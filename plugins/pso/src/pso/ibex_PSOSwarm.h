@@ -38,7 +38,7 @@
 namespace ibex{
 	class PSOSwarm {
 	public:
-		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, int nParticles, int limit);
+		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2,  double x,  int nParticles, int limit);
 		virtual ~PSOSwarm();
 
 		void resetPSO(double loup);
@@ -60,7 +60,7 @@ namespace ibex{
 		double getGBestPenalty();
 
 		void update_gbest(Vector& loup_point, double loup){
-			if(loup<gValue || gpenalty != 0.0){
+			if(loup!=POS_INFINITY && (loup<gValue || gpenalty != 0.0)){
 				if (tree->search(loup_point)){
 					gBest = loup_point;
 					gValue = loup;
@@ -100,6 +100,7 @@ namespace ibex{
 
 		double c1;
 		double c2;
+		double x;
 
 		std::ofstream output;
 		System* orig_sys;

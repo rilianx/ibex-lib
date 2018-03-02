@@ -40,9 +40,10 @@ void TreeCellOpt::insert(Cell* cell, Cell* last_node){
 			last_node->get<CellPSO>().right = cell;
 			cell->get<CellPSO>().p = last_node;
 		}else{
-			//cout << "no-where to assign cell" << endl;
+			cout << "no-where to assign cell" << endl;
 		}
-	}
+	}else
+		cout << "no last_node" << endl;
 }
 
 bool TreeCellOpt::trim(Cell* last_node){
@@ -62,13 +63,13 @@ bool TreeCellOpt::trim(Cell* last_node){
 					}else if(father->get<CellPSO>().right == aux){
 						father->get<CellPSO>().right = NULL;
 					}
-					//std::cout << "trim(" << aux << ") : " << aux->box << endl;
+					//std::cout << "trim(" << aux << ") " << endl;
 					count++;
 					delete aux;
 					aux = father;
 					last_node = NULL;
 				}else{
-					//std::cout << "trim_root(" << aux << ") : " << aux->box << endl;
+					//std::cout << "trim_root(" << aux << ")  " << endl;
 					count++;
 					delete root;
 					root = NULL;
@@ -87,7 +88,7 @@ bool TreeCellOpt::trim(Cell* last_node){
 		}
 		//std::cout << "trimed(" << count << ")" << endl;
 	}else{
-		//std::cout << "Deleting last_node more than once / it's first time" << endl;
+		std::cout << "Deleting last_node more than once / it's first time" << endl;
 	}
 
 	if(count > 0)
@@ -97,6 +98,7 @@ bool TreeCellOpt::trim(Cell* last_node){
 }
 
 Cell* TreeCellOpt::random_node(){
+
 	Cell* aux = root;
 	if(aux == NULL) {
 		//std::cout << "root is NULL" << endl;
@@ -105,18 +107,18 @@ Cell* TreeCellOpt::random_node(){
 	while(aux){
 		float sel = RNG::rand(0,1);
 		if(sel > 0.5){
-			if(aux->get<CellPSO>().right)
+			if(aux->get<CellPSO>().right){
 				aux = aux->get<CellPSO>().right;
-			else if (aux->get<CellPSO>().left)
+			}else if (aux->get<CellPSO>().left){
 				aux = aux->get<CellPSO>().left;
-			else
+			}else
 				break;
 		}else{
-			if(aux->get<CellPSO>().left)
+			if(aux->get<CellPSO>().left){
 				aux = aux->get<CellPSO>().left;
-			else if(aux->get<CellPSO>().right)
+			}else if(aux->get<CellPSO>().right){
 				aux = aux->get<CellPSO>().right;
-			else
+			}else
 				break;
 		}
 	}
@@ -124,18 +126,25 @@ Cell* TreeCellOpt::random_node(){
 }
 
 Cell* TreeCellOpt::search(const Vector& x) const{
+	//cout << "search" << endl;
 	Cell* aux = root;
-	bool bool_gb_found;
 	bool bool_have;
 	if(!aux){
 		//std::cout << "root_null" << endl;
+		//cout << "NULL1" << endl;
 		return NULL;
 	}
-	while(aux){
-		bool_gb_found = false;
+
+	stack<Cell*> S;
+	S.push(aux);
+
+	while(!S.empty()){
+		aux=S.top(); S.pop();
+
 		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
 			// is a leaf
 			//std::cout << "(" << aux << ") is leaf" << endl;
+			//cout << endl;
 			return aux;
 		}else{
 			if(aux->get<CellPSO>().left){
@@ -148,12 +157,15 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 					}
 				}
 				if(bool_have){
-					aux = aux->get<CellPSO>().left;
+					S.push(aux->get<CellPSO>().left);
+					//aux = aux->get<CellPSO>().left;
+					//cout << "l";
 					//std::cout << "left has it" << endl;
-					bool_gb_found = true;
+					//continue;
 				}
 			}
-			if(!bool_gb_found && aux->get<CellPSO>().right){
+
+			if(aux->get<CellPSO>().right){
 				//std::cout << "(" << aux << ") has right (" << aux->get<CellPSO>().right << ")" << endl;
 				bool_have = true;
 				for(int i=0; i<orig_sys->box.size(); i++){
@@ -163,19 +175,24 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 					}
 				}
 				if(bool_have){
-					aux = aux->get<CellPSO>().right;
+					S.push(aux->get<CellPSO>().right);
+					//aux = aux->get<CellPSO>().right;
+					//cout << "r";
 					//std::cout << "right has it" << endl;
-					bool_gb_found = true;
+					//continue;
 				}
 			}
-			if(!bool_gb_found){
-				aux = NULL;
-				//std::cout << "no one has it" << endl;
-				break;
-			}
+
+
+
+			//cout << "NULL2" << endl;
+			//return NULL;
+
 		}
 	}
-	return aux;
+
+	//cout << "NULL" << endl;
+	return NULL;
 }
 
 void TreeCellOpt::contract(double loup) {
@@ -198,6 +215,7 @@ void TreeCellOpt::contract(double loup) {
 			}
 		}
 	}
+
 }
 
 }
