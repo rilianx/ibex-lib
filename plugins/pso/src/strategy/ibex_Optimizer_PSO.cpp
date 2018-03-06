@@ -57,7 +57,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
                                                 time(0), nb_cells(0), pso_nodes(pso_nodes), swarm(swarm), every_node_pso(every_node_pso){
-	BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
+	//BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
 	//buff->set_values(&loup_point,&loup);
 	if (trace) cout.precision(12);
 }
@@ -309,7 +309,9 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 	if(trace) cout << "first PSO" << endl;
 	if(swarm){
+		swarm->startPlot(); // create file to plot with python
 		swarm->executePSO(loup_point.mid(), loup, *root);
+		swarm->closePlot(); // close file
 		if(swarm->getGBestValue() < loup)
 			update_loup(swarm->getGBestPosition());
 	}

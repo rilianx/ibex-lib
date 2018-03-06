@@ -20,7 +20,6 @@ namespace ibex {
 	}
 
 	/*
-	 * \param function(Vector pos) external function to check if position is inside a node from a tree
 	 * updates current velocity and position of a particle
 	 */
 	void PSOParticle::updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x) {

@@ -10,6 +10,7 @@
 using namespace std;
 namespace ibex{
 	bool PSOSwarm::trace = false;
+	bool plot = true;
 
 	/*
 	 * Initialize swarm
@@ -23,9 +24,6 @@ namespace ibex{
 
 		particlesArray = new PSOParticle*[nParticles];
 		for(int i=0; i<nParticles; i++) particlesArray[i]=NULL;
-
-		//resetPSO();
-
 	}
 
 	void PSOSwarm::resetPSO(double loup){
@@ -96,12 +94,11 @@ namespace ibex{
 
 		// ** Iterations **
 		if (trace) cout << "\033[0;33m# ITERATIONS" << endl;
-		if (trace) startPlot();				// create file to plot with python
 
 		while(iterations < limit){
 
 
-			if (trace) iterationPlot();		//dump iteration to file
+			if (plot) iterationPlot();		//dump iteration to file
 			iterations++;
 			for(int i=0; i<nParticles; i++){
 				// Update velocity and position of every particle.
@@ -127,28 +124,29 @@ namespace ibex{
 
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
 		if (trace) cout << "\033[0mvBest["<< getGBestValue() <<"] violBest["<< getGBestPenalty() <<"]" << endl;
-		if (trace) closePlot();				// close file
 	}
 
 
 
 	void PSOSwarm::startPlot(){
+		cout << "to file output.txt" << endl;
 		output.open("output.txt");
-		output << "[";
+		//output << "[";
 	}
 
 	void PSOSwarm::iterationPlot(){
-		output << "[";
+		//output << "[";
 		for(int i=0; i < nParticles ; i++){
-			//output << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << ";";
-			output << "(" << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << "),";
+			output << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << ";";
+			//output << "(" << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << "),";
 		}
-		output << "(" << getGBestPosition()[0] << "," << getGBestPosition()[1] << ")";
-		output << "]";
+		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << endl;
+		//output << "]";
 	}
 
 	void PSOSwarm::closePlot(){
-		output << "]" << endl;
+		cout << "close file output.txt" << endl;
+		//output << "]" << endl;
 		output.close();
 		//system("python3 plot.py");
 	}

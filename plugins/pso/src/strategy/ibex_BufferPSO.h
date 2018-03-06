@@ -68,7 +68,7 @@ namespace ibex {
 			virtual void trim() { tree->trim(last_node); last_node=NULL; }
 
 
-			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl;}
+			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl; return NULL;}
 			/*
 			 * Clean tree.
 			 * PSO movement
