@@ -24,7 +24,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<std::string> _filtering(parser, "string", "the filtering method", {'f', "filt"});
 	args::ValueFlag<std::string> _linear_relax(parser, "string", "the linear relaxation method", {"linear_relax"});
 	args::ValueFlag<std::string> _bisector(parser, "string", "the bisection method", {'b', "bis"});
-	args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
+	args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy (ibex_pso, ibex_opt, ibex_rootpso)", {'s', "search"});
 	args::ValueFlag<double> _eps_x(parser, "float", "eps_x (the precision of the boxes)", {"exp_x"});
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});

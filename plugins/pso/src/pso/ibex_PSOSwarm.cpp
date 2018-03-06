@@ -119,6 +119,8 @@ namespace ibex{
 					gpenalty = particlesArray[i]->getBestPenalty();
 					if(trace) cout << "new gbest: " <<  gValue << "+" << gpenalty << endl;
 				}
+
+
 			}
 
 		}
