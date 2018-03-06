@@ -28,11 +28,8 @@ namespace ibex{
 
 	}
 
-	/*
-	 * Reset particles data and information of swarm
-	 */
 	void PSOSwarm::resetPSO(double loup){
-		if(trace) cout << "reset_PSO" << endl;
+	  if(trace) cout << "reset_PSO" << endl;
 		for(int i=0; i<nParticles; i++){
 			if(!particlesArray[i]) particlesArray[i] = new PSOParticle(tree, orig_sys);
 			else particlesArray[i]->initialize(tree, orig_sys);
@@ -49,7 +46,28 @@ namespace ibex{
 
 		}
 
+    initialized=true;
+	}
 
+	/*
+	 * Reset particles data and information of swarm
+	 */
+	void PSOSwarm::resetGBest(double loup){
+	  if(trace) cout << "resetGBest" << endl;
+		for(int i=0; i<nParticles; i++){
+			if(!tree->search(particlesArray[i]->getBestPosition()))
+				particlesArray[i]->initialize(tree,orig_sys);
+
+			// Update the gBest if the pBest is better than the gBest
+			if(i==0 || PSOParticle::compute_fitness(particlesArray[i]->getBestValue(),particlesArray[i]->getBestPenalty(), loup)
+			< PSOParticle::compute_fitness(gValue,gpenalty, loup) ){
+				gBest = particlesArray[i]->getBestPosition();
+				gValue = particlesArray[i]->getBestValue();
+				gpenalty = particlesArray[i]->getBestPenalty();
+
+			}
+
+		}
 		//cout << gValue << endl;
 		initialized = true;
 		//cout << "initialized" << endl;
@@ -72,8 +90,6 @@ namespace ibex{
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
 				particlesArray[i]->initialize(tree,orig_sys);
-
-
 		}
 
 

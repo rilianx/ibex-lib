@@ -17,6 +17,8 @@
 #include "ibex_CellBufferOptim.h"
 //#include "ibex_EntailedCtr.h"
 #include "ibex_CtcKhunTucker.h"
+#include <list>
+using namespace std;
 
 namespace ibex {
 
@@ -134,7 +136,7 @@ public:
 	 * </ul>
 	 */
 	void report(bool verbose=true);
-	
+
 	/**
 	 * \brief Get the status.
 	 *
@@ -273,6 +275,7 @@ public:
 	 */
 	double timeout;
 
+	static list<pair<double,pair<double,int>>> loup_time;
 
 protected:
 

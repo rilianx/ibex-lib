@@ -32,6 +32,8 @@ namespace ibex {
 		Vector newV = x* (velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
 		velocity = newV;
 
+		//cout << position << endl;
+
 		// ** Update Position based on new Velocity **
 		position = position + velocity;
 
@@ -109,4 +111,3 @@ namespace ibex {
 	}
 
 }
-

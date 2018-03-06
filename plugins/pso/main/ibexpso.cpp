@@ -12,6 +12,9 @@
 using namespace std;
 using namespace ibex;
 
+double get_obj_abs_prec(double uplo, double loup);
+double get_obj_rel_prec(double uplo, double loup);
+
 int main(int argc, char** argv){
 
 	try {
@@ -221,9 +224,9 @@ int main(int argc, char** argv){
 	Optimizer* oo=NULL;
 	//double c1, double c2, int particles, int iterations, double p) :
 	// ** parameters for PSO algorithm **
-	double c1 = 2.05;				// cognitive parameter (def. 2)
-	double c2 = 2.05;				// social parameter (def. 2)
-	double x=0.72984;
+	double c1 = 2.837;				// cognitive parameter (def. 2)
+	double c2 = 1.597;				// social parameter (def. 2)
+	double x=0.754;
 	int particles = 10;		// amount of particles in pso algorithm
 	int iterations = 5;		// number of iterations for pso algorithm
 
@@ -282,7 +285,7 @@ int main(int argc, char** argv){
 
 	if(strategy=="ibex_pso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *bufferPSO, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, NULL, swarm_node,false);
+	    		prec,goalprec,goalprec, bufferPSO, swarm_node,false);
 	}else if(strategy=="ibex_psodiv"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 	    		prec,goalprec,goalprec, bufferPSO, swarm_node,false);
@@ -293,7 +296,7 @@ int main(int argc, char** argv){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 	    		prec,goalprec,goalprec, NULL, swarm_node,false);
 	}else if(strategy=="ibex_opt"){
-		oo=new Optimizer(sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+		oo=new Optimizer(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 			    		prec,goalprec,goalprec);
 	}
 
@@ -330,14 +333,35 @@ int main(int argc, char** argv){
 	  }
 
 
+  list<pair<double,pair<double,int>>> loup_time;
+	double uplo;
+  if(o){
+    cout << argv[1] << " " << o->get_uplo() << " " << o->get_loup() << " " << double(o->get_time()) << " " <<
+             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << " ";
 
-  if(o)
-    cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
-             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
-  else
-	    cout << argv[1] << " " << oo->get_uplo() << "," << oo->get_loup() << " " << double(oo->get_time()) << " " <<
-	             double(oo->get_nb_cells()) << " " << (oo->get_time()>timelimit) << endl;
+		loup_time=o->loup_time;
+		uplo=o->get_uplo();
 
+
+  }else{
+	    cout << argv[1] << " " << oo->get_uplo() << " " << oo->get_loup() << " " << double(oo->get_time()) << " " <<
+	             double(oo->get_nb_cells()) << " " << (oo->get_time()>timelimit) << " ";
+
+			loup_time=oo->loup_time;
+			uplo= oo->get_uplo();
+	}
+
+	bool flag=true;
+	for(auto pair:loup_time){
+
+		if(flag && (get_obj_rel_prec(uplo,pair.first) <= 1e-4 ||
+								get_obj_abs_prec(uplo,pair.first) <= 1e-4 )) {flag=false;
+									cout << pair.second.first << " " << pair.second.second << " ";}
+
+		if(get_obj_rel_prec(uplo,pair.first) <= 1e-6 ||
+								get_obj_abs_prec(uplo,pair.first) <= 1e-6 ) {
+									cout << pair.second.first << " " << pair.second.second << endl; break;}
+	}
 
 	return 0;
 
@@ -349,5 +373,16 @@ int main(int argc, char** argv){
 	}
 }
 
+double get_obj_rel_prec(double uplo, double loup) {
+	if (loup==POS_INFINITY)
+		return POS_INFINITY;
+	else if (loup==0)
+		if (uplo<0) return POS_INFINITY;
+		else return 0;
+	else
+		return (loup-uplo)/(fabs(loup));
+}
 
-
+double get_obj_abs_prec(double uplo, double loup) {
+	return loup-uplo;
+}

@@ -1,4 +1,4 @@
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_Optimizer.cpp
 // Author      : Gilles Chabert, Bertrand Neveu
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -28,6 +28,7 @@ namespace ibex {
 const double OptimizerPSO::default_eps_x = 0;
 const double OptimizerPSO::default_rel_eps_f = 1e-03;
 const double OptimizerPSO::default_abs_eps_f = 1e-07;
+list<pair<double,pair<double,int>>> OptimizerPSO::loup_time;
 
 void OptimizerPSO::write_ext_box(const IntervalVector& box, IntervalVector& ext_box) {
 	int i2=0;
@@ -335,7 +336,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			if(pso_nodes){
 				pair<double, Vector> gbest=pso_nodes->get_gbest();
 				if(gbest.first < loup)
-					update_loup(gbest.second);
+					loup_changed|=update_loup(gbest.second);
 			}
 
 
@@ -364,8 +365,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 					if(every_node_pso && swarm){
 						swarm->executePSO(loup_point.mid(), loup, *c);
 						if(swarm->getGBestValue() < loup)
-							update_loup(swarm->getGBestPosition());
-
+							loup_changed|=update_loup(swarm->getGBestPosition());
 					}
 
 
@@ -389,6 +389,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 						// that the current cell is removed by contractHeap. See comments in
 						// older version of the code (before revision 284).
 
+						loup_time.push_back(make_pair(loup,make_pair(get_time(),nb_cells)));
 
 						double ymax=compute_ymax();
 

@@ -41,6 +41,7 @@ namespace ibex{
 		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2,  double x,  int nParticles, int limit);
 		virtual ~PSOSwarm();
 
+		void resetGBest(double loup);
 		void resetPSO(double loup);
 		void executePSO(double loup);
 

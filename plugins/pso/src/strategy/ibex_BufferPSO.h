@@ -82,6 +82,7 @@ namespace ibex {
 
 				if(!tree->search(swarm->getGBestPosition())){
 				//	cout << "gbest removed!: resetPSO" << endl;
+				  //swarm->resetGBest(loup);
 					swarm->resetPSO(loup);
 
 				}
