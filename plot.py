@@ -1,19 +1,23 @@
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import matplotlib.animation as animation
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from itertools import islice
+from tkinter import *
+from stat import *
+
+import matplotlib.animation as animation
+import matplotlib.patches as patches
+import matplotlib.pyplot as plt
+import multiprocessing
 import argparse
 import random
+import time
 import math
 import os
-from stat import *
-import multiprocessing
-from tkinter import *
-import time
-from itertools import islice
 
 #this file was created to plot particles from PSO algorithm implemented into IBEX
-# python3 plot.py
+#python3 plot.py -f <file_name.txt> -x_1 <int> -x_2 <int>
+#text must be formated like x_1,x_2,...,x_n;x_1,x_2,...,x_n and end line for each iteration.
+#file must be indicated on execution.
+#will only plot 2 var at a time, you must indicate each one on execution.
 
 def main():
 
@@ -60,7 +64,7 @@ def plotdata():
     	particulas = aux.split(';') #separate particles positions
     	print(particulas)
     	for particula in particulas[:-1]:
-    		# for each particle's position, separate x and y						
+    		# for each particle's position, separate x_1 and x_2						
     		s = particula.split(",")
     		Px.append(float(s[x_1]))
     		Py.append(float(s[x_2]))
