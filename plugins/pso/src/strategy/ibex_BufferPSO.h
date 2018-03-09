@@ -26,6 +26,8 @@ namespace ibex {
 		public:
 			BufferPSO(PSOSwarm* swarm) :
 				last_node(NULL), tree(swarm->getTree()), swarm(swarm){
+				char file_name[] = "output_innode.txt";
+				swarm->startPlot(file_name);
 				double aux = 0.0;
 			}
 			virtual ~BufferPSO(){}
@@ -95,8 +97,7 @@ namespace ibex {
 				aux = tree->search(swarm->getGBestPosition());
 				//cout << aux << endl;
 
-
-				//el gbest debeería estar en un nodo
+				//gbest should be inside a node.
 				assert(aux);
 
 				//std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;

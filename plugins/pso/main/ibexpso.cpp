@@ -38,8 +38,6 @@ int main(int argc, char** argv){
 	args::ValueFlag<int> _np_node(parser, "int", "number of particles (node pso)", {"np0"});
 	args::ValueFlag<int> _iter_node(parser, "int", "number of iterations per node (node pso)", {"iter0"});
 
-
-
 	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
 
 	try

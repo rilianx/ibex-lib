@@ -128,9 +128,9 @@ namespace ibex{
 
 
 
-	void PSOSwarm::startPlot(){
-		cout << "to file output.txt" << endl;
-		output.open("output.txt");
+	void PSOSwarm::startPlot(char* file_name){
+		cout << "to file " << file_name << endl;
+		output.open(file_name);
 		//output << "[";
 	}
 

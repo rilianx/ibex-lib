@@ -309,7 +309,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 	if(trace) cout << "first PSO" << endl;
 	if(swarm){
-		swarm->startPlot(); // create file to plot with python
+		char file_name[] = "output_root.txt";
+		swarm->startPlot(file_name); // create file to plot with python
 		swarm->executePSO(loup_point.mid(), loup, *root);
 		swarm->closePlot(); // close file
 		if(swarm->getGBestValue() < loup)

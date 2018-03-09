@@ -53,7 +53,7 @@ namespace ibex{
 			tree->root=NULL;
 		}
 
-		void startPlot();
+		void startPlot(char* file_name);
 		void iterationPlot();
 		void closePlot();
 		Vector getGBestPosition();
