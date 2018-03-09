@@ -131,7 +131,34 @@ namespace ibex{
 	void PSOSwarm::startPlot(char* file_name){
 		cout << "to file " << file_name << endl;
 		output.open(file_name);
-		//output << "[";
+		Vector max = Vector::zeros(orig_sys->box.size());
+		Vector min = Vector::zeros(orig_sys->box.size());
+		max.resize(orig_sys->box.size());
+		min.resize(orig_sys->box.size());
+		cout << max << endl;
+		cout << min << endl;
+		for(int a=0; a < orig_sys->box.size(); a++){
+			max[a] = POS_INFINITY;
+		}
+		for(int a=0; a < orig_sys->box.size(); a++){
+			min[a] = NEG_INFINITY;
+		}
+
+		cout << max << endl;
+		cout << min << endl;
+
+		for(int i=0; i < nParticles ; i++){
+			for(int a=0; a < orig_sys->box.size(); a++){
+				/*if(min[a] < particlesArray[i]->getPosition()[a])
+					min[a] = particlesArray[i]->getPosition()[a];
+				if(max[a] > particlesArray[i]->getPosition()[a])
+					max[a] = particlesArray[i]->getPosition()[a];*/
+				cout << particlesArray[i]->getPosition() << endl;
+			}
+		}
+		cout << max << endl;
+		cout << min << endl;
+		output << "[" << min << ";" << max << "]" << endl;
 	}
 
 	void PSOSwarm::iterationPlot(){
