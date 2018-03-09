@@ -1,0 +1,4 @@
+plugins/pso/benchs/cristian-price2.bch --search=ibex_rootpso
+
+plot.py output_root.txt
+plot.py output_innode.txt

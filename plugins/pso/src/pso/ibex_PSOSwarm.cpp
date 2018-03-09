@@ -135,13 +135,13 @@ namespace ibex{
 	}
 
 	void PSOSwarm::iterationPlot(){
-		//output << "[";
 		for(int i=0; i < nParticles ; i++){
-			output << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << ";";
-			//output << "(" << particlesArray[i]->getPosition()[0] << "," << particlesArray[i]->getPosition()[1] << "),";
+			for(int a=0; a < orig_sys->box.size(); a++){
+				output << particlesArray[i]->getPosition()[a] << ",";
+			}
+			output << particlesArray[i]->getPosition()[orig_sys->nb_var] << ";";
 		}
 		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << endl;
-		//output << "]";
 	}
 
 	void PSOSwarm::closePlot(){
