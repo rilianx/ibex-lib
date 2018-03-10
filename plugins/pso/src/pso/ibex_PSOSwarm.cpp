@@ -144,12 +144,12 @@ namespace ibex{
 			min[a] = NEG_INFINITY;
 
 		for(int i=0; i < nParticles ; i++){
-			for(int a=0; a < orig_sys->box.size(); a++){
+			for(int a=0; a < orig_sys->box.size()-1; a++){
 				output << particlesArray[i]->getPosition()[a] << ",";
 			}
-			output << particlesArray[i]->getPosition()[orig_sys->nb_var] << ";";
+			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 		}
-		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << ";";
+		output << getGBestPosition()[0] << "," << getGBestPosition()[1];
 		for(int i=0; i < nParticles; i++)
 			for(int a=0; a < orig_sys->box.size(); a++){
 				if(min[a] < particlesArray[i]->getPosition()[a])
@@ -157,14 +157,12 @@ namespace ibex{
 				if(max[a] > particlesArray[i]->getPosition()[a])
 					max[a] = particlesArray[i]->getPosition()[a];
 			}
-		output << "[" << min << ";" << max << "]" << endl;
+		output << "/" << min << "," << max << endl;
 	}
 
 	void PSOSwarm::closePlot(){
 		cout << "close file output.txt" << endl;
-		//output << "]" << endl;
 		output.close();
-		//system("python3 plot.py");
 	}
 
 	/*

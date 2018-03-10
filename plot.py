@@ -52,6 +52,16 @@ def plotdata():
 	x_2 = int(args.x_2)
 	with open(args.file) as f:
 		for line in f:
+			split = line.split('/')
+			aux = split[0] #contains particles
+			#clear format
+			split[-1]=split[-1].replace('(', '')
+			split[-1]=split[-1].replace(')', '')
+			split[-1]=split[-1].replace('\n', '')
+			split[-1]=split[-1].replace('inf', 'math.inf')
+			values=split[-1].split(',') #contains min and max coordenates
+			max=values[0].split(' ; ') #contains array of max elements by dimmension
+			min=values[-1].split(' ; ') #contains array of min elements by dimmension
 			try:
 				input("Press any key")
 			except SyntaxError:
@@ -60,9 +70,8 @@ def plotdata():
 			Py = []
 			bestx = []
 			besty = []
-			aux = line.replace('inf', 'math.inf') #change math format
-			aux = aux.replace('nan', '0') #change math format
-			aux = aux.replace('\n', '') #delete symbol
+			aux = aux.replace('inf', 'math.inf')
+			aux = aux.replace('nan', '0')
 			particulas = aux.split(';') #separate particles positions
 			print(particulas)
 			for particula in particulas[:-1]:
@@ -76,8 +85,8 @@ def plotdata():
 
 			fig.clear() #clear plot for next iteration
 			ax1.plot()
-			plt.ylim(-5,5)
-			plt.xlim(-5,5)
+			plt.ylim(float(min[x_2]),float(max[x_2]))
+			plt.xlim(float(min[x_1]),float(max[x_2]))
 			#plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
 			#plt.plot([-5,5],[-2,8]) # x - y > -3
 			plt.plot(Px,Py, 'r.', markersize=1)
