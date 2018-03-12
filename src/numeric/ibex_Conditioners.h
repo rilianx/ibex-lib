@@ -40,7 +40,7 @@ namespace ibex {
 
 	void combinatorial(IntervalMatrix A,int cols,int rows,std::vector< std::vector <int> > & comb_piv);
 
-	Matrix best_gauss_jordan (IntervalMatrix& A, double prec);
+	Matrix best_gauss_jordan (IntervalMatrix& A, IntervalVector box, double prec);
 
 	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,double prec);
 

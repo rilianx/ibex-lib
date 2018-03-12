@@ -102,7 +102,7 @@ namespace ibex {
 		return perm;
 	}
 
-	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,double prec){
+	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,IntervalVector box, double prec){
 		bool exist = false;
 		for (int i = 0 ; i < B.nb_rows() ; i++){
 			double max = 0;
@@ -110,7 +110,7 @@ namespace ibex {
 				for (int j = 0 ; j < B.nb_cols() ; j++){
 					if (ban_cols.count(j) != 1){
 						if ((B[i][j] > prec) || (B[i][j] < -prec)){
-							if (std::abs(B[i][j]) > max){
+							if (std::abs(B[i][j])*box[j].rad() > max){
 								exist = true;
 								max = B[i][j];
 								max_values.first = i ;
@@ -127,7 +127,7 @@ namespace ibex {
 		return exist;
 	}
 
-	Matrix best_gauss_jordan (IntervalMatrix& A, double prec){
+	Matrix best_gauss_jordan (IntervalMatrix& A, IntervalVector box,  double prec){
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
 		Matrix perm(1,1);
@@ -145,7 +145,7 @@ namespace ibex {
 		B = A.mid();
 		bool exist = true;
 		while (exist){
-			exist = max_piv(B,ban_rows,ban_cols,max_values,prec);
+			exist = max_piv(B,ban_rows,ban_cols,max_values,box, prec);
 			if (exist){
 				int temp_piv = max_values.first;
 				int actual_col = max_values.second;

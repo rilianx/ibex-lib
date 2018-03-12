@@ -32,7 +32,9 @@ namespace ibex {
 		}
 
 		if(ctc_type==GAUSS_JORDAN){
-
+			PA=A;
+			P = best_gauss_jordan(PA,box,1e-8);
+			Pb= P*b;
 			IntervalMatrix tmp(PA);
 			if(!bwd_mul(Pb, tmp, box, 1e8)){
 				box.set_empty();
@@ -121,8 +123,10 @@ namespace ibex {
 //				   if (PA.nb_cols()>PA.nb_rows())
 //					   gauss_jordan_all (PA,1e-8);
 //				   exit (1);
-//				   P = best_gauss_jordan(PA,1e-8);
-				   P = best_gauss_jordan(PA,1e-8);
+//				   P = gauss_jordan(PA,1e-8);
+				   IntervalVector aux(A.nb_cols());
+//				   for (int i = 0 ; i < A.nb_cols() ; i++) aux[i] = Interval(1,1);
+//				   P = best_gauss_jordan(PA,aux, 1e-8);
 //
 
 //				   	   exit(1);
