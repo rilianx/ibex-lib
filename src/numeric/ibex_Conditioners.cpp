@@ -45,74 +45,56 @@ namespace ibex {
 		}
 	}
 
-	void gauss_jordan_all (IntervalMatrix& A, vector<Matrix>& permutations, double prec){
-		int temp_piv;
-		set <int> rows_checked;
-		std::vector< std::vector <int> > comb_piv;
-		/*get all possible combinations of pivots*/
-		combinatorial(A,A.nb_cols(),A.nb_rows(),comb_piv);
+	Matrix gauss_jordan_test (IntervalMatrix& A, vector<pair <double, int > > order_cols, vector<pair <int, int> > & pair_contr,double prec){
 
-//		cout << comb_piv.size() << endl;
+		set <int> rows_checked;
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
-
 		Matrix perm(1,1);
 		perm.resize(B.nb_rows(),B.nb_rows());
-		/*perform the gauss elimination for each comb_piv element*/
-//		comb_piv.clear();
-//		std::vector<int> aux;
-//		aux.push_back(3); aux.push_back(1);
-//		comb_piv.push_back(aux);
-		while(comb_piv.size() > 0){
-			/*Initialize the permutation matrix*/
-			for (int i = 0; i<A.nb_rows() ; i++)
-				for (int j = 0; j<A.nb_rows() ; j++){
-					if (i == j) perm[i][j] = 1;
-					else perm[i][j] = 0;
+		B = A.mid();
+		for (int i = 0; i<A.nb_rows() ; i++)
+			for (int j = 0; j<A.nb_rows() ; j++){
+				if (i == j) perm[i][j] = 1;
+				else perm[i][j] = 0;
 			}
-			/*Initialize B*/
-			B = A.mid();
-			rows_checked.clear();
-			for (int k = 0 ; k < comb_piv[comb_piv.size()-1].size() ; k++){
-				int actual_col = comb_piv[comb_piv.size()-1][k];
-				temp_piv = -1;
+		for (int j = order_cols.size()-A.nb_rows(); j < order_cols.size() ; j++){
+			int col_pos = order_cols[j].second;
+			int temp_piv = -1;
 				for (int i = 0; i < B.nb_rows() ; i++)
-					if (( (B[i][actual_col] < -prec) || (B[i][actual_col] > prec)) && (rows_checked.count(i) != 1)){
+					if (( (B[i][col_pos] < -prec) || (B[i][col_pos] > prec)) && (rows_checked.count(i) != 1)){
 						rows_checked.insert(i);
 						temp_piv = i;
+						pair_contr.push_back(make_pair(i,col_pos));
 						break;
 					}
-				if (temp_piv==-1) break;
-				else{
-					double coef = B[temp_piv][actual_col];
-					Matrix aux_perm(1,1);
-					aux_perm.resize(A.nb_rows(),A.nb_rows());
-					for (int m = 0; m<A.nb_rows() ; m++)
-						for (int l = 0; l<A.nb_rows() ; l++){
-							if (m == l) aux_perm[m][l] = 1;
-							else aux_perm[m][l] = 0;
-						}
-					for (int m = 0 ; m < B.nb_rows() ; m++){
-						if (m != temp_piv){
-							double factor = B[m][actual_col];
-							aux_perm[m][temp_piv] = -factor/coef;
-							for (int l = 0 ; l < B.nb_cols() ; l++)
-								B[m][l]	= B[m][l]-(B[temp_piv][l]*factor/coef);
-						}
-					}
-					/*new:dejar con 1 test*/
-//					for (int i = 0 ; i < B.nb_cols() ; i++)
-//						B[temp_piv][i] = B[temp_piv][i]/coef;
-//					aux_perm[temp_piv][temp_piv] = 1/coef;
-					/*end: dejar con 1 test*/
-					perm = aux_perm*perm;
-				}
-			}
+					if (temp_piv !=-1){
+						double coef = B[temp_piv][col_pos];
+						Matrix aux_perm(1,1);
+						aux_perm.resize(A.nb_rows(),A.nb_rows());
+						for (int k = 0; k<A.nb_rows() ; k++)
+							for (int l = 0; l<A.nb_rows() ; l++){
+								if (k == l) aux_perm[k][l] = 1;
+								else aux_perm[k][l] = 0;
+							}
 
-			/*If gauss is perform complete, add the matrix perm to the list permutation*/
-			if (temp_piv!=-1) permutations.push_back(perm);
-			comb_piv.pop_back();
-		}
+						for (int k = 0 ; k < B.nb_rows() ; k++){
+							if ((k != temp_piv) &&( (B[k][col_pos] < -prec) || (B[k][col_pos] > prec))) {
+								double factor = B[k][col_pos];
+								aux_perm[k][temp_piv] = -factor/coef;
+								for (int l = 0 ; l < B.nb_cols() ; l++)
+									B[k][l]	= B[k][l]-(B[temp_piv][l]*factor/coef);
+							}
+						}
+						/*new:dejar con 1 test*/
+						for (int i = 0 ; i < B.nb_cols() ; i++)
+							B[temp_piv][i] = B[temp_piv][i]/coef;
+						aux_perm[temp_piv][temp_piv] = 1/coef;
+						/*end: dejar con 1 test*/
+						perm = aux_perm*perm;
+					}
+				}
+		return perm;
 	}
 
 	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,double prec){
@@ -188,6 +170,85 @@ namespace ibex {
 		}
 		return perm;
 	}
+
+	void gauss_jordan_all (IntervalMatrix& A, vector<Matrix>& permutations,vector < vector < pair <int, int> > > & pair_contr_all , double prec){
+		int temp_piv;
+		set <int> rows_checked;
+		std::vector< std::vector <int> > comb_piv;
+		/*get all possible combinations of pivots*/
+		combinatorial(A,A.nb_cols(),A.nb_rows(),comb_piv);
+		vector <pair<int,int> > aux_list;
+
+//		cout << comb_piv.size() << endl;
+		Matrix B(1,1);
+		B.resize(A.nb_rows(),A.nb_cols());
+
+		Matrix perm(1,1);
+		perm.resize(B.nb_rows(),B.nb_rows());
+		/*perform the gauss elimination for each comb_piv element*/
+//		comb_piv.clear();
+//		std::vector<int> aux;
+//		aux.push_back(3); aux.push_back(1);
+//		comb_piv.push_back(aux);
+		while(comb_piv.size() > 0){
+			aux_list.clear();
+			/*Initialize the permutation matrix*/
+			for (int i = 0; i<A.nb_rows() ; i++)
+				for (int j = 0; j<A.nb_rows() ; j++){
+					if (i == j) perm[i][j] = 1;
+					else perm[i][j] = 0;
+			}
+			/*Initialize B*/
+			B = A.mid();
+			rows_checked.clear();
+			for (int k = 0 ; k < comb_piv[comb_piv.size()-1].size() ; k++){
+				int actual_col = comb_piv[comb_piv.size()-1][k];
+				temp_piv = -1;
+				for (int i = 0; i < B.nb_rows() ; i++)
+					if (( (B[i][actual_col] < -prec) || (B[i][actual_col] > prec)) && (rows_checked.count(i) != 1)){
+						rows_checked.insert(i);
+						temp_piv = i;
+						aux_list.push_back(make_pair(temp_piv,actual_col));
+						break;
+					}
+				if (temp_piv==-1)
+					break;
+				else{
+					double coef = B[temp_piv][actual_col];
+					Matrix aux_perm(1,1);
+					aux_perm.resize(A.nb_rows(),A.nb_rows());
+					for (int m = 0; m<A.nb_rows() ; m++)
+						for (int l = 0; l<A.nb_rows() ; l++){
+							if (m == l) aux_perm[m][l] = 1;
+							else aux_perm[m][l] = 0;
+						}
+					for (int m = 0 ; m < B.nb_rows() ; m++){
+						if (m != temp_piv){
+							double factor = B[m][actual_col];
+							aux_perm[m][temp_piv] = -factor/coef;
+							for (int l = 0 ; l < B.nb_cols() ; l++)
+								B[m][l]	= B[m][l]-(B[temp_piv][l]*factor/coef);
+						}
+					}
+					/*new:dejar con 1 test*/
+					for (int i = 0 ; i < B.nb_cols() ; i++)
+						B[temp_piv][i] = B[temp_piv][i]/coef;
+					aux_perm[temp_piv][temp_piv] = 1/coef;
+					/*end: dejar con 1 test*/
+					perm = aux_perm*perm;
+				}
+			}
+
+			/*If gauss is perform complete, add the matrix perm to the list permutation*/
+			if (temp_piv!=-1){
+				pair_contr_all.push_back(aux_list);
+				permutations.push_back(perm);
+			}
+			comb_piv.pop_back();
+		}
+	}
+
+
 
 
 	Matrix gauss_jordan (IntervalMatrix& A, double prec){
