@@ -53,6 +53,7 @@ namespace ibex {
 		Matrix perm(1,1);
 		perm.resize(B.nb_rows(),B.nb_rows());
 		B = A.mid();
+
 		for (int i = 0; i<A.nb_rows() ; i++)
 			for (int j = 0; j<A.nb_rows() ; j++){
 				if (i == j) perm[i][j] = 1;

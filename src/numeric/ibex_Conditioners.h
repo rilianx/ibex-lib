@@ -22,7 +22,7 @@ namespace ibex {
     /**
      * TODO: add comments, cambiar prototipo de funcion
      * \brief This function performs the Gauss-Jordan elimination to the matrix A. All the row operations are stored
-     * on the matrix P.
+     * on the matrix P .
      *
      */
 	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
