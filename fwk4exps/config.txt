@@ -1,0 +1,33 @@
+[base]
+test_instances = instances2.txt
+mintime = 2.0 20.0 100.0 1000.0
+maxtime = 7200
+factors = 1 0.833 0.665 0.5 0.2 0.1
+sig_gain = 2.0
+max_seeds = 5
+min_seeds = 5
+algo_names = simplex acidhc4 dag gauss-sum
+
+[simplex]
+exec = "/home/victor/Dropbox/Doctorado/Proyectos/CommonSubexpression/ibex-2.3.4/examples/optimsolver" 
+params = _INSTANCE cse+hc4+simplex feasdiv smearsumrel 1e-7 1e-7 _MAXTIME _SEED 0
+outputpos_times = 2
+outputpos_boxes = 3
+
+[acidhc4]
+exec = "/home/victor/Dropbox/Doctorado/Proyectos/CommonSubexpression/ibex-2.3.4/examples/optimsolver" 
+params = _INSTANCE acidhc4 feasdiv smearsumrel 1e-7 1e-7 _MAXTIME _SEED 0
+outputpos_times = 2
+outputpos_boxes = 3
+
+[dag]
+exec = "/home/victor/Dropbox/Doctorado/Proyectos/CommonSubexpression/ibex-2.3.4/examples/optimsolver" 
+params = _INSTANCE cse+hc4 feasdiv smearsumrel 1e-7 1e-7 _MAXTIME _SEED 0
+outputpos_times = 2
+outputpos_boxes = 3
+
+[gauss-sum]
+exec = "/home/victor/Dropbox/Doctorado/Proyectos/CommonSubexpression/ibex-2.3.4/examples/optimsolver" 
+params = _INSTANCE cse+hc4+gauss feasdiv smearsumrel 1e-7 1e-7 _MAXTIME _SEED 0
+outputpos_times = 2
+outputpos_boxes = 3
