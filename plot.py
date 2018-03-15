@@ -20,77 +20,71 @@ import os
 #will only plot 2 var at a time, you must indicate each one on execution.
 
 def main():
-
-	#Create the base plot
-	plot()
-
-	#Call a function that reads a file and draws on plot
-	plotdata()
-	plt.show()
-	print('Done')
+  #Create the base plot
+  plot()
+  
+  #Call a function that reads a file and draws on plot
+  plotdata()
+  plt.show()
+  print('Done')
 
 def plot():
-	global line,ax1,canvas,fig
-
-	fig = plt.figure()
-	ax1 = fig.add_subplot(1,1,1)
-	line, = ax1.plot([], [])
+  global line,ax1,canvas,fig
+  fig = plt.figure()
+  ax1 = fig.add_subplot(1,1,1)
+  line, = ax1.plot([], [])
 
 #format must be 2 dimension vector, variables separated by (,) and every vector separated by (;)
 #i.e. 1,2;4,5;78.324324,-12342 every line is a iterations from PSO
 def plotdata():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("--file", "-f", type=str, required=True)
-	parser.add_argument("--x_1", "-x_1", type=str, required=True)
-	parser.add_argument("--x_2", "-x_2", type=str, required=True)
-	args = parser.parse_args()
+  parser = argparse.ArgumentParser()
+  parser.add_argument("--file", "-f", type=str, required=True)
+  parser.add_argument("--x_1", "-x_1", type=str, required=True)
+  parser.add_argument("--x_2", "-x_2", type=str, required=True)
+  parser.add_argument("--minimal", "-min", type=str, required=True)
+  parser.add_argument("--maximal", "-max", type=str, required=True)
+  args = parser.parse_args()
+  print("file: "+args.file)
+  print("x_1: "+args.x_1)
+  print("x_2: "+args.x_2)
+  print("min: "+args.minimal)
+  print("max: "+args.maximal)
+  x_1 = int(args.x_1)
+  x_2 = int(args.x_2)
+  min_xy = int(args.minimal)
+  max_xy = int(args.maximal)
+  with open(args.file) as f:
+    for line in f:
+      fig.clear() #clear plot for next iteration
+      Px = []
+      Py = []
+      bestx = []
+      besty = []
+      aux = line.replace('inf', 'math.inf')
+      aux = aux.replace('nan', '0')
+      aux = aux.replace('\n', '')
+      particulas = aux.split(';') #separate particles positions
+      print(particulas)
+      for particula in particulas[:-1]:
+        # for each particle's position, separate x_1 and x_2
+        s = particula.split(",")
+        Px.append(float(s[x_1]))
+        Py.append(float(s[x_2]))
+      sb = particulas[-1].split(",")
+      bestx.append(float(sb[x_1]))
+      besty.append(float(sb[x_2]))
+      ax1.plot()
+      plt.xlim(min_xy,max_xy)
+      plt.ylim(min_xy,max_xy)
+      #plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
+      plt.plot(Px,Py, 'r.', markersize=1)
+      plt.plot(bestx,besty, 'b.', markersize=2) #best in blue
+      plt.pause(0.05)
+      try:
+        input("Press any key")
+      except SyntaxError:
+        pass
+  f.close()
 
-	print("file: "+args.file)
-	print("x_1: "+args.x_1)
-	print("x_2: "+args.x_2)
-	x_1 = int(args.x_1)
-	x_2 = int(args.x_2)
-	with open(args.file) as f:
-		for line in f:
-			split = line.split('/')
-			aux = split[0] #contains particles
-			#clear format
-			split[-1]=split[-1].replace('(', '')
-			split[-1]=split[-1].replace(')', '')
-			split[-1]=split[-1].replace('\n', '')
-			split[-1]=split[-1].replace('inf', 'math.inf')
-			values=split[-1].split(',') #contains min and max coordenates
-			max=values[0].split(' ; ') #contains array of max elements by dimmension
-			min=values[-1].split(' ; ') #contains array of min elements by dimmension
-			try:
-				input("Press any key")
-			except SyntaxError:
-				pass
-			Px = []
-			Py = []
-			bestx = []
-			besty = []
-			aux = aux.replace('inf', 'math.inf')
-			aux = aux.replace('nan', '0')
-			particulas = aux.split(';') #separate particles positions
-			print(particulas)
-			for particula in particulas[:-1]:
-				# for each particle's position, separate x_1 and x_2
-				s = particula.split(",")
-				Px.append(float(s[x_1]))
-				Py.append(float(s[x_2]))
-				sb = particulas[-1].split(",")
-				bestx.append(float(sb[x_1]))
-				besty.append(float(sb[x_2]))
-
-			fig.clear() #clear plot for next iteration
-			ax1.plot()
-			plt.ylim(float(min[x_2]),float(max[x_2]))
-			plt.xlim(float(min[x_1]),float(max[x_2]))
-			#plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
-			#plt.plot([-5,5],[-2,8]) # x - y > -3
-			plt.plot(Px,Py, 'r.', markersize=1)
-			plt.plot(bestx,besty, 'b.', markersize=2) #best in blue
-	f.close()
 if __name__ == '__main__':
-    main()
+  main()
