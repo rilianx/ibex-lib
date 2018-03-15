@@ -149,15 +149,15 @@ namespace ibex{
 			}
 			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 		}
-		output << getGBestPosition()[0] << "," << getGBestPosition()[1];
-		for(int i=0; i < nParticles; i++)
+		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << endl;
+		/*for(int i=0; i < nParticles; i++)
 			for(int a=0; a < orig_sys->box.size(); a++){
 				if(min[a] < particlesArray[i]->getPosition()[a])
 					min[a] = particlesArray[i]->getPosition()[a];
 				if(max[a] > particlesArray[i]->getPosition()[a])
 					max[a] = particlesArray[i]->getPosition()[a];
 			}
-		output << "/" << min << "," << max << endl;
+		output << "/" << min << "," << max << endl;*/
 	}
 
 	void PSOSwarm::closePlot(){
