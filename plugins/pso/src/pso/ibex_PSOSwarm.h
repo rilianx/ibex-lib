@@ -48,7 +48,7 @@ namespace ibex{
 		void executePSO(Vector loup_point, double loup, Cell& c){
 			tree->root=&c;
 			resetPSO(loup);
-			update_gbest(loup_point, loup);
+			//update_gbest(loup_point, loup);
 			executePSO(loup);
 			tree->root=NULL;
 		}
@@ -62,7 +62,14 @@ namespace ibex{
 
 		void update_gbest(Vector& loup_point, double loup){
 			if(loup!=POS_INFINITY && (loup<gValue || gpenalty != 0.0)){
-				if (tree->search(loup_point)){
+				bool bool_have = true;
+				for(int i=0; i<orig_sys->box.size(); i++){
+					if(!minlb_node->box[i].contains(loup_point[i])){
+						bool_have = false;
+						break;
+					}
+				}
+				if(bool_have &&	tree->search(loup_point)){
 					gBest = loup_point;
 					gValue = loup;
 					gpenalty = 0.0;
@@ -89,6 +96,8 @@ namespace ibex{
 		bool isInitialized();
 
 		TreeCellOpt* getTree() {return tree;}
+
+    Cell* minlb_node;
 
 	protected:
 		int nParticles;

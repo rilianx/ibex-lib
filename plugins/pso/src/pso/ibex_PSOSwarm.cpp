@@ -20,7 +20,7 @@ namespace ibex{
 	//TODO pair array ExtArray<c_i,&vector_i>
 	PSOSwarm::PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2, double x, int nParticles, int limit) :
 			tree(tree), c1(c1), c2(c2), x(x), nParticles(nParticles), orig_sys(orig_sys), limit(limit),
-			gBest(Vector::zeros(orig_sys->box.size())), gpenalty(0.0), gValue(0.0), initialized(false){
+			gBest(Vector::zeros(orig_sys->box.size())), gpenalty(0.0), gValue(0.0), initialized(false), minlb_node(NULL){
 
 		particlesArray = new PSOParticle*[nParticles];
 		for(int i=0; i<nParticles; i++) particlesArray[i]=NULL;
@@ -28,9 +28,11 @@ namespace ibex{
 
 	void PSOSwarm::resetPSO(double loup){
 	  if(trace) cout << "reset_PSO" << endl;
+		minlb_node = tree->minlb_node();
+
 		for(int i=0; i<nParticles; i++){
-			if(!particlesArray[i]) particlesArray[i] = new PSOParticle(tree, orig_sys);
-			else particlesArray[i]->initialize(tree, orig_sys);
+			if(!particlesArray[i]) particlesArray[i] = new PSOParticle(tree, orig_sys, minlb_node);
+			else particlesArray[i]->initialize(tree, orig_sys, minlb_node);
 			//cout << "particle["<<i<<"]:" << particlesArray[i]->getBestValue() << "+" << particlesArray[i]->getBestPenalty()<< endl;
 
 			// Update the gBest if the pBest is better than the gBest
@@ -54,7 +56,7 @@ namespace ibex{
 	  if(trace) cout << "resetGBest" << endl;
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
-				particlesArray[i]->initialize(tree,orig_sys);
+				particlesArray[i]->initialize(tree,orig_sys, minlb_node);
 
 			// Update the gBest if the pBest is better than the gBest
 			if(i==0 || PSOParticle::compute_fitness(particlesArray[i]->getBestValue(),particlesArray[i]->getBestPenalty(), loup)
@@ -75,6 +77,7 @@ namespace ibex{
 	 * Execute PSO algorithm
 	 */
 	void PSOSwarm::executePSO(double loup){
+
 		double fitness;
 		int iterations = 0;
 
@@ -87,11 +90,10 @@ namespace ibex{
 		//vericar que todos los pbest se encuentren dentro de una caja
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
-				particlesArray[i]->initialize(tree,orig_sys);
+				particlesArray[i]->initialize(tree, orig_sys, minlb_node);
 		}
 
-
-
+		//cout << "gbest(0): " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
 		// ** Iterations **
 		if (trace) cout << "\033[0;33m# ITERATIONS" << endl;
 
@@ -108,6 +110,7 @@ namespace ibex{
 				// AND the pBest is located into some box
 				particlesArray[i]->update_pBest(tree,orig_sys, loup);
 
+
 				// Update the gBest if the pBest is better than the gBest
 				if(PSOParticle::compute_fitness(particlesArray[i]->getBestValue(),particlesArray[i]->getBestPenalty(), loup)
 							< PSOParticle::compute_fitness(gValue,gpenalty, loup) ){
@@ -115,11 +118,13 @@ namespace ibex{
 					gValue = particlesArray[i]->getBestValue();
 					gpenalty = particlesArray[i]->getBestPenalty();
 					if(trace) cout << "new gbest: " <<  gValue << "+" << gpenalty << endl;
+					cout << "new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
 				}
 
 
 			}
 
+			if(gpenalty==0.0) loup=gValue;
 		}
 
 		if (trace) cout << "\033[0;33m# END ITERATIONS" << endl;
@@ -145,11 +150,17 @@ namespace ibex{
 
 		for(int i=0; i < nParticles ; i++){
 			for(int a=0; a < orig_sys->box.size()-1; a++){
-				output << particlesArray[i]->getPosition()[a] << ",";
+				output << particlesArray[i]->getBestPosition()[a] << ",";
 			}
-			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
+			output << particlesArray[i]->getBestPosition()[orig_sys->box.size()-1] << ";";
 		}
-		output << getGBestPosition()[0] << "," << getGBestPosition()[1] << endl;
+
+		for(int a=0; a < orig_sys->box.size()-1; a++){
+			output << getGBestPosition()[a] << ",";
+		}
+		output << getGBestPosition()[orig_sys->box.size()-1] << endl;
+
+
 		/*for(int i=0; i < nParticles; i++)
 			for(int a=0; a < orig_sys->box.size(); a++){
 				if(min[a] < particlesArray[i]->getPosition()[a])

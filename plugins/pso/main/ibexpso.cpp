@@ -81,7 +81,7 @@ int main(int argc, char** argv){
 
  	double eqeps= 1.e-8;
  	double default_relax_ratio = 0.2;
-	srand(nseed);
+ 	RNG::srand(nseed);
 
     System* orig_sys,*sys;
     LoupFinderDefault* loupfinder;
@@ -222,8 +222,8 @@ int main(int argc, char** argv){
 	Optimizer* oo=NULL;
 	//double c1, double c2, int particles, int iterations, double p) :
 	// ** parameters for PSO algorithm **
-	double c1 = 2.837;				// cognitive parameter (def. 2)
-	double c2 = 1.597;				// social parameter (def. 2)
+	double c1 = 2.001;				// cognitive parameter (def. 2)
+	double c2 = 2.001;				// social parameter (def. 2)
 	double x=0.754;
 	int particles = 10;		// amount of particles in pso algorithm
 	int iterations = 5;		// number of iterations for pso algorithm

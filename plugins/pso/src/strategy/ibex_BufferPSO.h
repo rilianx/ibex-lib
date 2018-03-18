@@ -67,7 +67,10 @@ namespace ibex {
 
 			virtual Cell* pop() { cout << "BufferPSO::pop() function is not implemented, use trim instead" << endl; return NULL; }
 
-			virtual void trim() { tree->trim(last_node); last_node=NULL; }
+			virtual void trim() {
+				if(tree->trim(last_node, swarm->minlb_node )) swarm->minlb_node=NULL;
+				last_node=NULL;
+			}
 
 
 			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl; return NULL;}
@@ -82,8 +85,9 @@ namespace ibex {
 					swarm->resetPSO(loup);
 				}
 
-				if(!tree->search(swarm->getGBestPosition())){
-				//	cout << "gbest removed!: resetPSO" << endl;
+				if(!tree->search(swarm->getGBestPosition())){ //  ||
+			  //!swarm->minlb_node) {
+					//cout << "gbest removed!: resetPSO" << endl;
 				  //swarm->resetGBest(loup);
 					swarm->resetPSO(loup);
 
@@ -94,7 +98,10 @@ namespace ibex {
 
 				//std::cout << "gbest: " << swarm->getGBestPosition() << endl;
 				//std::cout << "gbest: " << swarm->getGBestValue() << "+" << swarm->getGBestPenalty() << endl;
-				aux = tree->search(swarm->getGBestPosition());
+				//if(swarm->getGBestPenalty() < 0.1)
+					aux = tree->search(swarm->getGBestPosition());
+				//else
+				  //aux = tree->diving_node(swarm->minlb_node);
 				//cout << aux << endl;
 
 				//gbest should be inside a node.

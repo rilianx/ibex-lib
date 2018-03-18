@@ -64,13 +64,21 @@ class TreeCellOpt {
 	/*
 	 * Trim the tree
 	 * Delete every node that has no children left starting from last_node.
+	 * Return true if the minlb_node was removed
 	 */
-	bool trim(Cell* last_node);
+	bool trim(Cell* last_node, Cell* minlb=NULL);
 
 	/*
 	 * Random selection of leaf-node.
 	 */
-	Cell* random_node();
+	Cell* random_node(Cell* node=NULL);
+
+  /*
+  * Return the node with the min lb
+		*/
+	Cell* minlb_node();
+
+	Cell* diving_node(Cell* minlb);
 
 	/*
 	 * Return true if Vector is contained by any node

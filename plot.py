@@ -51,13 +51,14 @@ def plotdata():
   print("max: "+args.maximal)
   x_1 = int(args.x_1)
   x_2 = int(args.x_2)
-  min_xy = int(args.minimal)
-  max_xy = int(args.maximal)
+  min_xy = float(args.minimal)
+  max_xy = float(args.maximal)
   with open(args.file) as f:
     for line in f:
       fig.clear() #clear plot for next iteration
       Px = []
       Py = []
+      M = []
       bestx = []
       besty = []
       aux = line.replace('inf', 'math.inf')
@@ -65,20 +66,28 @@ def plotdata():
       aux = aux.replace('\n', '')
       particulas = aux.split(';') #separate particles positions
       print(particulas)
+
+      colors = ('b', 'g', 'r', 'c', 'm', 'y', 'k')
+      ax1.plot()
+      plt.xlim(min_xy,max_xy)
+      plt.ylim(min_xy,max_xy)
+
+      i = 0
       for particula in particulas[:-1]:
         # for each particle's position, separate x_1 and x_2
         s = particula.split(",")
         Px.append(float(s[x_1]))
         Py.append(float(s[x_2]))
+        color = colors[i % len(colors)]
+        plt.plot(float(s[x_1]),float(s[x_2]), color=color, marker=".", markersize=3)
+        i = i+1
       sb = particulas[-1].split(",")
       bestx.append(float(sb[x_1]))
       besty.append(float(sb[x_2]))
-      ax1.plot()
-      plt.xlim(min_xy,max_xy)
-      plt.ylim(min_xy,max_xy)
+      
       #plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
-      plt.plot(Px,Py, 'r.', markersize=1)
-      plt.plot(bestx,besty, 'b.', markersize=2) #best in blue
+      #plt.plot(Px,Py, 'r.', markersize=1)
+      plt.plot(bestx,besty, 'b.', markersize=6) #best in blue
       plt.pause(0.05)
       try:
         input("Press any key")

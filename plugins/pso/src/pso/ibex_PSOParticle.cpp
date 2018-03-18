@@ -13,10 +13,10 @@
 
 using namespace std; //delete
 namespace ibex {
-	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps) :
+	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node, double eqeps) :
 			position(orig_sys->box.random()), pBest(position),
 			velocity(Vector::zeros(orig_sys->box.size())), eqeps(eqeps){
-		initialize(tree, orig_sys);
+		initialize(tree, orig_sys, minlb_node);
 	}
 
 	/*
@@ -38,6 +38,7 @@ namespace ibex {
 
 	}
 
+
 	double PSOParticle::computePenalty(System* orig_sys){
 		double sum = 0;
 		for(int i=0; i<orig_sys->ctrs.size();i++){
@@ -53,6 +54,7 @@ namespace ibex {
 			}
 		}
 
+    
 		return sum;
 	}
 

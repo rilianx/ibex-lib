@@ -13,7 +13,7 @@
 namespace ibex{
 	class PSOParticle {
 		public:
-			PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps=1e-8);
+			PSOParticle(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node, double eqeps=1e-8);
 			virtual ~PSOParticle();
 
 			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x);
@@ -29,11 +29,14 @@ namespace ibex{
 			double getPenalty();
 			double getBestPenalty();
 
-			void initialize(TreeCellOpt* tree, System* orig_sys){
+
+			void initialize(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node){
 				// Randomize particle position into valid place
 				if(tree->is_empty()) return;
 
-				Cell* c = tree->random_node();
+				Cell* c = tree->random_node(minlb_node);
+				//Cell* c = minlb_node;
+
 
 				position = c->box.random();
 				position.resize(orig_sys->box.size());
@@ -48,6 +51,8 @@ namespace ibex{
 				vBest = value;
 				peBest = penalty;
 
+				//cout << "pbest: " <<  vBest << "+" << peBest  << endl;
+
 				if(!tree->search(position)){
 				   cout << "ERROR: The new particle "<< position <<" is not in the tree" << endl;
 				}
@@ -55,13 +60,16 @@ namespace ibex{
 
 			void update_pBest(TreeCellOpt* tree, System* orig_sys, double loup){
 				if(tree->search(position)){
+
 					value = orig_sys->goal->eval(position).ub();
 					penalty = computePenalty(orig_sys);
+
 
 					if(compute_fitness(value, penalty, loup) < compute_fitness(vBest, peBest, loup)){
 						pBest = position;
 						vBest = value;
 						peBest = penalty;
+						//cout << "new pbest: " <<  vBest << "+" << peBest << " --> " << compute_fitness(vBest, peBest, loup) << endl;
 					}
 				}
 

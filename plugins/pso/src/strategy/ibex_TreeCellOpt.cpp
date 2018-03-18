@@ -46,9 +46,8 @@ void TreeCellOpt::insert(Cell* cell, Cell* last_node){
 		cout << "no last_node" << endl;
 }
 
-bool TreeCellOpt::trim(Cell* last_node){
-	//cout << "trim" << endl;
-	int count = 0;
+bool TreeCellOpt::trim(Cell* last_node, Cell* minlb){
+	bool ret = false;
 	if(last_node){
 		Cell* father = last_node->get<CellPSO>().p;
 		Cell* aux = last_node;
@@ -56,50 +55,91 @@ bool TreeCellOpt::trim(Cell* last_node){
 			if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
 				father = aux->get<CellPSO>().p;
 				if(father){
-					//std::cout << "(" << aux << ") has father (" << father  << ")" << endl;
-					//delete last_node from his father
-					if(father->get<CellPSO>().left == aux){
-						father->get<CellPSO>().left = NULL;
-					}else if(father->get<CellPSO>().right == aux){
-						father->get<CellPSO>().right = NULL;
-					}
-					//std::cout << "trim(" << aux << ") " << endl;
-					count++;
+					if(father->get<CellPSO>().left == aux) father->get<CellPSO>().left = NULL;
+					else if(father->get<CellPSO>().right == aux) father->get<CellPSO>().right = NULL;
+
+					if(aux==minlb) ret=true;
 					delete aux;
 					aux = father;
 					last_node = NULL;
 				}else{
-					//std::cout << "trim_root(" << aux << ")  " << endl;
-					count++;
+					if(root==minlb) ret=true;
 					delete root;
 					root = NULL;
 					last_node = NULL;
 					aux=NULL;
 				}
-			}else{
-				//std::cout << "(" << aux << ") has childrens";
-				/*if(aux->get<CellPSO>().left)
-					std::cout << " (" << aux->get<CellPSO>().left << ")";
-				if(aux->get<CellPSO>().right)
-					std::cout << " (" << aux->get<CellPSO>().right << ")";
-				std::cout << endl;*/
+			}else
 				break;
-			}
 		}
-		//std::cout << "trimed(" << count << ")" << endl;
 	}else{
 		std::cout << "Deleting last_node more than once / it's first time" << endl;
 	}
 
-	if(count > 0)
-		return true;
-	else
-		return false;
+	return ret;
 }
 
-Cell* TreeCellOpt::random_node(){
+Cell* TreeCellOpt::diving_node(Cell* minlb){
+	Cell* aux = minlb;
+
+	if(aux == NULL) {
+		//std::cout << "root is NULL" << endl;
+		return NULL;
+	}
+  int n = aux->box.size()-1;
+
+	while(aux){
+
+		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+			return aux;
+		}else if(!aux->get<CellPSO>().left)
+			aux=aux->get<CellPSO>().right;
+		else if(!aux->get<CellPSO>().right)
+		  aux=aux->get<CellPSO>().left;
+		else{
+			if(aux->get<CellPSO>().left->box[n].lb() < aux->get<CellPSO>().right->box[n].lb())
+			   aux=aux->get<CellPSO>().left;
+			else
+		  	 aux=aux->get<CellPSO>().right;
+		}
+  }
+	return aux;
+}
+
+Cell* TreeCellOpt::minlb_node(){
+	Cell* aux = root;
+	Cell* minlb = NULL;
+	if(aux == NULL) {
+		//std::cout << "root is NULL" << endl;
+		return NULL;
+	}
+  int n = aux->box.size()-1;
+
+	stack<Cell*> S;
+	S.push(aux);
+
+	while(!S.empty()){
+		aux=S.top(); S.pop();
+
+		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+			if(!minlb || aux->box[n].lb() < minlb->box[n].lb())
+			   minlb=aux;
+		}else{
+			if(aux->get<CellPSO>().left && (!minlb || aux->get<CellPSO>().left->box[n].lb() < minlb->box[n].lb()))
+				S.push(aux->get<CellPSO>().left);
+
+			if(aux->get<CellPSO>().right && (!minlb || aux->get<CellPSO>().right->box[n].lb() < minlb->box[n].lb()))
+				S.push(aux->get<CellPSO>().right);
+	  }
+
+  }
+	return minlb;
+}
+
+Cell* TreeCellOpt::random_node(Cell* node){
 
 	Cell* aux = root;
+  if(node) aux = node;
 	if(aux == NULL) {
 		//std::cout << "root is NULL" << endl;
 		return NULL;
