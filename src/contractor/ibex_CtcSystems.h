@@ -54,6 +54,7 @@ public:
 		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(nb_var), A(1,1), b(1), P(1,1), PA(1,1), Pb(1) {
 
+
 	}
 
 	/**
@@ -63,6 +64,7 @@ public:
 		Linearizer(A.nb_cols()), ctc(*this, LPSolver::default_max_iter,
 		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
 		ctc_type(ctc_type), Ctc(A.nb_cols()), A(A), b(1), P(P), PA(PA), Pb(1) {
+
 
 	}
 
@@ -77,8 +79,6 @@ public:
 	 * This method is required by the PolytopeHull
 	 */
 	int linearization(const IntervalVector& x, LPSolver& lp_solver);
-
-
 
 
 protected:

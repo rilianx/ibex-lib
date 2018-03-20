@@ -14,7 +14,7 @@
 #include "ibex_Matrix.h"
 #include "ibex_Linear.h"
 #include "ibex_Expr.h"
-
+#include <algorithm>
 using namespace std;
 
 namespace ibex {
@@ -25,7 +25,11 @@ namespace ibex {
      * on the matrix P .
      *
      */
-	Matrix gauss_jordan (IntervalMatrix& A, double prec=1e-7);
+
+	pair<int,int> find_next_pivot(Matrix & PA, IntervalVector x,set<int> & ban_rows, set<int> & ban_cols);
+	void best_gauss_jordan_coll (IntervalMatrix A, IntervalVector x, vector<IntervalMatrix> & perm_list,
+							vector <vector <pair <int,int> > > & proj_vars, double prec);
+	Matrix gauss_jordan (IntervalMatrix& A, double prec);
 
 	void gauss_jordan_all (IntervalMatrix& A, vector<Matrix>& permutations,vector < vector < pair <int, int> > > &pair_contr_all , double prec);
 

@@ -32,19 +32,56 @@ namespace ibex {
 		}
 
 		if(ctc_type==GAUSS_JORDAN){
-			PA=A;
-			P = best_gauss_jordan(PA,box,1e-8);
-			Pb= P*b;
-			IntervalMatrix tmp(PA);
-			if(!bwd_mul(Pb, tmp, box, 1e8)){
-				box.set_empty();
-				return;
+			vector<IntervalMatrix>  perm_list;
+			vector <vector <pair <int,int> > > proj_vars;
+			best_gauss_jordan_coll (A,box,perm_list,proj_vars,1e-8);
+			/*gauss-seidel*/
+				IntervalVector last_box = box;
+				for (int i = 0 ; i < perm_list.size() ; i ++){
+				P = perm_list[i];
+				PA=P*A;
+				Pb= P*b;
+				IntervalMatrix tmp(PA);
+				if(!bwd_mul(Pb, tmp, box, 1e8)){
+					box.set_empty();
+					return;
+				}
 			}
+//			while(cambio){
+//			IntervalVector last_box= box;
+//			for (int j = 0 ; j < proj_vars.size() ; j++){
+//				P = perm_list[j];
+//				PA=P*A;
+//				Pb= P*b;
+//				IntervalMatrix tmp(PA);
+//				for (int k = 0 ; k  < proj_vars[j].size() ; k++){
+//					int var = proj_vars[j][k].first;
+//					int eq = proj_vars[j][k].second;
+//					Interval value(Pb[eq]);
+//					for (int l = 0; l < tmp.nb_cols(); l++){
+//						if (l != var){
+//							value = value +(-tmp[eq][l]*box[l]);
+//						}
+//					}
+//					value = value/tmp[eq][var];
+//					box[var] = value&=box[var];
+//					if(box.is_empty()) return;
+//				}
+//
+//			}
+//			if (box == last_box) cambio = false;
+//			}
+
+
+
 		}
+
+
 	}
 
 
 	int LinearSystem::linearization(const IntervalVector& x, LPSolver& lp_solver){
+
 		int num=0;
 		for (int i=0; i<A.nb_rows(); i++) {
 
@@ -75,6 +112,7 @@ namespace ibex {
 								is_mult(is_mult), x(xn.size()), extended(extended)  {
 
 				b.resize(A.nb_rows());
+
 				if(extended)
 					b=Vector::zeros(A.nb_rows());
 	}
@@ -112,7 +150,7 @@ namespace ibex {
 						PA=P*A;
 				   else{
 					   PA=A;
-					   P = gauss_jordan(PA);
+					   P = gauss_jordan(PA,1e-8);
 				   }
 				   // after this: PA*x = P*b
 			   }else if(ctc_type == GAUSS_JORDAN ){
@@ -125,8 +163,8 @@ namespace ibex {
 //				   exit (1);
 //				   P = gauss_jordan(PA,1e-8);
 				   IntervalVector aux(A.nb_cols());
-//				   for (int i = 0 ; i < A.nb_cols() ; i++) aux[i] = Interval(1,1);
-//				   P = best_gauss_jordan(PA,aux, 1e-8);
+				   for (int i = 0 ; i < A.nb_cols() ; i++) aux[i] = Interval(1,1);
+				   P = best_gauss_jordan(PA,aux, 1e-8);
 //
 
 //				   	   exit(1);
