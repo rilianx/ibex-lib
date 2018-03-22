@@ -1,15 +1,4 @@
-//============================================================================
 //                                  I B E X
-//
-//                               ************
-//                                  IbexOpt
-//                               ************
-//
-// Author      : Gilles Chabert
-// Copyright   : IMT Atlantique (France)
-// License     : See the LICENSE file
-// Last Update : Jul 09, 2017
-//============================================================================
 
 #include "ibex.h"
 #include "args.hxx"
