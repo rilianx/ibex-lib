@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : Adaptive CID (ACID) contractor
 // Author      : Bertrand Neveu , Gilles Trombettoni
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -34,6 +34,10 @@ void CtcAcid::contract(IntervalVector& box) {
 
 	int nb_CID_var=cid_vars.size();                    // [gch]
 	impact.clear();                                    // [gch]
+
+	if(active_ctr) active_ctr->clear();					// [actc]
+	if(input_ctr && ctc.input_ctr) *ctc.input_ctr = *input_ctr;
+
 	int nbvarmax=5*nb_CID_var;                         //  au plus 5*nbvar
 	double *ctstat = new double[nbvarmax];
 

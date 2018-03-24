@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : Fix-point of a contractor
 // Author      : Gilles Chabert
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -27,10 +27,15 @@ void CtcFixPoint::contract(IntervalVector& box) {
 	BitSet flags(BitSet::empty(Ctc::NB_OUTPUT_FLAGS));
 	BitSet impact(BitSet::all(nb_var)); // always set to "all" for the moment (to be improved later)
 
+	if(active_ctr)	active_ctr->clear();
+  if(input_ctr && ctc.input_ctr) *ctc.input_ctr = *input_ctr;
+
 	do {
 		old_box=box;
 
 		ctc.contract(box,impact,flags);
+
+		if(active_ctr && ctc.active_ctr) *active_ctr |= *ctc.active_ctr;
 
 		if (box.is_empty()) {
 			set_flag(FIXPOINT);
@@ -41,6 +46,9 @@ void CtcFixPoint::contract(IntervalVector& box) {
 
 	if (flags[FIXPOINT]) set_flag(FIXPOINT);
 	if (flags[INACTIVE] && init_box==box) set_flag(INACTIVE);
+
+
+
 }
 
 } // end namespace ibex

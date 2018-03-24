@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_3BCID.cpp
 // Author      : Ignacio Araya, Gilles Chabert,
 //               Bertrand Neveu, Gilles Trombettoni
@@ -60,6 +60,10 @@ void Ctc3BCid::contract(IntervalVector& box) {
 
 	start_var=nb_var-1;                                //  patch pour l'optim  A RETIRER ??
 	impact.clear();                                    // [gch]
+
+	if(active_ctr) active_ctr->clear();					// [actc]
+	if(input_ctr && ctc.input_ctr) *ctc.input_ctr = *input_ctr;
+
 	for (int k=0; k<vhandled; k++) {                   // [gch] k counts the number of varCIDed variables [gch]
 
 		var=(start_var+k)%nb_var;
@@ -167,7 +171,12 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 
 			ctc.contract(box,impact);              // [gch] only "var" is set in "impact".
 
+
+
 			if (!box.is_empty()) {
+				if(box[var].lb()>inf)
+					if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
 				inf=box[var].lb();
 				volatile double mid = (inf+lb)/2;      // we must subdivide the current slice (declared volatile to prevent
 				//   the compiler from expanding mid in the next line and using higher
@@ -175,11 +184,13 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 				if (lb-inf<=wv || inf>=mid || lb<=mid) // the two last conditions prevent from splitting a float in half
 					break;
 				else lb=mid;                           // useless to restore domains (we divide the same slice)
-			} else {                                   // the current slice has been cut off
+			} else {
+				if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+				                // the current slice has been cut off
 				//	cout << "      slice removed.\n";
 				if (inf==lb) {                         // border is degenerated and current=border
 					if (inf==sup)                      // current=border=the whole interval itself:
-					  {//cout << " inf = sup " ; 
+					  {//cout << " inf = sup " ;
 					    box.set_empty() ; return true;                   //   in this case the box must remain entirely emptied
 					  }
 					else break;                        // return anyway (no more to do).
@@ -205,6 +216,10 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 			ctc.contract(box,impact);              // [gch] only "var" is set in "impact".
 
 			if (!box.is_empty()) {
+				if(box[var].ub()<sup)
+					if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
+
 				sup=box[var].ub();
 				volatile double mid = (rb+sup)/2;      // we must subdivide the current interval (declared volatile to prevent
 				//   the compiler from expanding mid in the next line and using higher
@@ -213,6 +228,7 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 					break;
 				else rb=mid;                           // useless to restore domains (we divide the same slice)
 			} else {                                   // the current slice has been cut off
+				if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
 				//cout << "      slice removed.\n";
 				if (sup==rb) {                         // border is degenerated and current=border
 					if (inf==sup)                      // current=border=the whole interval itself:
@@ -259,6 +275,8 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 		ctc.contract(box,impact);                  // [gch] only "var" is set in "impact".
 
 		if (box.is_empty()) {
+			if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
 			leftBound = sup_k;
 			k++;
 			continue;
@@ -266,6 +284,10 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 		//non empty box
 		stopLeft = true;
 		leftCID = sup_k;
+
+    if(dom.lb() > leftBound)
+		   if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
 		leftBound = dom.lb();
 		k++;
 	}
@@ -302,6 +324,8 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 			ctc.contract(box,impact);                  // [gch] only "var" is set in "impact".
 
 			if (box.is_empty()) {
+				if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
 				rightBound = sup_k;
 				k2--;
 				continue;
@@ -309,6 +333,10 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 
 			stopRight = true;
 			lastInf_k = inf_k;
+
+			if( rightBound > dom.ub())
+			   if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+
 			rightBound = dom.ub();
 
 			k2--;

@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : Composition of contractors
 // Author      : Gilles Chabert
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -200,7 +200,11 @@ void CtcCompo::contract(IntervalVector& box) {
 
 	BitSet impact(BitSet::all(nb_var)); // always set to "all" for the moment (to be improved later)
 
+	if(active_ctr)	active_ctr->clear();
+
 	for (int i=0; i<list.size(); i++) {
+		if(input_ctr && list[i].input_ctr) *list[i].input_ctr = *input_ctr;
+
 		if (inactive) {
 			flags.clear();
 			list[i].contract(box,impact,flags);
@@ -208,6 +212,8 @@ void CtcCompo::contract(IntervalVector& box) {
 		} else {
 			list[i].contract(box);
 		}
+
+    if(active_ctr && list[i].active_ctr) *active_ctr |= *list[i].active_ctr;
 
 		if (box.is_empty()) {
 			set_flag(FIXPOINT);

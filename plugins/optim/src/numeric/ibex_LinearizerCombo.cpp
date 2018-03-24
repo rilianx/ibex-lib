@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_LinearizerCombo.cpp
 // Author      : Ignacio Araya, Bertrand Neveu , Gilles Trombettoni, Jordan Ninin
 // Copyright   : IMT Atlantique (France)
@@ -91,9 +91,15 @@ int LinearizerCombo::linearize(const IntervalVector& box, LPSolver& lp_solver) {
 		cont = myart->linearize(box,lp_solver);
 		break;
 	case COMPO: {
+		myxnewton->input_ctr = input_ctr;
 		cont = myxnewton->linearize(box,lp_solver);
+		lp2nolp = myxnewton->lp2nolp;
 		if (cont!=-1) {
+			myart->input_ctr = input_ctr;
 			int cont2 = myart->linearize(box,lp_solver);
+			for(auto l2nol : myart->lp2nolp)
+				lp2nolp[cont+l2nol.first] = l2nol.second;
+
 			if (cont2==-1) cont=-1;
 			else cont+=cont2;
 		}

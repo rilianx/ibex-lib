@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_CtcART.cpp
 // Author      : Ignacio Araya, Bertrand Neveu , Gilles Trombettoni
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -87,6 +87,8 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 
 	// Create the linear relaxation of each constraint
 	for (int ctr = 0; ctr < sys.nb_ctr; ctr++) {
+		if(input_ctr && !(*input_ctr)[ctr]) continue;
+
 		CmpOp op = sys.ctrs[ctr].op;
 		ev  = ctr_af_evl[ctr]->eval(box).i();
 		af2 = ctr_af_evl[ctr]->af2.top->i();
@@ -120,6 +122,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 					if (0.0 < ev.ub()) {
 						try {// TODO TO CHECK
 							lp_solver.add_constraint(rowconst, LEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
+							lp2nolp[cont]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -130,6 +133,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 					if (ev.lb() < 0.0) {
 						try {// TODO TO CHECK
 							lp_solver.add_constraint(rowconst, GEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
+							lp2nolp[cont]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -161,8 +165,11 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 	CmpOp op;
 	int cont = 0;
 
+  lp2nolp.clear();
+
 	// Create the linear relaxation of each constraint
 	for (int ctr = 0; ctr < sys.nb_ctr; ctr++) {
+		if(input_ctr && !(*input_ctr)[ctr]) continue;
 
 		op  = sys.ctrs[ctr].op;
 		ev  = ctr_af_evl[ctr]->eval(box).i();
@@ -202,6 +209,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 					else if (0.0 < ev.ub()) {
 						try {
 							lp_solver.add_constraint(rowconst, LEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
+							lp2nolp[cont]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -213,6 +221,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 					else if (ev.lb() < 0.0) {
 						try {
 							lp_solver.add_constraint(rowconst, GEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
+							lp2nolp[cont]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -223,8 +232,10 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 						if (ev.diam()>2*lp_solver.get_epsilon()) {
 							try {
 								lp_solver.add_constraint(rowconst, GEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
+								lp2nolp[cont]=ctr;
 								cont++;
 								lp_solver.add_constraint(rowconst, LEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
+								lp2nolp[cont]=ctr;
 								cont++;
 							} catch (LPException&) { }
 						}

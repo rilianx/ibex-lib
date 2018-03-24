@@ -11,7 +11,7 @@
 
 namespace ibex {
 
-Linearizer::Linearizer(int n) : n(n) {
+Linearizer::Linearizer(int n) : n(n), input_ctr(NULL) {
 
 }
 

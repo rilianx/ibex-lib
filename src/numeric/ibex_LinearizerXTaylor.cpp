@@ -62,6 +62,8 @@ LinearizerXTaylor::~LinearizerXTaylor() {
 int LinearizerXTaylor::linearize(const IntervalVector& box, LPSolver& _lp_solver)  {
 	lp_solver = &_lp_solver;
 
+	lp2nolp.clear();
+
 	if (mode==RELAX)
 		return linear_relax(box);
 	else
@@ -114,6 +116,8 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box)  {
 			for (int i=0; i<active.size(); i++) {
 				c=(i==0? active.min() : active.next(c));
 
+				if(input_ctr && !(*input_ctr)[c]) continue;
+
 				//cout << " add ctr n°" << c << endl;
 
 				// only one corner for a linear constraint
@@ -123,13 +127,19 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box)  {
 				}
 
 				try {
-					if (sys.ops[c]==LEQ || sys.ops[c]==LT || sys.ops[c]==EQ)
-						count += linearize_leq_corner(box,corner,Df[i],g_corner[i]);
+					if (sys.ops[c]==LEQ || sys.ops[c]==LT || sys.ops[c]==EQ){
+						int cc = linearize_leq_corner(box,corner,Df[i],g_corner[i]);
+						for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+						count +=cc;
+					}
 
 					// note: in case of equality g(x)=0, we also add a linear relaxation for
 					// g(x)>=0, except if this is the "goal constraint" y=f(x).
-					if (sys.ops[c]==GEQ || sys.ops[c]==GT || sys.ops[c]==EQ) // && c!=goal_ctr))
-						count += linearize_leq_corner(box,corner,-Df[i],-g_corner[i]);
+					if (sys.ops[c]==GEQ || sys.ops[c]==GT || sys.ops[c]==EQ){ // && c!=goal_ctr))
+						int cc = linearize_leq_corner(box,corner,-Df[i],-g_corner[i]);
+						for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+						count +=cc;
+					}
 
 				} catch (LPException&) {
 					continue;  // just skip this constraint
@@ -175,14 +185,21 @@ int LinearizerXTaylor::linear_restrict(const IntervalVector& box) {
 		for (int i=0; i<active.size(); i++) {
 			c=(i==0? active.min() : active.next(c));
 
+			if(input_ctr && !(*input_ctr)[c]) continue;
+
 			try {
 				if (sys.ops[c]==EQ && c!=goal_ctr)
 					// in principle we could deal with linear constraints
 					return -1;
-				else if (c==goal_ctr || sys.ops[c]==LEQ || sys.ops[c]==LT)
-					count += linearize_leq_corner(box,corner,J[i],g_corner[i]);
-				else
-					count += linearize_leq_corner(box,corner,-J[i],-g_corner[i]);
+				else if (c==goal_ctr || sys.ops[c]==LEQ || sys.ops[c]==LT){
+					int cc = linearize_leq_corner(box,corner,J[i],g_corner[i]);
+					for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+					count +=cc;
+				}else{
+					int cc = linearize_leq_corner(box,corner,-J[i],-g_corner[i]);
+					for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+					count +=cc;
+				}
 			} catch (LPException&) {
 				return -1;
 			} catch (Unsatisfiability&) {

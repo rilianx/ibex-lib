@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_CtcPolytopeHull.cpp
 // Author      : Gilles Chabert
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -52,7 +52,9 @@ void CtcPolytopeHull::contract(IntervalVector& box) {
 
 	try {
 
+    if(active_ctr) active_ctr->clear();
 		//returns the number of constraints in the linearized system
+		if(input_ctr) lr.input_ctr=input_ctr;
 		int cont = lr.linearize(box, mylinearsolver);
 
 		//cout << "[polytope-hull] end of LR" << endl;
@@ -117,13 +119,28 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			stat = mylinearsolver.solve_var(LPSolver::MINIMIZE, i, opt);
 			//cout << "[polytope-hull]->[optimize] simplex for left bound returns stat:" << stat <<  " opt: " << opt << endl;
 			if (stat == LPSolver::OPTIMAL_PROVED) {
+
 				if(opt.lb()>box[i].ub()) {
+					if(active_ctr){
+						IntervalVector evals = mylinearsolver.get_rows()*mylinearsolver.get_primal_sol() + Interval(-1e-7,1e-7);
+						IntervalVector b = mylinearsolver.get_lhs_rhs();
+						for(int k=0; k<b.size(); k++)
+					    if(! evals[k].is_subset(b[k]) ) active_ctr->add(lr.lp2nolp[k]);
+					}
+
 					delete[] inf_bound;
 					delete[] sup_bound;
 					throw PolytopeHullEmptyBoxException();
 				}
 
 				if(opt.lb() > box[i].lb()) {
+					if(active_ctr){
+						IntervalVector evals = mylinearsolver.get_rows()*mylinearsolver.get_primal_sol() + Interval(-1e-7,1e-7);
+						IntervalVector b = mylinearsolver.get_lhs_rhs();
+						for(int k=0; k<b.size(); k++)
+							if(! evals[k].is_subset(b[k]) ) active_ctr->add(lr.lp2nolp[k]);
+					}
+
 					box[i]=Interval(opt.lb(),box[i].ub());
 					mylinearsolver.set_bounds_var(i,box[i]);
 				}
@@ -133,6 +150,10 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				}
 			}
 			else if (stat == LPSolver::INFEASIBLE_PROVED) {
+				if(active_ctr)
+					for(int k=0; k<mylinearsolver.get_nb_rows(); k++)
+					 	 active_ctr->add(lr.lp2nolp[k]);
+
 				delete[] inf_bound;
 				delete[] sup_bound;
 				// the infeasibility is proved, the EmptyBox exception is raised

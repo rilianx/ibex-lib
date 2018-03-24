@@ -1,0 +1,115 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 12288 bytes for committing reserved memory.
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   In 32 bit mode, the process size limit was hit
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Use 64 bit Java on a 64 bit OS
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_linux.cpp:2643), pid=3653, tid=0x00007ff3638f8700
+#
+# JRE version: OpenJDK Runtime Environment (8.0_151-b12) (build 1.8.0_151-8u151-b12-0ubuntu0.16.04.2-b12)
+# Java VM: OpenJDK 64-Bit Server VM (25.151-b12 mixed mode linux-amd64 compressed oops)
+# Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x00007ff34c03c800):  JavaThread "Worker-196" [_thread_new, id=18654, stack(0x00007ff3637f8000,0x00007ff3638f9000)]
+
+Stack: [0x00007ff3637f8000,0x00007ff3638f9000],  sp=0x00007ff3638f7b70,  free space=1022k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0xa684eb]
+V  [libjvm.so+0x4c579c]
+V  [libjvm.so+0x8b67b8]
+V  [libjvm.so+0x8b0e2e]
+V  [libjvm.so+0x8b7177]
+V  [libjvm.so+0xa0cdf7]
+V  [libjvm.so+0x8b4032]
+C  [libpthread.so.0+0x76ba]  start_thread+0xca
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+=>0x00007ff34c03c800 JavaThread "Worker-196" [_thread_new, id=18654, stack(0x00007ff3637f8000,0x00007ff3638f9000)]
+  0x00007ff34c03c000 JavaThread "Worker-195" [_thread_in_Java, id=18641, stack(0x00007ff37c181000,0x00007ff37c282000)]
+  0x00007ff34802c800 JavaThread "Worker-192" [_thread_in_vm, id=18631, stack(0x00007ff37ecfd000,0x00007ff37edfe000)]
+  0x0000000001e46800 JavaThread "Worker-168" [_thread_in_native, id=18470, stack(0x00007ff3b5911000,0x00007ff3b5a12000)]
+  0x00007ff3a4001800 JavaThread "[ThreadPool Manager] - Idle Thread" daemon [_thread_blocked, id=18347, stack(0x00007ff3639fa000,0x00007ff363afb000)]
+  0x00007ff2d9a17800 JavaThread "org.eclipse.jface.text.reconciler.MonoReconciler" daemon [_thread_in_native, id=16078, stack(0x00007ff361fe8000,0x00007ff3620e9000)]
+  0x00007ff2d860b000 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_in_vm, id=12129, stack(0x00007ff3635f6000,0x00007ff3636f7000)]
+  0x00007ff36ff97000 JavaThread "org.eclipse.mylyn.internal.wikitext.ui.editor.reconciler.MarkupMonoReconciler" daemon [_thread_blocked, id=4417, stack(0x00007ff363eff000,0x00007ff364000000)]
+  0x00007ff36f47e000 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_blocked, id=4241, stack(0x00007ff37c080000,0x00007ff37c181000)]
+  0x00007ff36d048800 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_blocked, id=3893, stack(0x00007ff360c83000,0x00007ff360d84000)]
+  0x00007ff36ce67800 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_blocked, id=3883, stack(0x00007ff360d84000,0x00007ff360e85000)]
+  0x00007ff36cd7f800 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_blocked, id=3880, stack(0x00007ff361485000,0x00007ff361586000)]
+  0x00007ff36c7f0000 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_in_vm, id=3783, stack(0x00007ff361586000,0x00007ff361687000)]
+  0x00007ff45c51b000 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_in_native, id=3776, stack(0x00007ff361687000,0x00007ff361788000)]
+  0x00007ff3441a2800 JavaThread "Provisioning Event Dispatcher" daemon [_thread_blocked, id=3739, stack(0x00007ff3632f5000,0x00007ff3633f6000)]
+  0x00007ff3a400b800 JavaThread "[ThreadPool Manager] - Idle Thread" daemon [_thread_blocked, id=3734, stack(0x00007ff3624e9000,0x00007ff3625ea000)]
+  0x00007ff35c2d0000 JavaThread "Thread-8" [_thread_blocked, id=3728, stack(0x00007ff3625ea000,0x00007ff3626eb000)]
+  0x00007ff36c071000 JavaThread "org.eclipse.jface.text.reconciler.MonoReconciler" daemon [_thread_in_native, id=3705, stack(0x00007ff37effe000,0x00007ff37f0ff000)]
+  0x00007ff45fdfe800 JavaThread "org.eclipse.cdt.internal.ui.text.CReconciler" daemon [_thread_blocked, id=3704, stack(0x00007ff37f4ff000,0x00007ff37f600000)]
+  0x00007ff45f878000 JavaThread "EventAdmin Async Event Dispatcher Thread" daemon [_thread_blocked, id=3703, stack(0x00007ff395378000,0x00007ff395479000)]
+  0x00007ff45edef800 JavaThread "Bundle File Closer" daemon [_thread_blocked, id=3700, stack(0x00007ff3b61c6000,0x00007ff3b62c7000)]
+  0x00007ff3ac1b6800 JavaThread "EMF Reference Cleaner" daemon [_thread_blocked, id=3693, stack(0x00007ff3b5c9d000,0x00007ff3b5d9e000)]
+  0x00007ff3ac12e800 JavaThread "Worker-JM" [_thread_blocked, id=3692, stack(0x00007ff3b5db1000,0x00007ff3b5eb2000)]
+  0x00007ff3ac04e000 JavaThread "[Timer] - Main Queue Handler" daemon [_thread_blocked, id=3691, stack(0x00007ff3b60c3000,0x00007ff3b61c4000)]
+  0x00007ff45c757800 JavaThread "Start Level: Equinox Container: 3f924341-20cd-4123-8f83-f9d63e0dc8b0" daemon [_thread_blocked, id=3689, stack(0x00007ff3b64d4000,0x00007ff3b65d5000)]
+  0x00007ff45c752800 JavaThread "Framework Event Dispatcher: org.eclipse.osgi.internal.framework.EquinoxEventPublisher@757f675c" daemon [_thread_blocked, id=3688, stack(0x00007ff3b65d5000,0x00007ff3b66d6000)]
+  0x00007ff45c6fa000 JavaThread "Active Thread: Equinox Container: 3f924341-20cd-4123-8f83-f9d63e0dc8b0" [_thread_blocked, id=3687, stack(0x00007ff3b66d6000,0x00007ff3b67d7000)]
+  0x00007ff45c21d800 JavaThread "Service Thread" daemon [_thread_blocked, id=3685, stack(0x00007ff3e74ad000,0x00007ff3e75ae000)]
+  0x00007ff45c218800 JavaThread "C1 CompilerThread3" daemon [_thread_blocked, id=3684, stack(0x00007ff3e75ae000,0x00007ff3e76af000)]
+  0x00007ff45c216800 JavaThread "C2 CompilerThread2" daemon [_thread_blocked, id=3683, stack(0x00007ff3e76af000,0x00007ff3e77b0000)]
+  0x00007ff45c212000 JavaThread "C2 CompilerThread1" daemon [_thread_in_vm, id=3682, stack(0x00007ff3e77b0000,0x00007ff3e78b1000)]
+  0x00007ff45c210000 JavaThread "C2 CompilerThread0" daemon [_thread_in_native, id=3681, stack(0x00007ff3e78b1000,0x00007ff3e79b2000)]
+  0x00007ff45c20d800 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=3680, stack(0x00007ff3e79b2000,0x00007ff3e7ab3000)]
+  0x00007ff45c20b800 JavaThread "Surrogate Locker Thread (Concurrent GC)" daemon [_thread_blocked, id=3679, stack(0x00007ff40805b000,0x00007ff40815c000)]
+  0x00007ff45c1df800 JavaThread "Finalizer" daemon [_thread_blocked, id=3678, stack(0x00007ff40815c000,0x00007ff40825d000)]
+  0x00007ff45c1db000 JavaThread "Reference Handler" daemon [_thread_blocked, id=3677, stack(0x00007ff40825d000,0x00007ff40835e000)]
+  0x00007ff45c00b000 JavaThread "main" [_thread_in_native, id=3654, stack(0x00007ff46276e000,0x00007ff46286f000)]
+
+Other Threads:
+  0x00007ff45c1d3800 VMThread [stack: 0x00007ff40835e000,0x00007ff40845f000] [id=3676]
+  0x00007ff45c220800 WatcherThread [stack: 0x00007ff3e73ac000,0x00007ff3e74ad000] [id=3686]
+
+VM state:not at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x00007ff45c007e80] CompiledIC_lock - owner thread: 0x00007ff45c212000
+
+Heap:
+ garbage-first heap   total 262144K, used 125783K [0x00000000c0000000, 0x00000000c0100800, 0x0000000100000000)
+  region size 1024K, 12 young (12288K), 1 survivors (1024K)
+ Metaspace       used 111618K, capacity 121802K, committed 121932K, reserved 1155072K
+  class space    used 12810K, capacity 15851K, committed 15948K, reserved 1048576K
+
+Heap Regions: (Y=young(eden), SU=young(survivor), HS=humongous(starts), HC=humongous(continues), CS=collection set, F=free, TS=gc time stamp, PTAMS=previous top-at-mark-start, NTAMS=next top-at-mark-start)
+AC   0  O    TS     0 PTAMS 0x00000000c0100000 NTAMS 0x00000000c0100000 space 1024K, 100% used [0x00000000c0000000, 0x00000000c0100000)
+AC   0  O    TS     0 PTAMS 0x00000000c0200000 NTAMS 0x00000000c0200000 space 1024K, 100% used [0x00000000c0100000, 0x00000000c0200000)
+AC   0  O    TS     0 PTAMS 0x00000000c0300000 NTAMS 0x00000000c0300000 space 1024K, 100% used [0x00000000c0200000, 0x00000000c0300000)
+AC   0  O    TS     7 PTAMS 0x00000000c0300000 NTAMS 0x00000000c0300000 space 1024K, 100% used [0x00000000c0300000, 0x00000000c0400000)
+AC   0  O    TS     0 PTAMS 0x00000000c0500000 NTAMS 0x00000000c0500000 space 1024K, 100% used [0x00000000c0400000, 0x00000000c0500000)
+AC   0  O    TS     0 PTAMS 0x00000000c0600000 NTAMS 0x00000000c0600000 space 1024K, 100% used [0x00000000c0500000, 0x00000000c0600000)
+AC   0  O    TS     0 PTAMS 0x00000000c0700000 NTAMS 0x00000000c0700000 space 1024K, 100% used [0x00000000c0600000, 0x00000000c0700000)
+AC   0  O    TS     0 PTAMS 0x00000000c0800000 NTAMS 0x00000000c0800000 space 1024K, 100% used [0x00000000c0700000, 0x00000000c0800000)
+AC   0  O    TS     0 PTAMS 0x00000000c0900000 NTAMS 0x00000000c0900000 space 1024K, 100% used [0x00000000c0800000, 0x00000000c0900000)
+AC   0  O    TS     0 PTAMS 0x00000000c0a00000 NTAMS 0x00000000c0a00000 space 1024K, 100% used [0x00000000c0900000, 0x00000000c0a00000)
+AC   0  O    TS     0 PTAMS 0x00000000c0b00000 NTAMS 0x00000000c0b00000 space 1024K, 100% used [0x00000000c0a00000, 0x00000000c0b00000)
+AC   0  O    TS     0 PTAMS 0x00000000c0c00000 NTAMS 0x00000000c0c00000 space 1024K, 100% used [0x00000000c0b00000, 0x00000000c0c00000)
+AC   0  O    TS     0 PTAMS 0x00000000c0d00000 NTAMS 0x00000000c0d00000 space 1024K, 100% used [0x00000000c0c00000, 0x00000000c0d00000)
+AC   0  O    TS     0 PTAMS 0x00000000c0e00000 NTAMS 0x00000000c0e00000 space 1024K, 100% used [0x00000000c0d00000, 0x00000000c0e00000)
+AC   0  O    TS     0 PTAMS 0x00000000c0f00000 NTAMS 0x00000000c0f00000 space 1024K, 100% used [0x00000000c0e00000, 0x00000000c0f00000)
+AC   0  O    TS     0 PTAMS 0x00000000c1000000 NTAMS 0x00000000c1000000 space 1024K, 100% used [0x00000000c0f00000, 0x00000000c1000000)
+AC   0  O    TS     7 PTAMS 0x00000000c1000000 NTAMS 0x00000000c1000000 space 1024K, 100% used [0x00000000c1000000, 0x00000000c1100000)
+AC   0  O

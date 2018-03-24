@@ -195,7 +195,7 @@ void Optimizer::contract_and_bound(Cell& c, const IntervalVector& init_box) {
 	//cout << " [contract]  x before=" << c.box << endl;
 	//cout << " [contract]  y before=" << y << endl;
 
-	ctc.contract(c.box);
+	ctc.contract(c);
 
 	if (c.box.is_empty()) return;
 
@@ -308,7 +308,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 
 				pair<Cell*,Cell*> new_cells=bsc.bisect(*c);
 				buffer.pop();
-				delete c; // deletes the cell.
+				//delete c; // deletes the cell.
 
 				nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was the number of cells put into the buffer after being handled)
                 
@@ -346,7 +346,7 @@ Optimizer::Status Optimizer::optimize(const IntervalVector& init_box, double obj
 			catch (NoBisectableVariableException& ) {
 				update_uplo_of_epsboxes((c->box)[goal_var].lb());
 				buffer.pop();
-				delete c; // deletes the cell.
+				//delete c; // deletes the cell.
 				update_uplo(); // the heap has changed -> recalculate the uplo (eg: if not in best-first search)
 
 			}

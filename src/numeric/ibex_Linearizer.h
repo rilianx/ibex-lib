@@ -12,6 +12,11 @@
 
 #include "ibex_IntervalVector.h"
 #include "ibex_LPSolver.h"
+#include "ibex_BitSet.h"
+
+#include <map>
+
+using namespace std;
 
 namespace ibex {
 
@@ -52,6 +57,10 @@ public:
 	 * \brief Number of variables
 	 */
 	int nb_var() const;
+
+  map<int,int> lp2nolp;
+
+	BitSet* input_ctr;
 
 protected:
 

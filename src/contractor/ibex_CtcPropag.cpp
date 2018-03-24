@@ -55,6 +55,8 @@ void CtcPropag::contract(IntervalVector& box) {
 	// By default, all contractors are active
 	active.fill(0,list.size()-1);
 
+	if(active_ctr) active_ctr->clear(); 	// [actc]
+
 	if (incremental) {
 		/**
 		 * impact() is the impact in input (given to CtcPropag).
@@ -72,12 +74,12 @@ void CtcPropag::contract(IntervalVector& box) {
 			if (!impact() || (*impact())[i]) {
 				set<int> ctrs=g.output_ctrs(i);
 				for (set<int>::iterator c=ctrs.begin(); c!=ctrs.end(); c++)
-					agenda.push(*c);
+					if(!input_ctr || (*input_ctr)[*c]) agenda.push(*c);
 			}
 		}
 	} else { // push all the contractors
 		for (int i=0; i<list.size(); i++)
-			agenda.push(i);
+			if(!input_ctr || (*input_ctr)[i]) agenda.push(i);
 	}
 
 	int c; // current contractor
@@ -116,6 +118,8 @@ void CtcPropag::contract(IntervalVector& box) {
 		list[c].contract(box, _impact, flags);
 
 		if (box.is_empty()) {
+			if(active_ctr) active_ctr->add(c);
+
 			agenda.flush();
 			//cout << "=========== End propagation ==========" << endl;
 			//cout << "   empty!" << endl;
@@ -130,11 +134,14 @@ void CtcPropag::contract(IntervalVector& box) {
 			int v=*it;
 			//cout << "   " << old_box[v] << " % " << box[v] << "   " << old_box[v].ratiodelta(box[v]) << endl;
 			//if (old_box[v].rel_distance(box[v])>=ratio) {
+			if(active_ctr && old_box[v] != box[v]) active_ctr->add(c);
+
+
 			if (old_box[v].ratiodelta(box[v])>=ratio) {
 				set<int> ctrs=g.output_ctrs(v);
 				for (set<int>::iterator c2=ctrs.begin(); c2!=ctrs.end(); c2++) {
 					if ((c!=*c2 && active[*c2]) || (c==*c2 && !flags[FIXPOINT]))
-						agenda.push(*c2);
+						if(!input_ctr || (*input_ctr)[*c2]) agenda.push(*c2);
 				}
 				// ===================== coarse propagation =========================
 				// reset the old box to the current domains just after propagation

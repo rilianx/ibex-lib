@@ -16,6 +16,7 @@
 #include "ibex_BitSet.h"
 #include "ibex_Array.h"
 #include "ibex_Set.h"
+#include "ibex_Cell.h"
 
 namespace ibex {
 
@@ -46,6 +47,13 @@ public:
 	 * \brief Contraction.
 	 */
 	virtual void contract(IntervalVector& box)=0;
+
+	/**
+	 * \brief Contraction.
+	 */
+	virtual void contract(Cell& c){
+		contract(c.box);
+	}
 
 	/**
 	 * \brief Contract a set with this contractor.
@@ -94,6 +102,16 @@ public:
 	 * \brief The output variables NULL pointer means "unspecified")
 	 */
 	BitSet* output;
+
+	/**
+	 * \brief (Adaptive Contraction) The input constraints
+	 */
+	BitSet* input_ctr;
+
+	/**
+	 * \brief (Adaptive Contraction) The constraints identified active
+	 */
+	BitSet* active_ctr;
 
 	/**
 	 * \brief Output flag numbers
@@ -150,9 +168,10 @@ private:
 
 
 
-inline Ctc::Ctc(int n) : nb_var(n), input(NULL), output(NULL), _impact(NULL), _output_flags(NULL) { }
+inline Ctc::Ctc(int n) : nb_var(n), input(NULL), output(NULL), _impact(NULL), _output_flags(NULL), input_ctr(NULL), active_ctr(NULL) { }
 
-inline Ctc::Ctc(const Array<Ctc>& l) : nb_var(l[0].nb_var), input(NULL), output(NULL), _impact(NULL), _output_flags(NULL) { }
+inline Ctc::Ctc(const Array<Ctc>& l) : nb_var(l[0].nb_var), input(NULL), output(NULL), _impact(NULL), _output_flags(NULL), input_ctr(NULL),
+		active_ctr(NULL) { }
 
 inline Ctc::~Ctc() { }
 
