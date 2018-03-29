@@ -1,25 +1,25 @@
-../plugins/solver/benchs/polynom/Bellido.bch -s solver
-../plugins/solver/benchs/polynom/Brent-10.bch -s solver
-../plugins/solver/benchs/polynom/Brown-07.bch -s solver
-../plugins/solver/benchs/polynom/Butcher8-a.bch -s solver
-../plugins/solver/benchs/polynom/Butcher8-b.bch -s solver
-../plugins/solver/benchs/polynom/CountercurrentReactors2-10.bch -s solver
-../plugins/solver/benchs/non-polynom/Design.bch -s solver
-../plugins/solver/benchs/polynom/Dietmaier.bch -s solver
-../plugins/solver/benchs/non-polynom/Directkin.bch -s solver
-../plugins/solver/benchs/polynom/Discrete-Integralf2-10.bch -s solver
-../plugins/solver/benchs/polynom/Eco9.bch -s solver
-../plugins/solver/benchs/polynom/Fourbar.bch -s solver
-../plugins/solver/benchs/polynom/Geneig.bch -s solver
-../plugins/solver/benchs/others/hayes1.bch -s solver
-../plugins/solver/benchs/polynom/I5.bch -s solver
-../plugins/solver/benchs/polynom/Katsura-14.bch -s solver
-../plugins/solver/benchs/polynom/Pramanik.bch -s solver
-../plugins/solver/benchs/polynom/Synthesis.bch -s solver
-../plugins/solver/benchs/non-polynom/Trigexp2-13.bch -s solver
-../plugins/solver/benchs/non-polynom/Trigo1-0014.bch -s solver
-../plugins/solver/benchs/polynom/Virasoro.bch -s solver
-../plugins/solver/benchs/polynom/yamamura/Yamamua1-0012.bch -s solver
+../plugins/solver/benchs/polynom/Bellido.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Brent-10.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Brown-07.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Butcher8-a.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Butcher8-b.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/CountercurrentReactors2-10.bch -s solver -b smearsumrel
+../plugins/solver/benchs/non-polynom/Design.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Dietmaier.bch -s solver -b smearsumrel
+../plugins/solver/benchs/non-polynom/Directkin.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Discrete-Integralf2-10.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Eco9.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Fourbar.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Geneig.bch -s solver -b smearsumrel
+../plugins/solver/benchs/others/hayes1.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/I5.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Katsura-14.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Pramanik.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Synthesis.bch -s solver -b smearsumrel
+../plugins/solver/benchs/non-polynom/Trigexp2-13.bch -s solver -b smearsumrel
+../plugins/solver/benchs/non-polynom/Trigo1-0014.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/Virasoro.bch -s solver -b smearsumrel
+../plugins/solver/benchs/polynom/yamamura/Yamamua1-0012.bch -s solver -b smearsumrel
 ../plugins/optim/benchs/hard/ex2_1_9.bch
 ../plugins/optim/benchs/easy/ex3_1_1.bch
 ../plugins/optim/benchs/easy/ex5_4_3.bch
