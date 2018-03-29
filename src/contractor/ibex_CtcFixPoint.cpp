@@ -28,7 +28,7 @@ void CtcFixPoint::contract(IntervalVector& box) {
 	BitSet impact(BitSet::all(nb_var)); // always set to "all" for the moment (to be improved later)
 
 	if(active_ctr)	active_ctr->clear();
-  if(input_ctr && ctc.input_ctr) *ctc.input_ctr = *input_ctr;
+  if(input_ctr) ctc.input_ctr = input_ctr;
 
 	do {
 		old_box=box;

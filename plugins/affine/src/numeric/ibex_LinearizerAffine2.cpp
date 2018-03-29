@@ -122,7 +122,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 					if (0.0 < ev.ub()) {
 						try {// TODO TO CHECK
 							lp_solver.add_constraint(rowconst, LEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
-							lp2nolp[cont]=ctr;
+							lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -133,7 +133,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 					if (ev.lb() < 0.0) {
 						try {// TODO TO CHECK
 							lp_solver.add_constraint(rowconst, GEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
-							lp2nolp[cont]=ctr;
+							lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -209,7 +209,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 					else if (0.0 < ev.ub()) {
 						try {
 							lp_solver.add_constraint(rowconst, LEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
-							lp2nolp[cont]=ctr;
+							lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -221,7 +221,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 					else if (ev.lb() < 0.0) {
 						try {
 							lp_solver.add_constraint(rowconst, GEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
-							lp2nolp[cont]=ctr;
+							lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 							cont++;
 						} catch (LPException&) { }
 					}
@@ -232,10 +232,10 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 						if (ev.diam()>2*lp_solver.get_epsilon()) {
 							try {
 								lp_solver.add_constraint(rowconst, GEQ,	(-(af2.err()+err) - (af2.val(0)-center)).lb());
-								lp2nolp[cont]=ctr;
+								lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 								cont++;
 								lp_solver.add_constraint(rowconst, LEQ,	((af2.err()+err) - (af2.val(0)-center)).ub());
-								lp2nolp[cont]=ctr;
+								lp2nolp[lp_solver.get_nb_rows()-1]=ctr;
 								cont++;
 							} catch (LPException&) { }
 						}

@@ -92,13 +92,21 @@ int LinearizerCombo::linearize(const IntervalVector& box, LPSolver& lp_solver) {
 		break;
 	case COMPO: {
 		myxnewton->input_ctr = input_ctr;
+		//	cout << lp_solver.get_nb_rows() << endl;
 		cont = myxnewton->linearize(box,lp_solver);
-		lp2nolp = myxnewton->lp2nolp;
+
+		for(int i=0; i<box.size(); i++ )
+			lp2nolp[i] = -1;
+
+		for(auto l2nol : myxnewton->lp2nolp)
+			lp2nolp[l2nol.first] = l2nol.second;
+
 		if (cont!=-1) {
 			myart->input_ctr = input_ctr;
 			int cont2 = myart->linearize(box,lp_solver);
+
 			for(auto l2nol : myart->lp2nolp)
-				lp2nolp[cont+l2nol.first] = l2nol.second;
+				lp2nolp[l2nol.first] = l2nol.second;
 
 			if (cont2==-1) cont=-1;
 			else cont+=cont2;

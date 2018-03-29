@@ -52,20 +52,21 @@ void CtcPolytopeHull::contract(IntervalVector& box) {
 
 	try {
 
-    if(active_ctr) active_ctr->clear();
+		if(active_ctr) active_ctr->clear();
 		//returns the number of constraints in the linearized system
 		if(input_ctr) lr.input_ctr=input_ctr;
 		int cont = lr.linearize(box, mylinearsolver);
 
 		//cout << "[polytope-hull] end of LR" << endl;
 
-		if (cont==-1) throw PolytopeHullEmptyBoxException();
+		if (cont==-1)
+		 throw PolytopeHullEmptyBoxException();
 
 		if (cont==0) return;
 
 		optimizer(box);
 
-		//mylinearsolver.writeFile("LP.lp");
+		//mylinearsolver.write_file("LP.lp");
 		//system ("cat LP.lp");
 		//cout << "[polytope-hull] box after LR: " << box << endl;
 		mylinearsolver.clean_ctrs();
@@ -122,10 +123,16 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 
 				if(opt.lb()>box[i].ub()) {
 					if(active_ctr){
-						IntervalVector evals = mylinearsolver.get_rows()*mylinearsolver.get_primal_sol() + Interval(-1e-7,1e-7);
-						IntervalVector b = mylinearsolver.get_lhs_rhs();
-						for(int k=0; k<b.size(); k++)
-					    if(! evals[k].is_subset(b[k]) ) active_ctr->add(lr.lp2nolp[k]);
+						//cout << mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1) << endl;
+						IntervalVector ev = mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1)
+								* mylinearsolver.get_primal_sol() + Interval(-1e-8,1e-8);
+						IntervalVector b = mylinearsolver.get_lhs_rhs().subvector(nb_var,mylinearsolver.get_nb_rows()-1);
+						for(int k=0; k<mylinearsolver.get_nb_rows()-nb_var; k++)
+							if(! ev[k].is_subset(b[k]) ){
+								// cout << "e[" <<  k <<  "]:" << evals[k] << endl << "b:" << b[k] << endl;
+								// cout << lr.lp2nolp[k] << endl;
+								 if(lr.lp2nolp[nb_var+k]>=0) active_ctr->add(lr.lp2nolp[nb_var+k]);
+							}
 					}
 
 					delete[] inf_bound;
@@ -134,11 +141,18 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				}
 
 				if(opt.lb() > box[i].lb()) {
-					if(active_ctr){
-						IntervalVector evals = mylinearsolver.get_rows()*mylinearsolver.get_primal_sol() + Interval(-1e-7,1e-7);
-						IntervalVector b = mylinearsolver.get_lhs_rhs();
-						for(int k=0; k<b.size(); k++)
-							if(! evals[k].is_subset(b[k]) ) active_ctr->add(lr.lp2nolp[k]);
+
+					if(active_ctr && (opt.lb() - box[i].lb())/box[i].diam() > 0.1){
+						//cout << mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1) << endl;
+						IntervalVector ev = mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1)
+								* mylinearsolver.get_primal_sol() + Interval(-1e-8,1e-8);
+						IntervalVector b = mylinearsolver.get_lhs_rhs().subvector(nb_var,mylinearsolver.get_nb_rows()-1);
+						for(int k=0; k<mylinearsolver.get_nb_rows()-nb_var; k++)
+							if(! ev[k].is_subset(b[k]) ){
+								// cout << "e[" <<  k <<  "]:" << evals[k] << endl << "b:" << b[k] << endl;
+								// cout << lr.lp2nolp[k] << endl;
+								 if(lr.lp2nolp[nb_var+k]>=0) active_ctr->add(lr.lp2nolp[nb_var+k]);
+							}
 					}
 
 					box[i]=Interval(opt.lb(),box[i].ub());
@@ -151,8 +165,11 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			}
 			else if (stat == LPSolver::INFEASIBLE_PROVED) {
 				if(active_ctr)
-					for(int k=0; k<mylinearsolver.get_nb_rows(); k++)
-					 	 active_ctr->add(lr.lp2nolp[k]);
+					for(int k=0; k<mylinearsolver.get_nb_rows(); k++){
+					 	 if(lr.lp2nolp[k]>=0) active_ctr->add(lr.lp2nolp[k]);
+						 //if(lr.lp2nolp[k]>=0) cout << lr.lp2nolp[k] << "," ;
+					 }
+					 //cout << endl;
 
 				delete[] inf_bound;
 				delete[] sup_bound;
@@ -187,12 +204,39 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			//cout << "[polytope-hull]->[optimize] simplex for right bound returns stat=" << stat << " opt=" << opt << endl;
 			if( stat == LPSolver::OPTIMAL_PROVED) {
 				if(opt.ub() <box[i].lb()) {
+					if(active_ctr){
+						//cout << mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1) << endl;
+						IntervalVector ev = mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1)
+								* mylinearsolver.get_primal_sol() + Interval(-1e-8,1e-8);
+						IntervalVector b = mylinearsolver.get_lhs_rhs().subvector(nb_var,mylinearsolver.get_nb_rows()-1);
+						for(int k=0; k<mylinearsolver.get_nb_rows()-nb_var; k++)
+							if(! ev[k].is_subset(b[k]) ){
+								// cout << "e[" <<  k <<  "]:" << evals[k] << endl << "b:" << b[k] << endl;
+								// cout << lr.lp2nolp[k] << endl;
+								 if(lr.lp2nolp[nb_var+k]>=0) active_ctr->add(lr.lp2nolp[nb_var+k]);
+							}
+					}
+
 					delete[] inf_bound;
 					delete[] sup_bound;
 					throw PolytopeHullEmptyBoxException();
 				}
 
 				if (opt.ub() < box[i].ub()) {
+
+					if(active_ctr && (box[i].ub() - opt.ub())/box[i].diam() > 0.1){
+						//cout << mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1) << endl;
+						IntervalVector ev = mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1)
+								* mylinearsolver.get_primal_sol() + Interval(-1e-8,1e-8);
+						IntervalVector b = mylinearsolver.get_lhs_rhs().subvector(nb_var,mylinearsolver.get_nb_rows()-1);
+						for(int k=0; k<mylinearsolver.get_nb_rows()-nb_var; k++)
+							if(! ev[k].is_subset(b[k]) ){
+								// cout << "e[" <<  k <<  "]:" << evals[k] << endl << "b:" << b[k] << endl;
+								// cout << lr.lp2nolp[k] << endl;
+								 if(lr.lp2nolp[nb_var+k]>=0) active_ctr->add(lr.lp2nolp[nb_var+k]);
+							}
+					}
+
 					box[i] =Interval( box[i].lb(), opt.ub());
 					mylinearsolver.set_bounds_var(i,box[i]);
 				}
@@ -202,6 +246,12 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				}
 			}
 			else if(stat == LPSolver::INFEASIBLE_PROVED) {
+				if(active_ctr)
+					for(int k=0; k<mylinearsolver.get_nb_rows(); k++){
+						 if(lr.lp2nolp[k]>=0) active_ctr->add(lr.lp2nolp[k]);
+						 //if(lr.lp2nolp[k]>=0) cout << lr.lp2nolp[k] << "," ;
+					 }
+
 				delete[] inf_bound;
 				delete[] sup_bound;
 				// the infeasibility is proved,  the EmptyBox exception is raised

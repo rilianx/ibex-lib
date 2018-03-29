@@ -1,5 +1,27 @@
+../plugins/solver/benchs/polynom/Bellido.bch -s solver
+../plugins/solver/benchs/polynom/Brent-10.bch -s solver
+../plugins/solver/benchs/polynom/Brown-07.bch -s solver
+../plugins/solver/benchs/polynom/Butcher8-a.bch -s solver
+../plugins/solver/benchs/polynom/Butcher8-b.bch -s solver
+../plugins/solver/benchs/polynom/CountercurrentReactors2-10.bch -s solver
+../plugins/solver/benchs/non-polynom/Design.bch -s solver
+../plugins/solver/benchs/polynom/Dietmaier.bch -s solver
+../plugins/solver/benchs/non-polynom/Directkin.bch -s solver
+../plugins/solver/benchs/polynom/Discrete-Integralf2-10.bch -s solver
+../plugins/solver/benchs/polynom/Eco9.bch -s solver
+../plugins/solver/benchs/polynom/Fourbar.bch -s solver
+../plugins/solver/benchs/polynom/Geneig.bch -s solver
+../plugins/solver/benchs/others/hayes1.bch -s solver
+../plugins/solver/benchs/polynom/I5.bch -s solver
+../plugins/solver/benchs/polynom/Katsura-14.bch -s solver
+../plugins/solver/benchs/polynom/Pramanik.bch -s solver
+../plugins/solver/benchs/polynom/Synthesis.bch -s solver
+../plugins/solver/benchs/non-polynom/Trigexp2-13.bch -s solver
+../plugins/solver/benchs/non-polynom/Trigo1-0014.bch -s solver
+../plugins/solver/benchs/polynom/Virasoro.bch -s solver
+../plugins/solver/benchs/polynom/yamamura/Yamamua1-0012.bch -s solver
 ../plugins/optim/benchs/hard/ex2_1_9.bch
-../plugins/optim/benchs/easy/ex3_1_1.bch 
+../plugins/optim/benchs/easy/ex3_1_1.bch
 ../plugins/optim/benchs/easy/ex5_4_3.bch
 ../plugins/optim/benchs/medium/ex5_3_2.bch
 ../plugins/optim/benchs/unsolved/ex5_4_4.bch
@@ -15,13 +37,13 @@
 ../plugins/optim/benchs/easy/ex7_2_3.bch
 ../plugins/optim/benchs/blowup/ex7_2_4.bch
 ../plugins/optim/benchs/blowup/ex7_2_8.bch
-../plugins/optim/benchs/unsolved/ex7_2_9.bch
+../plugins/optim/benchs/unsolved/ex7_2_9.bch*
 ../plugins/optim/benchs/medium/ex7_3_4.bch
 ../plugins/optim/benchs/blowup/ex7_3_5.bch
 ../plugins/optim/benchs/easy/ex8_1_8.bch
 ../plugins/optim/benchs/blowup/ex8_2_1.bch
 ../plugins/optim/benchs/blowup/ex8_4_4.bch
-../plugins/optim/benchs/blowup/ex8_4_5.bch
+../plugins/optim/benchs/blowup/ex8_4_5.bch*
 ../plugins/optim/benchs/blowup/ex8_4_6.bch
 ../plugins/optim/benchs/blowup/ex8_5_1.bch
 ../plugins/optim/benchs/blowup/ex8_5_2.bch
@@ -59,7 +81,7 @@
 ../plugins/optim/benchs/coconutbenchmark-library2/dualc5.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/genhs28.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/haifas.nl
-../plugins/optim/benchs/coconutbenchmark-library2/haldmads.nl
+../plugins/optim/benchs/coconutbenchmark-library2/haldmads.nl*
 ../plugins/optim/benchs/coconutbenchmark-library2/himmelbk.nl*
 ../plugins/optim/benchs/coconutbenchmark-library2/hs056.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/hs087.nl

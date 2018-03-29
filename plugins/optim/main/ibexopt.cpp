@@ -22,6 +22,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<std::string> _bisector(parser, "string", "the bisection method", {'b', "bis"});
 	args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
 	args::ValueFlag<int> _L(parser, "int", "L", {'L'});
+	args::Flag _df(parser, "df", "Depth-first", {"df"});
 	args::ValueFlag<double> _eps_x(parser, "float", "eps_x (the precision of the boxes)", {"exp_x"});
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
@@ -59,7 +60,7 @@ int main(int argc, char** argv){
 	cout << "Relax method: " << linearrelaxation << endl;
 	string bisection= (_bisector)? _bisector.Get() : "lsmear";
 	cout << "Bisector: " << bisection << endl;
-	string strategy= (_strategy)? _strategy.Get() : "feasdiv";
+	string strategy= (_strategy)? _strategy.Get() : "lbub";
 	cout << "Search strategy: " << strategy << endl;
 	int L= (_L)? _L.Get() : 8;
 	cout << "L: " << L << endl;
@@ -133,6 +134,7 @@ int main(int argc, char** argv){
 	}
 	// hc4 inside xnewton loop
 	CtcHC4 hc44xn (sys->ctrs,0.01,false);
+	//if(_actc) hc44xn.active_ctr = new BitSet(sys->nb_ctr);
 	// The 3BCID contractor on all variables (component of the contractor when filtering == "3bcidhc4")
 	Ctc3BCid c3bcidhc4(hc44cid);
 	if(_actc){
@@ -193,16 +195,12 @@ int main(int argc, char** argv){
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
           {
 		cxn_poly = new CtcPolytopeHull(*lr);
-		if(_actc){
-				cxn_poly->input_ctr = new BitSet(sys->nb_ctr);
-				cxn_poly->active_ctr = new BitSet(sys->nb_ctr);
-		}
+		if(_actc)	cxn_poly->active_ctr = new BitSet(sys->nb_ctr);
+
 
 		cxn_compo =new CtcCompo(*cxn_poly, hc44xn);
-		if(_actc){
-				cxn_compo->input_ctr = new BitSet(sys->nb_ctr);
-				cxn_compo->active_ctr = new BitSet(sys->nb_ctr);
-		}
+		if(_actc)	cxn_compo->active_ctr = new BitSet(sys->nb_ctr);
+
 
 		cxn = new CtcFixPoint (*cxn_compo, default_relax_ratio);
 		if(_actc){
@@ -226,9 +224,13 @@ int main(int argc, char** argv){
 	Ctc* c=NULL;
 	if(L==0)
 		c= new CtcCompo(ctcs);
-	else
-		c= new CtcAdaptive(ctcs, sys->nb_ctr, L);
-
+	else{
+		if(strategy=="solver")
+			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df);
+		else
+		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false);
+  }
+		
 	if(strategy=="solver"){
 		// A "CellStack" means a depth-first search.
 		CellStack buff;
@@ -313,8 +315,10 @@ int main(int argc, char** argv){
     CtcAdaptive* cc=dynamic_cast<CtcAdaptive*> (c);
 
     if(cc){
-    	cout << ","<< (double)cc->effective_calls[1] / (double)cc->calls[1] << "--" << (double)cc->nb_act_ctr[1] / (double)cc->nb_input_ctr[1] << ",";
-    	cout << (double)cc->effective_calls[2] / (double)cc->calls[2] << "--" << (double)cc->nb_act_ctr[2] / (double)cc->nb_input_ctr[2] ;
+			cout << ","<< (double)cc->calls[1] / (double)cc->gcalls[1];
+    	cout << ","<< (double)cc->effective_calls[1] / (double)cc->calls[1] << "--" << (double)cc->nb_act_ctr[1] / (double)cc->nb_input_ctr[1];
+			cout << ","<< (double)cc->calls[2] / (double)cc->gcalls[2];
+			cout << ","<< (double)cc->effective_calls[2] / (double)cc->calls[2] << "--" << (double)cc->nb_act_ctr[2] / (double)cc->nb_input_ctr[2] ;
     }
     cout << endl;
 

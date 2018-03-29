@@ -174,8 +174,8 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 
 
 			if (!box.is_empty()) {
-				if(box[var].lb()>inf)
-					if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+				//if(box[var].lb()>inf)
+					//if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
 
 				inf=box[var].lb();
 				volatile double mid = (inf+lb)/2;      // we must subdivide the current slice (declared volatile to prevent
@@ -216,8 +216,8 @@ bool Ctc3BCid::shave_bound_dicho(IntervalVector& box, int var,  double wv, bool 
 			ctc.contract(box,impact);              // [gch] only "var" is set in "impact".
 
 			if (!box.is_empty()) {
-				if(box[var].ub()<sup)
-					if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+				//if(box[var].ub()<sup)
+					//if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
 
 
 				sup=box[var].ub();
@@ -285,8 +285,8 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 		stopLeft = true;
 		leftCID = sup_k;
 
-    if(dom.lb() > leftBound)
-		   if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+    //if(dom.lb() > leftBound)
+		  // if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
 
 		leftBound = dom.lb();
 		k++;
@@ -334,8 +334,8 @@ bool Ctc3BCid::var3BCID_slices(IntervalVector& box, int var, int locs3b, double 
 			stopRight = true;
 			lastInf_k = inf_k;
 
-			if( rightBound > dom.ub())
-			   if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
+			//if( rightBound > dom.ub())
+			  // if(active_ctr && ctc.active_ctr) *active_ctr|= *ctc.active_ctr;
 
 			rightBound = dom.ub();
 

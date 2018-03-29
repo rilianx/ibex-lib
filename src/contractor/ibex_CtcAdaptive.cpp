@@ -16,16 +16,18 @@ namespace ibex {
 
 
 
-CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L) :
-		Ctc(list), list(list),iter(0), nb_ctr(m), L(L) {
+CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf ) :
+		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf) {
 	assert(check_nb_var_ctc_list(list));
 
+	gcalls = new int[list.size()];
 	calls = new int[list.size()];
 	effective_calls = new int[list.size()];
 	nb_input_ctr = new int[list.size()];
 	nb_act_ctr = new int[list.size()];
 
 	for(int i=0; i<list.size(); i++){
+		gcalls[i]=0;
 		calls[i]=0;
 		effective_calls[i]=0;
 		nb_input_ctr[i]=0;
@@ -40,8 +42,9 @@ AdaptCell* CtcAdaptive::closest_informed_ancestor(Cell& cell, int ctc, int c){
 
 	while(anc->p){
 		anc=anc->p;
-		if(anc->T.find(make_pair(ctc,c)) != anc->T.end()) return anc;
+		if(anc->T.find(make_pair(ctc,c)) != anc->T.end())	 return anc;
 	}
+
 
 	return anc; // <-- root
 
@@ -78,8 +81,10 @@ void CtcAdaptive::contract(Cell& c) {
 
 			}
 
+			gcalls[j]++;
 			if(list[j].input_ctr->size()==0) continue;
 		}
+
 
 
 		if(list[j].active_ctr) list[j].active_ctr->fill(0,nb_ctr-1);
@@ -89,7 +94,7 @@ void CtcAdaptive::contract(Cell& c) {
 		//active constraints
 		BitSet ca(nb_ctr);
 		if(list[j].active_ctr) ca=*list[j].active_ctr;
-		else ca.fill(0,nb_ctr-1);
+		if(!list[j].active_ctr || (ca.size()==0 && c.box.is_empty()) ) ca.fill(0,nb_ctr-1);
 
 		calls[j]++;
 		if(ca.size()>0) effective_calls[j]++;
@@ -97,9 +102,10 @@ void CtcAdaptive::contract(Cell& c) {
 		if(list[j].input_ctr) nb_input_ctr[j]+=list[j].input_ctr->size();
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
 
-   /*
-		if(ctcs->list[j].input_ctr)
-			cout << j << ":" << ctcs->list[j].input_ctr->size() << "-->"<< ca.size() << endl;
+/*
+    if (c.box.is_empty()) cout << j << ": empty_box" << endl;
+		if(list[j].input_ctr)
+			cout << j << ":" << list[j].input_ctr->size() << "-->"<< ca.size() << endl;
 		else
 			cout << j << ":" << ca.size() << endl;
 */
@@ -109,11 +115,11 @@ void CtcAdaptive::contract(Cell& c) {
 
 				if((*list[j].input_ctr)[i] && ca[i]){
 
-					a[i]->T[make_pair(j,i)] = 1;
+					a[i]->T[make_pair(j,i)] =1;
 					a[i]->F[make_pair(j,i)] = 0;
 
-					AdaptCell* p =a[i]->p;
-					if(p){
+					AdaptCell* p = c.get<AdaptCell>().p;
+					if(p && bf){
 						p->T[make_pair(j,i)] = 1;
 						p->F[make_pair(j,i)] = 0;
 					}

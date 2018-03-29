@@ -1,7 +1,7 @@
-algos:std 
-gains (average relative times):1.000000 
-gains (total time)            :1.000000 
-compared instances: 58 
-runs    : 85 
-L:  0 
-W:  0 
+algos:std ibex-actcL_L4 ibex-actcL_L6 ibex-actcL_L8 ibex-actcL_L10 ibex-actc_df_L4 ibex-actc_df_L6 ibex-actc_df_L8 ibex-actc_df_L10 
+gains (average relative times):1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 
+gains (total time)            :1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 1.000000 
+compared instances:  0   0   0   0   0   0   0   0   0 
+runs    :  0   0   0   0   0   0   0   0   0 
+L:  0   0   0   0   0   0   0   0   0 
+W:  0   0   0   0   0   0   0   0   0 

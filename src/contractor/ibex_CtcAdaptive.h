@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : Composition of contractors
 // Author      : Ignacio Araya
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -70,7 +70,7 @@ public:
 	 *
 	 * If incremental is true, manages the impact.
 	 */
-	CtcAdaptive(const Array<Ctc>& list, int m, int L=8);
+	CtcAdaptive(const Array<Ctc>& list, int m, int L=8, bool bf=true);
 
 
 	/**
@@ -96,6 +96,7 @@ public:
 	/** The list of sub-contractors */
 	Array<Ctc> list;
 
+	int* gcalls;
 	int* calls;
 	int* effective_calls;
 	int* nb_input_ctr;
@@ -110,6 +111,7 @@ protected:
 
 	int L;
 
+  bool bf;
 
 };
 

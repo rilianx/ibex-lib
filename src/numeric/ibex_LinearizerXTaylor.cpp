@@ -129,7 +129,8 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box)  {
 				try {
 					if (sys.ops[c]==LEQ || sys.ops[c]==LT || sys.ops[c]==EQ){
 						int cc = linearize_leq_corner(box,corner,Df[i],g_corner[i]);
-						for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+						int o= lp_solver->get_nb_rows() - cc;
+						for(; o<lp_solver->get_nb_rows(); o++) lp2nolp[o]=c;
 						count +=cc;
 					}
 
@@ -137,7 +138,8 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box)  {
 					// g(x)>=0, except if this is the "goal constraint" y=f(x).
 					if (sys.ops[c]==GEQ || sys.ops[c]==GT || sys.ops[c]==EQ){ // && c!=goal_ctr))
 						int cc = linearize_leq_corner(box,corner,-Df[i],-g_corner[i]);
-						for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+						int o= lp_solver->get_nb_rows() - cc;
+						for(; o<lp_solver->get_nb_rows(); o++) lp2nolp[o]=c;
 						count +=cc;
 					}
 
@@ -193,11 +195,13 @@ int LinearizerXTaylor::linear_restrict(const IntervalVector& box) {
 					return -1;
 				else if (c==goal_ctr || sys.ops[c]==LEQ || sys.ops[c]==LT){
 					int cc = linearize_leq_corner(box,corner,J[i],g_corner[i]);
-					for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+					int o= lp_solver->get_nb_rows() - cc;
+					for(; o<lp_solver->get_nb_rows(); o++) lp2nolp[o]=c;
 					count +=cc;
 				}else{
 					int cc = linearize_leq_corner(box,corner,-J[i],-g_corner[i]);
-					for(int o=0; o<cc; o++) lp2nolp[count + o]=c;
+					int o= lp_solver->get_nb_rows() - cc;
+					for(; o<lp_solver->get_nb_rows(); o++) lp2nolp[o]=c;
 					count +=cc;
 				}
 			} catch (LPException&) {

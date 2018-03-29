@@ -203,7 +203,7 @@ void CtcCompo::contract(IntervalVector& box) {
 	if(active_ctr)	active_ctr->clear();
 
 	for (int i=0; i<list.size(); i++) {
-		if(input_ctr && list[i].input_ctr) *list[i].input_ctr = *input_ctr;
+		if(input_ctr) list[i].input_ctr = input_ctr;
 
 		if (inactive) {
 			flags.clear();
