@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_Solver.cpp
 // Author      : Gilles Chabert
 // Copyright   : IMT Atlantique (France)
@@ -153,7 +153,7 @@ SolverOutputBox* Solver::next() {
 			impact.fill(0,ctc.nb_var-1);
 
 		try {
-			ctc.contract(c->box,impact);
+			ctc.contract(*c,impact);
 
 			if (c->box.is_empty()) throw EmptyBoxException();
 

@@ -55,6 +55,10 @@ public:
 		contract(c.box);
 	}
 
+	void contract(Cell& c, const BitSet& impact){
+		contract(c.box, impact);
+	}
+
 	/**
 	 * \brief Contract a set with this contractor.
 	 *
