@@ -170,7 +170,7 @@ SolverOutputBox* Solver::next() {
 				if (new_sol.status!=SolverOutputBox::UNKNOWN) {
 					if ((m==0 && new_sol.status==SolverOutputBox::INNER) ||
 							!is_too_large(new_sol.existence())) {
-						delete buffer.pop();
+						/*delete*/ buffer.pop();
 						return &store_sol(new_sol);
 					} else {
 						// otherwise: continue search...
@@ -188,7 +188,7 @@ SolverOutputBox* Solver::next() {
 				// next line may also throw NoBisectableVariableException
 				pair<Cell*,Cell*> new_cells=bsc.bisect(*c);
 
-				delete buffer.pop();
+				/*delete*/ buffer.pop();
 				buffer.push(new_cells.first);
 				buffer.push(new_cells.second);
 				nb_cells+=2;
@@ -197,12 +197,12 @@ SolverOutputBox* Solver::next() {
 
 			catch (NoBisectableVariableException&) {
 				SolverOutputBox new_sol=check_sol(c->box);
-				delete buffer.pop();
+				/*delete*/ buffer.pop();
 				return &store_sol(new_sol);
 			}
 		}
 		catch (EmptyBoxException&) {
-			delete buffer.pop();
+			/*delete*/ buffer.pop();
 			//impact.remove(v); // note: in case of the root node, we should clear the bitset
 			// instead but since the search is over, the impact is not used anymore.
 			// JN: that make a bug with Mingw
@@ -437,7 +437,7 @@ void Solver::flush() {
 		sol._existence=cell->box;
 		sol._unicity=NULL;
 		store_sol(sol);
-		delete buffer.pop();
+		/*delete*/ buffer.pop();
 	}
 }
 

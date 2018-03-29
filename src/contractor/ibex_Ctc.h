@@ -56,7 +56,8 @@ public:
 	}
 
 	void contract(Cell& c, const BitSet& impact){
-		contract(c.box, impact);
+		_impact = &impact;
+		contract(c);
 	}
 
 	/**
