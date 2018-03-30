@@ -5,27 +5,27 @@ maxtime = 3600
 factors = 1 0.833 0.665 0.5 0.2 0.1
 sig_gain = 1.2
 max_seeds = 5
-min_seeds = 5
-algo_names = std ibex-actcL ibex-actc_df
+min_seeds = 2
+algo_names = std ibex-actc ibex-actc_df
 
 [std]
-exec = "/home/iaraya/ibex-lib/__build__/plugins/optim/ibexopt"
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L 0 --seed=_SEED
 outputpos_times = 2
 outputpos_boxes = 3
 
-[ibex-actcL]
+[ibex-actc]
 tuning_param = L
-tuning_values = 4 6 8 10
-exec = "/home/iaraya/ibex-lib/__build__/plugins/optim/ibexopt"
+tuning_values = 8
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED
 outputpos_times = 2
 outputpos_boxes = 3
 
 [ibex-actc_df]
 tuning_param = L
-tuning_values = 4 6 8 10
-exec = "/home/iaraya/ibex-lib/__build__/plugins/optim/ibexopt"
+tuning_values = 8
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED --df
 outputpos_times = 2
 outputpos_boxes = 3
