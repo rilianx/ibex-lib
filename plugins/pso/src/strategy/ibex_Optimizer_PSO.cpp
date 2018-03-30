@@ -307,6 +307,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 	handle_cell(*root,init_box);
 
+	cout << "loup: " <<  loup << endl;
 	if(trace) cout << "first PSO" << endl;
 	if(swarm){
 		char file_name[] = "output_root.txt";
@@ -318,7 +319,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	}
 	if(trace) cout << "end first PSO" << endl;
 
-
+	exit(0);
 	update_uplo();
 	int count = 0;
 	try {

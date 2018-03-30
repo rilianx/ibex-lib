@@ -53,6 +53,7 @@ def plotdata():
   x_2 = int(args.x_2)
   min_xy = float(args.minimal)
   max_xy = float(args.maximal)
+  count = 0
   with open(args.file) as f:
     for line in f:
       fig.clear() #clear plot for next iteration
@@ -65,7 +66,8 @@ def plotdata():
       aux = aux.replace('nan', '0')
       aux = aux.replace('\n', '')
       particulas = aux.split(';') #separate particles positions
-      print(particulas)
+      count += 1
+      print(str(count)+":"+str(particulas))
 
       colors = ('b', 'g', 'r', 'c', 'm', 'y', 'k')
       ax1.plot()
@@ -88,11 +90,11 @@ def plotdata():
       #plt.plot([-5,5],[-3,7], 'y-', markersize=0.5) # x - y < -2
       #plt.plot(Px,Py, 'r.', markersize=1)
       plt.plot(bestx,besty, 'b.', markersize=6) #best in blue
-      plt.pause(0.05)
-      try:
-        input("Press any key")
-      except SyntaxError:
-        pass
+      plt.pause(0.1)
+      #try:
+        #input("Press any key")
+      #except SyntaxError:
+        #pass
   f.close()
 
 if __name__ == '__main__':

@@ -12,16 +12,20 @@ Instalation
 Must install g++, clang, bison, flex, zlib1g-dev
 
 On folder ibex-lib should configurate system to use ibex-pso plugin
+
 ./waf configure --with-optim --with-pso --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+
 Then compile the solver using:
+
 ./waf install
 
 To execute
+
 \_\_build\_\_/plugins/optim/ibexopt plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
- 
+
 \_\_build\_\_/plugins/pso/ibexpso plugins/optim/benchs/coconutbenchmark-library2/dualc2.nl --trace
  
-No constraint test
+Non constraint test
 
 \_\_build\_\_/plugins/pso/ibexpso plugins/optim/benchs/benchs-unconstrainedoptim/dixon-price5.bch --trace
 
@@ -51,15 +55,25 @@ Being <X_1>,<X_2>,...,<X_n> the position of one of the particles, <B_1>,<B_2>,..
 The plot.py script recieves parameters that will configure the presentation of graphics.
 
 file: output file from ibex-pso
+
 -f <filename.extension>
+
 x_1: representation of the first variable to plot as a vector number.
+
 -x_1 <pos int number>
+
 x_2: representation of the second variable to plot as a vector number.
+
 -x_2 <pos int number>
+
 plot.py will create a box (where to represent particles) with two numbers
+
 minimal: first number
+
 -min <float number>
+
 maximal: second number (must be greater than minimal)
+
 -max <float number>
 
 NOTE: When minimal and maximal aren't set, script will automatically adjust box to particles places.
