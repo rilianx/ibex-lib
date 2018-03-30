@@ -40,6 +40,10 @@ share
 bin
 doc/_build
 
+# output files
+output_root.txt
+output_innode.txt
+
 *~
 
 # files in examples
