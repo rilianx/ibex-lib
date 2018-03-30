@@ -251,9 +251,9 @@ int main(int argc, char** argv){
 
 		// Display the number of boxes (called "cells")
 		// generated during the search
-		cout << "number of cells=" << s.get_nb_cells() << endl;
+		//cout << "number of cells=" << s.get_nb_cells() << endl;
 		// Display the cpu time used
-		cout << "cpu time used=" << s.get_time() << "s."<< endl;
+		//cout << "cpu time used=" << s.get_time() << "s."<< endl;
 
 		cout << argv[1] << " " << s.get_manifold().size() << " " << s.get_time() << " " <<
 		s.get_nb_cells() << " " << (s.get_time()>timelimit) << endl;
