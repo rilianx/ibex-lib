@@ -230,7 +230,7 @@ int main(int argc, char** argv){
 		else
 		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false);
   }
-		
+
 	if(strategy=="solver"){
 		// A "CellStack" means a depth-first search.
 		CellStack buff;
@@ -246,7 +246,7 @@ int main(int argc, char** argv){
 
 
 		cout << state << endl;
-		s.report();
+		//s.report();
 
 
 		// Display the number of boxes (called "cells")
