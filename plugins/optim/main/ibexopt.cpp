@@ -226,9 +226,9 @@ int main(int argc, char** argv){
 		c= new CtcCompo(ctcs);
 	else{
 		if(strategy=="solver")
-			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df);
+			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false);
 		else
-		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false);
+		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df);
   }
 
 	if(strategy=="solver"){
@@ -258,7 +258,7 @@ int main(int argc, char** argv){
 		cout << argv[1] << " " << s.get_manifold().size() << " " << s.get_time() << " " <<
 		s.get_nb_cells() << " " << (s.get_time()>timelimit) << endl;
 
-		return 1;
+		return 0;
 
 	}
 
