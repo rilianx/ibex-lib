@@ -16,7 +16,7 @@ outputpos_boxes = 3
 
 [ibex-actc]
 tuning_param = L
-tuning_values = 4 6 8 10
+tuning_values = 4 8 12
 exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED
 outputpos_times = 2
@@ -24,7 +24,7 @@ outputpos_boxes = 3
 
 [ibex-actc_df]
 tuning_param = L
-tuning_values = 4 6 8 10
+tuning_values = 4 8 12
 exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED --df
 outputpos_times = 2
