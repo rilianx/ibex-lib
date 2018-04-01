@@ -115,7 +115,7 @@ void CtcAdaptive::contract(Cell& c) {
 
 				if((*list[j].input_ctr)[i] && ca[i]){
                                         
-					a[i]->T[make_pair(j,i)] = 1;
+					//a[i]->T[make_pair(j,i)] = 1;
 
 					a[i]->F[make_pair(j,i)] = 0;
 
