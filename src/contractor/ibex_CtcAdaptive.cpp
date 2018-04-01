@@ -120,7 +120,7 @@ if(a[i]->T[make_pair(j,i)]>1)
 
 					a[i]->F[make_pair(j,i)] = 0;
 
-					AdaptCell* p = c.get<AdaptCell>()->p;
+					AdaptCell* p = c.get<AdaptCell>().p;
 					if(p && bf){
 						p->T[make_pair(j,i)] = 1;
 						p->F[make_pair(j,i)] = 0;
