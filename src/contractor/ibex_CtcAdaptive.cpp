@@ -45,7 +45,7 @@ AdaptCell* CtcAdaptive::closest_informed_ancestor(Cell& cell, int ctc, int c){
 		if(anc->T.find(make_pair(ctc,c)) != anc->T.end())	 return anc;
 	}
 
-
+  root = anc;
 	return anc; // <-- root
 
 }
@@ -114,15 +114,16 @@ void CtcAdaptive::contract(Cell& c) {
 			for(int i=0; i<nb_ctr; i++){
 
 				if((*list[j].input_ctr)[i] && ca[i]){
-                                        
-					//a[i]->T[make_pair(j,i)] = 1;
 
+					a[i]->T[make_pair(j,i)] = 1;
 					a[i]->F[make_pair(j,i)] = 0;
 
 					AdaptCell* p = c.get<AdaptCell>().p;
 					if(p && bf){
 						p->T[make_pair(j,i)] = 1;
 						p->F[make_pair(j,i)] = 0;
+						root->T[make_pair(j,i)] = 1;
+						root->F[make_pair(j,i)] = 0;
 					}
 
 

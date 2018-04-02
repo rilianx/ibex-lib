@@ -113,6 +113,8 @@ protected:
 
   bool bf;
 
+	AdaptCell* root;
+
 };
 
 } // end namespace ibex
