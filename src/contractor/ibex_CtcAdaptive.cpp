@@ -100,7 +100,7 @@ void CtcAdaptive::contract(Cell& c) {
 		if(!list[j].active_ctr || (ca.size()==0 && c.box.is_empty()) ) ca.fill(0,nb_ctr-1);
 
 		calls[j]++;
-		if(ca.size()>0) {
+		if(list[j].active_ctr && ca.size()>0) {
 			effective_calls[j]++;
 			nb_succ_ctc++;
 		}
