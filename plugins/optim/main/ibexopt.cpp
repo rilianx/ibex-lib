@@ -122,10 +122,10 @@ int main(int argc, char** argv){
 
 	// the first contractor called
 	CtcHC4 hc4(sys->ctrs,0.01,true);
-	if(_actc){
-		hc4.input_ctr = new BitSet(sys->nb_ctr);
-		hc4.active_ctr = new BitSet(sys->nb_ctr);
-	}
+	//if(_actc){
+		//hc4.input_ctr = new BitSet(sys->nb_ctr);
+		//hc4.active_ctr = new BitSet(sys->nb_ctr);
+	//}
 	// hc4 inside acid and 3bcid : incremental propagation beginning with the shaved variable
 	CtcHC4 hc44cid(sys->ctrs,0.1,true);
 	if(_actc){

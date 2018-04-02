@@ -103,7 +103,7 @@ void CtcAdaptive::contract(Cell& c) {
 		if(list[j].active_ctr && ca.size()>0) {
 			effective_calls[j]++;
 			nb_succ_ctc++;
-		}
+		}else if(k>0 && j==1) break;
 
 		if(list[j].input_ctr) nb_input_ctr[j]+=list[j].input_ctr->size();
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
