@@ -195,7 +195,10 @@ int main(int argc, char** argv){
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
           {
 		cxn_poly = new CtcPolytopeHull(*lr);
-		if(_actc)	cxn_poly->active_ctr = new BitSet(sys->nb_ctr);
+		if(_actc){
+			cxn_poly->input_ctr = new BitSet(sys->nb_ctr);
+			cxn_poly->active_ctr = new BitSet(sys->nb_ctr);
+		}
 
 
 		cxn_compo =new CtcCompo(*cxn_poly, hc44xn);
@@ -213,8 +216,10 @@ int main(int argc, char** argv){
 	//  the actual contractor  ctc + linear relaxation
 	Ctc* ctcxn;
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn"){
-		ctcs.add(*cxn); //polytope hull
-    ctcxn= new CtcCompo  (*ctc, *cxn);
+		if(!_actc) ctcs.add(*cxn); //polytope hull
+		else ctcs.add(*cxn_poly); //without fixpoint
+
+		ctcxn= new CtcCompo  (*ctc, *cxn);
 	}else
 	  ctcxn = ctc;
 

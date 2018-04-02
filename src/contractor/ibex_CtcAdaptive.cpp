@@ -61,6 +61,8 @@ void CtcAdaptive::contract(Cell& c) {
 	BitSet flags(BitSet::empty(Ctc::NB_OUTPUT_FLAGS));
 	BitSet impact(BitSet::all(c.box.size())); // always set to "all" for the moment (to be improved later)
 
+    int nb_succ_ctc=0;
+    int k=0;
 
 	for(int j=0; j<list.size();j++){
 
@@ -76,7 +78,8 @@ void CtcAdaptive::contract(Cell& c) {
 				if(a[i]->T.find(make_pair(j,i)) == a[i]->T.end()) a[i]->T[make_pair(j,i)]=1;
 
 
-				if(iter % a[i]->T[make_pair(j,i)] == 0)
+				if( (k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
+						(a[i]->T[make_pair(j,i)]==1 && a[i]->F[make_pair(j,i)]==0) )
 					list[j].input_ctr->add(i);
 
 			}
@@ -97,7 +100,10 @@ void CtcAdaptive::contract(Cell& c) {
 		if(!list[j].active_ctr || (ca.size()==0 && c.box.is_empty()) ) ca.fill(0,nb_ctr-1);
 
 		calls[j]++;
-		if(ca.size()>0) effective_calls[j]++;
+		if(ca.size()>0) {
+			effective_calls[j]++;
+			nb_succ_ctc++;
+		}
 
 		if(list[j].input_ctr) nb_input_ctr[j]+=list[j].input_ctr->size();
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
@@ -110,7 +116,7 @@ void CtcAdaptive::contract(Cell& c) {
 			cout << j << ":" << ca.size() << endl;
 */
 
-		if(list[j].input_ctr){
+		if(k==0 && list[j].input_ctr){
 			for(int i=0; i<nb_ctr; i++){
 
 				if((*list[j].input_ctr)[i] && ca[i]){
@@ -122,8 +128,6 @@ void CtcAdaptive::contract(Cell& c) {
 					if(p && bf){
 						p->T[make_pair(j,i)] = 1;
 						p->F[make_pair(j,i)] = 0;
-						root->T[make_pair(j,i)] = 1;
-						root->F[make_pair(j,i)] = 0;
 					}
 
 
@@ -144,6 +148,11 @@ void CtcAdaptive::contract(Cell& c) {
 		if (c.box.is_empty()){
 			iter++;
 			return;
+		}
+
+		if(nb_succ_ctc>=2){
+			j=-1; k++;
+			nb_succ_ctc=0;
 		}
 
 	}
