@@ -113,7 +113,6 @@ protected:
 
   bool bf;
 
-	AdaptCell* root;
 
 };
 

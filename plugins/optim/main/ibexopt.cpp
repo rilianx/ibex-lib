@@ -123,8 +123,8 @@ int main(int argc, char** argv){
 	// the first contractor called
 	CtcHC4 hc4(sys->ctrs,0.01,true);
 	if(_actc){
-		//hc4.input_ctr = new BitSet(sys->nb_ctr);
-		//hc4.active_ctr = new BitSet(sys->nb_ctr);
+		hc4.input_ctr = new BitSet(sys->nb_ctr);
+		hc4.active_ctr = new BitSet(sys->nb_ctr);
 	}
 	// hc4 inside acid and 3bcid : incremental propagation beginning with the shaved variable
 	CtcHC4 hc44cid(sys->ctrs,0.1,true);
@@ -214,14 +214,12 @@ int main(int argc, char** argv){
 
 	  }
 	//  the actual contractor  ctc + linear relaxation
-	Ctc* ctcxn;
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn"){
 		if(!_actc) ctcs.add(*cxn); //polytope hull
 		else ctcs.add(*cxn_poly); //without fixpoint
 
-		ctcxn= new CtcCompo  (*ctc, *cxn);
 	}else
-	  ctcxn = ctc;
+
 
 	// one point probed when looking for a new feasible point (updating the loup)
 	int samplesize=1;
@@ -307,7 +305,6 @@ int main(int argc, char** argv){
 	if (linearrelaxation=="xn" ||linearrelaxation=="compo" || linearrelaxation=="art" )
 	  {
 		//delete lr;
-	    delete ctcxn;
 	  //  delete cxn;
 	  }
 

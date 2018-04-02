@@ -45,7 +45,7 @@ AdaptCell* CtcAdaptive::closest_informed_ancestor(Cell& cell, int ctc, int c){
 		if(anc->T.find(make_pair(ctc,c)) != anc->T.end())	 return anc;
 	}
 
-  root = anc;
+
 	return anc; // <-- root
 
 }
