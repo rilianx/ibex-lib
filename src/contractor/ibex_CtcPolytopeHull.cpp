@@ -45,6 +45,7 @@ CtcPolytopeHull::~CtcPolytopeHull() {
 }
 
 void CtcPolytopeHull::contract(IntervalVector& box) {
+  if(active_ctr) active_ctr->clear();
 
 	if (!(limit_diam_box.contains(box.max_diam()))) return;
 	// is it necessary?  YES (BNE) Soplex can give false infeasible results with large numbers
@@ -52,7 +53,7 @@ void CtcPolytopeHull::contract(IntervalVector& box) {
 
 	try {
 
-		if(active_ctr) active_ctr->clear();
+
 		//returns the number of constraints in the linearized system
 		if(input_ctr) lr.input_ctr=input_ctr;
 		int cont = lr.linearize(box, mylinearsolver);
@@ -63,6 +64,7 @@ void CtcPolytopeHull::contract(IntervalVector& box) {
 		 throw PolytopeHullEmptyBoxException();
 
 		if (cont==0) return;
+
 
 		optimizer(box);
 
@@ -225,6 +227,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				if (opt.ub() < box[i].ub()) {
 
 					if(active_ctr && (box[i].ub() - opt.ub())/box[i].diam() > 0.1){
+
 						//cout << mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1) << endl;
 						IntervalVector ev = mylinearsolver.get_rows().submatrix(nb_var,mylinearsolver.get_nb_rows()-1,0,nb_var-1)
 								* mylinearsolver.get_primal_sol() + Interval(-1e-8,1e-8);
