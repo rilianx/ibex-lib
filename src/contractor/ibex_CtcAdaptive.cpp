@@ -168,7 +168,7 @@ void CtcAdaptive::contract(Cell& c) {
 	}
 		k++;
 
-	}while(nb_succ_ctc>=2);
+	}while(false);
 
 	iter++;
 
