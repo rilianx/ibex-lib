@@ -135,11 +135,11 @@ void CtcPropag::contract(IntervalVector& box) {
 			//cout << "   " << old_box[v] << " % " << box[v] << "   " << old_box[v].ratiodelta(box[v]) << endl;
 			//if (old_box[v].rel_distance(box[v])>=ratio) {
 
-
+			if (old_box[v].ratiodelta(box[v])>=0.1) 
+				if(active_ctr && old_box[v] != box[v]) active_ctr->add(c);
 
 			if (old_box[v].ratiodelta(box[v])>=ratio) {
-				if(active_ctr && old_box[v] != box[v]) active_ctr->add(c);
-				
+
 				set<int> ctrs=g.output_ctrs(v);
 				for (set<int>::iterator c2=ctrs.begin(); c2!=ctrs.end(); c2++) {
 					if ((c!=*c2 && active[*c2]) || (c==*c2 && !flags[FIXPOINT]))
