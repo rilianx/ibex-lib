@@ -53,7 +53,7 @@ AdaptCell* CtcAdaptive::closest_informed_ancestor(Cell& cell, int ctc, int c){
 
 
 void CtcAdaptive::contract(Cell& c) {
-  //cout << "CONTRACT" << endl;
+  cout << "CONTRACT" << endl;
 	if(!c.data.used(typeid(AdaptCell).name())) c.add<AdaptCell>(); //root node
 
 	//ctc.contract(c.box);
