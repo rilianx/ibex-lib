@@ -63,6 +63,9 @@ void CtcAdaptive::contract(Cell& c) {
 
     int k=0;
     int nb_succ_ctc = list.size();
+		bool success[nb_succ_ctc];
+		for(int i=0;i<list.size();i++)
+		  success[i]=true;
 
    do{
 
@@ -89,7 +92,10 @@ void CtcAdaptive::contract(Cell& c) {
 
 			gcalls[j]++;
 			if(list[j].input_ctr->size()==0) {
-				if(k==0) nb_succ_ctc--;
+				if(k==0){
+					success[j]=false;
+					nb_succ_ctc--;
+				}
 				continue;
 			}
 		}
@@ -108,7 +114,10 @@ void CtcAdaptive::contract(Cell& c) {
 		calls[j]++;
 		if(list[j].active_ctr && ca.size()>0) {
 			effective_calls[j]++;
-		}else nb_succ_ctc--;
+		}else if(success[j]){
+			success[j]=false;
+			nb_succ_ctc--;
+		}
 
 		if(list[j].input_ctr) nb_input_ctr[j]+=list[j].input_ctr->size();
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
