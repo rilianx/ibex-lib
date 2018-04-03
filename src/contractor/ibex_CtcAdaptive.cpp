@@ -130,7 +130,7 @@ void CtcAdaptive::contract(Cell& c) {
 			cout << j << ":" << ca.size() << endl;
 */
 
-		if(k==0 && list[j].input_ctr){
+		if(list[j].input_ctr){
 			for(int i=0; i<nb_ctr; i++){
 
 				if((*list[j].input_ctr)[i] && ca[i]){
