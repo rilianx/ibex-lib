@@ -71,7 +71,7 @@ void CtcAdaptive::contract(Cell& c) {
 
 	 for(int j=0; j<list.size();j++){
 
-    if(L!=10000 && k>0 && nb_succ_ctc<2) break;
+    if(k>0 && nb_succ_ctc<2) break;
 
 		//array of informed nodes for each constraint i
 		AdaptCell* a[nb_ctr];
@@ -84,8 +84,8 @@ void CtcAdaptive::contract(Cell& c) {
 				if(a[i]->T.find(make_pair(j,i)) == a[i]->T.end()) a[i]->T[make_pair(j,i)]=1;
 
 
-				if( j==0 || (k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
-						(a[i]->T[make_pair(j,i)]==1 && a[i]->F[make_pair(j,i)]==0) || L==10000 )
+				if( j==0 ||(k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
+					(	(a[i]->T[make_pair(j,i)]==1 && a[i]->F[make_pair(j,i)]==0)) || L==10000 )
 					list[j].input_ctr->add(i);
 
 			}
@@ -123,14 +123,14 @@ void CtcAdaptive::contract(Cell& c) {
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
 
 
-/*
+
     if (c.box.is_empty()) cout << j << ": empty_box" << endl;
 		if(list[j].input_ctr)
 			cout << j << ":" << list[j].input_ctr->size() << "-->"<< ca.size() << endl;
 		else
 			cout << j << ":" << ca.size() << endl;
     //cout << c.box << endl;
-*/
+
 		if(list[j].input_ctr){
 			for(int i=0; i<nb_ctr; i++){
 
