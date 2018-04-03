@@ -71,7 +71,7 @@ void CtcAdaptive::contract(Cell& c) {
 
 	 for(int j=0; j<list.size();j++){
 
-    if(k>0 && nb_succ_ctc<2) break;
+    if(L!=10000 && k>0 && nb_succ_ctc<2) break;
 
 		//array of informed nodes for each constraint i
 		AdaptCell* a[nb_ctr];
