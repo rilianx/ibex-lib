@@ -81,7 +81,7 @@ void CtcAdaptive::contract(Cell& c) {
 				if(a[i]->T.find(make_pair(j,i)) == a[i]->T.end()) a[i]->T[make_pair(j,i)]=1;
 
 
-				if( (k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
+				if( j=0 || (k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
 						(a[i]->T[make_pair(j,i)]==1 && a[i]->F[make_pair(j,i)]==0) )
 					list[j].input_ctr->add(i);
 
