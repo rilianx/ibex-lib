@@ -271,12 +271,15 @@ int main(int argc, char** argv){
 
 	CellBufferOptim* buffer = NULL;
 
-	if(strategy=="lbub")
+	if(strategy=="min_lb")
+			buffer = new CellHeap(*dynamic_cast<ExtendedSystem*>(sys));
+	else if(strategy=="lbub")
 		buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
 	else if(strategy=="feasdiv")
 		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
 								       *new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
 	else {cout << strategy <<  " is not an implemented search strategy "  << endl; return -1;}
+
 
 	o=new Optimizer(orig_sys->nb_var, *c,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 	    		prec,goalprec,goalprec);
