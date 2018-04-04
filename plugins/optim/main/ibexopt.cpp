@@ -23,6 +23,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
 	args::ValueFlag<int> _L(parser, "int", "L", {'L'});
 	args::Flag _df(parser, "df", "Depth-first", {"df"});
+	args::Flag _fp(parser, "df", "Depth-first", {"fp"});
 	args::ValueFlag<double> _eps_x(parser, "float", "eps_x (the precision of the boxes)", {"exp_x"});
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
@@ -241,9 +242,9 @@ int main(int argc, char** argv){
 		c= new CtcCompo(ctcs);
 	else{
 		if(strategy=="solver")
-			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false);
+			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false, _fp);
 		else
-		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df);
+		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
   }
 
 	if(strategy=="solver"){

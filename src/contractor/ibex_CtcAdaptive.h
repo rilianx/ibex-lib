@@ -70,7 +70,7 @@ public:
 	 *
 	 * If incremental is true, manages the impact.
 	 */
-	CtcAdaptive(const Array<Ctc>& list, int m, int L=8, bool bf=true);
+	CtcAdaptive(const Array<Ctc>& list, int m, int L=8, bool bf=true, bool fp=true);
 
 
 	/**
@@ -112,6 +112,7 @@ protected:
 	int L;
 
   bool bf;
+  bool fp;
 
 
 };

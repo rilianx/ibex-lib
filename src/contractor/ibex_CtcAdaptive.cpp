@@ -17,7 +17,7 @@ namespace ibex {
 
 
 CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf ) :
-		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf) {
+		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf), fp(fp) {
 	assert(check_nb_var_ctc_list(list));
 
 	gcalls = new int[list.size()];
@@ -71,7 +71,7 @@ void CtcAdaptive::contract(Cell& c) {
 
 	 for(int j=0; j<list.size();j++){
 
-    if(k>0 && nb_succ_ctc<2) break;
+		 if(k>0 && nb_succ_ctc<2) break;
 
 		//array of informed nodes for each constraint i
 		AdaptCell* a[nb_ctr];
@@ -168,7 +168,7 @@ void CtcAdaptive::contract(Cell& c) {
 	}
 		k++;
 
-	}while(false);
+	}while(fp && nb_succ_ctc>=2);
 
 	iter++;
 
