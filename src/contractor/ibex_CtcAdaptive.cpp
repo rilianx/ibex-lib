@@ -16,7 +16,7 @@ namespace ibex {
 
 
 
-CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf ) :
+CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf, bool fp ) :
 		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf), fp(fp) {
 	assert(check_nb_var_ctc_list(list));
 
