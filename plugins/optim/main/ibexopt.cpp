@@ -153,7 +153,6 @@ int main(int argc, char** argv){
 	CtcCompo hc4acidhc4 (hc4, acidhc4);
 
 
-	string filtering2="acidhc4";
 
 	Ctc* ctc;
 	Array<Ctc> ctcs;
@@ -169,6 +168,19 @@ int main(int argc, char** argv){
 		ctcs.add(hc4);
 		ctcs.add(c3bcidhc4);
 	  //ctc= &hc43bcidhc4;
+	}else if(filtering == "varcid"){
+		ctcs.add(hc4);
+    for(int i=0; i<sys->nb_var; i++){
+			BitSet* b = new BitSet(sys->nb_var);
+			b->add(i);
+			Ctc3BCid* c3bcid = new Ctc3BCid(*b, hc44cid);
+			if(_actc){
+				c3bcid->input_ctr = new BitSet(sys->nb_ctr);
+				c3bcid->active_ctr = new BitSet(sys->nb_ctr);
+			}
+			ctcs.add(*c3bcid);
+		}
+
 	}else{cout << filtering <<  " is not an implemented  contraction  mode "  << endl; return -1;}
 
 
@@ -271,15 +283,12 @@ int main(int argc, char** argv){
 
 	CellBufferOptim* buffer = NULL;
 
-	if(strategy=="min_lb")
-			buffer = new CellHeap(*dynamic_cast<ExtendedSystem*>(sys));
-	else if(strategy=="lbub")
+	if(strategy=="lbub")
 		buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
 	else if(strategy=="feasdiv")
 		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
 								       *new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
 	else {cout << strategy <<  " is not an implemented search strategy "  << endl; return -1;}
-
 
 	o=new Optimizer(orig_sys->nb_var, *c,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 	    		prec,goalprec,goalprec);

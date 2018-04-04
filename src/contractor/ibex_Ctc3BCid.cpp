@@ -64,9 +64,13 @@ void Ctc3BCid::contract(IntervalVector& box) {
 	if(active_ctr) active_ctr->clear();					// [actc]
 	if(input_ctr && ctc.input_ctr) *ctc.input_ctr = *input_ctr;
 
-	for (int k=0; k<vhandled; k++) {                   // [gch] k counts the number of varCIDed variables [gch]
 
-		var=(start_var+k)%nb_var;
+  var=cid_vars.min();
+
+	for (int k=0; k<vhandled; k++) {                   // [gch] k counts the number of varCIDed variables [gch]
+    //cout << var << endl;
+
+		//var=(start_var+k)%nb_var;
 
 		impact.add(var);                              // [gch]
 		var3BCID(box,var);
@@ -76,6 +80,8 @@ void Ctc3BCid::contract(IntervalVector& box) {
 			set_flag(FIXPOINT);
 			return;
 		}
+
+		var=cid_vars.next(var);
 	}
 
 	//	start_var=(start_var+vhandled)%nb_var;             //  en contradiction avec le patch pour l'optim
