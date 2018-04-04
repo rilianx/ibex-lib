@@ -228,8 +228,9 @@ int main(int argc, char** argv){
 	  }
 	//  the actual contractor  ctc + linear relaxation
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn"){
-		if(!_actc) ctcs.add(*cxn); //polytope hull
-		else ctcs.add(*cxn_poly); //without fixpoint
+		//if(!_actc) ctcs.add(*cxn); //polytope hull
+		//else
+		ctcs.add(*cxn_poly); //without fixpoint
 
 	}else
 
