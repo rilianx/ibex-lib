@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<std::string> _strategy(parser, "string", "the search strategy", {'s', "search"});
 	args::ValueFlag<int> _L(parser, "int", "L", {'L'});
 	args::Flag _df(parser, "df", "Depth-first", {"df"});
-	args::Flag _fp(parser, "df", "Depth-first", {"fp"});
+	args::Flag _fp(parser, "fp", "Fixed point algorithm", {"fp"});
 	args::ValueFlag<double> _eps_x(parser, "float", "eps_x (the precision of the boxes)", {"exp_x"});
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
@@ -239,9 +239,10 @@ int main(int argc, char** argv){
 	int samplesize=1;
 
 	Ctc* c=NULL;
-	if(L==0)
+	if(L==0){
 		c= new CtcCompo(ctcs);
-	else{
+		if(_fp) c=new CtcFixPoint (*c, 0.1);
+	}else{
 		if(strategy=="solver")
 			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
 		else
