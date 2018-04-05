@@ -232,11 +232,7 @@ int main(int argc, char** argv){
 		//else
 		ctcs.add(*cxn_poly); //without fixpoint
 
-	}else
-
-
-	// one point probed when looking for a new feasible point (updating the loup)
-	int samplesize=1;
+	}
 
 	Ctc* c=NULL;
 	if(L==0){

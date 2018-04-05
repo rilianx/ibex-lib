@@ -92,7 +92,7 @@ void CtcAdaptive::contract(Cell& c) {
 
 			gcalls[j]++;
 			if(list[j].input_ctr->size()==0) {
-				if(k==0){
+				if(success[j]){
 					success[j]=false;
 					nb_succ_ctc--;
 				}
@@ -131,7 +131,7 @@ void CtcAdaptive::contract(Cell& c) {
 			cout << j << ":" << ca.size() << endl;
   */  //cout << c.box << endl;
 
-		if(list[j].input_ctr){
+		if(list[j].input_ctr && k==0){
 			for(int i=0; i<nb_ctr; i++){
 
 				if((*list[j].input_ctr)[i] && ca[i]){
