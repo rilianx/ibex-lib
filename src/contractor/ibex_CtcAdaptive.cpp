@@ -123,13 +123,13 @@ void CtcAdaptive::contract(Cell& c) {
 		if(list[j].active_ctr) nb_act_ctr[j]+=list[j].active_ctr->size();
 
 
-/*
+
     if (c.box.is_empty()) cout << j << ": empty_box" << endl;
 		if(list[j].input_ctr)
 			cout << j << ":" << list[j].input_ctr->size() << "-->"<< ca.size() << endl;
 		else
 			cout << j << ":" << ca.size() << endl;
-  */  //cout << c.box << endl;
+    //cout << c.box << endl;
 
 		if(list[j].input_ctr){
 			for(int i=0; i<nb_ctr; i++){
