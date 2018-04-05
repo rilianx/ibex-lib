@@ -243,7 +243,7 @@ int main(int argc, char** argv){
 		c= new CtcCompo(ctcs);
 	else{
 		if(strategy=="solver")
-			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, false, _fp);
+			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
 		else
 		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
   }
