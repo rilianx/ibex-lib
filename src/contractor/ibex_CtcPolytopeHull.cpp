@@ -45,14 +45,15 @@ CtcPolytopeHull::~CtcPolytopeHull() {
 }
 
 void CtcPolytopeHull::contract(IntervalVector& box) {
-  if(active_ctr) active_ctr->clear();
+
 
 	if (!(limit_diam_box.contains(box.max_diam()))) return;
 	// is it necessary?  YES (BNE) Soplex can give false infeasible results with large numbers
 	//cout << "[polytope-hull] box before LR (linear relaxation): " << box << endl;
 
 	try {
-
+		
+    if(active_ctr) active_ctr->clear();
 
 		//returns the number of constraints in the linearized system
 		if(input_ctr) lr.input_ctr=input_ctr;
