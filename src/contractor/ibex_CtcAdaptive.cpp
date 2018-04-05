@@ -150,7 +150,7 @@ void CtcAdaptive::contract(Cell& c) {
 					a[i]->F[make_pair(j,i)]++;
 
 					if(a[i]->F[make_pair(j,i)]==L){
-						a[i]->T[make_pair(j,i)] *= 2;
+					  if(a[i]->T[make_pair(j,i)] < 16) a[i]->T[make_pair(j,i)] *= 2;
 						a[i]->F[make_pair(j,i)] = 0;
 						//cout  << a[i] <<  j << "," << i << ":" << a[i]->T[make_pair(j,i)] << endl;
 					}
@@ -166,6 +166,7 @@ void CtcAdaptive::contract(Cell& c) {
 		}
 
 	}
+
 		k++;
 
 	}while(fp && nb_succ_ctc>=2);
