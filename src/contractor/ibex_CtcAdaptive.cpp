@@ -16,8 +16,8 @@ namespace ibex {
 
 
 
-CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf, bool fp ) :
-		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf), fp(fp) {
+CtcAdaptive::CtcAdaptive(const Array<Ctc>& list, int m, int L, bool bf, bool fp, int* T ) :
+		Ctc(list), list(list),iter(0), nb_ctr(m), L(L), bf(bf), fp(fp), T(T) {
 	assert(check_nb_var_ctc_list(list));
 
 	gcalls = new int[list.size()];
@@ -80,9 +80,13 @@ void CtcAdaptive::contract(Cell& c) {
 			list[j].input_ctr->clear();
 
 			for(int i=0; i<nb_ctr; i++){
-				a[i] = closest_informed_ancestor(c, j, i);
-				if(a[i]->T.find(make_pair(j,i)) == a[i]->T.end()) a[i]->T[make_pair(j,i)]=1;
 
+				a[i] = closest_informed_ancestor(c, j, i);
+
+				if(a[i]->T.find(make_pair(j,i)) == a[i]->T.end()) {
+					  if(T) a[i]->T[make_pair(j,i)]=T[j];
+				    else a[i]->T[make_pair(j,i)]=1;
+			  }
 
 				if( j==0 ||(k==0 && iter % a[i]->T[make_pair(j,i)] == 0) ||
 					(	(a[i]->T[make_pair(j,i)]==1 && a[i]->F[make_pair(j,i)]==0)) || L==10000 )
@@ -150,7 +154,9 @@ void CtcAdaptive::contract(Cell& c) {
 					a[i]->F[make_pair(j,i)]++;
 
 					if(a[i]->F[make_pair(j,i)]==L){
-					  if(a[i]->T[make_pair(j,i)] < 16) a[i]->T[make_pair(j,i)] *= 2;
+						if(T) a[i]->T[make_pair(j,i)] = T[j];
+						else if(a[i]->T[make_pair(j,i)] < 16) a[i]->T[make_pair(j,i)] *= 2;
+						
 						a[i]->F[make_pair(j,i)] = 0;
 						//cout  << a[i] <<  j << "," << i << ":" << a[i]->T[make_pair(j,i)] << endl;
 					}

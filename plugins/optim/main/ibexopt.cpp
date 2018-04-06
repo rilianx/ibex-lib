@@ -24,6 +24,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<int> _L(parser, "int", "L", {'L'});
 	args::Flag _df(parser, "df", "Depth-first", {"df"});
 	args::Flag _fp(parser, "fp", "Fixed point algorithm", {"fp"});
+	args::Flag _old(parser, "fp", "Old version", {"old"});
 	args::ValueFlag<double> _eps_x(parser, "float", "eps_x (the precision of the boxes)", {"exp_x"});
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
@@ -239,10 +240,16 @@ int main(int argc, char** argv){
 		c= new CtcCompo(ctcs);
 		if(_fp) c=new CtcFixPoint (*c, 0.1);
 	}else{
+		int* T=NULL;
+		if(_old){
+			T=new int[ctcs.size()];
+			for(int i=0;i<ctcs.size(); i++) T[i]=1;
+			T[ctcs.size()-1] = 4; //frequency of PolytopeHull
+		}
 		if(strategy=="solver")
-			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
+			c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp, T);
 		else
-		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp);
+		  c= new CtcAdaptive(ctcs, sys->nb_ctr, L, !_df, _fp, T);
   }
 
 	if(strategy=="solver"){
