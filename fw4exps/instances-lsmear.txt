@@ -44,7 +44,7 @@
 ../plugins/optim/benchs/blowup/ex8_2_1.bch
 ../plugins/optim/benchs/blowup/ex8_4_4.bch
 ../plugins/optim/benchs/blowup/ex8_4_5.bch*
-../plugins/optim/benchs/blowup/ex8_4_6.bch
+../plugins/optim/benchs/blowup/ex8_4_6.bch*
 ../plugins/optim/benchs/blowup/ex8_5_1.bch
 ../plugins/optim/benchs/blowup/ex8_5_2.bch
 ../plugins/optim/benchs/blowup/ex8_5_6.bch

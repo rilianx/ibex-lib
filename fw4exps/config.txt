@@ -6,26 +6,89 @@ factors = 1 0.833 0.665 0.5 0.2 0.1
 sig_gain = 1.2
 max_seeds = 5
 min_seeds = 2
-algo_names = std ibex-actc ibex-actc_df
+algo_names = std ibex-actc-old-df2
+#ibex-actc-old-df2
+#ibex-actc-varcid2 ibex-actc-varcid_df2
+#ibex-actc_bf2 ibex-actc_df2
+#ibex-actc-varcid ibex-actc-varcid-pf ibex-actc-fp2
+#std-fp ibex-actc-fp
+#ibex_ncsp-actc
+#std ibex-actc ibex-actc_df ibex-actc-fp
+#ibex-actc_df-varcid
 
 [std]
 exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
-params = _INSTANCE -L 0 --seed=_SEED
+params = _INSTANCE -L 10000 --seed=_SEED
 outputpos_times = 2
 outputpos_boxes = 3
 
-[ibex-actc]
+[std-fp]
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L 0 --seed=_SEED --fp
+outputpos_times = 2
+outputpos_boxes = 3
+
+[ibex-actc-fp2]
 tuning_param = L
-tuning_values = 4 8 12
+tuning_values = 1 2
+#2 4 6 8 10
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L _L --seed=_SEED --fp
+outputpos_times = 2
+outputpos_boxes = 3
+
+
+[ibex-actc_bf2]
+tuning_param = L
+tuning_values = 1 2 5 8 10 12
+#2 4 6 8 10
 exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED
 outputpos_times = 2
 outputpos_boxes = 3
 
-[ibex-actc_df]
+[ibex-actc_df2]
 tuning_param = L
-tuning_values = 4 8 12
+tuning_values = 1 2 5 10 
+#2 4 6 8 10
 exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
 params = _INSTANCE -L _L --seed=_SEED --df
+outputpos_times = 2
+outputpos_boxes = 3
+
+[ibex-actc-old-df2]
+tuning_param = L
+tuning_values = 1 2 4
+#2 4 6 8 10
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L _L --seed=_SEED --df --old
+outputpos_times = 2
+outputpos_boxes = 3
+
+
+[ibex-actc-varcid_df2]
+tuning_param = L
+tuning_values = 1 10000
+#2 5 10 10000
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L _L --seed=_SEED -f varcid --df
+outputpos_times = 2
+outputpos_boxes = 3
+
+
+[ibex-actc-varcid2]
+tuning_param = L
+tuning_values = 1 10000
+#2 5 10 10000
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L _L --seed=_SEED -f varcid
+outputpos_times = 2
+outputpos_boxes = 3
+
+[ibex-actc-varcid-fp2]
+tuning_param = L
+tuning_values = 1 2 4
+exec = "/home/ignacio/ibex-lib/__build__/plugins/optim/ibexopt"
+params = _INSTANCE -L _L --seed=_SEED -f varcid --fp
 outputpos_times = 2
 outputpos_boxes = 3
