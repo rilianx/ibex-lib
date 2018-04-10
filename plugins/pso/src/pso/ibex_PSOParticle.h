@@ -60,19 +60,21 @@ namespace ibex{
 
 			//TODO REPARAR SEARCH
 			void update_pBest(TreeCellOpt* tree, System* orig_sys, double loup){
+				//cout << position << endl;
 				if(tree->search(position)){
-
 					value = orig_sys->goal->eval(position).ub();
 					penalty = computePenalty(orig_sys);
 
 
 					if(compute_fitness(value, penalty, loup) < compute_fitness(vBest, peBest, loup)){
+						//cout << "is inside -> update pBest" << endl;
 						pBest = position;
 						vBest = value;
 						peBest = penalty;
 						//cout << "new pbest: " <<  vBest << "+" << peBest << " --> " << compute_fitness(vBest, peBest, loup) << endl;
 					}
 				}
+				//cout << "is NOT inside" << endl;
 
 			}
 

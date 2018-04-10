@@ -95,7 +95,6 @@ namespace ibex{
 
 		//cout << "gbest(0): " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
 		// ** Iterations **
-		if (trace) cout << "\033[0;33m# ITERATIONS" << endl;
 
 		while(iterations < limit){
 
@@ -107,9 +106,8 @@ namespace ibex{
 				particlesArray[i]->updateVelocityAndPosition(tree,orig_sys,gBest,c1,c2,x);
 
 				// Update the pBest if the new position is better than the previous one
-				// AND the pBest is located into some box
+				// AND the pBest is located in any box
 				particlesArray[i]->update_pBest(tree,orig_sys, loup);
-
 
 				// Update the gBest if the pBest is better than the gBest
 				if(PSOParticle::compute_fitness(particlesArray[i]->getBestValue(),particlesArray[i]->getBestPenalty(), loup)
@@ -117,8 +115,8 @@ namespace ibex{
 					gBest = particlesArray[i]->getBestPosition();
 					gValue = particlesArray[i]->getBestValue();
 					gpenalty = particlesArray[i]->getBestPenalty();
-					if(trace) cout << "new gbest: " <<  gValue << "+" << gpenalty << endl;
-					cout << "new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
+					cout << "   new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
+					cout << "particle pos: " << particlesArray[i]->getPosition() << "\n       g pos: " << particlesArray[i]->getBestPosition() << "\n--------------" << endl;
 				}
 
 

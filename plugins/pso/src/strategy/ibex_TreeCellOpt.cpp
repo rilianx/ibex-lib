@@ -184,8 +184,21 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
 			// is a leaf
 			//std::cout << "(" << aux << ") is leaf" << endl;
-			//cout << endl;
-			return aux;
+
+			bool_have = true;
+			for(int i=0; i<orig_sys->box.size(); i++){
+				if(!aux->box[i].contains(x[i])){
+					bool_have = false;
+					break;
+				}
+			}
+			if(bool_have){
+				S.push(aux->get<CellPSO>().left);
+				//std::cout << "this leaf has it" << endl;
+				return aux;
+			}else{
+				return NULL;
+			}
 		}else{
 			if(aux->get<CellPSO>().left){
 				//std::cout << "(" << aux << ") has left (" << aux->get<CellPSO>().left << ")" << endl;
@@ -199,7 +212,6 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 				if(bool_have){
 					S.push(aux->get<CellPSO>().left);
 					//aux = aux->get<CellPSO>().left;
-					//cout << "l";
 					//std::cout << "left has it" << endl;
 					//continue;
 				}
@@ -217,7 +229,6 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 				if(bool_have){
 					S.push(aux->get<CellPSO>().right);
 					//aux = aux->get<CellPSO>().right;
-					//cout << "r";
 					//std::cout << "right has it" << endl;
 					//continue;
 				}
@@ -227,7 +238,6 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 
 			//cout << "NULL2" << endl;
 			//return NULL;
-
 		}
 	}
 
