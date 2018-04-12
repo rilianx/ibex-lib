@@ -319,7 +319,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	}
 	if(trace) cout << "end first PSO" << endl;
 
-	exit(0);
+	//exit(0);
 	update_uplo();
 	int count = 0;
 	try {
@@ -337,7 +337,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			}
 
 			//The loup is updated if gbest < loup
-			if(pso_nodes){
+			if(!buffPSO && pso_nodes){
 				pair<double, Vector> gbest=pso_nodes->get_gbest();
 				if(gbest.first < loup)
 					loup_changed|=update_loup(gbest.second);

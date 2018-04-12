@@ -27,7 +27,7 @@ namespace ibex{
 	}
 
 	void PSOSwarm::resetPSO(double loup){
-	  if(trace) cout << "reset_PSO" << endl;
+	   cout << "reset_PSO" << endl;
 		minlb_node = tree->minlb_node();
 
 		for(int i=0; i<nParticles; i++){
@@ -53,7 +53,7 @@ namespace ibex{
 	 * Reset particles data and information of swarm
 	 */
 	void PSOSwarm::resetGBest(double loup){
-	  if(trace) cout << "resetGBest" << endl;
+	  // cout << "resetGBest" << endl;
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
 				particlesArray[i]->initialize(tree,orig_sys, minlb_node);
@@ -77,7 +77,7 @@ namespace ibex{
 	 * Execute PSO algorithm
 	 */
 	void PSOSwarm::executePSO(double loup){
-
+		cout << "executePSO" << endl;
 		double fitness;
 		int iterations = 0;
 
@@ -116,7 +116,7 @@ namespace ibex{
 					gValue = particlesArray[i]->getBestValue();
 					gpenalty = particlesArray[i]->getBestPenalty();
 					cout << "   new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
-					cout << "particle pos: " << particlesArray[i]->getPosition() << "\n       g pos: " << particlesArray[i]->getBestPosition() << "\n--------------" << endl;
+					//cout << "particle pos: " << particlesArray[i]->getPosition() << "\n       g pos: " << particlesArray[i]->getBestPosition() << "\n--------------" << endl;
 				}
 
 
