@@ -258,24 +258,10 @@ int main(int argc, char** argv){
 
 	if(strategy=="ibex_pso"){
 		bufferPSO = new BufferPSO(swarm);
-	}else if(strategy=="ibex_psodiv"){
-		bufferPSO = new BufferPSO(swarm);
-		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
-						*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
-	}else if(strategy == "ibex_opt" || strategy=="ibex_nodepso" || strategy=="ibex_rootpso"){
+	}else if(strategy == "ibex_opt" || strategy=="ibex_rootpso"){
 		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
 				*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
 	}
-
-
-
-	/*
-	if(strategy=="lbub")
-		buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
-	else if(strategy=="feasdiv")
-		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
-								       *new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
-	else {cout << strategy <<  " is not an implemented search strategy "  << endl; return -1;}*/
 
 	cout << sys->nb_var << endl;
 	cout << orig_sys->box << endl;
@@ -283,16 +269,10 @@ int main(int argc, char** argv){
 
 	if(strategy=="ibex_pso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *bufferPSO, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, bufferPSO, swarm_node,false);
-	}else if(strategy=="ibex_psodiv"){
-		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, bufferPSO, swarm_node,false);
-	}else if(strategy=="ibex_nodepso"){
-		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, NULL, swarm_node,true);
+	    		prec,goalprec,goalprec, swarm_node);
 	}else if(strategy=="ibex_rootpso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, NULL, swarm_node,false);
+	    		prec,goalprec,goalprec, swarm_node);
 	}else if(strategy=="ibex_opt"){
 		oo=new Optimizer(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 			    		prec,goalprec,goalprec);

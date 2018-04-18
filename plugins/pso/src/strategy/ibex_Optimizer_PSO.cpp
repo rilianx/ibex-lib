@@ -47,7 +47,7 @@ void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& b
 }
 
 OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
-		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f, BufferPSO* pso_nodes, PSOSwarm* swarm, bool every_node_pso) :
+		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f, PSOSwarm* swarm) :
                 				n(n), goal_var(goal_var),
                 				ctc(ctc), bsc(bsc), loup_finder(finder), buffer(buffer),
                 				eps_x(eps_x), rel_eps_f(rel_eps_f), abs_eps_f(abs_eps_f),
@@ -56,7 +56,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
                 				//kkt(normalized_user_sys),
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
-                                                time(0), nb_cells(0), pso_nodes(pso_nodes), swarm(swarm), every_node_pso(every_node_pso){
+                                                time(0), nb_cells(0), swarm(swarm){
 	//BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
 	//buff->set_values(&loup_point,&loup);
 	if (trace) cout.precision(12);
@@ -292,7 +292,6 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 	BufferPSO* buffPSO = dynamic_cast<BufferPSO*>(&buffer);
 
-
 	loup_changed=false;
 	initial_loup=obj_init_bound;
 
@@ -331,61 +330,25 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 			Cell *c;
 			if(buffPSO) c = buffPSO->top(loup);
-			else {
-				c= buffer.top();
-				if(pso_nodes) pso_nodes->last_node=c;
-			}
+			else c= buffer.top();
 
-			//cout << "cell:" << c << endl;
-
-			//The loup is updated if gbest < loup
-			if(!buffPSO && pso_nodes){
-				pair<double, Vector> gbest=pso_nodes->get_gbest();
-				if(gbest.first < loup)
-					loup_changed|=update_loup(gbest.second);
-			}
-
-
-			//if (trace >=2 ) cout << " current box " << c->box << endl;
-			//if (trace) cout << " current box " << c->box << endl;
 
 				try {
 					// Bisect
 					pair<IntervalVector,IntervalVector> boxes=bsc.bisect(*c);
 					pair<Cell*,Cell*> new_cells=c->bisect(boxes.first,boxes.second);
-				//	if(trace) std::cout << "cell: " << c;
-				//	if(trace) std::cout << " bisected: first->" << new_cells.first;
-				//	if(trace) std::cout << " second->" << new_cells.second << endl;
 
-					//nb_cells+=2;  // counting the cells handled ( in previous versions nb_cells was
-					//the number of cells put into the buffer after being handled)
+					if(!buffPSO) buffer.pop();
 
-					if(!buffPSO){
-						buffer.pop();
-					}
 
 					handle_cell(*new_cells.first, init_box);
 					handle_cell(*new_cells.second, init_box);
 
 					nb_cells+=2;
 
-					if(every_node_pso && swarm){
-						swarm->executePSO(loup_point.mid(), loup, *c);
-						if(swarm->getGBestValue() < loup){
-							loup_changed|=update_loup(swarm->getGBestPosition());
-							if(trace){
-								cout << "Updated loup" << endl;
-								//getchar();
-							}
-
-						}
-					}
-
 					if(buffPSO) buffPSO->trim(); //trim
-					else{
-						if(pso_nodes) pso_nodes->trim();
-						else delete c;
-					}
+					else delete c;
+
 
 					if (loup_changed) {
 						// In case of a new upper bound (loup_changed == true), all the boxes
@@ -401,7 +364,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 						if(!buffPSO)
 							buffer.contract(ymax);
-						if(pso_nodes) pso_nodes->update_gbest(loup_point.mid(), loup);
+						else buffPSO->update_gbest(loup_point.mid(), loup);
 
 						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
 

@@ -46,7 +46,7 @@ void TreeCellOpt::insert(Cell* cell, Cell* last_node){
 		cout << "no last_node" << endl;
 }
 
-bool TreeCellOpt::trim(Cell* last_node, Cell* minlb){
+bool TreeCellOpt::trim(Cell* last_node){
 	bool ret = false;
 	if(last_node){
 		Cell* father = last_node->get<CellPSO>().p;
@@ -58,12 +58,11 @@ bool TreeCellOpt::trim(Cell* last_node, Cell* minlb){
 					if(father->get<CellPSO>().left == aux) father->get<CellPSO>().left = NULL;
 					else if(father->get<CellPSO>().right == aux) father->get<CellPSO>().right = NULL;
 
-					if(aux==minlb) ret=true;
 					delete aux;
 					aux = father;
 					last_node = NULL;
 				}else{
-					if(root==minlb) ret=true;
+
 					delete root;
 					root = NULL;
 					last_node = NULL;
@@ -106,6 +105,7 @@ Cell* TreeCellOpt::diving_node(Cell* minlb){
 	return aux;
 }
 
+/*
 Cell* TreeCellOpt::minlb_node(){
 	Cell* aux = root;
 	Cell* minlb = NULL;
@@ -134,7 +134,7 @@ Cell* TreeCellOpt::minlb_node(){
 
   }
 	return minlb;
-}
+}*/
 
 Cell* TreeCellOpt::random_node(Cell* node){
 

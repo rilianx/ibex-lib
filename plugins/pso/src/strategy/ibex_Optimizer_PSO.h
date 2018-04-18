@@ -84,7 +84,7 @@ public:
 			int goal_var,
 			double eps_x=default_eps_x,
 			double rel_eps_f=default_rel_eps_f,
-			double abs_eps_f=default_abs_eps_f, BufferPSO* psoNodes=NULL, PSOSwarm* node_swarm=NULL, bool every_node_pso=true);
+			double abs_eps_f=default_abs_eps_f, PSOSwarm* node_swarm=NULL);
 
 	/**
 	 * \brief Delete *this.
@@ -239,11 +239,8 @@ public:
 	 */
 	CellBufferOptim& buffer;
 
-	BufferPSO* pso_nodes;
-
 	PSOSwarm* swarm;
 
-	bool every_node_pso;
 
 	/** Precision (bisection control) */
 	const double eps_x;

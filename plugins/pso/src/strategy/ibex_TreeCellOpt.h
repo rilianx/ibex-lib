@@ -66,7 +66,7 @@ class TreeCellOpt {
 	 * Delete every node that has no children left starting from last_node.
 	 * Return true if the minlb_node was removed
 	 */
-	bool trim(Cell* last_node, Cell* minlb=NULL);
+	bool trim(Cell* last_node);
 
 	/*
 	 * Random selection of leaf-node.
@@ -76,7 +76,7 @@ class TreeCellOpt {
   /*
   * Return the node with the min lb
 		*/
-	Cell* minlb_node();
+	//Cell* minlb_node();
 
 	Cell* diving_node(Cell* minlb);
 

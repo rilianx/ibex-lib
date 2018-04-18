@@ -68,7 +68,7 @@ namespace ibex {
 			virtual Cell* pop() { cout << "BufferPSO::pop() function is not implemented, use trim instead" << endl; return NULL; }
 
 			virtual void trim() {
-				if(tree->trim(last_node, swarm->minlb_node )) swarm->minlb_node=NULL;
+				tree->trim(last_node);
 				last_node=NULL;
 			}
 
@@ -86,7 +86,7 @@ namespace ibex {
 				}
 
 				//gbest should be inside a node.
-				if(!tree->search(swarm->getGBestPosition())){ //  ||
+				if(!tree->search(swarm->getGBestPosition()) ){ //  ||
 			  //!swarm->minlb_node) {
 					//cout << "gbest removed!: resetPSO" << endl;
 				  //swarm->resetGBest(loup);

@@ -13,7 +13,7 @@
 namespace ibex{
 	class PSOParticle {
 		public:
-			PSOParticle(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node, double eqeps=1e-8);
+			PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps=1e-8);
 			virtual ~PSOParticle();
 
 			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x);
@@ -30,15 +30,16 @@ namespace ibex{
 			double getBestPenalty();
 
 
-			void initialize(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node){
+			void initialize(TreeCellOpt* tree, System* orig_sys){
 				// Randomize particle position into valid place
 				if(tree->is_empty()) return;
 
-				Cell* c = tree->random_node(minlb_node);
+				Cell* c = tree->random_node(NULL);
 				//Cell* c = minlb_node;
 
 
 				position = c->box.random();
+				velocity = Vector::zeros(orig_sys->box.size());
 				position.resize(orig_sys->box.size());
 
 				value = orig_sys->goal->eval(position).ub();

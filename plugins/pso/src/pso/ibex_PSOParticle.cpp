@@ -13,10 +13,10 @@
 
 using namespace std; //delete
 namespace ibex {
-	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, Cell* minlb_node, double eqeps) :
+	PSOParticle::PSOParticle(TreeCellOpt* tree, System* orig_sys, double eqeps) :
 			position(orig_sys->box.random()), pBest(position),
 			velocity(Vector::zeros(orig_sys->box.size())), eqeps(eqeps){
-		initialize(tree, orig_sys, minlb_node);
+		initialize(tree, orig_sys);
 	}
 
 	/*
@@ -31,17 +31,20 @@ namespace ibex {
 
 
 
-		Vector newV = (velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
-		if (velocity == newV) cout << "same speed" << endl;
-		if (velocity == Vector::zeros(orig_sys->box.size())) cout << "speed zero! checkout!" << endl;
-		velocity = newV;
 
+		Vector newV = x*(velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
+		//if (velocity == newV) cout << "same speed" << endl;
+
+		velocity = newV;
+		//if (velocity == Vector::zeros(orig_sys->box.size())) cout << "speed zero! checkout!" << endl;
+		//cout << velocity << endl;
 		//velocity = x * orig_sys->box.random();
 
 		//cout << position << endl;
 
 		// ** Update Position based on new Velocity **
 		position = position + velocity;
+		//cout << position[0] << "," << position[1] << endl;
 
 	}
 
