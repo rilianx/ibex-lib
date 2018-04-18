@@ -28,8 +28,15 @@ namespace ibex {
 		// ** Update Velocity **
 		double rand1 = RNG::rand(0,1);
 		double rand2 = RNG::rand(0,1);
-		Vector newV = x* (velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
+
+
+
+		Vector newV = (velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
+		if (velocity == newV) cout << "same speed" << endl;
+		if (velocity == Vector::zeros(orig_sys->box.size())) cout << "speed zero! checkout!" << endl;
 		velocity = newV;
+
+		//velocity = x * orig_sys->box.random();
 
 		//cout << position << endl;
 

@@ -82,7 +82,6 @@ namespace ibex {
 			virtual Cell* top(double loup) const{
 				Cell* aux;
 				if(!swarm->isInitialized()){
-					cout << "contador" << endl;
 					swarm->resetPSO(loup);
 				}
 

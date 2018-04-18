@@ -375,7 +375,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 							loup_changed|=update_loup(swarm->getGBestPosition());
 							if(trace){
 								cout << "Updated loup" << endl;
-								getchar();
+								//getchar();
 							}
 
 						}

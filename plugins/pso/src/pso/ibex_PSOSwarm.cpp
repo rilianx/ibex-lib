@@ -27,7 +27,7 @@ namespace ibex{
 	}
 
 	void PSOSwarm::resetPSO(double loup){
-		cout << "reset_PSO" << endl;
+		//cout << "reset_PSO" << endl;
 		minlb_node = tree->minlb_node();
 
 		for(int i=0; i<nParticles; i++){
@@ -102,7 +102,10 @@ namespace ibex{
 			iterations++;
 			for(int i=0; i<nParticles; i++){
 				// Update velocity and position of every particle.
+				Vector oldPos = particlesArray[i]->getPosition();
 				particlesArray[i]->updateVelocityAndPosition(tree,orig_sys,gBest,c1,c2,x);
+				if(oldPos == particlesArray[i]->getPosition()) cout << "[" << iterations << "]same position [" << i << "] :: " << oldPos << endl;
+
 
 				// Update the pBest if the new position is better than the previous one
 				// AND the pBest is located in any box
