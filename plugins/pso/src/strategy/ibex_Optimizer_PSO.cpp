@@ -308,16 +308,16 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	handle_cell(*root,init_box);
 
 	cout << "loup: " <<  loup << endl;
-	if(trace) cout << "first PSO" << endl;
-	if(swarm){
+	//if(trace) cout << "first PSO" << endl;
+	/*if(swarm){
 		char file_name[] = "output_root.txt";
 		swarm->startPlot(file_name); // create file to plot with python
 		swarm->executePSO(loup_point.mid(), loup, *root);
 		swarm->closePlot(); // close file
 		if(swarm->getGBestValue() < loup)
 			update_loup(swarm->getGBestPosition());
-	}
-	if(trace) cout << "end first PSO" << endl;
+	}*/
+	//if(trace) cout << "end first PSO" << endl;
 
 	//exit(0);
 	update_uplo();
@@ -336,6 +336,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 				if(pso_nodes) pso_nodes->last_node=c;
 			}
 
+			//cout << "cell:" << c << endl;
+
 			//The loup is updated if gbest < loup
 			if(!buffPSO && pso_nodes){
 				pair<double, Vector> gbest=pso_nodes->get_gbest();
@@ -344,7 +346,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 			}
 
 
-			if (trace >=2 ) cout << " current box " << c->box << endl;
+			//if (trace >=2 ) cout << " current box " << c->box << endl;
+			//if (trace) cout << " current box " << c->box << endl;
 
 				try {
 					// Bisect
@@ -368,23 +371,21 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 					if(every_node_pso && swarm){
 						swarm->executePSO(loup_point.mid(), loup, *c);
-						if(swarm->getGBestValue() < loup)
+						if(swarm->getGBestValue() < loup){
 							loup_changed|=update_loup(swarm->getGBestPosition());
+							if(trace){
+								cout << "Updated loup" << endl;
+								getchar();
+							}
+
+						}
 					}
-
-
 
 					if(buffPSO) buffPSO->trim(); //trim
 					else{
 						if(pso_nodes) pso_nodes->trim();
 						else delete c;
 					}
-
-
-
-
-
-
 
 					if (loup_changed) {
 						// In case of a new upper bound (loup_changed == true), all the boxes
@@ -398,7 +399,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 						double ymax=compute_ymax();
 
 
-						buffer.contract(ymax);
+						if(!buffPSO)
+							buffer.contract(ymax);
 						if(pso_nodes) pso_nodes->update_gbest(loup_point.mid(), loup);
 
 						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
@@ -418,6 +420,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 					update_uplo();
 					if (timeout>0) timer.check(timeout); // TODO: not reentrant, JN: done
 						time = timer.get_time();
+
 				}
 				catch (NoBisectableVariableException& ) {
 					std::cout << "catch" << endl;
@@ -425,6 +428,7 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 					update_uplo(); // the heap has changed -> recalculate the uplo (eg: if not in best-first search)
 
 				}
+
 			//if(trace) std::cout << "FLAG END: empty::" << buffer.empty() << "====================================================" << endl;
 		}
 	}

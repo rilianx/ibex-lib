@@ -82,9 +82,11 @@ namespace ibex {
 			virtual Cell* top(double loup) const{
 				Cell* aux;
 				if(!swarm->isInitialized()){
+					cout << "contador" << endl;
 					swarm->resetPSO(loup);
 				}
 
+				//gbest should be inside a node.
 				if(!tree->search(swarm->getGBestPosition())){ //  ||
 			  //!swarm->minlb_node) {
 					//cout << "gbest removed!: resetPSO" << endl;
@@ -99,12 +101,12 @@ namespace ibex {
 				//std::cout << "gbest: " << swarm->getGBestPosition() << endl;
 				//std::cout << "gbest: " << swarm->getGBestValue() << "+" << swarm->getGBestPenalty() << endl;
 				//if(swarm->getGBestPenalty() < 0.1)
-					aux = tree->search(swarm->getGBestPosition());
+				aux = tree->search(swarm->getGBestPosition());
 				//else
 				  //aux = tree->diving_node(swarm->minlb_node);
 				//cout << aux << endl;
 
-				//gbest should be inside a node.
+
 				assert(aux);
 
 				//std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;

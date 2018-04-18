@@ -27,7 +27,7 @@ namespace ibex{
 	}
 
 	void PSOSwarm::resetPSO(double loup){
-	   cout << "reset_PSO" << endl;
+		cout << "reset_PSO" << endl;
 		minlb_node = tree->minlb_node();
 
 		for(int i=0; i<nParticles; i++){
@@ -53,7 +53,7 @@ namespace ibex{
 	 * Reset particles data and information of swarm
 	 */
 	void PSOSwarm::resetGBest(double loup){
-	  // cout << "resetGBest" << endl;
+	    cout << "resetGBest" << endl;
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
 				particlesArray[i]->initialize(tree,orig_sys, minlb_node);
@@ -77,7 +77,7 @@ namespace ibex{
 	 * Execute PSO algorithm
 	 */
 	void PSOSwarm::executePSO(double loup){
-		cout << "executePSO" << endl;
+		//cout << "executePSO" << endl;
 		double fitness;
 		int iterations = 0;
 
@@ -86,7 +86,6 @@ namespace ibex{
 		if (trace) cout << "Cognitive parameter (c1): " << c1 << endl;
 		if (trace) cout << "Social parameter (c2): " << c2 << endl;
 
-		//cout << gValue << endl;
 		//vericar que todos los pbest se encuentren dentro de una caja
 		for(int i=0; i<nParticles; i++){
 			if(!tree->search(particlesArray[i]->getBestPosition()))
@@ -115,7 +114,7 @@ namespace ibex{
 					gBest = particlesArray[i]->getBestPosition();
 					gValue = particlesArray[i]->getBestValue();
 					gpenalty = particlesArray[i]->getBestPenalty();
-					cout << "   new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
+					if(gpenalty == 0) cout << "   new gbest: " <<  gValue << "+" << gpenalty << " --> " <<  PSOParticle::compute_fitness(gValue,gpenalty, loup) << endl;
 					//cout << "particle pos: " << particlesArray[i]->getPosition() << "\n       g pos: " << particlesArray[i]->getBestPosition() << "\n--------------" << endl;
 				}
 
@@ -132,7 +131,7 @@ namespace ibex{
 
 
 	void PSOSwarm::startPlot(char* file_name){
-		cout << "to file " << file_name << endl;
+		//cout << "to file " << file_name << endl;
 		output.open(file_name);
 	}
 
@@ -150,7 +149,8 @@ namespace ibex{
 			for(int a=0; a < orig_sys->box.size()-1; a++){
 				output << particlesArray[i]->getBestPosition()[a] << ",";
 			}
-			output << particlesArray[i]->getBestPosition()[orig_sys->box.size()-1] << ";";
+			//output << particlesArray[i]->getBestPosition()[orig_sys->box.size()-1] << ";";
+			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 		}
 
 		for(int a=0; a < orig_sys->box.size()-1; a++){
@@ -170,7 +170,7 @@ namespace ibex{
 	}
 
 	void PSOSwarm::closePlot(){
-		cout << "close file output.txt" << endl;
+		//cout << "close file output.txt" << endl;
 		output.close();
 	}
 

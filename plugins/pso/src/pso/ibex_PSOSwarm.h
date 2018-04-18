@@ -47,7 +47,7 @@ namespace ibex{
 
 		void executePSO(Vector loup_point, double loup, Cell& c){
 			tree->root=&c;
-			resetPSO(loup);
+			//resetPSO(loup);
 			//update_gbest(loup_point, loup);
 			executePSO(loup);
 			tree->root=NULL;

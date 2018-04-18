@@ -58,7 +58,6 @@ namespace ibex{
 				}
 			}
 
-			//TODO REPARAR SEARCH
 			void update_pBest(TreeCellOpt* tree, System* orig_sys, double loup){
 				//cout << position << endl;
 				if(tree->search(position)){
