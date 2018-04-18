@@ -62,14 +62,7 @@ namespace ibex{
 
 		void update_gbest(Vector& loup_point, double loup){
 			if(loup!=POS_INFINITY && (loup<gValue || gpenalty != 0.0)){
-				bool bool_have = true;
-				for(int i=0; i<orig_sys->box.size(); i++){
-					/*if(!minlb_node->box[i].contains(loup_point[i])){
-						bool_have = false;
-						break;
-					}*/
-				}
-				if(bool_have &&	tree->search(loup_point)){
+				if(tree->search(loup_point)){
 					gBest = loup_point;
 					gValue = loup;
 					gpenalty = 0.0;
