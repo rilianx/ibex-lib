@@ -26,11 +26,16 @@ namespace ibex {
 		double maxVel;	//max velocity value
 
 		// ** Update Velocity **
+
 		double rand1 = RNG::rand(0,1);
 		double rand2 = RNG::rand(0,1);
 
 
-
+		//variante distinto random por componente del vector
+		//Vector newV (position.size());
+		//for(int i=0;i<newV.size();i++)
+			//newV[i] = x*(velocity[i] + (c1*RNG::rand(0,1)*(pBest[i] - position[i]) +
+		//			(c2*RNG::rand(0,1)*(gBest[i]-position[i]))));
 
 		Vector newV = x*(velocity + (c1*rand1*(pBest - position) + (c2*rand2*(gBest-position))));
 		//if (velocity == newV) cout << "same speed" << endl;
