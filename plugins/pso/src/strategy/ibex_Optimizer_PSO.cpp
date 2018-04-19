@@ -364,7 +364,8 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 						if(!buffPSO)
 							buffer.contract(ymax);
-						else buffPSO->update_gbest(loup_point.mid(), loup);
+						else
+							buffPSO->update_gbest(loup_point.mid(), loup);
 
 						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
 
