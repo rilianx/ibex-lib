@@ -15,7 +15,9 @@ using namespace std;
 namespace ibex {
 
 //TODO: remove this recipe for the argument of the max number of iterations of the LP solver
-LoupFinderXTaylor::LoupFinderXTaylor(const System& sys) : sys(sys), lr(sys,LinearizerXTaylor::RESTRICT), lp_solver(sys.nb_var, std::max(sys.nb_var*3,LPSolver::default_max_iter)) {
+LoupFinderXTaylor::LoupFinderXTaylor(const System& sys, bool abs_taylor) :
+		sys(sys), lr(sys,LinearizerXTaylor::RESTRICT), lp_solver((abs_taylor)?sys.nb_var:2*sys.nb_var,
+				std::max(sys.nb_var*3,LPSolver::default_max_iter)), abs_taylor(abs_taylor) {
 //	nb_simplex=0;
 //	diam_simplex=0;
 }
@@ -28,7 +30,19 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 	int n=sys.nb_var;
 
 	lp_solver.clean_ctrs();
-	lp_solver.set_bounds(box);
+
+	if(!abs_taylor)
+		lp_solver.set_bounds(box);
+	else{
+		IntervalVector box2(n*2);
+		for(int i=0;i<n;i++)
+			box2[i]=box[i];
+		for(int i=0;i<n;i++)
+			box2[n+i]=Interval(-box2[i].mag(), box2[i].mag());
+
+		lp_solver.set_bounds(box2);
+
+	}
 
 	IntervalVector ig=sys.goal_gradient(box.mid());
 	if (ig.is_empty()) // unfortunately, at the midpoint the function is not differentiable
@@ -53,6 +67,7 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 	if (stat == LPSolver::OPTIMAL) {
 		//the linear solution is mapped to intervals and evaluated
 		Vector loup_point = lp_solver.get_primal_sol();
+		loup_point.resize(n);
 
 		//std::cout << " simplex result " << prim[0] << " " << loup_point << std::endl;
 

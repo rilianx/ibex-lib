@@ -36,7 +36,7 @@ public:
 	 *
 	 * \param sys         - The NLP problem.
 	 */
-	LoupFinderXTaylor(const System& sys);
+	LoupFinderXTaylor(const System& sys, bool abs_taylor=false);
 
 	/**
 	 * \brief Find a new loup in a given box.
@@ -57,6 +57,9 @@ protected:
 
 	/** linear solver */
 	LPSolver lp_solver;
+
+	/** Variant using midTaylor with absolute values */
+	bool abs_taylor;
 
 	/** Miscellaneous   for statistics */
 //	int nb_simplex;
