@@ -20,13 +20,12 @@ LoupFinderXTaylor::LoupFinderXTaylor(const System& sys, bool abs_taylor) :
 				std::max(sys.nb_var*3,LPSolver::default_max_iter)), abs_taylor(abs_taylor) {
 //	nb_simplex=0;
 //	diam_simplex=0;
+
 }
 
 std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& box, const IntervalVector&, double current_loup) {
-
 	if (!(lp_solver.default_limit_diam_box.contains(box.max_diam())))
 		throw NotFound();
-
 	int n=sys.nb_var;
 
 	lp_solver.clean_ctrs();
@@ -41,7 +40,6 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 			box2[n+i]=Interval(-box2[i].mag(), box2[i].mag());
 
 		lp_solver.set_bounds(box2);
-
 	}
 
 	IntervalVector ig=sys.goal_gradient(box.mid());

@@ -24,5 +24,4 @@ all: $(BINS)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $< $(LIBS)
 
 clean:
-	rm -f $(BINS)
-	
+rm -f $(BINS)

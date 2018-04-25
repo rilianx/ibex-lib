@@ -41,6 +41,11 @@ LinearizerAbsTaylor::LinearizerAbsTaylor(const System& _sys):
 
 }
 
+LinearizerAbsTaylor::~LinearizerAbsTaylor() {
+
+}
+
+
 
 
 int LinearizerAbsTaylor::linearize(const IntervalVector& box, LPSolver& _lp_solver)  {
@@ -52,7 +57,6 @@ int LinearizerAbsTaylor::linearize(const IntervalVector& box, LPSolver& _lp_solv
 int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 
 	BitSet active=sys.active_ctrs(box);
-
 	if (active.empty()) return 0;
 
 
