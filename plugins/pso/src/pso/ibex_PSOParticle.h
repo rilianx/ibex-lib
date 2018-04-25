@@ -18,7 +18,7 @@ namespace ibex{
 
 			void updateVelocityAndPosition(TreeCellOpt* tree, System* orig_sys, Vector gBest, double c1, double c2, double x);
 
-			double computePenalty(System* orig_sys);
+			static double computePenalty(System* orig_sys, Vector& position);
 			void selectBestInternal(TreeCellOpt* tree);
 			bool isFeasible();
 			bool isBestFeasible();
@@ -44,7 +44,7 @@ namespace ibex{
 
 				value = orig_sys->goal->eval(position).ub();
 				//cout << value << endl;
-				penalty = computePenalty(orig_sys);
+				penalty = computePenalty(orig_sys, position);
 				//cout << penalty << endl;
 
 				// store best values
@@ -63,7 +63,7 @@ namespace ibex{
 				//cout << position << endl;
 				if(tree->search(position)){
 					value = orig_sys->goal->eval(position).ub();
-					penalty = computePenalty(orig_sys);
+					penalty = computePenalty(orig_sys, position);
 
 
 					if(compute_fitness(value, penalty, loup) < compute_fitness(vBest, peBest, loup)){

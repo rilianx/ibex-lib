@@ -93,9 +93,24 @@ class TreeCellOpt {
 	}
 
 	/*
+	 * Return true if the vector x is contained in box
+	 */
+	bool contains(const IntervalVector& box, const Vector& x) const;
+
+	/*
 	 * Return the node who contains Vector
 	 */
 	Cell* search(const Vector& x) const;
+
+	/*
+	 * Returns the distance from the vector to the closest point in the box
+	 */
+	double manhattan_distance(const Vector& x, const IntervalVector& box) const;
+
+	/*
+	 * Return the closest node (manhattan distance) to x
+	 */
+	Cell* closest_node(const Vector& x) const;
 
 	/*
 	virtual bool hasGB(Cell* cell){

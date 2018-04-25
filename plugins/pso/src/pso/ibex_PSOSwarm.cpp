@@ -49,29 +49,6 @@ namespace ibex{
     initialized=true;
 	}
 
-	/*
-	 * Reset particles data and information of swarm
-	 */
-	void PSOSwarm::resetGBest(double loup){
-	   // cout << "resetGBest" << endl;
-		for(int i=0; i<nParticles; i++){
-			if(!tree->search(particlesArray[i]->getBestPosition()))
-				particlesArray[i]->initialize(tree,orig_sys);
-
-			// Update the gBest if the pBest is better than the gBest
-			if(i==0 || PSOParticle::compute_fitness(particlesArray[i]->getBestValue(),particlesArray[i]->getBestPenalty(), loup)
-			< PSOParticle::compute_fitness(gValue,gpenalty, loup) ){
-				gBest = particlesArray[i]->getBestPosition();
-				gValue = particlesArray[i]->getBestValue();
-				gpenalty = particlesArray[i]->getBestPenalty();
-
-			}
-
-		}
-		//cout << gValue << endl;
-		initialized = true;
-		//cout << "initialized" << endl;
-	}
 
 	/*
 	 * Execute PSO algorithm
@@ -152,9 +129,9 @@ namespace ibex{
 
 		for(int i=0; i < nParticles ; i++){
 			for(int a=0; a < orig_sys->box.size()-1; a++){
-				output << particlesArray[i]->getBestPosition()[a] << ",";
+				output << particlesArray[i]->getPosition()[a] << ",";
 			}
-			output << particlesArray[i]->getBestPosition()[orig_sys->box.size()-1] << ";";
+			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 			//output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 		}
 

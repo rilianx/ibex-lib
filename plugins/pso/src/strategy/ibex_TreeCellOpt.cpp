@@ -165,15 +165,20 @@ Cell* TreeCellOpt::random_node(Cell* node){
 	return aux;
 }
 
+bool TreeCellOpt::contains(const IntervalVector& box, const Vector& x) const{
+
+	for(int i=0; i<x.size(); i++){
+		if(!box[i].contains(x[i]))
+			return false;
+	}
+	return true;
+}
+
+
 Cell* TreeCellOpt::search(const Vector& x) const{
 	//cout << "search" << endl;
 	Cell* aux = root;
-	bool bool_have;
-	if(!aux){
-		//std::cout << "root_null" << endl;
-		//cout << "NULL1" << endl;
-		return NULL;
-	}
+	if(!aux) return NULL;
 
 	stack<Cell*> S;
 	S.push(aux);
@@ -182,67 +187,93 @@ Cell* TreeCellOpt::search(const Vector& x) const{
 		aux=S.top(); S.pop();
 
 		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
-			// is a leaf
-			//std::cout << "(" << aux << ") is leaf" << endl;
 
-			bool_have = true;
-			for(int i=0; i<orig_sys->box.size(); i++){
-				if(!aux->box[i].contains(x[i])){
-					bool_have = false;
-					break;
-				}
-			}
-			if(bool_have){
-				S.push(aux->get<CellPSO>().left);
-				//std::cout << "this leaf has it" << endl;
+			if( contains(aux->box, x) )
 				return aux;
-			}else{
-				return NULL;
-			}
+
+
 		}else{
 			if(aux->get<CellPSO>().left){
-				//std::cout << "(" << aux << ") has left (" << aux->get<CellPSO>().left << ")" << endl;
-				bool_have = true;
-				for(int i=0; i<orig_sys->box.size(); i++){
-					if(!aux->get<CellPSO>().left->box[i].contains(x[i])){
-						bool_have = false;
-						break;
-					}
-				}
-				if(bool_have){
+
+				if(contains(aux->get<CellPSO>().left->box, x))
 					S.push(aux->get<CellPSO>().left);
-					//aux = aux->get<CellPSO>().left;
-					//std::cout << "left has it" << endl;
-					//continue;
-				}
+
 			}
 
 			if(aux->get<CellPSO>().right){
-				//std::cout << "(" << aux << ") has right (" << aux->get<CellPSO>().right << ")" << endl;
-				bool_have = true;
-				for(int i=0; i<orig_sys->box.size(); i++){
-					if(!aux->get<CellPSO>().right->box[i].contains(x[i])){
-						bool_have = false;
-						break;
-					}
-				}
-				if(bool_have){
+
+				if(contains(aux->get<CellPSO>().right->box, x))
 					S.push(aux->get<CellPSO>().right);
-					//aux = aux->get<CellPSO>().right;
-					//std::cout << "right has it" << endl;
-					//continue;
-				}
+
 			}
 
-
-
-			//cout << "NULL2" << endl;
-			//return NULL;
 		}
 	}
 
-	//cout << "NULL" << endl;
 	return NULL;
+}
+
+double TreeCellOpt::manhattan_distance(const Vector& x, const IntervalVector& box) const{
+	double distance = 0.0;
+	for(int i=0; i<x.size(); i++){
+		if(!box[i].contains(x[i]))
+			distance+= (x[i]<box[i].lb())? box[i].lb()-x[i] : x[i] - box[i].ub();
+
+	}
+	return distance;
+
+}
+
+Cell* TreeCellOpt::closest_node(const Vector& x) const{
+	//cout << "search" << endl;
+	Cell* aux = root;
+	Cell* closest=NULL;
+	if(!aux) return NULL;
+
+
+	map<double, Cell*> M; // lb_distance --> node
+
+	double min_distance= POS_INFINITY;
+
+	M.insert(make_pair(0, root));
+
+	while(!M.empty()){
+		pair<double, Cell*> pair =*M.begin();
+		if(pair.first >= min_distance) return closest;
+
+		aux=pair.second;
+		M.erase(M.begin());
+
+		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+
+			double d=manhattan_distance(x, aux->box);
+
+			if( d==0 )
+				return aux;
+			else if(d<min_distance){
+				closest=aux;
+				min_distance=d;
+			}
+
+		}else{
+			if(aux->get<CellPSO>().left){
+
+				double lb_d=manhattan_distance(x, aux->get<CellPSO>().left->box);
+				M.insert(make_pair(lb_d,aux->get<CellPSO>().left));
+
+			}
+
+			if(aux->get<CellPSO>().right){
+
+				double lb_d=manhattan_distance(x, aux->get<CellPSO>().right->box);
+				M.insert(make_pair(lb_d,aux->get<CellPSO>().right));
+
+			}
+
+		}
+	}
+
+	return closest;
 }
 
 void TreeCellOpt::contract(double loup) {

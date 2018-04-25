@@ -54,7 +54,7 @@ namespace ibex {
 	}
 
 
-	double PSOParticle::computePenalty(System* orig_sys){
+	double PSOParticle::computePenalty(System* orig_sys, Vector& position){
 		double sum = 0;
 		for(int i=0; i<orig_sys->ctrs.size();i++){
 			Interval eval = orig_sys->ctrs[i].f.eval(position);
@@ -65,7 +65,7 @@ namespace ibex {
 				sum += -eval.ub();
 			}
 			else if(orig_sys->ctrs[i].op == EQ ){
-				sum += std::max(0.0, abs(eval).ub() - eqeps);
+				sum += std::max(0.0, abs(eval).ub() /*- eqeps*/);
 			}
 		}
 

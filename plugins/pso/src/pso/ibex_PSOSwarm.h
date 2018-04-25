@@ -41,7 +41,6 @@ namespace ibex{
 		PSOSwarm(TreeCellOpt* tree, System* orig_sys, double c1, double c2,  double x,  int nParticles, int limit);
 		virtual ~PSOSwarm();
 
-		void resetGBest(double loup);
 		void resetPSO(double loup);
 		void executePSO(double loup);
 
@@ -60,15 +59,41 @@ namespace ibex{
 		double getGBestValue();
 		double getGBestPenalty();
 
-		void update_gbest(Vector& loup_point, double loup){
+		void update_gbest(Vector& point, double loup){
 			if(loup!=POS_INFINITY && (loup<gValue || gpenalty != 0.0)){
-				if(tree->search(loup_point)){
-					gBest = loup_point;
+				if(tree->search(point)){
+					gBest = point;
 					gValue = loup;
 					gpenalty = 0.0;
 				}
 				else cout << "loup is not in the tree" << endl;
 			}
+		}
+
+		bool update_gbest_closest_node(const Vector& point){
+			Cell* c=tree->closest_node(point);
+            if(c){
+            	gBest = c->box.random();
+            	gBest.resize(orig_sys->box.size());
+            	gValue = orig_sys->goal->eval(gBest).ub();
+            	gpenalty = PSOParticle::computePenalty(orig_sys, gBest);
+            	return true;
+            }
+            return false;
+
+		}
+
+		bool update_gbest(const Cell* c){
+
+			if(c){
+				gBest = c->box.random();
+				gBest.resize(orig_sys->box.size());
+				gValue = orig_sys->goal->eval(gBest).ub();
+				gpenalty = PSOParticle::computePenalty(orig_sys, gBest);
+				return true;
+			}
+			return false;
+
 		}
 
 		void setGBest(Vector pos){

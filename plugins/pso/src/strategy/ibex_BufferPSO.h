@@ -68,6 +68,12 @@ namespace ibex {
 			virtual Cell* pop() { cout << "BufferPSO::pop() function is not implemented, use trim instead" << endl; return NULL; }
 
 			virtual void trim() {
+				//update the gbest with the best children of the last node (lb)
+				if(!tree->search(swarm->getGBestPosition())){
+					Cell* n=tree->diving_node(last_node);
+					if(n) swarm->update_gbest(n);
+				}
+
 				tree->trim(last_node);
 				last_node=NULL;
 			}
@@ -80,17 +86,24 @@ namespace ibex {
 			 * Returns node who contains gBest and update last_node.
 			 */
 			virtual Cell* top(double loup) const{
+				//cout << "top" << endl;
+
 				Cell* aux;
 				if(!swarm->isInitialized()){
 					swarm->resetPSO(loup);
 				}
 
 				//gbest should be inside a node.
-				if(!tree->search(swarm->getGBestPosition()) ){ //  ||
-			  //!swarm->minlb_node) {
-					//cout << "gbest removed!: resetPSO" << endl;
-				  //swarm->resetGBest(loup);
-					swarm->resetPSO(loup);
+
+
+				if(!tree->search(swarm->getGBestPosition()) ){
+					//cout << "gbest removed!" << endl;
+					//if(!swarm->update_gbest_closest_node(swarm->getGBestPosition(),loup)){
+						//cout << "gbest migrated" << endl;
+						//cout << "reset PSO" << endl;
+						swarm->resetPSO(loup);
+					//}
+
 
 				}
 
