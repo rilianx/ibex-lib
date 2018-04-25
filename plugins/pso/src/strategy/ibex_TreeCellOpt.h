@@ -78,7 +78,7 @@ class TreeCellOpt {
 		*/
 	//Cell* minlb_node();
 
-	Cell* diving_node(Cell* minlb);
+	Cell* minlb(Cell* minlb);
 
 	/*
 	 * Return true if Vector is contained by any node

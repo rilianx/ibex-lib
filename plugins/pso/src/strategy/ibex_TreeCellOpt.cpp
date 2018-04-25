@@ -78,7 +78,7 @@ bool TreeCellOpt::trim(Cell* last_node){
 	return ret;
 }
 
-Cell* TreeCellOpt::diving_node(Cell* minlb){
+Cell* TreeCellOpt::minlb(Cell* minlb){
 	Cell* aux = minlb;
 
 	if(aux == NULL) {

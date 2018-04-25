@@ -28,6 +28,7 @@ namespace ibex{
 			double getBestValue();
 			double getPenalty();
 			double getBestPenalty();
+			Vector getVelocity() {return velocity;}
 
 
 			void initialize(TreeCellOpt* tree, System* orig_sys){

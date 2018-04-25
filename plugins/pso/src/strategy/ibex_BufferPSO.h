@@ -70,7 +70,7 @@ namespace ibex {
 			virtual void trim() {
 				//update the gbest with the best children of the last node (lb)
 				if(!tree->search(swarm->getGBestPosition())){
-					Cell* n=tree->diving_node(last_node);
+					Cell* n=tree->minlb(last_node);
 					if(n) swarm->update_gbest(n);
 				}
 
@@ -100,7 +100,7 @@ namespace ibex {
 					//cout << "gbest removed!" << endl;
 					//if(!swarm->update_gbest_closest_node(swarm->getGBestPosition(),loup)){
 						//cout << "gbest migrated" << endl;
-						//cout << "reset PSO" << endl;
+						cout << "reset PSO" << endl;
 						swarm->resetPSO(loup);
 					//}
 

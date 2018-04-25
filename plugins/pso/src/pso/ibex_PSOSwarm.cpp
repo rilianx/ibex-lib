@@ -53,6 +53,7 @@ namespace ibex{
 	/*
 	 * Execute PSO algorithm
 	 */
+
 	void PSOSwarm::executePSO(double loup){
 		//cout << "executePSO" << endl;
 		double fitness;
@@ -82,6 +83,7 @@ namespace ibex{
 				// Update velocity and position of every particle.
 				Vector oldPos = particlesArray[i]->getPosition();
 				particlesArray[i]->updateVelocityAndPosition(tree,orig_sys,gBest,c1,c2,x);
+
 				//if(oldPos == particlesArray[i]->getPosition()) cout << "[" << iterations << "]same position [" << i << "] :: " << oldPos << endl;
 
 
@@ -129,9 +131,9 @@ namespace ibex{
 
 		for(int i=0; i < nParticles ; i++){
 			for(int a=0; a < orig_sys->box.size()-1; a++){
-				output << particlesArray[i]->getPosition()[a] << ",";
+				output << particlesArray[i]->getBestPosition()[a] << ",";
 			}
-			output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
+			output << particlesArray[i]->getBestPosition()[orig_sys->box.size()-1] << ";";
 			//output << particlesArray[i]->getPosition()[orig_sys->box.size()-1] << ";";
 		}
 
