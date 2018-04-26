@@ -15,8 +15,6 @@
 #include "ibex_Backtrackable.h"
 #include "ibex_OptimData.h"
 
-#include "ibex_PSOSwarm.h"
-
 #include <float.h>
 #include <stdlib.h>
 #include <iomanip>
@@ -47,7 +45,7 @@ void OptimizerPSO::read_ext_box(const IntervalVector& ext_box, IntervalVector& b
 }
 
 OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBufferOptim& buffer,
-		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f, PSOSwarm* swarm) :
+		int goal_var, double eps_x, double rel_eps_f, double abs_eps_f) :
                 				n(n), goal_var(goal_var),
                 				ctc(ctc), bsc(bsc), loup_finder(finder), buffer(buffer),
                 				eps_x(eps_x), rel_eps_f(rel_eps_f), abs_eps_f(abs_eps_f),
@@ -56,7 +54,7 @@ OptimizerPSO::OptimizerPSO(int n, Ctc& ctc, Bsc& bsc, LoupFinder& finder, CellBu
                 				//kkt(normalized_user_sys),
 						uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY), loup(POS_INFINITY),
                 				loup_point(n), initial_loup(POS_INFINITY), loup_changed(false),
-                                                time(0), nb_cells(0), swarm(swarm){
+                                                time(0), nb_cells(0){
 	//BufferPSO* buff = dynamic_cast<BufferPSO*>(&buffer);
 	//buff->set_values(&loup_point,&loup);
 	if (trace) cout.precision(12);
@@ -77,9 +75,14 @@ double OptimizerPSO::compute_ymax() {
 
 bool OptimizerPSO::update_loup(const IntervalVector& box) {
 	try {
-		pair<IntervalVector,double> p=loup_finder.find(box,loup_point,loup);
-		loup_point = p.first;
-		loup = p.second;
+		IntervalVector box2=box;
+		//box2[box2.size()-1]=Interval(box2[box2.size()-1].lb(),100);
+		pair<IntervalVector,double> p=loup_finder.find(box2,loup_point,loup);
+		if(p.second < loup){
+			loup_point = p.first;
+			loup = p.second;
+		}else
+			cout << "no-loup= " << loup  << endl;
 
 		if (trace) {
 			cout << "                    ";
@@ -283,11 +286,6 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 	buffer.add_backtrackable(*root);
 	root->add<CellPSO>();
 
-//  add data required by optimizer + KKT contractor
-//	root->add<EntailedCtr>();
-//	//root->add<Multipliers>();
-//	entailed=&root->get<EntailedCtr>();
-//	entailed->init_root(user_sys,sys);
 
 
 	BufferPSO* buffPSO = dynamic_cast<BufferPSO*>(&buffer);
@@ -364,8 +362,6 @@ OptimizerPSO::Status OptimizerPSO::optimize(const IntervalVector& init_box, doub
 
 						if(!buffPSO)
 							buffer.contract(ymax);
-						else
-							buffPSO->update_gbest(loup_point.mid(), loup);
 
 						//cout << " now buffer is contracted and min=" << buffer.minimum() << endl;
 

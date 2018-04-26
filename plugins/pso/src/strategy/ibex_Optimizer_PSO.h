@@ -15,7 +15,6 @@
 #include "ibex_Bsc.h"
 #include "ibex_LoupFinder.h"
 #include "ibex_CellBufferOptim.h"
-#include "ibex_PSOSwarm.h"
 #include "ibex_BufferPSO.h"
 //#include "ibex_EntailedCtr.h"
 #include "ibex_CtcKhunTucker.h"
@@ -84,7 +83,7 @@ public:
 			int goal_var,
 			double eps_x=default_eps_x,
 			double rel_eps_f=default_rel_eps_f,
-			double abs_eps_f=default_abs_eps_f, PSOSwarm* node_swarm=NULL);
+			double abs_eps_f=default_abs_eps_f);
 
 	/**
 	 * \brief Delete *this.
@@ -239,7 +238,6 @@ public:
 	 */
 	CellBufferOptim& buffer;
 
-	PSOSwarm* swarm;
 
 
 	/** Precision (bisection control) */

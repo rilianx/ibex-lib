@@ -13,7 +13,6 @@
 #include "ibex_ExtendedSystem.h"
 #include "ibex_CellCostFunc.h"
 #include "ibex_TreeCellOpt.h"
-#include "ibex_PSOSwarm.h"
 #include "ibex_Interval.h"
 #include "ibex_Random.h"
 #include "ibex_System.h"
@@ -22,14 +21,66 @@
 using namespace std;
 
 namespace ibex {
+
+	class Part{
+
+		public:
+
+		Part(const Vector& pos) : position(pos){
+			position.resize(orig_sys->box.size());
+			cost=orig_sys->goal->eval(position).ub();
+			viols=computePenalty();
+		}
+
+		void reinitialize(const Vector& pos) {
+		  position=pos;
+		  position.resize(orig_sys->box.size());
+			cost=orig_sys->goal->eval(position).ub();
+			viols=computePenalty();
+		}
+
+
+		double computePenalty(){
+			double sum = 0;
+			for(int i=0; i<orig_sys->ctrs.size();i++){
+				Interval eval = orig_sys->ctrs[i].f.eval(position);
+				if((orig_sys->ctrs[i].op == LEQ || orig_sys->ctrs[i].op == LT) && eval.ub()>0.0){
+					sum += eval.ub();
+				}
+				else if((orig_sys->ctrs[i].op == GEQ || orig_sys->ctrs[i].op == GT) && eval.lb()<0.0){
+					sum += -eval.ub();
+				}
+				else if(orig_sys->ctrs[i].op == EQ ){
+					sum += std::max(0.0, abs(eval).ub() /*- eqeps*/);
+				}
+			}
+			return sum;
+		}
+
+		double fitness(double current_ub){
+			if(current_ub==POS_INFINITY) return -viols;
+			else if(viols>0.0) return -(viols + std::max(0.0, cost - current_ub));
+			else	return -(cost - current_ub);
+		}
+
+		static System* orig_sys;
+		Vector position;
+		double cost;
+		double viols;
+
+	};
+
+
+
 	class BufferPSO : public CellBufferOptim {
 		public:
-			BufferPSO(PSOSwarm* swarm) :
-				last_node(NULL), tree(swarm->getTree()), swarm(swarm){
-				char file_name[] = "output_innode.txt";
-				swarm->startPlot(file_name);
-				double aux = 0.0;
-			}
+			BufferPSO(TreeCellOpt* tree, int popsize=10) :
+				last_node(NULL), tree(tree), particles(NULL), popsize(popsize){
+
+					particles = new Part*[popsize];
+					for(int i=0;i<popsize; i++) particles[i]=NULL;
+			 }
+
 			virtual ~BufferPSO(){}
 
 			virtual void add_backtrackable(Cell& root) {
@@ -67,80 +118,19 @@ namespace ibex {
 
 			virtual Cell* pop() { cout << "BufferPSO::pop() function is not implemented, use trim instead" << endl; return NULL; }
 
-			virtual void trim() {
-				//update the gbest with the best children of the last node (lb)
-				if(!tree->search(swarm->getGBestPosition())){
-					Cell* n=tree->minlb(last_node);
-					if(n) swarm->update_gbest(n);
-				}
-
-				tree->trim(last_node);
-				last_node=NULL;
-			}
+      /*
+			* Removes every node with no children in the last_node branch
+			*/
+			virtual void trim();
 
 
 			virtual Cell* top() const{ cout << "deprecated, you should use Cell*  top(double loup) instead" << endl; return NULL;}
-			/*
-			 * Clean tree.
-			 * PSO movement
-			 * Returns node who contains gBest and update last_node.
-			 */
-			virtual Cell* top(double loup) const{
-				//cout << "top" << endl;
 
-				Cell* aux;
-				if(!swarm->isInitialized()){
-					swarm->resetPSO(loup);
-				}
-
-				//gbest should be inside a node.
-
-
-				if(!tree->search(swarm->getGBestPosition()) ){
-					//cout << "gbest removed!" << endl;
-					//if(!swarm->update_gbest_closest_node(swarm->getGBestPosition(),loup)){
-						//cout << "gbest migrated" << endl;
-						cout << "reset PSO" << endl;
-						swarm->resetPSO(loup);
-					//}
-
-
-				}
-
-
-				swarm->executePSO(loup);
-
-				//std::cout << "gbest: " << swarm->getGBestPosition() << endl;
-				//std::cout << "gbest: " << swarm->getGBestValue() << "+" << swarm->getGBestPenalty() << endl;
-				//if(swarm->getGBestPenalty() < 0.1)
-				aux = tree->search(swarm->getGBestPosition());
-				//else
-				  //aux = tree->diving_node(swarm->minlb_node);
-				//cout << aux << endl;
-
-
-				assert(aux);
-
-				//std::cout << "ln (" << last_node << ") ret (" << aux  << ")" << endl;
-				last_node = aux;
-				return aux;
-			}
+			virtual Cell* top(double loup) const;
 
 			virtual std::ostream& print(std::ostream& os) const { return os;}
 
 			virtual double minimum() const {return tree->minimum();}
-
-			virtual pair<double, Vector> get_gbest()  {
-				if(swarm->getGBestPenalty()==0){
-					return make_pair(swarm->getGBestValue(), swarm->getGBestPosition());
-				}else
-					return make_pair(POS_INFINITY, swarm->getGBestPosition());
-			}
-
-			virtual void update_gbest(Vector loup_point, double loup){
-				//cout << "changing the gbest " <<  swarm->getGBestValue() << "-->" << loup << endl;
-				swarm->update_gbest(loup_point, loup);
-			}
 
 			/*
 			 * Contract the tree.
@@ -152,11 +142,13 @@ namespace ibex {
 
 			mutable Cell* last_node;
 
-		protected:
+	  	protected:
 			/* structures */
-
 			TreeCellOpt* tree;
-			PSOSwarm* swarm;
+
+			Part** particles;
+
+			int popsize;
 	};
 
 } // namespace ibex

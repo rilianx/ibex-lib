@@ -253,11 +253,10 @@ int main(int argc, char** argv){
 	TreeCellOpt* tree = new TreeCellOpt(orig_sys);
 	TreeCellOpt* tree_single_node = new TreeCellOpt(orig_sys);
 
-	PSOSwarm* swarm = new PSOSwarm(tree,orig_sys,c1,c2,x,particles,iterations);
-	PSOSwarm* swarm_node = new PSOSwarm(tree_single_node,orig_sys,c1,c2,x,particles_node,iterations_node);
+	Part::orig_sys=orig_sys;
 
 	if(strategy=="ibex_pso"){
-		bufferPSO = new BufferPSO(swarm);
+		bufferPSO = new BufferPSO(tree,particles);
 	}else if(strategy == "ibex_opt" || strategy=="ibex_rootpso"){
 		buffer = new CellBeamSearch(*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)),
 				*new CellHeap (*dynamic_cast<ExtendedSystem*>(sys)), *dynamic_cast<ExtendedSystem*>(sys));
@@ -269,10 +268,10 @@ int main(int argc, char** argv){
 
 	if(strategy=="ibex_pso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *bufferPSO, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, swarm_node);
+	    		prec,goalprec,goalprec);
 	}else if(strategy=="ibex_rootpso"){
 		o=new OptimizerPSO(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
-	    		prec,goalprec,goalprec, swarm_node);
+	    		prec,goalprec,goalprec);
 	}else if(strategy=="ibex_opt"){
 		oo=new Optimizer(orig_sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
 			    		prec,goalprec,goalprec);

@@ -78,32 +78,57 @@ bool TreeCellOpt::trim(Cell* last_node){
 	return ret;
 }
 
-Cell* TreeCellOpt::minlb(Cell* minlb){
-	Cell* aux = minlb;
 
-	if(aux == NULL) {
-		//std::cout << "root is NULL" << endl;
-		return NULL;
-	}
-  int n = aux->box.size()-1;
+Cell* TreeCellOpt::minlb(Cell* node){
+		//cout << "search" << endl;
+		Cell* aux = node;
+		Cell* min=NULL;
+		if(!aux) return NULL;
 
-	while(aux){
+    int n = aux->box.size()-1;
 
-		if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
-			return aux;
-		}else if(!aux->get<CellPSO>().left)
-			aux=aux->get<CellPSO>().right;
-		else if(!aux->get<CellPSO>().right)
-		  aux=aux->get<CellPSO>().left;
-		else{
-			if(aux->get<CellPSO>().left->box[n].lb() < aux->get<CellPSO>().right->box[n].lb())
-			   aux=aux->get<CellPSO>().left;
-			else
-		  	 aux=aux->get<CellPSO>().right;
+		map<double, Cell*> M; // minlb -> cell
+
+		double minlb=POS_INFINITY;
+
+		M.insert(make_pair(root->box[n].lb(), root));
+
+		while(!M.empty()){
+			pair<double, Cell*> pair =*M.begin();
+			if(pair.first >= minlb) return min;
+
+			aux=pair.second;
+			M.erase(M.begin());
+
+			if(!aux->get<CellPSO>().left && !aux->get<CellPSO>().right){
+
+				double lb=aux->box[n].lb();
+
+				if(lb<minlb){
+					min=aux;
+					minlb=lb;
+				}
+
+			}else{
+				if(aux->get<CellPSO>().left){
+
+					double lb=aux->get<CellPSO>().left->box[n].lb();
+					M.insert(make_pair(lb,aux->get<CellPSO>().left));
+
+				}
+
+				if(aux->get<CellPSO>().right){
+
+					double lb=aux->get<CellPSO>().right->box[n].lb();
+					M.insert(make_pair(lb,aux->get<CellPSO>().right));
+
+				}
+
+			}
 		}
-  }
-	return aux;
-}
+
+		return min;
+	}
 
 /*
 Cell* TreeCellOpt::minlb_node(){

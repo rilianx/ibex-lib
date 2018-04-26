@@ -33,7 +33,7 @@ Advance behavior test
 
 Advance behavior test with parameters
 
-plugins/optim/benchs/hard/ex6_1_3.bch --search=ibex_pso --trace --np0=25 --iter0=50 --seed=4
+\_\_build\_\_/plugins/pso/ibexpso plugins/optim/benchs/hard/ex6_1_3.bch --search=ibex_pso --trace --np0=25 --iter0=50 --seed=4
 
 Output files
 -----------
