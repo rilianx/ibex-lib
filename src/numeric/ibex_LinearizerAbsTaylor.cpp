@@ -107,8 +107,8 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 			a2[n+i]=-1.0;
 
 
-			lp_solver->add_constraint(a, LEQ, -box[i].mid() - lp_solver->get_epsilon());
-			lp_solver->add_constraint(a2, LEQ, box[i].mid() - lp_solver->get_epsilon());
+			lp_solver->add_constraint(a, LEQ, -box[i].mid() );
+			lp_solver->add_constraint(a2, LEQ, box[i].mid() );
 			count +=2;
 		}
 
@@ -144,7 +144,7 @@ int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const Inte
 
 	Interval rhs = -g_mid + a*box.mid();
 
-	double b = rhs.lb() - lp_solver->get_epsilon();
+	double b = rhs.lb() ;
 
 	// may throw Unsatisfiability and LPException
 	return check_and_add_constraint(box,a,b);

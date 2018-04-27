@@ -79,14 +79,10 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 
 		//if (!box.contains(loup_point)) throw NotFound();
 
-
-
-
-		double new_loup=current_loup;
-
-		//if (check(sys,loup_point,new_loup,false)) {
+		double new_loup=sys.goal_ub(loup_point);
+		if (new_loup<current_loup) {
 			return std::make_pair(loup_point,new_loup);
-		//}
+		}
 	}
 
 	throw NotFound();

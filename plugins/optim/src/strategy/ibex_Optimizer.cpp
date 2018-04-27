@@ -13,6 +13,7 @@
 #include "ibex_NoBisectableVariableException.h"
 #include "ibex_Backtrackable.h"
 #include "ibex_OptimData.h"
+#include "ibex_LoupFinderDefault.h"
 
 #include <float.h>
 #include <stdlib.h>
@@ -80,7 +81,7 @@ bool Optimizer::update_loup(const IntervalVector& box) {
 
 		if (trace) {
 			cout << "                    ";
-			cout << "\033[32m loup= " << loup << " " << nb_cells << "\033[0m" << endl;
+			cout << "\033[32m loup= " << loup << " iter:" << nb_cells << " finder:" << LoupFinderDefault::foundby <<  "\033[0m" << endl;
 //			cout << " loup point=";
 //			if (loup_finder.rigorous())
 //				cout << loup_point << endl;

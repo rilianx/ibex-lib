@@ -25,7 +25,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
 	args::ValueFlag<int> _seed(parser, "int", "seed", {"seed"});
-	args::Flag _abstaylor(parser, "abstaylor", "AbsTaylor UpperBounding.", {"abstaylor"});
+	args::ValueFlag<std::string> _loup_mode(parser, "loup_mode", "UpperBounding mode (xt, abst or both).", {"lmode"});
 	args::Flag _trace(parser, "trace", "Activate trace. Updates of loup/uplo are printed while minimizing.", {"trace"});
 
 	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
@@ -68,6 +68,13 @@ int main(int argc, char** argv){
 	cout << "timelimit: " << timelimit << endl;
 	int nseed= (_seed)? _seed.Get() : 1 ;
 	cout << "seed: " << nseed << endl;
+	LoupFinderDefault::mode m=LoupFinderDefault::xt;
+
+	if(_loup_mode && _loup_mode.Get()=="abst")
+		m=LoupFinderDefault::abst;
+	else if(_loup_mode && _loup_mode.Get()=="both")
+		m=LoupFinderDefault::both;
+
 
  	double eqeps= 1.e-8;
  	double default_relax_ratio = 0.2;
@@ -86,8 +93,8 @@ int main(int argc, char** argv){
 	if(strategy=="solver") sys=orig_sys;
 	else {
 		sys=new ExtendedSystem(*orig_sys,eqeps);
-		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps);
-		loupfinder = new  LoupFinderDefault(*norm_sys,true, _abstaylor);
+		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps); //orig_sys
+		loupfinder = new  LoupFinderDefault(*norm_sys, true, m);
 
 		loupfinder = new LoupFinderCertify(*orig_sys, *loupfinder);
 

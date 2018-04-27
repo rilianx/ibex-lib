@@ -35,6 +35,9 @@ namespace ibex {
  */
 class LoupFinderDefault : public LoupFinder {
 public:
+
+	enum mode{xt, abst, both} m;
+
 	/**
 	 * \brief Create the algorithm for a given system.
 	 *
@@ -46,7 +49,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderDefault(const System& sys, bool inHC4=true, bool abstaylor=false);
+	LoupFinderDefault(const System& sys, bool inHC4=true, mode m=xt);
 
 	/**
 	 * \brief Delete this.
@@ -71,6 +74,15 @@ public:
 	 * Loup finder using inner polytopes.
 	 */
 	LoupFinderXTaylor finder_x_taylor;
+
+	/**
+	 * Loup finder using inner polytopes.
+	 */
+	LoupFinderXTaylor finder_abs_taylor;
+
+	static string foundby;
+
+
 };
 
 } /* namespace ibex */

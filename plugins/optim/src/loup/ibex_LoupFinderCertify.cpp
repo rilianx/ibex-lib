@@ -33,10 +33,14 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 
 	// may throw NotFound
 	pair<IntervalVector,double> p=finder.find(box,loup_point,loup);
-
 	//if (!has_equality)
 		//return p;
 
+	//cout << p.first << endl;
+	p.first.resize(sys.nb_var);
+	//cout << box << endl;
+    //cout << p.first.size() << "," << sys.nb_var << endl;
+    //cout << sys.f_ctrs.eval_vector(p.first) << endl;
 	// TODO : how to fix detection threshold in a more adaptative way?
 	//        maybe, we should replace eps_h by something else!
 	FncActivation af(sys,p.first.lb(),NormalizedSystem::default_eps_h);
@@ -51,7 +55,7 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 	// ====================================================
 	// solution #1: we inflate the loup-point and
 	//              call Hansen test in contracting mode.
-		epsbox.inflate(NormalizedSystem::default_eps_h);
+		epsbox.inflate(1e-6);//NormalizedSystem::default_eps_h);
 		//TODO: usar caja inicial
 		//IntervalVector box2(box);
 		//box2.resize(epsbox.size());
@@ -76,8 +80,6 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 
 	if (pdc.test(epsbox)==YES) {
 		Interval resI = sys.goal->eval(pdc.solution());
-		//cout << pdc.solution() << endl;
-		if (resI.lb() < -5000 ) exit(0);
 		if (!resI.is_empty()) {
 			double res=resI.ub();
 			if (res<loup) {
