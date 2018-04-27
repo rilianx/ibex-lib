@@ -15,9 +15,9 @@ using namespace std;
 
 namespace ibex {
 
-LoupFinderDefault::LoupFinderDefault(const System& sys, bool inHC4) :
+LoupFinderDefault::LoupFinderDefault(const System& sys, bool inHC4, bool abs_taylor) :
 	finder_probing(inHC4? (LoupFinder&) *new LoupFinderInHC4(sys) : (LoupFinder&) *new LoupFinderFwdBwd(sys)),
-	finder_x_taylor(sys,true) {
+	finder_x_taylor(sys,abs_taylor) {
 
 }
 

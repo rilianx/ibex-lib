@@ -257,8 +257,8 @@ inline Interval Fnc::eval(int i, const IntervalVector& box) const {
 }
 
 inline IntervalVector Fnc::eval_vector(const IntervalVector& box) const {
-	return _image_dim.is_scalar() ?
-			IntervalVector(1,eval(box)) :
+	return /*_image_dim.is_scalar() ?
+			IntervalVector(1,eval(box)) :*/
 			eval_vector(box, BitSet::all(image_dim()));
 }
 

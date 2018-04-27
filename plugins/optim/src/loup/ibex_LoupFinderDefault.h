@@ -46,7 +46,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderDefault(const System& sys, bool inHC4=true);
+	LoupFinderDefault(const System& sys, bool inHC4=true, bool abstaylor=false);
 
 	/**
 	 * \brief Delete this.

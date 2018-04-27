@@ -29,7 +29,7 @@ bool LoupFinder::check(const System& sys, const Vector& pt, double& loup, bool _
 	// The test of the constraints is done only when the evaluation of the criterion
 	// is better than the loup (a cheaper test).
 
-	//        cout << " res " <<  res << " loup " <<  pseudo_loup <<  " is_inner " << _is_inner << endl;
+	     //   cout << " res " <<  res << " loup " <<  loup <<  " is_inner " << _is_inner << endl;
 	if (res<loup) {
 		if (_is_inner || sys.is_inner(pt)) {
 			loup = res;

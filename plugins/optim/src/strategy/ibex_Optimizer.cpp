@@ -80,7 +80,7 @@ bool Optimizer::update_loup(const IntervalVector& box) {
 
 		if (trace) {
 			cout << "                    ";
-			cout << "\033[32m loup= " << loup << "\033[0m" << endl;
+			cout << "\033[32m loup= " << loup << " " << nb_cells << "\033[0m" << endl;
 //			cout << " loup point=";
 //			if (loup_finder.rigorous())
 //				cout << loup_point << endl;

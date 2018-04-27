@@ -53,7 +53,7 @@ public:
 protected:
 
 	/** Linearization technique. */
-	LinearizerXTaylor lr;
+	Linearizer* lr;
 
 	/** linear solver */
 	LPSolver lp_solver;

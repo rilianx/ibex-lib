@@ -34,8 +34,8 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 	// may throw NotFound
 	pair<IntervalVector,double> p=finder.find(box,loup_point,loup);
 
-	if (!has_equality)
-		return p;
+	//if (!has_equality)
+		//return p;
 
 	// TODO : how to fix detection threshold in a more adaptative way?
 	//        maybe, we should replace eps_h by something else!
@@ -47,16 +47,22 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 
 	IntervalVector epsbox(p.first);
 
+
 	// ====================================================
 	// solution #1: we inflate the loup-point and
 	//              call Hansen test in contracting mode.
-	//	epsbox.inflate(NormalizedSystem::default_eps_h);
-	//	PdcHansenFeasibility pdc(af, false);
+		epsbox.inflate(NormalizedSystem::default_eps_h);
+		//TODO: usar caja inicial
+		//IntervalVector box2(box);
+		//box2.resize(epsbox.size());
+
+		//epsbox&=box2;
+		PdcHansenFeasibility pdc(af, false);
 	// ====================================================
 
 	// ====================================================
 	// solution #2: we call Hansen test in inflating mode.
-	PdcHansenFeasibility pdc(af, true);
+	//PdcHansenFeasibility pdc(af, true);
 	// ====================================================
 
 	// TODO: maybe we should check first if the epsbox is inner...
@@ -66,8 +72,12 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 	// TODO: HansenFeasibility uses midpoint
 	//       but maybe we should use random
 
+	//cout << epsbox << endl;
+
 	if (pdc.test(epsbox)==YES) {
 		Interval resI = sys.goal->eval(pdc.solution());
+		//cout << pdc.solution() << endl;
+		if (resI.lb() < -5000 ) exit(0);
 		if (!resI.is_empty()) {
 			double res=resI.ub();
 			if (res<loup) {
