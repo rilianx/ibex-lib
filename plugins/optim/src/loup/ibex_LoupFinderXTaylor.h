@@ -50,6 +50,10 @@ public:
 	 */
 	const System& sys;
 
+	/** for statistics */
+	int nb_calls;
+	int nb_opts;
+
 protected:
 
 	/** Linearization technique. */
@@ -60,6 +64,8 @@ protected:
 
 	/** Variant using midTaylor with absolute values */
 	bool abs_taylor;
+
+
 
 	/** Miscellaneous   for statistics */
 //	int nb_simplex;

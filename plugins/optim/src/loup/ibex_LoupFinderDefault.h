@@ -82,6 +82,10 @@ public:
 
 	static string foundby;
 
+  void print_results(){
+		std::cout << (double) finder_x_taylor.nb_opts / finder_x_taylor.nb_calls << " " <<
+		(double) finder_abs_taylor.nb_opts / finder_abs_taylor.nb_calls << std::endl;
+	}
 
 };
 

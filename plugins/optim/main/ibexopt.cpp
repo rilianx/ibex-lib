@@ -74,6 +74,10 @@ int main(int argc, char** argv){
 		m=LoupFinderDefault::abst;
 	else if(_loup_mode && _loup_mode.Get()=="both")
 		m=LoupFinderDefault::both;
+	else if(_loup_mode && _loup_mode.Get()!="xt") {
+		cout << _loup_mode.Get() << " is not an implemented loupFinder mode "  << endl; return -1;
+	}
+
 
 
  	double eqeps= 1.e-8;
@@ -82,6 +86,7 @@ int main(int argc, char** argv){
 
     System* orig_sys,*sys;
     LoupFinder* loupfinder;
+		LoupFinderDefault* loupfinderd;
     std::size_t found = string(filename.Get().c_str()).find(".nl");
 	if (found!=std::string::npos){
 	       AmplInterface interface (argv[1]);
@@ -94,9 +99,9 @@ int main(int argc, char** argv){
 	else {
 		sys=new ExtendedSystem(*orig_sys,eqeps);
 		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps); //orig_sys
-		loupfinder = new  LoupFinderDefault(*norm_sys, true, m);
+		loupfinderd = new  LoupFinderDefault(*norm_sys, true, m);
 
-		loupfinder = new LoupFinderCertify(*orig_sys, *loupfinder);
+		loupfinder = new LoupFinderCertify(*orig_sys, *loupfinderd);
 
 	}
 
@@ -266,7 +271,9 @@ int main(int argc, char** argv){
 
 
     cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
-             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
+             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << " ";
+		loupfinderd->print_results();
+
 
 
 	return 0;
@@ -278,4 +285,3 @@ int main(int argc, char** argv){
 	  cout << e << endl;
 	}
 }
-

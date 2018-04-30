@@ -18,7 +18,7 @@ namespace ibex {
 //TODO: remove this recipe for the argument of the max number of iterations of the LP solver
 LoupFinderXTaylor::LoupFinderXTaylor(const System& sys, bool abs_taylor) :
 		sys(sys), lp_solver( (!abs_taylor)? sys.nb_var:(2*sys.nb_var) ,
-				std::max(sys.nb_var*3,LPSolver::default_max_iter)), abs_taylor(abs_taylor) {
+				std::max(sys.nb_var*3,LPSolver::default_max_iter)), abs_taylor(abs_taylor), nb_calls(0), nb_opts(0) {
 	if(!abs_taylor)
 		lr = new LinearizerXTaylor(sys,LinearizerXTaylor::RESTRICT);
 	else
@@ -68,7 +68,9 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 
 	LPSolver::Status_Sol stat = lp_solver.solve();
 
+  nb_calls++;
 	if (stat == LPSolver::OPTIMAL) {
+		nb_opts++;
 		//the linear solution is mapped to intervals and evaluated
 		Vector loup_point = lp_solver.get_primal_sol();
 		//cout << sys.f_ctrs.eval_vector(loup_point) << endl;
