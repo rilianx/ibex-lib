@@ -100,8 +100,8 @@ int main(int argc, char** argv){
 		sys=new ExtendedSystem(*orig_sys,eqeps);
 		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps); //orig_sys
 		loupfinderd = new  LoupFinderDefault(*norm_sys, true, m);
-
-		loupfinder = new LoupFinderCertify(*orig_sys, *loupfinderd);
+		loupfinder=loupfinderd;
+		//loupfinder = new LoupFinderCertify(*orig_sys, *loupfinderd);
 
 	}
 

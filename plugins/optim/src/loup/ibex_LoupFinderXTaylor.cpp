@@ -43,7 +43,7 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 		for(int i=0;i<n;i++)
 			box2[i]=box[i];
 		for(int i=0;i<n;i++)
-			box2[n+i]=Interval(-box2[i].mag(), box2[i].mag());
+			box2[n+i]=Interval(-box2[i].mag()-1, box2[i].mag()+1);
 
 		lp_solver.set_bounds(box2);
 	}
@@ -78,14 +78,23 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 		loup_point.resize(n);
 
 		//std::cout << " simplex result " << std::endl;
+		//correction
+		for(int i=0;i<box.size();i++){
+			if(box[i].lb() > loup_point[i]) loup_point[i]=box[i].lb();
+			else if(box[i].ub() < loup_point[i]) loup_point[i]=box[i].ub();
+		}
+
+		double new_loup=current_loup;
+
+		if (check(sys,loup_point,new_loup,false)) {
+			return std::make_pair(loup_point,new_loup);
+		}
 
 		//if (!box.contains(loup_point)) throw NotFound();
 
-		double new_loup=sys.goal_ub(loup_point);
-		if (new_loup<current_loup) {
-			return std::make_pair(loup_point,new_loup);
-		}
 	}
+
+
 
 	throw NotFound();
 }

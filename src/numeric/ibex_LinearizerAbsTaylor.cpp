@@ -141,8 +141,9 @@ int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const Inte
 	}
 
 	// =====================================================
-
-	Interval rhs = -g_mid + a*box.mid();
+    Vector aa=a;
+	aa.resize(box.size());
+	Interval rhs = -g_mid + aa*box.mid() - lp_solver->get_epsilon();
 
 	double b = rhs.lb() ;
 
@@ -152,21 +153,21 @@ int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const Inte
 
 int LinearizerAbsTaylor::check_and_add_constraint(const IntervalVector& box, const Vector& a, double b) {
 
-	Interval ax=a*box; // for fast (in)feasibility check
+	//Interval ax=a*box; // for fast (in)feasibility check
 
 	// ======= Quick (in)feasibility checks
 	//                 a*[x] <= rhs ?
-	if (ax.lb()>b)
+/*	if (ax.lb()>b){
 		// the constraint is not satisfied
 		throw Unsatisfiability();
-	else if (ax.ub()<=b) {
+	}else if (ax.ub()<=b) {
 		// the (linear) constraint is satisfied for any point in the box
 		return 0;
-	} else {
+	} else {*/
 		//cout << "add constraint " << a << "*x<=" << b << endl;
 		lp_solver->add_constraint(a, LEQ, b); // note: may throw LPException
 		return 1;
-	}
+	//}
 }
 
 } // end namespace
