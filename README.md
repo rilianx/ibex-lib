@@ -5,3 +5,16 @@ ibex-lib
 ========
 
 http://www.ibex-lib.org
+
+
+Installation
+------------
+./waf configure --with-optim --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+./waf install
+
+
+Test Example
+------------
+__build__/plugins/optim/ibexopt plugins/optim/benchs/medium/ex7_3_4.bch --trace --lmode=abst
+
+

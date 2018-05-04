@@ -68,14 +68,14 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 
 	LPSolver::Status_Sol stat = lp_solver.solve();
 
-  nb_calls++;
+    nb_calls++;
 	if (stat == LPSolver::OPTIMAL) {
 		nb_opts++;
 		//the linear solution is mapped to intervals and evaluated
 		Vector loup_point = lp_solver.get_primal_sol();
 		//cout << sys.f_ctrs.eval_vector(loup_point) << endl;
 
-		loup_point.resize(n);
+		loup_point.resize(box.size() /*n*/);
 
 		//std::cout << " simplex result " << std::endl;
 		//correction
