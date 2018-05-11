@@ -27,6 +27,8 @@ const double Optimizer::default_eps_x = 0;
 const double Optimizer::default_rel_eps_f = 1e-03;
 const double Optimizer::default_abs_eps_f = 1e-07;
 
+map<double, pair<double, int> > Optimizer::time2loupbox;
+
 void Optimizer::write_ext_box(const IntervalVector& box, IntervalVector& ext_box) {
 	int i2=0;
 	for (int i=0; i<n; i++,i2++) {
@@ -79,9 +81,13 @@ bool Optimizer::update_loup(const IntervalVector& box) {
 		loup_point = p.first;
 		loup = p.second;
 
+
+		time2loupbox[time]=make_pair(loup,nb_cells);
+
 		if (trace) {
 			cout << "                    ";
 			cout << "\033[32m loup= " << loup << " iter:" << nb_cells << " finder:" << LoupFinderDefault::foundby <<  "\033[0m" << endl;
+
 //			cout << " loup point=";
 //			if (loup_finder.rigorous())
 //				cout << loup_point << endl;

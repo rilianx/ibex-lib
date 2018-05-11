@@ -28,12 +28,15 @@ class LinearizerAbsTaylor : public Linearizer {
 
 public:
 
+
+	typedef enum{MID, RANDOM} Mode;
+
 	/**
 	 * \brief Creates the X_Taylor linearizer.
 	 *
 	 * \param sys             - The system (extended or not).
 	 */
-	LinearizerAbsTaylor(const System& sys);
+	LinearizerAbsTaylor(const System& sys, Mode point_mode=MID);
 
 	/**
 	 * \brief Deletes this.
@@ -58,7 +61,7 @@ private:
 	 * \param dg_box:   dg([box])
 	 * \param g_mid: g(mid)
 	 */
-	int linearize_leq_mid(const IntervalVector& box, const IntervalVector& dg_box, const Interval& g_mid);
+	int linearize_leq_mid(const IntervalVector& box, const Vector& point, const IntervalVector& dg_box, const Interval& g_mid);
 
 	/**
 	 * \brief Add the constraint ax<=b in the LP solver.
@@ -79,6 +82,8 @@ private:
 	 * \brief Goal constraint (in case of extended system, -1 otherwise).
 	 */
 	const int goal_ctr;
+
+	Mode point_mode;
 
 
 	/**

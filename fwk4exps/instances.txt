@@ -22,7 +22,7 @@
 ../plugins/optim/benchs/blowup/ex8_2_1.bch
 ../plugins/optim/benchs/blowup/ex8_4_4.bch
 ../plugins/optim/benchs/blowup/ex8_4_5.bch
-../plugins/optim/benchs/blowup/ex8_4_6.bch
+../plugins/optim/benchs/blowup/ex8_4_6.bch **
 ../plugins/optim/benchs/blowup/ex8_5_1.bch
 ../plugins/optim/benchs/blowup/ex8_5_2.bch
 ../plugins/optim/benchs/blowup/ex8_5_6.bch
@@ -34,8 +34,8 @@
 ../plugins/optim/benchs/medium/ex14_2_7.bch
 ../plugins/optim/benchs/medium/alkyl.bch
 ../plugins/optim/benchs/medium/bearing.bch*
-../plugins/optim/benchs/hard/chem.bch
-../plugins/optim/benchs/unsolved/harker.bch
+../plugins/optim/benchs/hard/chem.bch **
+../plugins/optim/benchs/unsolved/harker.bch **
 ../plugins/optim/benchs/blowup/hhfair.bch
 ../plugins/optim/benchs/medium/himmel16.bch
 ../plugins/optim/benchs/easy/house.bch
@@ -59,7 +59,7 @@
 ../plugins/optim/benchs/coconutbenchmark-library2/dualc5.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/genhs28.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/haifas.nl
-../plugins/optim/benchs/coconutbenchmark-library2/haldmads.nl
+../plugins/optim/benchs/coconutbenchmark-library2/haldmads.nl **
 ../plugins/optim/benchs/coconutbenchmark-library2/himmelbk.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/hs056.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/hs087.nl
@@ -82,4 +82,4 @@
 ../plugins/optim/benchs/coconutbenchmark-library2/pentagon.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/polak5.nl
 ../plugins/optim/benchs/coconutbenchmark-library2/robot.nl*
-../plugins/optim/benchs/coconutbenchmark-library2/hs102.nl
+../plugins/optim/benchs/coconutbenchmark-library2/hs102.nl **

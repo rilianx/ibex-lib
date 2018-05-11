@@ -30,10 +30,10 @@ class Unsatisfiability : public Exception { };
 
 }
 
-LinearizerAbsTaylor::LinearizerAbsTaylor(const System& _sys):
+LinearizerAbsTaylor::LinearizerAbsTaylor(const System& _sys, Mode point_mode):
 			Linearizer(_sys.nb_var), sys(_sys),
 			m(sys.f_ctrs.image_dim()), goal_ctr(-1 /*tmp*/),
-			lp_solver(NULL) {
+			lp_solver(NULL), point_mode(point_mode) {
 
 	if (dynamic_cast<const ExtendedSystem*>(&sys)) {
 		((int&) goal_ctr)=((const ExtendedSystem&) sys).goal_ctr();
@@ -68,8 +68,11 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 		if (J.is_empty()) return -1; // note: no way to inform that the box is actually infeasible
 
 
-		// the evaluation of the constraints in the corner x_corner
-		IntervalVector g_mid(sys.f_ctrs.eval_vector(box.mid(),active));
+		// the evaluation of the constraints in the mid of the box
+		Vector point(box.mid());
+		if(point_mode==RANDOM) point=box.random();
+
+		IntervalVector g_mid(sys.f_ctrs.eval_vector(point,active));
 		if (g_mid.is_empty()) return -1;
 
 		// total number of added constraint
@@ -86,9 +89,9 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 					// in principle we could deal with linear constraints
 					return -1;
 				else if (c==goal_ctr || sys.ops[c]==LEQ || sys.ops[c]==LT)
-					count += linearize_leq_mid(box,J[i],g_mid[i]);
+					count += linearize_leq_mid(box,point, J[i],g_mid[i]);
 				else
-					count += linearize_leq_mid(box,-J[i],-g_mid[i]);
+					count += linearize_leq_mid(box, point, -J[i],-g_mid[i]);
 			} catch (LPException&) {
 				return -1;
 			} catch (Unsatisfiability&) {
@@ -107,8 +110,8 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 			a2[n+i]=-1.0;
 
 
-			lp_solver->add_constraint(a, LEQ, -box[i].mid() );
-			lp_solver->add_constraint(a2, LEQ, box[i].mid() );
+			lp_solver->add_constraint(a, LEQ, -point[i] );
+			lp_solver->add_constraint(a2, LEQ, point[i] );
 			count +=2;
 		}
 
@@ -119,7 +122,7 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 
 }
 
-int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const IntervalVector& dg_box, const Interval& g_mid) {
+int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const Vector& point, const IntervalVector& dg_box, const Interval& g_mid) {
 	Vector a(2*n); // vector of coefficients
 
 	if (dg_box.max_diam() > lp_solver->default_limit_diam_box.ub()) {
@@ -143,7 +146,7 @@ int LinearizerAbsTaylor::linearize_leq_mid(const IntervalVector& box, const Inte
 	// =====================================================
     Vector aa=a;
 	aa.resize(box.size());
-	Interval rhs = -g_mid + aa*box.mid() - lp_solver->get_epsilon();
+	Interval rhs = -g_mid + aa*point - lp_solver->get_epsilon();
 
 	double b = rhs.lb() ;
 

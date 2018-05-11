@@ -11,6 +11,8 @@
 using namespace std;
 using namespace ibex;
 
+double get_prec(double loup, double uplo);
+
 int main(int argc, char** argv){
 
 	try {
@@ -83,6 +85,7 @@ int main(int argc, char** argv){
  	double eqeps= 1.e-8;
  	double default_relax_ratio = 0.2;
 	srand(nseed);
+	RNG::srand(nseed);
 
     System* orig_sys,*sys;
     LoupFinder* loupfinder;
@@ -272,8 +275,25 @@ int main(int argc, char** argv){
 
     cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
              double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << " ";
-		loupfinderd->print_results();
+	//loupfinderd->print_results();
 
+    vector<double> precs={1e-1, 1e-2, 1e-3};
+
+
+    double uplo = o->get_uplo();
+    int i=0;
+    for(auto elem : Optimizer::time2loupbox){
+    	while(i < precs.size() && precs[i] >= get_prec(elem.second.first, uplo)){
+    		cout << elem.first << " " << elem.second.second << " ";
+    		i++;
+    	}
+    }
+    
+    while(i < precs.size()){
+    		cout << 3600 << " " << 3600 << " ";
+    		i++;
+    	}
+    cout << endl;
 
 
 	return 0;
@@ -285,3 +305,22 @@ int main(int argc, char** argv){
 	  cout << e << endl;
 	}
 }
+
+
+double get_prec(double loup, double uplo) {
+	double prec=POS_INFINITY;
+
+	if (loup==POS_INFINITY)
+		prec= POS_INFINITY;
+	else if (loup==0)
+		if (uplo<0) prec= POS_INFINITY;
+		else prec= 0;
+	else
+		prec= (loup-uplo)/(fabs(loup));
+
+	if(prec < loup-uplo) return prec;
+	else return loup-uplo;
+}
+
+
+

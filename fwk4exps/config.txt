@@ -1,9 +1,9 @@
 [base]
 test_instances = instances.txt
-mintime = 2.0 20.0 100.0 1000.0
-maxtime = 1000
+mintime = 1.0 20.0 100.0 1000.0
+maxtime = 3600
 factors = 1 0.833 0.665 0.5 0.2 0.1
-sig_gain = 2.0
+sig_gain = 1.4
 max_seeds = 3
 min_seeds = 3
 algo_names = ibex
@@ -12,6 +12,6 @@ algo_names = ibex
 tuning_param = L
 tuning_values = xt abst both
 exec = "../__build__/plugins/optim/ibexopt"
-params = _INSTANCE --lmode=_L
-outputpos_times = 2
+params = _INSTANCE --lmode=_L --seed=_SEED --eps=1e-3
+outputpos_times = 9
 outputpos_boxes = 3

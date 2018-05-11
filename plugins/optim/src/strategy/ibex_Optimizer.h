@@ -18,6 +18,10 @@
 //#include "ibex_EntailedCtr.h"
 #include "ibex_CtcKhunTucker.h"
 
+#include <map>
+
+using namespace std;
+
 namespace ibex {
 
 /**
@@ -273,6 +277,8 @@ public:
 	 */
 	double timeout;
 
+
+	static map<double, pair<double, int> > time2loupbox;
 
 protected:
 
