@@ -10,6 +10,7 @@ http://www.ibex-lib.org
 Installation
 ------------
 ./waf configure --with-optim --with-ampl --with-affine --prefix=. --gaol-dir= --lp-lib=soplex
+
 ./waf install
 
 
