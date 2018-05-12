@@ -16,7 +16,8 @@ namespace ibex {
 
 using namespace std;
 
-LoupFinderCertify::LoupFinderCertify(const System& sys, LoupFinder& finder) : sys(sys), has_equality(false), finder(finder) {
+LoupFinderCertify::LoupFinderCertify(const System& sys, LoupFinder& finder, const IntervalVector* initbox,
+	bool safe_finder) : sys(sys), has_equality(false), finder(finder), initbox(initbox), safe_finder(safe_finder) {
 
 	if (sys.nb_ctr>0)
 		// ==== check if the system contains equalities ====
@@ -34,14 +35,14 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 	// may throw NotFound
 	pair<IntervalVector,double> p=finder.find(box,loup_point,loup);
 
-	if (!has_equality)
+	if (safe_finder && !has_equality)
 		return p;
 
 	// TODO : how to fix detection threshold in a more adaptative way?
 	//        maybe, we should replace eps_h by something else!
 	FncActivation af(sys,p.first.lb(),NormalizedSystem::default_eps_h);
 
-	if (af.image_dim()==0) {
+	if (safe_finder && af.image_dim()==0) {
 		return p;
 	}
 
@@ -50,13 +51,17 @@ std::pair<IntervalVector, double> LoupFinderCertify::find(const IntervalVector& 
 	// ====================================================
 	// solution #1: we inflate the loup-point and
 	//              call Hansen test in contracting mode.
-	//	epsbox.inflate(NormalizedSystem::default_eps_h);
+
+	if(initbox){
+		epsbox.inflate(1e-6 /*NormalizedSystem::default_eps_h*/);
+		epsbox &= *initbox;
+	}
 	//	PdcHansenFeasibility pdc(af, false);
 	// ====================================================
 
 	// ====================================================
 	// solution #2: we call Hansen test in inflating mode.
-	PdcHansenFeasibility pdc(af, true);
+	PdcHansenFeasibility pdc(af, !initbox);
 	// ====================================================
 
 	// TODO: maybe we should check first if the epsbox is inner...

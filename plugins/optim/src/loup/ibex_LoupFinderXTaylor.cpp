@@ -10,17 +10,26 @@
 
 #include "ibex_LoupFinderXTaylor.h"
 
+
 using namespace std;
+
 
 namespace ibex {
 
+
+
+
 //TODO: remove this recipe for the argument of the max number of iterations of the LP solver
-LoupFinderXTaylor::LoupFinderXTaylor(const System& sys) : sys(sys), lr(sys,LinearizerXTaylor::RESTRICT), lp_solver(sys.nb_var, std::max(sys.nb_var*3,LPSolver::default_max_iter)) {
+LoupFinderXTaylor::LoupFinderXTaylor(const System& sys) : sys(sys), lr(sys,LinearizerXTaylor::RESTRICT),
+		lp_solver(sys.nb_var, std::max(sys.nb_var*3,LPSolver::default_max_iter)){
 //	nb_simplex=0;
 //	diam_simplex=0;
 }
 
-std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& box, const IntervalVector&, double current_loup) {
+
+
+std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& box, const IntervalVector&,
+	double current_loup, bool safe_loup) {
 
 	if (!(lp_solver.default_limit_diam_box.contains(box.max_diam())))
 		throw NotFound();
@@ -54,18 +63,29 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 		//the linear solution is mapped to intervals and evaluated
 		Vector loup_point = lp_solver.get_primal_sol();
 
-		//std::cout << " simplex result " << prim[0] << " " << loup_point << std::endl;
+		// std::cout << " simplex result " << loup_point << std::endl;
 
-		if (!box.contains(loup_point)) throw NotFound();
+		//we force the point to be inside the box
+		for(int i=0; i<box.size(); i++){
+			if(loup_point[i] < box[i].lb()) loup_point[i] = box[i].lb();
+			if(loup_point[i] > box[i].ub()) loup_point[i] = box[i].ub();
+		}
 
 		double new_loup=current_loup;
 
-		if (check(sys,loup_point,new_loup,false)) {
-			return std::make_pair(loup_point,new_loup);
+		if (safe_loup){
+			if(check(sys,loup_point,new_loup,false))
+				return std::make_pair(loup_point,new_loup);
+		}else{
+			//unsafe loup
+			double new_loup = sys.goal_ub(loup_point);
+			if(new_loup < current_loup)
+				return std::make_pair(loup_point,new_loup);
 		}
 	}
 
 	throw NotFound();
+
 }
 
 } /* namespace ibex */

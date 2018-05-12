@@ -1,0 +1,7 @@
+algos:ibex ibex-rigor 
+gains (average relative times):1.000000 0.720294 
+gains (total time)            :1.000000 0.442548 
+compared instances: 18   9 
+runs    : 27  24 
+L:  0   3 
+W:  0   1 

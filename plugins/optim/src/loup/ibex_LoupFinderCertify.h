@@ -36,7 +36,7 @@ public:
 	 * \param sys    - The real system (that is, without relaxation).
 	 * \param finder - A loup finder for the relaxed system.
 	 */
-	LoupFinderCertify(const System& sys, LoupFinder& finder);
+	LoupFinderCertify(const System& sys, LoupFinder& finder, const IntervalVector* initbox=NULL, bool safe_finder=false);
 
 	/**
 	 * \brief Find a new loup in a given box.
@@ -68,6 +68,10 @@ protected:
 	 * \brief Finder for the relaxed system.
 	 */
 	LoupFinder& finder;
+
+	bool safe_finder;
+
+	const IntervalVector* initbox;
 };
 
 } /* namespace ibex */

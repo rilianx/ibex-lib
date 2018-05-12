@@ -38,17 +38,30 @@ public:
 	 */
 	LoupFinderXTaylor(const System& sys);
 
+
+
 	/**
 	 * \brief Find a new loup in a given box.
 	 *
 	 * \see comments in LoupFinder.
 	 */
-	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& x0, double current_loup);
+	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& x0, double current_loup, bool safe_loup);
+
+	/**
+	 * \brief Find a new loup in a given box.
+	 *
+	 * \see comments in LoupFinder.
+	 */
+	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& x0, double current_loup){
+		return find(box, x0, current_loup, true);
+	}
 
 	/**
 	 * \brief The NLP problem.
 	 */
 	const System& sys;
+
+	//static const System* real_sys;
 
 protected:
 
@@ -57,6 +70,8 @@ protected:
 
 	/** linear solver */
 	LPSolver lp_solver;
+
+
 
 	/** Miscellaneous   for statistics */
 //	int nb_simplex;

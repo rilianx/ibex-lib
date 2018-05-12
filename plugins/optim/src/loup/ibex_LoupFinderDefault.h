@@ -46,7 +46,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderDefault(const System& sys, bool inHC4=true);
+	LoupFinderDefault(const System& sys, bool inHC4=true, bool safe_loup=true);
 
 	/**
 	 * \brief Delete this.
@@ -60,6 +60,7 @@ public:
 	 */
 	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& loup_point, double loup);
 
+
 	/*
 	 * Loup finder using inner boxes.
 	 *
@@ -71,6 +72,11 @@ public:
 	 * Loup finder using inner polytopes.
 	 */
 	LoupFinderXTaylor finder_x_taylor;
+
+	const System& sys;
+
+	bool safe_loup;
+
 };
 
 } /* namespace ibex */

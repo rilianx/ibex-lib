@@ -1,5 +1,5 @@
 //============================================================================
-//                                  I B E X                                   
+//                                  I B E X
 // File        : ibex_DefaultOptimizer.cpp
 // Author      : Gilles Chabert, Bertrand Neveu
 // Copyright   : Ecole des Mines de Nantes (France)
@@ -63,18 +63,21 @@ DefaultOptimizer::DefaultOptimizer(const System& sys, double rel_eps_f, double a
 			  ctc(get_ext_sys(sys,eps_h)), // warning: we don't know which argument is evaluated first
 //			  rec(new SmearSumRelative(get_ext_sys(sys,eps_h),eps_x)),
 			  rec(new LSmear(get_ext_sys(sys,eps_h),eps_x)),
-			  rec(rigor? (LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4))) :
-						 (LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4)),
+			  rec(rigor? (LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4, false)),
+						new IntervalVector(sys.box),false) :
+			  	  	  	  (LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4)) ,
+					     //(LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4))) :
+						 //(LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4, &sys)),
 			  (CellBufferOptim&) rec(new CellDoubleHeap(get_ext_sys(sys,eps_h))),
 //			  (CellBufferOptim&) rec (new  CellBeamSearch (
-//								       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
-//								       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
+	//							       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
+	//							       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),
 //								       get_ext_sys(sys,eps_h))),
 			  get_ext_sys(sys,eps_h).goal_var(),
 			  eps_x,
 			  rel_eps_f,
 			  abs_eps_f) {
-  
+
 
 	RNG::srand(random_seed);
 

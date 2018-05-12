@@ -1,0 +1,21 @@
+[base]
+test_instances = instances.txt
+mintime = 1.0 20.0 100.0 1000.0
+maxtime = 3600
+factors = 1 0.833 0.665 0.5 0.2 0.1
+sig_gain = 1.4
+max_seeds = 3
+min_seeds = 3
+algo_names = ibex ibex-rigor
+
+[ibex-rigor]
+exec = "../__build__/plugins/optim/ibexopt"
+params = _INSTANCE --rigor --random-seed=_SEED --quiet
+outputpos_times = 0
+outputpos_boxes = 0
+
+[ibex]
+exec = "../__build__/plugins/optim/ibexopt"
+params = _INSTANCE --random-seed=_SEED --quiet
+outputpos_times = 0
+outputpos_boxes = 0
