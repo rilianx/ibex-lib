@@ -8,6 +8,7 @@ This is a README for knowledge on how to use this plugin on ibex solver.
 Must change "source" variable to set example to execute on file wscript on folder "param-estim".
 
 `source = bld.path.ant_glob ("examples/**/robust_estim1.cpp")`
+
 Choices for source (for now) are:
 ..* robust_estim1.cpp
 ..* robust_estim2.cpp
@@ -15,6 +16,7 @@ Choices for source (for now) are:
 ..* robust_estim4.cpp
 ### ibex configuration
 Must add the param-estim flag to use it and as optional the default optimizer (optim).
+
 `./waf configure --with-optim --with-param-estim --prefix=. --gaol-dir= --lp-lib=soplex`
 
 ## Compile
