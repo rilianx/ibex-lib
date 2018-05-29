@@ -28,6 +28,10 @@
 # python generated files
 *.pyc
 
+# pso output files
+output_innode.txt
+output_root.txt
+
 # waf generated stuff
 .waf*
 .lock-waf*
