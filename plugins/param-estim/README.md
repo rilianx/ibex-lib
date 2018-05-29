@@ -10,10 +10,15 @@ Must change "source" variable to set example to execute on file wscript on folde
 `source = bld.path.ant_glob ("examples/**/robust_estim1.cpp")`
 
 Choices for source (for now) are:
-..* robust_estim1.cpp
-..* robust_estim2.cpp
-..* robust_estim3.cpp
-..* robust_estim4.cpp
+
+* robust_estim1.cpp
+
+* robust_estim2.cpp
+
+* robust_estim3.cpp
+
+* robust_estim4.cpp
+
 ### ibex configuration
 Must add the param-estim flag to use it and as optional the default optimizer (optim).
 
