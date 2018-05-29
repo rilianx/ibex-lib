@@ -30,7 +30,12 @@ void init_data() {
 	RNG::srand(1111);
 
 	double center[N];
-	for (int j=0; j<N; j++) center[j] = RNG::rand(0,L); //((double) rand()/RAND_MAX)*L;
+	cout << "center:" << endl;
+	for (int j=0; j<N; j++){
+		center[j] = RNG::rand(0,L); //((double) rand()/RAND_MAX)*L;
+		cout << center[j] << ",";
+	}
+	cout << endl;
 
 	RNG::rand();
 
