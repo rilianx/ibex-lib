@@ -64,7 +64,6 @@ def build (bld):
 		bld.program (
 		target = "param-estim",
 		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/*.cpp"),
+		source = bld.path.ant_glob ("examples/**/robust_estim1.cpp"),
 		install_path = bld.env.BINDIR,
 		)
-
