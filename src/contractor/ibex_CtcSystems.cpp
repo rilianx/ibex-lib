@@ -32,20 +32,26 @@ namespace ibex {
 		}
 
 		if(ctc_type==GAUSS_JORDAN){
-			vector<IntervalMatrix>  perm_list;
-			vector <vector <pair <int,int> > > proj_vars;
-			best_gauss_jordan_coll (A,box,perm_list,proj_vars,1e-8);
-			/*gauss-seidel*/
-				IntervalVector last_box = box;
-				for (int i = 0 ; i < perm_list.size() ; i ++){
-				P = perm_list[i];
-				PA=P*A;
-				Pb= P*b;
-				IntervalMatrix tmp(PA);
-				if(!bwd_mul(Pb, tmp, box, 1e8)){
-					box.set_empty();
-					return;
-				}
+
+			IntervalMatrix tmp(PA);
+			if(!bwd_mul(Pb, tmp, box, 1e8)){
+				box.set_empty();
+				return;
+			}
+//			vector<IntervalMatrix>  perm_list;
+//			vector <vector <pair <int,int> > > proj_vars;
+//			best_gauss_jordan_coll (A,box,perm_list,proj_vars,1e-8);
+//			/*gauss-seidel*/
+//				IntervalVector last_box = box;
+//				for (int i = 0 ; i < perm_list.size() ; i ++){
+//				P = perm_list[i];
+//				PA=P*A;
+//				Pb= P*b;
+//				IntervalMatrix tmp(PA);
+//				if(!bwd_mul(Pb, tmp, box, 1e8)){
+//					box.set_empty();
+//					return;
+//				}
 			}
 //			while(cambio){
 //			IntervalVector last_box= box;
@@ -74,7 +80,7 @@ namespace ibex {
 
 
 
-		}
+
 
 
 	}
@@ -162,9 +168,7 @@ namespace ibex {
 //					   gauss_jordan_all (PA,1e-8);
 //				   exit (1);
 //				   P = gauss_jordan(PA,1e-8);
-				   IntervalVector aux(A.nb_cols());
-				   for (int i = 0 ; i < A.nb_cols() ; i++) aux[i] = Interval(1,1);
-				   P = best_gauss_jordan(PA,aux, 1e-8);
+				   P = gauss_jordan (PA, 1e-8);
 //
 
 //				   	   exit(1);

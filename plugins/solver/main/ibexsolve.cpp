@@ -10,224 +10,271 @@
 // License     : See the LICENSE file
 // Last Update : Oct 01, 2017
 //============================================================================
+#include "args.hxx"
+/*
+ * optimsolver.cpp
+ *
+ *  Created on: 05-10-2017
+ *      Author: victor
+ */
 
 #include "ibex.h"
-#include "args.hxx"
-
-#include <sstream>
-
-#ifndef _IBEX_WITH_SOLVER_
-#error "You need to install the IbexSolve plugin (--with-solver)."
-#endif
 
 using namespace std;
 using namespace ibex;
 
-int main(int argc, char** argv) {
-
-	stringstream _random_seed, _eps_x_min, _eps_x_max;
-	_random_seed << "Random seed (useful for reproducibility). Default value is " << DefaultSolver::default_random_seed << ".";
-	_eps_x_min << "Minimal width of output boxes. This is a criterion to _stop_ bisection: a "
-			"non-validated box will not be larger than 'eps-min'. Default value is 1e" << round(::log10(DefaultSolver::default_eps_x_min)) << ".";
-	_eps_x_max << "Maximal width of output boxes. This is a criterion to _force_ bisection: a "
-			"validated box will not be larger than 'eps-max' (unless there is no equality and it is fully inside inequalities)."
-			" Default value is +oo (none)";
-
-	args::ArgumentParser parser("********* IbexSolve (defaultsolver) *********.", "Solve a Minibex file.");
-	args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-	args::ValueFlag<double> eps_x_min(parser, "float", _eps_x_min.str(), {'e', "eps-min"});
-	args::ValueFlag<double> eps_x_max(parser, "float", _eps_x_max.str(), {'E', "eps-max"});
-	args::ValueFlag<double> timeout(parser, "float", "Timeout (time in seconds). Default value is +oo (none).", {'t', "timeout"});
-	args::ValueFlag<string> input_file(parser, "filename", "Manifold input file. The file contains a "
-			"(intermediate) description of the manifold with boxes in the MNF (binary) format.", {'i',"input"});
-	args::ValueFlag<string> output_file(parser, "filename", "Manifold output file. The file will contain the "
-			"description of the manifold with boxes in the MNF (binary) format.", {'o',"output"});
-	args::Flag format(parser, "format", "Show the output text format", {"format"});
-	args::Flag bfs(parser, "bfs", "Perform breadth-first search (instead of depth-first search, by default)", {"bfs"});
-	args::Flag txt(parser, "txt", "Write the output manifold in a easy-to-parse text file. See --format", {"txt"});
-	args::Flag trace(parser, "trace", "Activate trace. \"Solutions\" (output boxes) are displayed as and when they are found.", {"trace"});
-	args::ValueFlag<string> boundary_test_arg(parser, "true|full-rank|half-ball|false", "Boundary test strength. Possible values are:\n"
-			"\t\t* true:\talways satisfied. Set by default for under constrained problems (0<m<n).\n"
-			"\t\t* full-rank:\tthe gradients of all constraints (equalities and potentially activated inequalities) must be linearly independent.\n"
-			"\t\t* half-ball:\t(**not implemented yet**) the intersection of the box and the solution set is homeomorphic to a half-ball of R^n\n"
-	        "\t\t* false: never satisfied. Set by default if m=0 or m=n (inequalities only/square systems)",
-			{"boundary"});
-	args::Flag sols(parser, "sols", "Display the \"solutions\" (output boxes) on the standard output.", {'s',"sols"});
-	args::ValueFlag<double> random_seed(parser, "float", _random_seed.str(), {"random-seed"});
-	args::Flag quiet(parser, "quiet", "Print no report on the standard output.",{'q',"quiet"});
-
-	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
-
-	try
-	{
-		parser.ParseCLI(argc, argv);
-	}
-	catch (args::Help&)
-	{
-		std::cout << parser;
-		return 0;
-	}
-	catch (args::ParseError& e)
-	{
-		std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-		return 1;
-	}
-	catch (args::ValidationError& e)
-	{
-		std::cerr << e.what() << std::endl;
-		std::cerr << parser;
-		return 1;
-	}
-
-	if (format) {
-		cout << Manifold::format() << endl;
-		exit(0);
-	}
-
-	if (filename.Get()=="") {
-		ibex_error("no input file (try ibexsolve --help)");
-		exit(1);
-	}
+int main(int argc, char** argv){
 
 	try {
 
-		// Load a system of equations
-		System sys(filename.Get().c_str());
+	if (argc<9) {
+		cerr << "usage: optimsolver filename filtering linear_relaxation strategy bisection prec goal_prec timelimit nseed lsmear_mode"  << endl;
+		exit(1);
+	}
 
-		string output_manifold_file; // manifold output file
-		bool overwitten=false;       // is it overwritten?
-		string manifold_copy;
+	string filtering = argv[2];
+	string linearrelaxation= argv[3];
+    string strategy = argv[4];
+	string bisection= argv[5];
+	double prec= atof(argv[6]);
+	double goalprec= atof (argv[7]);
+	double timelimit = atof(argv[8]);
+	int nseed= atoi(argv[9]);
+	bool extended_embedded_system = atoi(argv[10]);
 
-		if (!quiet) {
-			cout << endl << "***************************** setup *****************************" << endl;
-			cout << "  file loaded:\t\t" << filename.Get() << endl;
+	/*
+    ibex::lsmear_mode ls_mode;
+    switch(atoi(argv[10])){
+		case 0: ls_mode=BASIC; break;
+		case 1: ls_mode=BASIC_JMID; break;
+	}
+	*/
 
-			if (eps_x_min)
-				cout << "  eps-x:\t\t" << eps_x_min.Get() << "\t(precision on variables domain)" << endl;
+ 	double eqeps= 1.e-8;
+ 	double default_relax_ratio = 0.2;
+	srand(nseed);
 
-			// Fix the random seed for reproducibility.
-			if (random_seed)
-				cout << "  random seed:\t\t" << random_seed.Get() << endl;
+    System* orig_sys,*sys;
+    LoupFinderDefault* loupfinder;
+    std::size_t found = string(argv[1]).find(".nl");
+	if (found!=std::string::npos){
+	       AmplInterface interface (argv[1]);
+	       orig_sys= new System(interface);
+     }else
+           orig_sys = new System(argv[1]);
 
-			if (bfs)
-				cout << "  bfs:\t\t\tON" << endl;
+	// the extended system
+	if(strategy=="solver") sys=orig_sys;
+	else {
+		sys=new ExtendedSystem(*orig_sys,eqeps);
+		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps);
+		loupfinder = new  LoupFinderDefault(*norm_sys,true);
+	}
+
+
+	// Build the bisection heuristic
+	// --------------------------
+	Bsc * bs;
+
+	if (bisection=="roundrobin")
+	  bs = new RoundRobin (prec);
+	else if (bisection== "largestfirst")
+          bs= new LargestFirst();
+	else if (bisection=="smearsum")
+	  bs = new SmearSum(*sys,prec);
+	else if (bisection=="smearmax")
+	  bs = new SmearMax(*sys,prec);
+	else if (bisection=="smearsumrel")
+	  bs = new SmearSumRelative(*sys,prec);
+	else if (bisection=="smearmaxrel")
+	  bs = new SmearMaxRelative(*sys,prec);
+	/*
+	else if (bisection=="lsmear")
+	  bs = new LSmear(*sys,prec, 0.45, ls_mode);
+	*/
+	else {cout << bisection << " is not an implemented  bisection mode "  << endl; return -1;}
+
+	// Build the contractors
+
+	// the first contractor called
+	CtcHC4 hc4(sys->ctrs,0.01,true);
+	// hc4 inside acid and 3bcid : incremental propagation beginning with the shaved variable
+	CtcHC4 hc44cid(sys->ctrs,0.1,true);
+	// hc4 inside xnewton loop
+	CtcHC4 hc44xn (sys->ctrs,0.01,false);
+	// The 3BCID contractor on all variables (component of the contractor when filtering == "3bcidhc4")
+	Ctc3BCid c3bcidhc4(hc44cid);
+	// hc4 followed by 3bcidhc4 : the actual contractor used when filtering == "3bcidhc4"
+	CtcCompo hc43bcidhc4 (hc4, c3bcidhc4);
+	// The ACID contractor (component of the contractor  when filtering == "acidhc4")
+	CtcAcid acidhc4(*sys,hc44cid,1);
+	// hc4 followed by acidhc4 : the actual contractor used when filtering == "acidhc4"
+	CtcCompo hc4acidhc4 (hc4, acidhc4);
+
+
+	string filtering2="acidhc4";
+
+	Ctc* ctc;
+	if (filtering == "hc4")
+	  ctc= &hc4;
+	else if (filtering =="acidhc4")
+	  ctc= &hc4acidhc4;
+	else if (filtering =="3bcidhc4")
+	  ctc= &hc43bcidhc4;
+	else if (filtering =="cse+hc4" || filtering =="cse+hc4+simplex"
+	|| filtering =="cse+hc4+pseudoinverse" || filtering =="cse+hc4+gauss"
+	|| filtering =="cse+hc4+gauss_pseudoinv" ){
+		int ctc_type=-1;
+		if(filtering =="cse+hc4+simplex") ctc_type=LinearSystem::SIMPLEX;
+		else if(filtering =="cse+hc4+pseudoinverse") ctc_type=LinearSystem::PSEUDOINVERSE;
+		else if(filtering =="cse+hc4+gauss") ctc_type=LinearSystem::GAUSS_JORDAN;
+		else if(filtering =="cse+hc4+gauss_pseudoinv") ctc_type=LinearSystem::GAUSS_PSEUDOINV;
+
+		Array<const ExprSymbol> vars_dag(sys->args.size());
+        const ExprNode& dag_root=ExprNode2Dag::generate(*sys, vars_dag);
+	    Function *f = new Function(vars_dag, dag_root, "mi_dag");
+
+	    CtcDag* dagctc=new CtcDag(*f, sys->ctrs);
+	    CtcFixPoint* dagctc_fp = new CtcFixPoint(*dagctc,0.01);
+	    if(filtering =="cse+hc4") ctc = dagctc_fp;
+
+	    else{
+
+			Array<Ctc> a;
+			a.add(getEmbeddedLinearSystems<ExprAdd>(*dagctc, false, ctc_type, extended_embedded_system/*, sys->nb_ctr*/));
+			//a.add(getEmbeddedLinearSystems<ExprMul>(*dagctc, true, ctc_type, extended_embedded_system));
+
+			CtcCompo* linear_systems = (a.size()>0)? new CtcCompo(a) : NULL;
+
+			ctc = (linear_systems)? new CtcFixPoint(*new CtcCompo(*dagctc_fp,*linear_systems),0.01) : dagctc_fp;
+
+	    }
+		if(filtering2 == "acidhc4"){
+			CtcFixPoint* dagctc_fp4cid = new CtcFixPoint(*dagctc,0.1);
+			CtcAcid* acid_dagctc = new CtcAcid(*sys,*dagctc_fp4cid,1);
+			ctc = new CtcCompo(*ctc, *acid_dagctc);
 		}
 
-		if (output_file) {
-			output_manifold_file = output_file.Get();
-		} else {
-			// got from stackoverflow.com:
-			string::size_type const p(filename.Get().find_last_of('.'));
-			// filename without extension
-			string filename_no_ext=filename.Get().substr(0, p);
-			stringstream ss;
-			ss << filename_no_ext << ".mnf";
-			output_manifold_file=ss.str();
+	}else{cout << filtering <<  " is not an implemented  contraction  mode "  << endl; return -1;}
 
-			ifstream file;
-			file.open(output_manifold_file.c_str(), ios::in); // to check if it exists
+    CtcNewton* ctcnewton=NULL;
+    if(strategy=="solver"){
+	    ctcnewton=new CtcNewton(sys->f_ctrs,5e8,prec,1.e-4);
+		ctc =  new CtcCompo (*ctc, *ctcnewton);
+	}
 
-			if (file.is_open()) {
-				overwitten = true;
-				stringstream ss;
-				ss << output_manifold_file << "~";
-				manifold_copy=ss.str();
-				// got from stackoverflow.com:
-				ofstream dest(manifold_copy, ios::binary);
 
-			    istreambuf_iterator<char> begin_source(file);
-			    istreambuf_iterator<char> end_source;
-			    ostreambuf_iterator<char> begin_dest(dest);
-			    copy(begin_source, end_source, begin_dest);
-			}
-			file.close();
-		}
+	Linearizer* lr;
+	if (linearrelaxation=="art")
+	  lr= new LinearizerCombo(*sys,LinearizerCombo::ART);
+	else if  (linearrelaxation=="compo")
+	  lr= new LinearizerCombo(*sys,LinearizerCombo::COMPO);
+	else if (linearrelaxation=="xn")
+	  lr= new LinearizerXTaylor (*sys, LinearizerXTaylor::RELAX, LinearizerXTaylor::RANDOM_OPP);
+	//	else {cout << linearrelaxation  <<  " is not an implemented  linear relaxation mode "  << endl; return -1;}
+	// fixpoint linear relaxation , hc4  with default fix point ratio 0.2
+	CtcFixPoint* cxn;
+	CtcPolytopeHull* cxn_poly;
+	CtcCompo* cxn_compo;
+	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
+          {
+		cxn_poly = new CtcPolytopeHull(*lr);
+		cxn_compo =new CtcCompo(*cxn_poly, hc44xn);
+		cxn = new CtcFixPoint (*cxn_compo, default_relax_ratio);
+	  }
+	//  the actual contractor  ctc + linear relaxation
+	Ctc* ctcxn;
+	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
+          ctcxn= new CtcCompo  (*ctc, *cxn);
+	else
+	  ctcxn = ctc;
 
-		if (!quiet) {
-			cout << "  output file:\t\t" << output_manifold_file << "\n";
-			if (txt)
-				cout << "  output format:\tTXT" << endl;
-		}
+	// one point probed when looking for a new feasible point (updating the loup)
+	int samplesize=1;
 
-		// Build the default solver
-		DefaultSolver s(sys,
-				eps_x_min ? eps_x_min.Get() : DefaultSolver::default_eps_x_min,
-				eps_x_max ? eps_x_max.Get() : DefaultSolver::default_eps_x_max,
-				!bfs,
-				random_seed? random_seed.Get() : DefaultSolver::default_random_seed);
+	if(strategy=="solver"){
+		// A "CellStack" means a depth-first search.
+		CellStack buff;
 
-		if (boundary_test_arg) {
 
-			if (boundary_test_arg.Get()=="true")
-				s.boundary_test = Solver::ALL_TRUE;
-			else if (boundary_test_arg.Get()=="full-rank")
-				s.boundary_test = Solver::FULL_RANK;
-			else if (boundary_test_arg.Get()=="half-ball")
-				s.boundary_test = Solver::HALF_BALL;
-			else if (boundary_test_arg.Get()=="false")
-				s.boundary_test = Solver::ALL_FALSE;
-			else {
-				cerr << "\nError: \"" << boundary_test_arg.Get() << "\" is not a valid option (try --help)\n";
-				exit(0);
-			}
+		Solver s(*sys, *ctcxn, *bs, buff, Vector(sys->nb_var,prec), Vector(sys->nb_var,POS_INFINITY));
+		s.time_limit = timelimit;;
+		s.trace=0;  // solutions are printed as soon as found when trace=1
 
-			if (!quiet)
-				cout << "  boundary test:\t\t" << boundary_test_arg.Get() << endl;
-		}
+		// Solve the system and get the solutions
+		Solver::Status state=s.solve(sys->box);
 
-		// This option limits the search time
-		if (timeout) {
-			if (!quiet)
-				cout << "  timeout:\t\t" << timeout.Get() << "s" << endl;
-			s.time_limit=timeout.Get();
-		}
 
-		// This option prints each better feasible point when it is found
-		if (trace) {
-			if (!quiet)
-				cout << "  trace:\t\tON" << endl;
-			s.trace=trace.Get();
-		}
+//		cout << state << endl;
+//		s.report();
 
-		if (!quiet) {
-			cout << "*****************************************************************" << endl << endl;
-		}
 
-		if (!quiet)
-			cout << "running............" << endl << endl;
+		// Display the number of boxes (called "cells")
+		// generated during the search
+//		cout << "number of cells=" << s.get_nb_cells() << endl;
+		// Display the cpu time used
+//		cout << "cpu time used=" << s.get_time() << "s."<< endl;
 
-		// Get the solutions
-		if (input_file)
-			s.solve(input_file.Get().c_str());
-		else
-			s.solve(sys.box);
+		cout << argv[1] << " " << s.get_manifold().size() << " " << (double)s.get_time() << " " <<
+				(int)s.get_nb_cells() << " " <<  endl;
 
-		if (trace) cout << endl;
 
-		if (!quiet) s.report();
-
-		if (sols) cout << s.get_manifold() << endl;
-
-		if (txt)
-			s.get_manifold().write_txt(output_manifold_file.c_str());
-		else
-			s.get_manifold().write(output_manifold_file.c_str());
-
-		if (!quiet) {
-			cout << " results written in " << output_manifold_file << "\n";
-			if (overwitten)
-				cout << " (old file saved in " << manifold_copy << ")\n";
-		}
-		//		if (!quiet && !sols) {
-//			cout << " (note: use --sols to display solutions)" << endl;
-//		}
 
 	}
-	catch(ibex::UnknownFileException& e) {
-		cerr << "Error: cannot read file '" << filename.Get() << "'" << endl;
+	else{
+
+
+	// the optimizer : the same precision goalprec is used as relative and absolute precision
+	Optimizer* o=NULL;
+
+	CellBufferOptim* buffer = new CellDoubleHeap(*dynamic_cast<ExtendedSystem*>(sys));
+
+	if(strategy=="lbub")
+	    o=new Optimizer(sys->nb_var, *ctcxn,*bs, *loupfinder, *buffer, dynamic_cast<ExtendedSystem*>(sys)->goal_var(),
+	    		prec,goalprec,goalprec);
+//	else if(strategy=="feasdiv")
+//		o=new FeasibleDiving(*orig_sys,*ctcxn,*bs, prec,goalprec,goalprec,samplesize,Optimizer::default_equ_eps, false);
+	else {cout << strategy <<  " is not an implemented search strategy "  << endl; return -1;}
+
+	// the trace
+	o->trace=1;
+
+	if (o && o->trace)	cout << " sys.box " << sys->box << endl;
+
+	// the allowed time for search
+	o->timeout=timelimit;
+
+    vector<IntervalVector> sols;
+    cout.precision(10);
+	// the search itself
+	o->optimize(orig_sys->box);
+
+	// printing the results
+	if (o->trace)
+	  o->report();
+
+
+	delete bs;
+	if (linearrelaxation=="xn" ||linearrelaxation=="compo" || linearrelaxation=="art" )
+	  {
+		//delete lr;
+	    delete ctcxn;
+	  //  delete cxn;
+	  }
+
+
+
+
+    cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
+             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << endl;
+
+
 	}
+
+	}
+
+
 	catch(ibex::SyntaxError& e) {
-		cout << e << endl;
+	  cout << e << endl;
 	}
 }
