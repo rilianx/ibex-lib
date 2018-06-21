@@ -48,6 +48,16 @@ doc/_build
 
 # files in examples
 **/examples/*
+!**/examples/estimparam
+**/examples/estimparam/*
+!**/examples/estimparam/README
+!**/examples/estimparam/house40
+!**/examples/estimparam/house44
+!**/examples/estimparam/*.cpp
+!**/examples/estimparam/data
+!**/examples/estimparam/data/*.txt
+
+
 !**/examples/*cpp
 !**/examples/makefile
 
