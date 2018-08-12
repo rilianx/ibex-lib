@@ -90,8 +90,8 @@ def build (bld):
 		install_path = bld.env.BINDIR,
 		)
 		bld.program (
-		target = "estim_plane_optim",
+		target = "estim_house",
 		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/estim_plane_optim.cpp"),
+		source = bld.path.ant_glob ("examples/**/estim_house.cpp"),
 		install_path = bld.env.BINDIR,
 		)

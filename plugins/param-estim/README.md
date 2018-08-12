@@ -22,10 +22,19 @@ Choices for source (for now) are:
 ### ibex configuration
 Must add the param-estim flag to use it and as optional the default optimizer (optim).
 
-`./waf configure --with-optim --with-param-estim --prefix=. --gaol-dir= --lp-lib=soplex`
+`./waf configure --with-optim --with-param-estim --prefix=. --gaol-dir= --lp-lib=soplex --with-affine`
+
+### extras
+For some examples, you must copy the input file from the examples folder to `__build__`
+
+`cp examples/estimparam/house40 __build__/plugins/param-estim/house40`
+
+Replace "house40" with the filename you want to test.
 
 ## Compile
-`./waf install` and cross fingers and hope for the best.
+
+`./waf install` cross fingers and hope for the best.
 
 ## Launch
-`__build__/plugins/param-estim/param-estim`
+
+`__build__/plugins/param-estim/estim_house_optim house40 1.e-3 21 1.e-4 1.e-4 1 0 0 rr2 1`
