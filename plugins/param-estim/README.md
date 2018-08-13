@@ -37,4 +37,17 @@ Replace "house40" with the filename you want to test.
 
 ## Launch
 
+### Arguments
+* filename (string): house40
+* epseq (double): 1.e-3
+* Q (int): 21
+* prebc (double)
+* precd (double)
+* flist (int)
+* gaplimit (int)
+* nbrand (int)
+* bisect (string)
+* random seed
+
 `__build__/plugins/param-estim/estim_house_optim house40 1.e-3 21 1.e-4 1.e-4 1 0 0 rr2 1`
+
