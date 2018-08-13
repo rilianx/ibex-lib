@@ -9,7 +9,9 @@ using namespace ibex;
 
 /*
  * 
- * Detects plan in real 3d point clouds using q-intersection. 
+ * Detects plan in real 3d point clouds using q-intersection.
+ * From original work of Bertrand Neveu, Martin de la Gorce and Gilles Trombettoni
+ * "Improving a Constraint Programming Approach for Parameter Estimation"
  * 
  */
 
@@ -21,8 +23,7 @@ int main(int argc, char** argv) {
 
 	/*
 	 * Set parameters
-	 */
-
+	 * */
 	double cputime =0;
 	double totaltime=0;
 	string input_file_name=argv[1];
@@ -39,8 +40,8 @@ int main(int argc, char** argv) {
 	ifstream input(input_file_name.c_str());
 
 	/*
-	 * Load data from file
-	 */
+	 * Load data from file 
+	 * */
 	while (!input.eof()){
 		double in;
 		input >> in;
@@ -57,8 +58,6 @@ int main(int argc, char** argv) {
 	srand(atoi(argv[10]));
 
 	cout << " nb points " << x->size() << endl;
-
-	// for (int i=0; i< x->size(); i++) cout << (*x)[i] << " " << (*y)[i] << " " << (*z)[i] <<endl;
 	
 	int n = 3;
 	Variable u(3);
@@ -82,18 +81,15 @@ int main(int argc, char** argv) {
 	Function* m_f0;
 	Ctc* ctc0;
 	Variable v(3);
-	
-	// double R[p];
-	// double alpha[p];
 
 	clock_t start, start0, end;
-	int nb_cells=0;
+	int nb_cells = 0;
 	start = clock();
-	start0=clock();
-	int Q0=Q;
-	int Qvalid=Q;
+	start0 = clock();
+	int Q0 = Q;
+	int Qvalid = Q;
 
-	cout << np << "  " << Q0 << " " << Qvalid << " " << epseq << endl;
+	cout << np << " " << Q0 << " " << Qvalid << " " << epseq << endl;
 
 	int bestsolpointnumber=0;
 	int Qoct=Q;
@@ -104,24 +100,12 @@ int main(int argc, char** argv) {
 		m_f0= new Function(v, (diry*v[0]+dirz*v[1]-1));
 		ctc0=new CtcFwdBwd(*m_f0,LEQ);
 		for (int i=0; i<p; i++){
-			// R[i] = sqrt( pow(x->at(i),2)+pow(y->at(i),2));
-			// alpha[i] = atan(y->at(i)/x->at(i));
-			// m_func[i] = new Function(v,sqrt(1-sqr(v[0]))*R[i]*cos(v[1]-alpha[i])+v[0]*z->at(i)-v[2]+Interval(-epseq,epseq));
-
 			m_func[i] = new Function(v,(x->at(i) +v[0]*(y->at(i)- diry*x->at(i))+v[1]*(z->at(i)-dirz*x->at(i))-v[2]-Interval(-epseq,epseq)));
 			m_ctc.set_ref(i,(*new CtcFwdBwd(*m_func[i])));
-			
-			// m_ctc.set_ref(i,*new CtcCompo (*new CtcFwdBwd(*m_func[i]), * new CtcFwdBwd(*m_func[i], EQ, AFFINE2_MODE)));
-			// m_ctc.set_ref(i, (* new CtcFixPoint (* new CtcFwdBwd(*m_func[i]),0.2)));
-			// m_ctc.set_ref(i,*new Ctc3BCid(3,* new  CtcFwdBwd(*m_func[i]),5,1,3));  
-			// m_ctc.set_ref(i,*new CtcCompo (*new CtcFixPoint (* new CtcFwdBwd(*m_func[i]),0.2),  // cid seul ne marche pas
-			// 	*new Ctc3BCid(3,* new CtcFixPoint (* new CtcFwdBwd(*m_func[i]),0.2),5,1,3)));
-			// m_ctc.set_ref(i,*new CtcCompo (* new CtcFwdBwd(*m_func[i]),  // cid seul ne marche pas
-			// 	*new Ctc3BCid(3, * new CtcFwdBwd(*m_func[i]),5,1,3)));
 		}
 
+		/* We must be on the plane defined by v */
 		for (int i=0; i<p; i++){
-	    /* We must be on the plane defined by v */
 			m_ctc1.set_ref(i,m_ctc[i]);
 			linfun[i][0]=x->at(i);
 			linfun[i][1]=y->at(i)-diry*x->at(i);
@@ -155,49 +139,38 @@ int main(int argc, char** argv) {
 		prec[2]=precd;
 
 		cout << "precision bissection " <<  prec[0] << " " << prec[1] << " " << prec[2] << endl;
-		
-		// prec[0]=0.001;
-		// prec[1]=0.001;
-		// prec[2]=0.001;
 	
 		Vector proba(3);
 		proba[0]=0.33;
 		proba[1]=0.33;
 		proba[2]=0.34;
 
-		// CellStack buff;
-		// DepthFirstSearch str (buff);
 		CellHeapQInter buff;
 		BeamSearch str(buff);
-		// BestFirstSearch str(buff);
 
 		Bsc * bs;
-		if (bisect=="rr")
+		if (bisect == "rr")
 			bs = new RoundRobin(prec,0.5);
-		else if (bisect=="rr2")
+		else if (bisect == "rr2")
 			bs = new RoundRobinNvar(2,prec,0.5);
 
-
-		// bs = new LargestFirst (prec,0.5);
-
-		/* Main optimization loop */
+		/**
+		 * Main optimization loop
+		 * */
 
 		CtcQInterAffPlane ctcq(n,p,m_ctc1,linfun,epseq,Qoct,QINTERPROJ);
 					
-		// Ctc3BCid cid(ctcq,5,1,1);
-		// CtcCompo ctcid(ctcq ,cid);
 		CtcCompo ctcqf0(*ctc0,ctcq);
 		CtcFixPoint ctcf(ctcqf0, 1);
-		// CtcFixPoint ctcf(ctcqf0, 0.1);
 
 		SolverOptQInter s(ctcf,*bs,str,ctcq);
 
-		s.str.with_oracle=false;
-		s.str.with_storage=true;
+		s.str.with_oracle = false;
+		s.str.with_storage = true;
 		s.timeout = 3600;
 		s.trace=1;
-		s.gaplimit=gaplimit;
-		s.feasible_tries=nbrand;
+		s.gaplimit = gaplimit;
+		s.feasible_tries = nbrand;
 
 		s.bestsolpointnumber=bestsolpointnumber;
 		s.bestsolpoint=bestsol;
@@ -206,7 +179,7 @@ int main(int argc, char** argv) {
 		IntervalVector res=s.solve(box);
 
 		cout << "Number of branches : " << s.nb_cells << endl;
-		nb_cells +=s.nb_cells;
+		nb_cells += s.nb_cells;
 		cputime += s.time;
 		if (s.bestsolpointnumber){
 			Qoct=s.bestsolpointnumber+s.epsobj;
@@ -227,7 +200,7 @@ int main(int argc, char** argv) {
 		delete &m_ctc[i];
 	}
 	  
-	end=clock();
+	end = clock();
 	cout << "Shape extraction : OK. Time : " << ((double)(end)-(double)(start0))/CLOCKS_PER_SEC << " seconds" << endl;
 	cout << " total time " << totaltime << endl;
 	cout << " cpu time " << cputime << endl;
