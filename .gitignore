@@ -61,3 +61,4 @@ doc/_build
 !**/examples/*cpp
 !**/examples/makefile
 
+env/
