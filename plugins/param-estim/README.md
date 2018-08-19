@@ -48,10 +48,5 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 ### Execute
 `__build__/plugins/param-estim/estim_optim plugins/param-estim/examples/data/house40 -q 21 -b rr2 -s 1`
 
-### Extras
-For more examples, you must copy the input file from the examples folder to `__build__`
-
-`cp examples/estimparam/house40 __build__/plugins/param-estim/house40`
-
 Replace "house40" with the filename you want to test.
 
