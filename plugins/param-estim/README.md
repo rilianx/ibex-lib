@@ -33,21 +33,20 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 ## Launch
 
 ### Arguments
-* filename (string): house40
-* epsilon (double): 1.e-3
-* Q (int): 21
-* prebc (double)
-* precd (double)
-* flist (int)
-* gaplimit (int)
-* nbrand (int)
-* bisect method (string): rr or rr2
-* random seed
+* filename (string): house40 (folder plugins/param-estim/examples/data/)
+* -e, --epseq (double): default 1.e-3
+* -q, --Qinter (int): default 0
+* --prebc (double): default 1.e-4
+* --precd (double): default 1.e-4
+* --flist (int): default 1
+* -g, --gaplimit (int): default 0 
+* -n, --nbrand (int): default 0
+* -b, --bis (string) bisector method: (rr or rr2) default rr
+* -s, --seed (int): default 1
+* -h, --help for por info.
 
 ### Execute
-
-`__build__/plugins/param-estim/estim_optim house40 1.e-3 21 1.e-4 1.e-4 1 0 0 rr2 1`
-
+`__build__/plugins/param-estim/estim_optim plugins/param-estim/examples/data/house40 -q 21 -b rr2 -s 1`
 
 ### Extras
 For more examples, you must copy the input file from the examples folder to `__build__`

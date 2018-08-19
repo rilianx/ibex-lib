@@ -19,12 +19,11 @@ using namespace ibex;
 int main(int argc, char** argv) {
 
 	try{
-		args::ArgumentParser parser("********* IbexOpt (defaultoptimizer) *********.", "Solve a Minibex file.");
+		args::ArgumentParser parser("********* QInter project (QInter Optimization) *********", "Solve a problem's file with  Q-Inter.");
 		args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-		//args::Positional<std::string> _filename(parser, "filename", "filename to execute", {'f', "file"});
-		args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
-		args::ValueFlag<double> _epseq(parser, "double", "epseq", {'e',"epseq"});
-		args::ValueFlag<int> _Q(parser, "int", "Q-known for Q-Intersection", {'q',"Qinter"});
+		args::Positional<std::string> filename(parser, "filename", "The name of the problem file.");
+		args::ValueFlag<double> _epseq(parser, "double", "epsilon tolerance", {'e',"epseq"});
+		args::ValueFlag<int> _Q(parser, "int", "known number of inliers", {'q',"Qinter"});
 		args::ValueFlag<double> _precbc(parser, "double", "precision for bc", {"precbc"});
 		args::ValueFlag<double> _precd(parser, "double", "precision for c", {"precd"});
 		args::ValueFlag<int> _flist(parser, "int", "f list", {"flist"});
@@ -237,7 +236,6 @@ int main(int argc, char** argv) {
 			totaltime += ((double)(end)-(double)(start))/CLOCKS_PER_SEC;
 			start= clock();
 			delete bs;
-			getchar();
 		}
 
 		for (int i=0; i<p; i++){
