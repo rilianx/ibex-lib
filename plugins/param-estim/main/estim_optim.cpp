@@ -201,10 +201,8 @@ int main(int argc, char** argv) {
 				bs = new RoundRobin(prec,0.5);
 			else if (bisect == "rr2")
 				bs = new RoundRobinNvar(2,prec,0.5);
-			/**
-			 * Optimization zone 
-			 * */
 
+			/* Optimization zone */
 			CtcQInterAffPlane ctcq(n,p,m_ctc1,linfun,epseq,Qoct,QINTERPROJ);
 						
 			CtcCompo ctcqf0(*ctc0,ctcq);
@@ -221,8 +219,7 @@ int main(int argc, char** argv) {
 
 			s.bestsolpointnumber=bestsolpointnumber;
 			s.bestsolpoint=bestsol;
-			cout << "\t avant resolution " << endl;
-			cout << "\t q " << ctcq.q << endl;
+			cout << "\tavant resolution q:" << ctcq.q << endl;
 			IntervalVector res=s.solve(box);
 
 			cout << "\tNumber of branches : " << s.nb_cells << endl;
