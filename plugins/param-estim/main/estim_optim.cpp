@@ -17,7 +17,6 @@ using namespace ibex;
  */
 
 int main(int argc, char** argv) {
-
 	try{
 		args::ArgumentParser parser("********* QInter project (QInter Optimization) *********", "Solve a problem's file with  Q-Inter.");
 		args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
@@ -31,6 +30,7 @@ int main(int argc, char** argv) {
 		args::ValueFlag<int> _nbrand(parser, "int", "n brand", {'n', "nbrand"});
 		args::ValueFlag<std::string> _bisector(parser, "string", "the bisection method", {'b', "bis"});
 		args::ValueFlag<int> _seed(parser, "int", "seed integer", {'s', "seed"});
+		args::Flag trace(parser, "trace", "Activate trace.", {"trace"});
 
 		try{
 			parser.ParseCLI(argc, argv);
@@ -52,9 +52,8 @@ int main(int argc, char** argv) {
 		vector<double> *z = new vector<double>;
 
 		/*
-		* Set parameters
+		* Parameter section
 		* */
-
 		double cputime =0;
 		double totaltime=0;
 		string input_file_name = (filename)? filename.Get() : "randomize";
@@ -99,7 +98,11 @@ int main(int argc, char** argv) {
 		cout << "\tnbrand: " << nbrand << endl;
 		cout << "\tbisector method: " << bisect << endl;
 		cout << "\tseed: " << seed << endl;
-		getchar();
+
+		if(trace){
+			cout << "press a key to continue..." << endl;
+			getchar();
+		}
 
 		cout << "nb points " << x->size() << endl;
 		

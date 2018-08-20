@@ -1,10 +1,12 @@
 ParamEstim
 ======
-This is a README for knowledge on how to use this plugin on ibex solver.
+This is a README  knowledge on how to use this plugin on ibex solver.
 
 
 ## Configuration
+
 ### Default build
+
 Must change "source" variable to set example to execute on file wscript on folder "param-estim".
 
 `source = bld.path.ant_glob ("examples/**/robust_estim1.cpp")`
@@ -22,6 +24,7 @@ Choices for source are:
 * estim_optim.cpp
 
 ### ibex configuration
+
 Must add the param-estim flag to use it and as optional the default optimizer (optim).
 
 `./waf configure --with-optim --with-param-estim --prefix=. --gaol-dir= --lp-lib=soplex --with-affine`
@@ -33,6 +36,7 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 ## Launch
 
 ### Arguments
+
 * filename (string): house40 (folder plugins/param-estim/examples/data/)
 * -e, --epseq (double): default 1.e-3
 * -q, --Qinter (int): default 0
@@ -46,6 +50,7 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 * -h, --help for por info.
 
 ### Execute
+
 `__build__/plugins/param-estim/estim_optim plugins/param-estim/examples/data/house40 -q 21 -b rr2 -s 1`
 
 Replace "house40" with the filename you want to test.
