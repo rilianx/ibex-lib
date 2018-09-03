@@ -26,7 +26,18 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 	bool found=false;
 
 		try {
-
+			/*
+			 * old_exp <-- mid(x)
+			 * (exp,y) <-- abstaylor(old_exp)
+			 * if y:
+			 *   step <-- (old_exp,exp) #maximo step relativo
+			 *   while step>0.1:
+			 *      x <-- generate(exp,step*size(x),ratio)
+			 *      old_exp <-- exp
+			 *      (exp,y) <-- abstaylor(old_exp)
+			 *      step <-- (old_exp,exp) #maximo step relativo
+			 *
+			 */
 
 
 			pair<IntervalVector,double> p2=finder_abs_taylor.find(box,box.mid(),p.second);
