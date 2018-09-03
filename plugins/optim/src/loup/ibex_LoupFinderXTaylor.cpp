@@ -29,7 +29,7 @@ LoupFinderXTaylor::LoupFinderXTaylor(const System& sys, bool abs_taylor) :
 
 }
 
-std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& box, const IntervalVector&, double current_loup) {
+std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& box, const IntervalVector& exp_point, double current_loup) {
 	if (!(lp_solver.default_limit_diam_box.contains(box.max_diam())))
 		throw NotFound();
 	int n=sys.nb_var;
@@ -42,13 +42,17 @@ std::pair<IntervalVector, double> LoupFinderXTaylor::find(const IntervalVector& 
 		IntervalVector box2(n*2);
 		for(int i=0;i<n;i++)
 			box2[i]=box[i];
+
+		//initialize auxiliary variables u_i
 		for(int i=0;i<n;i++)
 			box2[n+i]=Interval(-box2[i].mag()-1, box2[i].mag()+1);
 
 		lp_solver.set_bounds(box2);
+		LinearizerAbsTaylor* lr_abst = dynamic_cast<LinearizerAbsTaylor*>(lr);
+		lr_abst->set_expansion_point(exp_point.mid());
 	}
 
-	IntervalVector ig=sys.goal_gradient(box.mid());
+	IntervalVector ig=sys.goal_gradient(exp_point.mid());
 	if (ig.is_empty()) // unfortunately, at the midpoint the function is not differentiable
 		throw NotFound(); // not a big deal: wait for another box...
 

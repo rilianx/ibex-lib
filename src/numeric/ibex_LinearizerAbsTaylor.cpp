@@ -30,10 +30,10 @@ class Unsatisfiability : public Exception { };
 
 }
 
-LinearizerAbsTaylor::LinearizerAbsTaylor(const System& _sys, Mode point_mode):
+LinearizerAbsTaylor::LinearizerAbsTaylor(const System& _sys):
 			Linearizer(_sys.nb_var), sys(_sys),
 			m(sys.f_ctrs.image_dim()), goal_ctr(-1 /*tmp*/),
-			lp_solver(NULL), point_mode(point_mode) {
+			lp_solver(NULL), exp_point(0.0) {
 
 	if (dynamic_cast<const ExtendedSystem*>(&sys)) {
 		((int&) goal_ctr)=((const ExtendedSystem&) sys).goal_ctr();
@@ -69,8 +69,7 @@ int LinearizerAbsTaylor::linear_restrict(const IntervalVector& box) {
 
 
 		// the evaluation of the constraints in the mid of the box
-		Vector point(box.mid());
-		if(point_mode==RANDOM) point=box.random();
+		Vector point(exp_point);
 
 		IntervalVector g_mid(sys.f_ctrs.eval_vector(point,active));
 		if (g_mid.is_empty()) return -1;

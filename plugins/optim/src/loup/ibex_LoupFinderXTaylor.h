@@ -36,14 +36,14 @@ public:
 	 *
 	 * \param sys         - The NLP problem.
 	 */
-	LoupFinderXTaylor(const System& sys, bool abs_taylor=false);
+	LoupFinderXTaylor(const System& sys, bool abs_taylor=false, bool trust_region=false);
 
 	/**
 	 * \brief Find a new loup in a given box.
 	 *
 	 * \see comments in LoupFinder.
 	 */
-	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& x0, double current_loup);
+	virtual std::pair<IntervalVector, double> find(const IntervalVector& box, const IntervalVector& exp_point, double current_loup);
 
 	/**
 	 * \brief The NLP problem.

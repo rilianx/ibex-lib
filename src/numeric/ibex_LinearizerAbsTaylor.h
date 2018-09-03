@@ -29,14 +29,12 @@ class LinearizerAbsTaylor : public Linearizer {
 public:
 
 
-	typedef enum{MID, RANDOM} Mode;
-
 	/**
 	 * \brief Creates the X_Taylor linearizer.
 	 *
 	 * \param sys             - The system (extended or not).
 	 */
-	LinearizerAbsTaylor(const System& sys, Mode point_mode=MID);
+	LinearizerAbsTaylor(const System& sys);
 
 	/**
 	 * \brief Deletes this.
@@ -47,6 +45,8 @@ public:
 	 * \brief Generation of the linear inequalities
 	 */
 	virtual int linearize(const IntervalVector& box, LPSolver& lp_solver);
+
+	void set_expansion_point(Vector point){ exp_point=point; }
 
 private:
 
@@ -83,7 +83,7 @@ private:
 	 */
 	const int goal_ctr;
 
-	Mode point_mode;
+	Vector exp_point;
 
 
 	/**

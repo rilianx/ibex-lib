@@ -52,7 +52,7 @@ std::pair<IntervalVector, double> LoupFinderDefault::find(const IntervalVector& 
 		try {
 			// TODO
 			// in_x_taylor.set_inactive_ctr(entailed->norm_entailed);
-			pair<IntervalVector,double> p2=finder_abs_taylor.find(box,p.first,p.second);
+			pair<IntervalVector,double> p2=finder_abs_taylor.find(box,box.mid(),p.second);
 			if(p2.second < p.second){
 				p=p2;
 				foundby="abstaylor";
