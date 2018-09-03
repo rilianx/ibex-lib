@@ -13,6 +13,7 @@
 #include "ibex_LoupFinder.h"
 #include "ibex_System.h"
 #include "ibex_LoupFinderXTaylor.h"
+#include "ibex_Vector.h"
 
 namespace ibex {
 
