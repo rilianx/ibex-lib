@@ -13,6 +13,7 @@
 #include "ibex_LoupFinder.h"
 #include "ibex_System.h"
 #include "ibex_LoupFinderXTaylor.h"
+#include "ibex_LoupFinderTrustRegion.h"
 
 namespace ibex {
 
@@ -36,7 +37,7 @@ namespace ibex {
 class LoupFinderDefault : public LoupFinder {
 public:
 
-	enum mode{xt, abst, both} m;
+	enum mode{xt, abst, both, trustregion} m;
 
 	/**
 	 * \brief Create the algorithm for a given system.
@@ -49,7 +50,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderDefault(const System& sys, bool inHC4=true, mode m=xt);
+	LoupFinderDefault(const System& sys,const IntervalVector& initial_box, bool inHC4=true, mode m=xt);
 
 	/**
 	 * \brief Delete this.
@@ -79,8 +80,9 @@ public:
 	 * Loup finder using inner polytopes.
 	 */
 	LoupFinderXTaylor finder_abs_taylor;
-
+	LoupFinderTrustRegion finder_trustregion;
 	static string foundby;
+	const IntervalVector& initial_box;
 
   void print_results(){
 		std::cout << (double) finder_x_taylor.nb_opts / finder_x_taylor.nb_calls << " " <<

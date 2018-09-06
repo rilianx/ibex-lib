@@ -102,7 +102,7 @@ int main(int argc, char** argv){
 	else {
 		sys=new ExtendedSystem(*orig_sys,eqeps);
 		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps); //orig_sys
-		loupfinderd = new  LoupFinderDefault(*norm_sys, true, m);
+		loupfinderd = new  LoupFinderDefault(*norm_sys,sys->box, true, m);
 		loupfinder=loupfinderd;
 		//loupfinder = new LoupFinderCertify(*orig_sys, *loupfinderd);
 

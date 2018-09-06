@@ -64,6 +64,7 @@ protected:
 
 	/** Variant using midTaylor with absolute values */
 	bool abs_taylor;
+	bool trust_region;
 
 
 

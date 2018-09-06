@@ -7,8 +7,8 @@
 // Created     : Jul 09, 2017
 //============================================================================
 
-#ifndef __IBEX_LOUP_FINDER_DEFAULT_H__
-#define __IBEX_LOUP_FINDER_DEFAULT_H__
+#ifndef __IBEX_LOUP_FINDER_TRUST_REGION_H__
+#define __IBEX_LOUP_FINDER_TRUST_REGION_H__
 
 #include "ibex_LoupFinder.h"
 #include "ibex_System.h"
@@ -50,7 +50,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderTrustRegion(const System& sys);
+	LoupFinderTrustRegion(const System& sys, const IntervalVector& initial_box);
 
 	/**
 	 * \brief Delete this.
@@ -68,7 +68,7 @@ public:
 	 * Loup finder using inner polytopes.
 	 */
 	LoupFinderXTaylor finder_abs_taylor;
-
+	const IntervalVector& initial_box;
 
 };
 

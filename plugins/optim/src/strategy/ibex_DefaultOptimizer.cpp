@@ -63,8 +63,8 @@ DefaultOptimizer::DefaultOptimizer(const System& sys, double rel_eps_f, double a
 			  ctc(get_ext_sys(sys,eps_h)), // warning: we don't know which argument is evaluated first
 //			  rec(new SmearSumRelative(get_ext_sys(sys,eps_h),eps_x)),
 			  rec(new LSmear(get_ext_sys(sys,eps_h),eps_x)),
-			  rec(rigor? (LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4))) :
-						 (LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),inHC4)),
+			  rec(rigor? (LoupFinder*) new LoupFinderCertify(sys,rec(new LoupFinderDefault(get_norm_sys(sys,eps_h),sys.box,inHC4))) :
+						 (LoupFinder*) new LoupFinderDefault(get_norm_sys(sys,eps_h),sys.box,inHC4)),
 			  (CellBufferOptim&) rec(new CellDoubleHeap(get_ext_sys(sys,eps_h))),
 //			  (CellBufferOptim&) rec (new  CellBeamSearch (
 //								       (CellHeap&) rec (new CellHeap (get_ext_sys(sys,eps_h))),

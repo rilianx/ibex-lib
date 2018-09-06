@@ -14,8 +14,8 @@ using namespace std;
 namespace ibex {
 
 
-LoupFinderTrustRegion::LoupFinderTrustRegion(const System& sys) :
-	finder_abs_taylor(sys,true) {
+LoupFinderTrustRegion::LoupFinderTrustRegion(const System& sys,const IntervalVector& initial_box) :
+	finder_abs_taylor(sys,true),initial_box(initial_box) {
 
 }
 
@@ -40,7 +40,7 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 			 */
 			Vector old_exp = box.mid();
 			pair<IntervalVector,double> p2=finder_abs_taylor.find(box,old_exp,p.second);
-			if (p2.first){
+			if (p2.second < p.second){ //si es mas pequeño o si encuentra cualquiera?
 				double step = 0.0;
 				for (int i = 0 ; i < old_exp.size() ; i++)
 					if (std::abs((old_exp[i]-p2.first.mid()[i])/p2.first.mid()[i]) > step)
