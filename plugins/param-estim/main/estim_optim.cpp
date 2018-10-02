@@ -54,24 +54,24 @@ int main(int argc, char** argv) {
 		/*
 		* Parameter section
 		* */
-		double cputime =0;
-		double totaltime=0;
+		double cputime = 0;
+		double totaltime = 0;
 		string input_file_name = (filename)? filename.Get() : "randomize";
 		double epseq = (_epseq)? _epseq.Get(): 1.e-3;
 		int Q = (_Q)? _Q.Get(): 0;
-		double precbc= (_precbc)? _precbc.Get(): 1.e-4;
-		double precd= (_precd)? _precd.Get(): 1.e-4;
+		double precbc = (_precbc)? _precbc.Get(): 1.e-4;
+		double precd = (_precd)? _precd.Get(): 1.e-4;
 		int flist = (_flist)? _flist.Get(): 1;
-		int gaplimit= (_gaplimit)? _gaplimit.Get(): 0;
-		int nbrand= (_nbrand)? _nbrand.Get(): 0;
+		int gaplimit = (_gaplimit)? _gaplimit.Get(): 0;
+		int nbrand = (_nbrand)? _nbrand.Get(): 0;
 		string bisect = (_bisector)? _bisector.Get(): "rr";
 		int seed = (_seed)? _seed.Get(): 1;
 		cout << input_file_name << endl;
 		ifstream input(input_file_name.c_str());
 
-		/*
+		/**
 		* Load data from file 
-		* */
+		**/
 		while (!input.eof()){
 			double in;
 			input >> in;
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
 		Vector bestsol (3);
 		/**
 		 * Main optimization loop
-		 * */
+		 **/
 		for (int oct=0; oct <4; oct++){
 			int diry= pow(-1,oct%2);
 			int dirz= pow(-1,oct/2);
@@ -204,7 +204,9 @@ int main(int argc, char** argv) {
 			else if (bisect == "rr2")
 				bs = new RoundRobinNvar(2,prec,0.5);
 
-			/* Optimization zone */
+			/** 
+			 * Optimization zone 
+			 **/
 			CtcQInterAffPlane ctcq(n,p,m_ctc1,linfun,epseq,Qoct,QINTERPROJ);
 						
 			CtcCompo ctcqf0(*ctc0,ctcq);
@@ -215,11 +217,11 @@ int main(int argc, char** argv) {
 			s.str.with_oracle = false;
 			s.str.with_storage = true;
 			s.timeout = 3600;
-			s.trace=1;
+			s.trace = trace;
 			s.gaplimit = gaplimit;
 			s.feasible_tries = nbrand;
 
-			s.bestsolpointnumber=bestsolpointnumber;
+			s.bestsolpointnumber = bestsolpointnumber;
 			s.bestsolpoint=bestsol;
 			cout << "\tavant resolution q:" << ctcq.q << endl;
 			IntervalVector res=s.solve(box);
