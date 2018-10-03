@@ -22,8 +22,7 @@ using namespace std;
 namespace ibex {
 
   
-  SolverOptQInter::SolverOptQInter ( Ctc& ctc, Bsc& bsc, SearchStrategy& str, CtcQInter& ctcq)  : SolverOpt (ctc,bsc,str), ctcq(ctcq) ,  initbox(ctcq.nb_var)
- { init();}
+  SolverOptQInter::SolverOptQInter(Ctc& ctc, Bsc& bsc, SearchStrategy& str, CtcQInter& ctcq): SolverOpt (ctc,bsc,str), ctcq(ctcq), initbox(ctcq.nb_var){init();}
   
   /* utilitaires sur les matrices : non utilisé dans version courante
   double matrix_magnitude (IntervalMatrix & mat)
