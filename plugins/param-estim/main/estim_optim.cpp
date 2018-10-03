@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 			getchar();
 		}
 
-		cout << "nb points " << x->size() << endl;
+		if(trace) cout << "nb points " << x->size() << endl;
 		
 		int n = 3;
 		Variable u(3);
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
 		for (int i=0;i<p;i++)
 			if ((*z)[i] >=2.79 && (*z)[i] <3)
 				nz++;
-		cout << "nz " << nz << endl;
+		if(trace) cout << "nz " << nz << endl;
 		int K = 1;
 		int np = p;
 		double ** linfun;
@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
 		int Q0 = Q;
 		int Qvalid = Q;
 
-		cout << np << " " << Q0 << " " << Qvalid << " " << epseq << endl;
+		if(trace) cout << np << " " << Q0 << " " << Qvalid << " " << epseq << endl;
 
 		int bestsolpointnumber=0;
 		int Qoct=Q;
@@ -145,6 +145,7 @@ int main(int argc, char** argv) {
 		 * Main optimization loop
 		 **/
 		for (int oct=0; oct <4; oct++){
+			if(trace) cout << "oct: " << oct << endl;
 			int diry= pow(-1,oct%2);
 			int dirz= pow(-1,oct/2);
 			m_f0= new Function(v, (diry*v[0]+dirz*v[1]-1));
@@ -188,7 +189,7 @@ int main(int argc, char** argv) {
 			prec[1]=precbc;
 			prec[2]=precd;
 
-			cout << "precision bisection " <<  prec[0] << " " << prec[1] << " " << prec[2] << endl;
+			if(trace) cout << "precision bisection " <<  prec[0] << " " << prec[1] << " " << prec[2] << endl;
 		
 			Vector proba(3);
 			proba[0]=0.33;
@@ -210,7 +211,7 @@ int main(int argc, char** argv) {
 			CtcQInterAffPlane ctcq(n,p,m_ctc1,linfun,epseq,Qoct,QINTERPROJ);
 						
 			CtcCompo ctcqf0(*ctc0,ctcq);
-			CtcFixPoint ctcf(ctcqf0, 1);
+			CtcFixPoint ctcf(ctcqf0,1);
 
 			SolverOptQInter s(ctcf,*bs,str,ctcq);
 
@@ -223,10 +224,10 @@ int main(int argc, char** argv) {
 
 			s.bestsolpointnumber = bestsolpointnumber;
 			s.bestsolpoint=bestsol;
-			cout << "\tavant resolution q:" << ctcq.q << endl;
+			if(trace) cout << "\tavant resolution q:" << ctcq.q << endl;
 			IntervalVector res=s.solve(box);
 
-			cout << "\tNumber of branches : " << s.nb_cells << endl;
+			if(trace) cout << "\tNumber of branches : " << s.nb_cells << endl;
 			nb_cells += s.nb_cells;
 			cputime += s.time;
 			if (s.bestsolpointnumber){
@@ -234,8 +235,10 @@ int main(int argc, char** argv) {
 				bestsol=s.bestsolpoint;
 				bestsolpointnumber=s.bestsolpointnumber;
 			}
-			s.report_possible_inliers();
-			s.report_solution();
+			if(trace){
+				s.report_possible_inliers();
+				s.report_solution();
+			}
 
 			end = clock();
 			totaltime += ((double)(end)-(double)(start))/CLOCKS_PER_SEC;
