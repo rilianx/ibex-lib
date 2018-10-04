@@ -112,8 +112,17 @@ namespace ibex {
   }
 
   void SolverOptQInter::postcontract(Cell& c) {
-    //    cout << "qmax after contract " << c.get<QInterPoints>().qmax  << "  " << ctcq.qmax <<  endl;
+    cout << "qmax after contract " << c.get<QInterPoints>().qmax  << "  " << ctcq.qmax <<  endl;
+    cout << ctcq.points->size() << endl;
+   /* for(auto i: *ctcq.points){
+    		//ctcq.points){
+    	cout << i << ", " ;
+    }
+    cout << endl;*/
+
+
     update_cell_info(c);
+
     ctcq.disable_side_effects();
     ctc.disable_side_effects();
   }
