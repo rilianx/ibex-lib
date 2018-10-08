@@ -76,6 +76,8 @@ int main(int argc, char** argv){
 		m=LoupFinderDefault::abst;
 	else if(_loup_mode && _loup_mode.Get()=="both")
 		m=LoupFinderDefault::both;
+	else if(_loup_mode && _loup_mode.Get()=="trust")
+		m=LoupFinderDefault::trustregion;
 	else if(_loup_mode && _loup_mode.Get()!="xt") {
 		cout << _loup_mode.Get() << " is not an implemented loupFinder mode "  << endl; return -1;
 	}

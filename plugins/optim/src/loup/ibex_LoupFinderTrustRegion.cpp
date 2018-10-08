@@ -24,58 +24,60 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 	pair<IntervalVector,double> p=make_pair(old_loup_point, old_loup);
 
 	bool found=false;
-
 		try {
-			/*
-			 * old_exp <-- mid(x)
-			 * (exp,y) <-- abstaylor(old_exp)
-			 * if y:
-			 *   step <-- (old_exp,exp) #maximo step relativo
-			 *   while step>0.1:
-			 *      x <-- generate(exp,step*size(x),ratio)
-			 *      old_exp <-- exp
-			 *      (exp,y) <-- abstaylor(old_exp)
-			 *      step <-- (old_exp,exp) #maximo step relativo
-			 *
-			 */
 
-			Vector old_exp = box.mid();
-			pair<IntervalVector,double> p2=finder_abs_taylor.find(box,old_exp,p.second);
-			if (p2.second < p.second){ //si es mas pequeño o si encuentra cualquiera?
-				double step = 0.0;
-				for (int i = 0 ; i < old_exp.size() ; i++)
-					if (std::abs((old_exp[i]-p2.first.mid()[i])/old_exp[i]) > step)
-						step = std::abs((old_exp[i]-p2.first.mid()[i])/old_exp[i]);
-				IntervalVector box_aux(box.size());
-				while(step > 0.1){
-					old_exp = p2.first.mid();
-					for (int i = 0 ; i < box.size() ; i++){
-						if ((old_exp[i]+step*box[i].lb()>=initial_box[i].lb()) && (old_exp[i]+step*box[i].ub()<=initial_box[i].ub()))
-							box_aux[i] = Interval(old_exp[i]+step*box[i].lb(),old_exp[i]+step*box[i].ub());
-						else if ((old_exp[i]+step*box[i].lb()>=initial_box[i].lb()) && (old_exp[i]+step*box[i].ub()>initial_box[i].ub()))
-							box_aux[i] = Interval(old_exp[i]+step*box[i].lb(),initial_box[i].ub());
-						else if ((old_exp[i]+step*box[i].lb()<initial_box[i].lb()) && (old_exp[i]+step*box[i].ub()<=initial_box[i].ub()))
-							box_aux[i] = Interval(initial_box[i].lb(),old_exp[i]+step*box[i].ub());
-						else if ((old_exp[i]+step*box[i].lb()<initial_box[i].lb()) && (old_exp[i]+step*box[i].ub()>initial_box[i].ub()))
-							box_aux[i] = Interval(initial_box[i].lb(),initial_box[i].ub());
-					}
-					p2 = finder_abs_taylor.find(box_aux,old_exp,p.second);
-					for (int i = 0 ; i < old_exp.size() ; i++)
-						if (std::abs((old_exp[i]-p2.first.mid()[i])/old_exp[i]) > step)
-							step = std::abs((old_exp[i]-p2.first.mid()[i])/old_exp[i]);
-				}
-			}
-			if(p2.second < p.second){
-				p=p2;
-				found=true;
-			}
-		} catch(NotFound&) { }
+		pair<IntervalVector,double> new_ub=finder_abs_taylor.find(box,box.mid(),p.second);
+		pair<IntervalVector,double> old_ub = p;
+	 	if(new_ub.second < p.second){
+	 		found = true;
+	 		p = new_ub;
+	 	}
+	 	else throw NotFound();
+	 	double current_alpha;
+	 	bool flag = true;
+	 	IntervalVector box_aux(box.size());
+	 	while ((old_ub.second-new_ub.second>1e-5) || (flag)){
+	 		if (old_ub.second-new_ub.second < 1e-5) flag = false;
+	 		else flag = true;
 
-	if (found)
-		return p;
-	else
-		throw NotFound();
-}
+	 		Vector old_exp = new_ub.first.mid();
+	 		for (int i = 0 ; i < box.size() ; i++){
+	 			if ((std::abs(box[i].lb()-new_ub.first[i].lb())<1e-5) || (std::abs(box[i].ub()-new_ub.first[i].ub())<1e-5))
+	 				current_alpha = 1;
+	 			else{ current_alpha = 0.2;
+	 			}
+				if ((old_exp[i]-current_alpha*box[i].diam()>=initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()<=initial_box[i].ub()))
+					box_aux[i] = Interval(old_exp[i]-current_alpha*box[i].diam(),old_exp[i]+current_alpha*box[i].diam());
+				else if ((old_exp[i]-current_alpha*box[i].diam()>=initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()>initial_box[i].ub()))
+					box_aux[i] = Interval(old_exp[i]-current_alpha*box[i].diam(),initial_box[i].ub());
+				else if ((old_exp[i]-current_alpha*box[i].diam()<initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()<=initial_box[i].ub()))
+					box_aux[i] = Interval(initial_box[i].lb(),old_exp[i]+current_alpha*box[i].diam());
+				else if ((old_exp[i]-current_alpha*box[i].diam()<initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()>initial_box[i].ub()))
+					box_aux[i] = Interval(initial_box[i].lb(),initial_box[i].ub());
+			}
+	 		try {
+	 			pair<IntervalVector,double> newnew_ub = make_pair(old_loup_point, old_loup);
+ 		 		old_ub = new_ub;
+	 			newnew_ub=finder_abs_taylor.find(box_aux,box_aux.mid(),new_ub.second);
+	 		 	if(newnew_ub.second < new_ub.second){
+	 		 		new_ub = newnew_ub;
+	 		 		found = true;
+	 		 		p = new_ub;
+	 		 	}
+	 		}
+	 		catch(NotFound&) {
+	 			if (!flag)
+	 				return p;
+	 		}
+	 	}
+
+	 	} catch(NotFound&) { }
+
+	 	if (found)
+	 		return p;
+	 	else
+	 		throw NotFound();
+	 }
 
 LoupFinderTrustRegion::~LoupFinderTrustRegion() {
 	delete &finder_abs_taylor;
