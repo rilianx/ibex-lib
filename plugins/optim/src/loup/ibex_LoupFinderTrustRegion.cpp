@@ -44,7 +44,7 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 	 		for (int i = 0 ; i < box.size() ; i++){
 	 			if ((std::abs(box[i].lb()-new_ub.first[i].lb())<1e-5) || (std::abs(box[i].ub()-new_ub.first[i].ub())<1e-5))
 	 				current_alpha = 1;
-	 			else{ current_alpha = 0.2;
+	 			else{ current_alpha = 0.9;
 	 			}
 				if ((old_exp[i]-current_alpha*box[i].diam()>=initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()<=initial_box[i].ub()))
 					box_aux[i] = Interval(old_exp[i]-current_alpha*box[i].diam(),old_exp[i]+current_alpha*box[i].diam());
