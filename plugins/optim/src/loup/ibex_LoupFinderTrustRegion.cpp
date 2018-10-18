@@ -15,8 +15,7 @@ namespace ibex {
 
 
 LoupFinderTrustRegion::LoupFinderTrustRegion(const System& sys,const IntervalVector& initial_box) :
-	finder_abs_taylor(sys,true),initial_box(initial_box) {
-
+	finder_abs_taylor(sys,true),initial_box(initial_box),f_goal(sys.goal) {
 }
 
 std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVector& box, const IntervalVector& old_loup_point, double old_loup) {
@@ -27,6 +26,7 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 		try {
 
 		pair<IntervalVector,double> new_ub=finder_abs_taylor.find(box,box.mid(),p.second);
+
 		pair<IntervalVector,double> old_ub = p;
 	 	if(new_ub.second < p.second){
 	 		found = true;
@@ -36,15 +36,15 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 	 	double current_alpha;
 	 	bool flag = true;
 	 	IntervalVector box_aux(box.size());
-	 	while ((old_ub.second-new_ub.second>1e-5) || (flag)){
-	 		if (old_ub.second-new_ub.second < 1e-5) flag = false;
+	 	while ((old_ub.second-new_ub.second>1e-6) || (flag)){
+	 		if (old_ub.second-new_ub.second < 1e-6) flag = false;
 	 		else flag = true;
 
 	 		Vector old_exp = new_ub.first.mid();
 	 		for (int i = 0 ; i < box.size() ; i++){
-	 			if ((std::abs(box[i].lb()-new_ub.first[i].lb())<1e-5) || (std::abs(box[i].ub()-new_ub.first[i].ub())<1e-5))
+	 			if ((std::abs(box[i].lb()-new_ub.first[i].lb())<1e-6) || (std::abs(box[i].ub()-new_ub.first[i].ub())<1e-6))
 	 				current_alpha = 1;
-	 			else{ current_alpha = 0.9;
+	 			else{ current_alpha = 0.2;
 	 			}
 				if ((old_exp[i]-current_alpha*box[i].diam()>=initial_box[i].lb()) && (old_exp[i]+current_alpha*box[i].diam()<=initial_box[i].ub()))
 					box_aux[i] = Interval(old_exp[i]-current_alpha*box[i].diam(),old_exp[i]+current_alpha*box[i].diam());
@@ -56,10 +56,22 @@ std::pair<IntervalVector, double> LoupFinderTrustRegion::find(const IntervalVect
 					box_aux[i] = Interval(initial_box[i].lb(),initial_box[i].ub());
 			}
 	 		try {
+
 	 			pair<IntervalVector,double> newnew_ub = make_pair(old_loup_point, old_loup);
  		 		old_ub = new_ub;
 	 			newnew_ub=finder_abs_taylor.find(box_aux,box_aux.mid(),new_ub.second);
-	 		 	if(newnew_ub.second < new_ub.second){
+
+	 			pair<double, double> c1_t1 = make_pair(POS_INFINITY,0);
+	 			IntervalVector point_a = old_ub.first;
+	 			PFunction pf(*f_goal,  newnew_ub.first.mid(),box_aux.mid());
+	 			c1_t1 = pf.optimize(Interval(POS_INFINITY), PFunction::MIN, POS_INFINITY,  0.1);
+
+	 			if (f_goal->eval(point_a+c1_t1.second*(newnew_ub.first-point_a)).ub()+1e-6 < newnew_ub.second){
+	 				newnew_ub.first = point_a+c1_t1.second*(newnew_ub.first-point_a);
+	 				newnew_ub.second = f_goal->eval(old_loup_point).ub();
+	 			}
+
+	 			if(newnew_ub.second+1e-6 < new_ub.second){
 	 		 		new_ub = newnew_ub;
 	 		 		found = true;
 	 		 		p = new_ub;

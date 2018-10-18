@@ -42,7 +42,8 @@ public:
 
 	IntervalVector get_point(const Interval& t) const;
 	static Interval eval_goal(const Function& goal, const IntervalVector& x, int n);
-	static IntervalVector deriv_goal(const Function& goal, const IntervalVector& x, int n);
+
+		static IntervalVector deriv_goal(const Function& goal, const IntervalVector& x, int n);
 	/**
 	 * \brief gets the image of the segment line xa-xb
 	 */

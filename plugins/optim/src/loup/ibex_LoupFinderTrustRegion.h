@@ -14,6 +14,7 @@
 #include "ibex_System.h"
 #include "ibex_LoupFinderXTaylor.h"
 #include "ibex_Vector.h"
+#include "ibex_PFunction.h"
 
 namespace ibex {
 
@@ -69,6 +70,7 @@ public:
 	 */
 	LoupFinderXTaylor finder_abs_taylor;
 	const IntervalVector& initial_box;
+	const Function* f_goal;
 
 };
 
