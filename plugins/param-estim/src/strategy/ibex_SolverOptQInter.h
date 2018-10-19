@@ -17,6 +17,8 @@
 #include "ibex_CellBuffer.h"
 #include "ibex_CellStack.h"
 #include "ibex_CtcQInter.h"
+#include "ibex_CtcFwdBwd.h"
+#include "ibex_CtcCompo.h"
 #include "ibex_QInterPoints.h"
 #include "ibex_LPSolver.h"
 #include "ibex_NormalizedSystem.h"
@@ -82,6 +84,29 @@ Q-intersection contractors.
    double compute_err_sol(Vector& vec);
    Cell* root_cell(const IntervalVector& box);
 
+
+   //genera sistemas con varias observaciones los contracta y si falla se agrega una clausula al SAT
+   SAT* extract_SAT_information(IntervalVector& box, list<int>& points){
+	   ini:
+	   IntervalVector initbox(box);
+	   Array<Ctc> ctcs;
+	   for (int i=0; i<10; i++){
+		    int p;//random point from points
+
+		    Function* m_func = new Function(v,(x->at(i) +v[0]*(y->at(i)- diry*x->at(i))+v[1]*(z->at(i)-dirz*x->at(i))-v[2]-Interval(-epseq,epseq)));
+		    ctcs.add(*new CtcFwdBwd(*m_func)); //TODO: usar simplex
+		}
+	   CtcCompo observ(ctcs);
+	   observ.contract(initbox);
+	   //la caja fue eliminada (fallo)
+	   if(initbox.empty()){
+		   //crear clausula con los puntos y agregar al SAT
+	   }
+	   goto ini; //hacer las veces que sean necesarias
+   }
+
+   //resuelve el problema y retorna un upperbound para q
+   int maxsat (SAT* s);
 
    void report_time_limit();
    

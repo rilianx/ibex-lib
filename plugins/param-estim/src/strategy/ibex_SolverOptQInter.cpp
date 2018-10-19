@@ -114,6 +114,10 @@ namespace ibex {
   void SolverOptQInter::postcontract(Cell& c) {
     cout << "qmax after contract " << c.get<QInterPoints>().qmax  << "  " << ctcq.qmax <<  endl;
     cout << ctcq.points->size() << endl;
+    SAT* s = extract_SAT_information(c.box, ctcq.points);
+    int qmax = maxsat (s);
+    //actualizar ctcq.qmax si mejora (esperemos que si)
+
    /* for(auto i: *ctcq.points){
     		//ctcq.points){
     	cout << i << ", " ;
