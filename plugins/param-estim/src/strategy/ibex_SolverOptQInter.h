@@ -86,7 +86,7 @@ Q-intersection contractors.
 
 
    //genera sistemas con varias observaciones los contracta y si falla se agrega una clausula al SAT
-   SAT* extract_SAT_information(IntervalVector& box, list<int>& points){
+   /*SAT* extract_SAT_information(IntervalVector& box, list<int>& points){
 	   ini:
 	   IntervalVector initbox(box);
 	   Array<Ctc> ctcs;
@@ -103,10 +103,10 @@ Q-intersection contractors.
 		   //crear clausula con los puntos y agregar al SAT
 	   }
 	   goto ini; //hacer las veces que sean necesarias
-   }
+   }*/
 
    //resuelve el problema y retorna un upperbound para q
-   int maxsat (SAT* s);
+   //int maxsat (SAT* s);
 
    void report_time_limit();
    
