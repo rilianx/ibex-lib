@@ -50,7 +50,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderDefault(const System& sys,const IntervalVector& initial_box, bool inHC4=true, mode m=xt);
+	LoupFinderDefault(const System& sys,const IntervalVector& initial_box, double alpha, bool inHC4=true, mode m=xt);
 
 	/**
 	 * \brief Delete this.
@@ -83,6 +83,7 @@ public:
 	LoupFinderTrustRegion finder_trustregion;
 	static string foundby;
 	const IntervalVector& initial_box;
+	double alpha;
 
   void print_results(){
 		std::cout << (double) finder_x_taylor.nb_opts / finder_x_taylor.nb_calls << " " <<

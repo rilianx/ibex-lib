@@ -27,6 +27,7 @@ int main(int argc, char** argv){
 	args::ValueFlag<double> _eps(parser, "float", "eps (the precision of the objective)", {"eps"});
 	args::ValueFlag<double> _timelimit(parser, "float", "timelimit", {'t',"timelimit"});
 	args::ValueFlag<int> _seed(parser, "int", "seed", {"seed"});
+	args::ValueFlag<double> _alpha(parser, "float", "alpha", {"alpha"});
 	args::ValueFlag<std::string> _loup_mode(parser, "loup_mode", "UpperBounding mode (xt, abst or both).", {"lmode"});
 	args::Flag _trace(parser, "trace", "Activate trace. Updates of loup/uplo are printed while minimizing.", {"trace"});
 
@@ -70,6 +71,8 @@ int main(int argc, char** argv){
 	cout << "timelimit: " << timelimit << endl;
 	int nseed= (_seed)? _seed.Get() : 1 ;
 	cout << "seed: " << nseed << endl;
+	double alpha= (_alpha)? _alpha.Get() : 1 ;
+	cout << "alpha: " << alpha << endl;
 	LoupFinderDefault::mode m=LoupFinderDefault::xt;
 
 	if(_loup_mode && _loup_mode.Get()=="abst")
@@ -104,7 +107,7 @@ int main(int argc, char** argv){
 	else {
 		sys=new ExtendedSystem(*orig_sys,eqeps);
 		NormalizedSystem* norm_sys = new NormalizedSystem(*orig_sys,eqeps); //orig_sys
-		loupfinderd = new  LoupFinderDefault(*norm_sys,sys->box, true, m);
+		loupfinderd = new  LoupFinderDefault(*norm_sys,sys->box,alpha, true, m);
 		loupfinder=loupfinderd;
 		//loupfinder = new LoupFinderCertify(*orig_sys, *loupfinderd);
 
@@ -276,10 +279,10 @@ int main(int argc, char** argv){
 
 
     cout << argv[1] << " " << o->get_uplo() << "," << o->get_loup() << " " << double(o->get_time()) << " " <<
-             double(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << " ";
+             int(o->get_nb_cells()) << " " << (o->get_time()>timelimit) << " ";
 	//loupfinderd->print_results();
 
-    vector<double> precs={1e-1, 1e-2, 1e-3};
+    vector<double> precs={1e-1,1e-2,1e-3,1e-4,1e-5,1e-6};
 
 
     double uplo = o->get_uplo();

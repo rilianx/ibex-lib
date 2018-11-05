@@ -51,7 +51,7 @@ public:
 	 *                2/ generates symbolically components of the main function (heavy)
 	 *
 	 */
-	LoupFinderTrustRegion(const System& sys, const IntervalVector& initial_box);
+	LoupFinderTrustRegion(const System& sys, const IntervalVector& initial_box,double alpha);
 
 	/**
 	 * \brief Delete this.
@@ -69,8 +69,10 @@ public:
 	 * Loup finder using inner polytopes.
 	 */
 	LoupFinderXTaylor finder_abs_taylor;
+	LoupFinderXTaylor finder_xt;
 	const IntervalVector& initial_box;
 	const Function* f_goal;
+	double alpha;
 
 };
 

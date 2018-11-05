@@ -17,9 +17,9 @@ namespace ibex {
 
 string LoupFinderDefault::foundby="";
 
-LoupFinderDefault::LoupFinderDefault(const System& sys,const IntervalVector& initial_box, bool inHC4, mode m) :
+LoupFinderDefault::LoupFinderDefault(const System& sys,const IntervalVector& initial_box,double alpha, bool inHC4, mode m) :
 	finder_probing(inHC4? (LoupFinder&) *new LoupFinderInHC4(sys) : (LoupFinder&) *new LoupFinderFwdBwd(sys)),
-	finder_abs_taylor(sys,true), finder_x_taylor(sys,false),initial_box(initial_box), finder_trustregion(sys,initial_box), m(m) {
+	finder_abs_taylor(sys,true), finder_x_taylor(sys,false),initial_box(initial_box), finder_trustregion(sys,initial_box,alpha), m(m),alpha(alpha) {
 
 }
 
