@@ -16,6 +16,12 @@ using namespace std;
 namespace ibex {
     class SAT_Clauses{
         public:
+            /** 
+             * Custom type
+             * */
+            typedef signed char my_type;
+            typedef unsigned char my_unsigned_type;
+            /* */
             int smaller_than(int lit1, int lit2);
             my_type redundant(int *new_clause, int *old_clause);
             void remove_passive_clauses();
@@ -27,3 +33,4 @@ namespace ibex {
             my_type build_simple_sat_instance(char *input_file);
     };
 }
+#endif // __IBEX_SAT_CLAUSES_H__

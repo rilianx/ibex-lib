@@ -1234,9 +1234,6 @@ namespace ibex {
             return assign_value(chosen_var, TRUE, FALSE);
         else
             return assign_value(chosen_var, FALSE, TRUE);
-    }
-
-    my_type var_best_value[tab_variable_size]; // Best assignment of variables
 
     int dpl() {
         int var, nb;
