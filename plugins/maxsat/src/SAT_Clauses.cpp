@@ -14,19 +14,19 @@
 using namespace std;
 namespace ibex {
     /* test if the new clause is redundant or subsompted by another */
-    int smaller_than(int lit1, int lit2) {
+    int smaller_than(int lit1, int lit2, int NB_VAR) {
         return ((lit1<NB_VAR) ? lit1 : lit1-NB_VAR) < 
         ((lit2<NB_VAR) ? lit2 : lit2-NB_VAR);
     }
 
-    my_type redundant(int *new_clause, int *old_clause) {
+    my_type redundant(int *new_clause, int *old_clause, int NONE, int lit1, int lit2, int NB_VAR) {
         int lit1, lit2, old_clause_diff=0, new_clause_diff=0;
 
         lit1=*old_clause; lit2=*new_clause;
         while ((lit1 != NONE) && (lit2 != NONE)) {
-            if (smaller_than(lit1, lit2)) {
+            if (smaller_than(lit1, lit2, NB_VAR)) {
                 lit1=*(++old_clause); old_clause_diff++;
-            }else if (smaller_than(lit2, lit1)) {
+            }else if (smaller_than(lit2, lit1, NB_VAR)) {
                 lit2=*(++new_clause); new_clause_diff++;
             }else if (complement(lit1, lit2)) {
                 return FALSE; /* old_clause_diff++; new_clause_diff++; j1++; j2++; */
@@ -43,7 +43,7 @@ namespace ibex {
         return FALSE;
     }
 
-    void remove_passive_clauses() {
+    void remove_passive_clauses(int NONE, int NB_CLAUSE, int PASSIVE, int* clause_state, ) {
         int  clause, put_in, first=NONE;
         for (clause=0; clause<NB_CLAUSE; clause++) {
             if (clause_state[clause]==PASSIVE) {

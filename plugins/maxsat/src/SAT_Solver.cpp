@@ -1260,7 +1260,7 @@ namespace ibex {
         } while (VARIABLE_STACK_fill_pointer > 0);
     }
 
-    void init() {
+    void init(int NO_REASON, int NONE, int NB_CLAUSE, int NBVAR, int* lit_involved_in_clause, int* lit_to_fix) {
         int var, clause;
         NB_EMPTY=0; REAL_NB_CLAUSE=NB_CLAUSE;
         UNITCLAUSE_STACK_fill_pointer=0;
