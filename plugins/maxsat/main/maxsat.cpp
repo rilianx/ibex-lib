@@ -4,39 +4,11 @@
 #include <ctime>
 #include <fstream>
 #include <set>
-
-// #define WORD_LENGTH 100
-// #define TRUE 1
-// #define FALSE 0
-// #define NONE -1
-
-// #define WEIGHT 4
-// #define WEIGHT1 25
-// #define WEIGHT2 5
-// #define WEIGHT3 1
-// #define T 10
-
-// #define NO_CONFLICT -3
-// #define NO_REASON -3
-static const int WORD_LENGTH = 100;
-static const int TRUE = 1;
-static const int FALSE = 0;
-static const int NONE = -1;
-
-static const int WEIGHT = 4;
-static const int WEIGHT1 = 25;
-static const int WEIGHT2 = 5;
-static const int WEIGHT3 = 1;
-static const int T = 10;
-
-static const int NO_CONFLICT = -3;
-static const int NO_REASON = -3;
+#include "ibex_SAT_Solver.h"
+#include "ibex_SAT_Clauses.h"
 
 typedef signed char my_type;
 typedef unsigned char my_unsigned_type;
-
-#include "ibex_SAT_Solver.h"
-#include "ibex_SAT_Clauses.h"
 
 using namespace std;
 using namespace ibex;
@@ -56,7 +28,7 @@ int main(int argc, char *argv[]) {
 
         if (argc<2) {
             printf("Using format: maxsatz input_instance [upper_bound]\n");
-            return FALSE;
+            return SAT_Clauses::FALSE;
         }
         //for (i=0; i<WORD_LENGTH; i++) saved_input_file[i]=argv[1][i];
         //for (i=0; i<WORD_LENGTH; i++) cout << saved_input_file[i] << endl;
@@ -65,11 +37,11 @@ int main(int argc, char *argv[]) {
         mess=times(a_tms); begintime = a_tms->tms_utime;
 
         switch (cl->build_simple_sat_instance(argv[1])){
-            case FALSE:
+            case SAT_Clauses::FALSE:
                 s->INIT_NB_CLAUSE = s->NB_CLAUSE;
                 printf("Input file error\n");
-                return FALSE;
-            case TRUE:
+                return SAT_Clauses::FALSE;
+            case SAT_Clauses::TRUE:
                 s->INIT_NB_CLAUSE = s->NB_CLAUSE;
                 if (argc>2)
                     s->UB=atoi(argv[2]);
@@ -87,7 +59,7 @@ int main(int argc, char *argv[]) {
         printf("s OPTIMUM FOUND\nc Optimal Solution (minimum number of unsatisfied clauses) = %d\n", s->UB);
         printf("v");
         for (i = 0; i < s->NB_VAR; i++) {
-            if (s->var_best_value[i] == FALSE)
+            if (s->var_best_value[i] == SAT_Clauses::FALSE)
                 printf(" -%i", i + 1);
             else
                 printf(" %i", i + 1);

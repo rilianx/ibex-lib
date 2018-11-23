@@ -24,11 +24,6 @@ using namespace std;
 namespace ibex {
     class SAT_Solver{
         public:
-            const int NEGATIVE = 0;
-            const int POSITIVE = 1;
-            const int PASSIVE = 0;
-            const int ACTIVE = 1;
-
             int tab_unitclause_size;
             int my_tab_variable_size;
             int my_tab_clause_size;
@@ -68,7 +63,7 @@ namespace ibex {
 
             inline bool complement(int lit1, int lit2){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
 
-            inline int inverse_sign(int signe){ if(signe == POSITIVE) return NEGATIVE; else return POSITIVE;}
+            inline int inverse_sign(int signe){ if(signe == SAT_Clauses::POSITIVE) return SAT_Clauses::NEGATIVE; else return SAT_Clauses::POSITIVE;}
 
             inline int unsat(int val){if (val==0) return 0; else return 1;} //inline string "UNS" = 0; "SAT" = 1
 
@@ -121,6 +116,7 @@ namespace ibex {
 
             //typedef signed char my_type;
             //typedef unsigned char my_unsigned_type;
+            int NB_VAR;
 
             static const int tab_variable_size = 10000;
             static const int tab_clause_size = 40000;
@@ -167,7 +163,6 @@ namespace ibex {
 
             int PREVIOUS_REDUCEDCLAUSE_STACK_fill_pointer = 0;
 
-            int NB_VAR;
             int NB_CLAUSE;
             int INIT_NB_CLAUSE;
             long NB_UNIT=1, NB_MONO=0, NB_BRANCHE=0, NB_BACK = 0;
@@ -194,7 +189,9 @@ namespace ibex {
             int saved_new_clauses[tab_variable_size];
 
             my_type var_best_value[tab_variable_size]; // Best assignment of variables
-                        
+
+            int CLAUSES_TO_REMOVE[tab_clause_size];
+            int CLAUSES_TO_REMOVE_fill_pointer=0;
             
             
     };

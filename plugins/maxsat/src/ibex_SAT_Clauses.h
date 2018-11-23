@@ -26,22 +26,27 @@ namespace ibex {
             void eliminate_redundance();
             my_type build_simple_sat_instance(char *input_file);
 
-            int WORD_LENGTH = 100;
-            int TRUE = 1;
-            int FALSE = 0;
-            int NONE = -1;
+            static const int NEGATIVE = 0;
+            static const int POSITIVE = 1;
+            static const int PASSIVE = 0;
+            static const int ACTIVE = 1;
 
-            int WEIGHT = 4;
-            int WEIGHT1 = 25;
-            int WEIGHT2 = 5;
-            int WEIGHT3 = 1;
-            int T = 10;
+            static const int OLD_CLAUSE_REDUNDANT = -77;
+            static const int NEW_CLAUSE_REDUNDANT = -7;
 
-            int OLD_CLAUSE_REDUNDANT = -77;
-            int NEW_CLAUSE_REDUNDANT = -7;
+            static const int WORD_LENGTH = 100;
+            static const int TRUE = 1;
+            static const int FALSE = 0;
+            static const int NONE = -1;
 
-            int NO_CONFLICT = -3;
-            int NO_REASON = -3;
+            static const int WEIGHT = 4;
+            static const int WEIGHT1 = 25;
+            static const int WEIGHT2 = 5;
+            static const int WEIGHT3 = 1;
+            static const int T = 10;
+
+            static const int NO_CONFLICT = -3;
+            static const int NO_REASON = -3;
     };
 }
 

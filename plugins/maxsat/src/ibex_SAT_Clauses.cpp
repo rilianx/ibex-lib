@@ -28,9 +28,9 @@ namespace ibex {
 
         lit1=*old_clause; lit2=*new_clause;
         while ((lit1 != NONE) && (lit2 != NONE)) {
-            if (smaller_than(lit1, lit2, NB_VAR)) {
+            if (smaller_than(lit1, lit2)) {
                 lit1=*(++old_clause); old_clause_diff++;
-            }else if (smaller_than(lit2, lit1, NB_VAR)) {
+            }else if (smaller_than(lit2, lit1)) {
                 lit2=*(++new_clause); new_clause_diff++;
             }else if (complement(lit1, lit2)) {
                 return FALSE; /* old_clause_diff++; new_clause_diff++; j1++; j2++; */
@@ -49,14 +49,14 @@ namespace ibex {
 
     void SAT_Clauses::remove_passive_clauses() {
         int  clause, put_in, first=NONE;
-        for (clause=0; clause<NB_CLAUSE; clause++) {
+        for (clause=0; clause<s->NB_CLAUSE; clause++) {
             if (clause_state[clause]==PASSIVE) {
                 first=clause; break;
             }
         }
         if (first!=NONE) {
             put_in=first;
-            for(clause=first+1; clause<NB_CLAUSE; clause++) {
+            for(clause=first+1; clause<s->NB_CLAUSE; clause++) {
                 if (clause_state[clause]==ACTIVE) {
                     sat[put_in]=sat[clause]; var_sign[put_in]=var_sign[clause];
                     clause_state[put_in]=ACTIVE; 
@@ -64,7 +64,7 @@ namespace ibex {
                     put_in++;
                 }
             }
-            NB_CLAUSE=put_in;
+            s->NB_CLAUSE=put_in;
         }
     }
 
@@ -211,7 +211,7 @@ namespace ibex {
         }
     }
 
-    void SAT_Clauses::eliminate_redundance(NB_CLAUSE, ) {
+    void SAT_Clauses::eliminate_redundance() {
         int *lits, i, lit, *clauses, res, clause;
 
         for (i=0; i<NB_CLAUSE; i++) {
@@ -265,7 +265,7 @@ namespace ibex {
         build_structure();
         eliminate_redundance();
         if (clean_structure()==FALSE)
-        return FALSE;
+            return FALSE;
         return TRUE;
     }
 }
