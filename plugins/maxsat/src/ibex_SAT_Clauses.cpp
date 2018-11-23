@@ -32,7 +32,7 @@ namespace ibex {
                 lit1=*(++old_clause); old_clause_diff++;
             }else if (smaller_than(lit2, lit1)) {
                 lit2=*(++new_clause); new_clause_diff++;
-            }else if (complement(lit1, lit2)) {
+            }else if (complement(lit1, lit2, NB_VAR)) {
                 return FALSE; /* old_clause_diff++; new_clause_diff++; j1++; j2++; */
             }else{
                 lit1=*(++old_clause);  lit2=*(++new_clause);

@@ -29,6 +29,8 @@ namespace ibex {
             void eliminate_redundance();
             my_type build_simple_sat_instance(char *input_file);
 
+            static bool complement(int lit1, int lit2, int NB_VAR){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
+
             static const int NEGATIVE = 0;
             static const int POSITIVE = 1;
             static const int PASSIVE = 0;

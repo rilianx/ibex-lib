@@ -58,7 +58,7 @@ namespace ibex {
 
             inline int get_var_from_lit(int literal) {if(literal<NB_VAR) return literal; else return literal-NB_VAR;}
 
-            inline bool complement(int lit1, int lit2){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
+            // static bool complement(int lit1, int lit2){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
 
             inline int inverse_sign(int signe){ if(signe == SAT_Clauses::POSITIVE) return SAT_Clauses::NEGATIVE; else return SAT_Clauses::POSITIVE;}
 
