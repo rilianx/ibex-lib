@@ -6,11 +6,11 @@
 // Created     : Oct 30, 2018
 //============================================================================
 
-#include "SAT_Solver.h"
+#include "ibex_SAT_Solver.h"
 using namespace std;
 namespace ibex {
 
-    void remove_clauses(int var) {
+    void SAT_Solver::remove_clauses(int var) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE)
@@ -25,7 +25,7 @@ namespace ibex {
         }
     }
 
-    int reduce_clauses(int var) {
+    int SAT_Solver::reduce_clauses(int var) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE)
@@ -50,7 +50,7 @@ namespace ibex {
         return TRUE;
     }
 
-    int my_reduce_clauses(int var) {
+    int SAT_Solver::my_reduce_clauses(int var) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE)
@@ -73,7 +73,7 @@ namespace ibex {
         return NO_CONFLICT;
     }
 
-    int my_reduce_clauses_for_fl(int var) {
+    int SAT_Solver::my_reduce_clauses_for_fl(int var) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE)
@@ -96,7 +96,7 @@ namespace ibex {
         return NO_CONFLICT;
     }
 
-    void print_values(int nb_var) {
+    void SAT_Solver::print_values(int nb_var) {
         FILE* fp_out;
         int i;
         fp_out = fopen("satx.sol", "w");
@@ -110,7 +110,7 @@ namespace ibex {
         fclose(fp_out);			
     } 
 
-    int backtracking() {
+    int SAT_Solver::backtracking() {
         int var, index,clause, *position, saved;
             
         NB_BACK++;
@@ -160,7 +160,7 @@ namespace ibex {
         return FALSE;
     }
 
-    int verify_solution() {
+    int SAT_Solver::verify_solution() {
         int i, nb=0, var, *vars_signs, clause_truth,cpt;
 
         for (i=0; i<REAL_NB_CLAUSE; i++) {
@@ -176,7 +176,7 @@ namespace ibex {
         return nb;
     }
 
-    void reset_context(int saved_clause_stack_fill_pointer, 
+    void SAT_Solver::reset_context(int saved_clause_stack_fill_pointer, 
             int saved_reducedclause_stack_fill_pointer,
             int saved_unitclause_stack_fill_pointer,
             int saved_variable_stack_fill_pointer) {
@@ -207,7 +207,7 @@ namespace ibex {
         UNITCLAUSE_STACK_fill_pointer=saved_unitclause_stack_fill_pointer;
     }
 
-    int replace_clause(int newclause, int clause_to_replace, int *clauses) {
+    int SAT_Solver::replace_clause(int newclause, int clause_to_replace, int *clauses) {
         int clause, flag=FALSE;
         
         for(clause=*clauses; clause!=NONE; clause=*(++clauses)) {
@@ -224,7 +224,7 @@ namespace ibex {
         return flag;
     }
 
-    void create_binaryclause(int var1, int sign1, int var2, int sign2, 
+    void SAT_Solver::create_binaryclause(int var1, int sign1, int var2, int sign2, 
             int clause1, int clause2) {
         int clause, *vars_signs, flag=FALSE, *clauses1, *clauses2;
         if (sign1==POSITIVE)
@@ -254,7 +254,7 @@ namespace ibex {
         NB_CLAUSE++;
     }
 
-    int verify_binary_clauses(int *varssigns, int var1, int sign1, int var2, int sign2) {
+    int SAT_Solver::verify_binary_clauses(int *varssigns, int var1, int sign1, int var2, int sign2) {
         int nb=0;
 
         if (var1==*varssigns) {
@@ -274,7 +274,7 @@ namespace ibex {
     int CLAUSES_TO_REMOVE[tab_clause_size];
     int CLAUSES_TO_REMOVE_fill_pointer=0;
 
-    int create_clause_from_conflict_clauses(int clause1, int clause2, int clause3) {
+    int SAT_Solver::create_clause_from_conflict_clauses(int clause1, int clause2, int clause3) {
         int var3, sign3, var2, sign2,*clauses2, *clauses3, *vars_signs, 
             varssigns[4], i=0, var;
 
@@ -322,7 +322,7 @@ namespace ibex {
     int LINEAR_REASON_STACK2_fill_pointer=0;
     int clause_involved[tab_clause_size];
 
-    int search_linear_reason1(int var) {
+    int SAT_Solver::search_linear_reason1(int var) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
         for(fixed_var=var; fixed_var!=NONE; fixed_var=new_fixed_var) {
@@ -344,7 +344,7 @@ namespace ibex {
 
     #define SIMPLE_NON_LINEAR_CASE 2
 
-    int search_linear_reason2(int var) {
+    int SAT_Solver::search_linear_reason2(int var) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
         for(fixed_var=var; fixed_var!=NONE; fixed_var=new_fixed_var) {
@@ -371,7 +371,7 @@ namespace ibex {
 
     // clause1 is l1->l2, clause is l2->l3, clause3 is ((not l3) or (not l4))
     // i.e., the reason of l2 is clause1, the reason of l3 is clause
-    int check_reason(int *varssigns, int clause, int clause1, int clause2) {
+    int SAT_Solver::check_reason(int *varssigns, int clause, int clause1, int clause2) {
         int var, *vars_signs, var1, var2, flag;
 
         if ((reason[varssigns[0]]!=clause1) || (reason[varssigns[2]]!=clause)) 
@@ -385,7 +385,7 @@ namespace ibex {
         return flag;
     }
 
-    int create_complementary_binclause(int clause, int clause1, int clause2) {
+    int SAT_Solver::create_complementary_binclause(int clause, int clause1, int clause2) {
         int var, *vars_signs, i=0, varssigns[4], sign, j=0;
         vars_signs = var_sign[clause];
         for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
@@ -405,7 +405,7 @@ namespace ibex {
         return TRUE;
     }
 
-    int get_satisfied_literal(int clause) {
+    int SAT_Solver::get_satisfied_literal(int clause) {
         int var, *vars_signs;
         vars_signs = var_sign[clause];
         for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
@@ -416,7 +416,7 @@ namespace ibex {
         return NONE;
     }
 
-    void create_ternary_clauses(int var1, int sign1, int var2, int sign2, int var3, int sign3, int clause1, int clause2, int clause3) {
+    void SAT_Solver::create_ternary_clauses(int var1, int sign1, int var2, int sign2, int var3, int sign3, int clause1, int clause2, int clause3) {
         int clause, *vars_signs, flag=FALSE, *clauses1, *clauses2, *clauses3;
         if (sign1==POSITIVE) clauses1=pos_in[var1]; else clauses1=neg_in[var1];
         if (sign2==POSITIVE) clauses2=pos_in[var2]; else clauses2=neg_in[var2];
@@ -437,7 +437,7 @@ namespace ibex {
         NB_CLAUSE++;
     }  
 
-    int non_linear_conflict(int empty_clause, int var1, int sign1, int var2, int sign2) {
+    int SAT_Solver::non_linear_conflict(int empty_clause, int var1, int sign1, int var2, int sign2) {
         int var, sign, j;
         // driving unit clause is LINEAR_REASON_STACK1[2] (propagate
         // it resulting the empty_clause by simple non-linear derivation
@@ -465,7 +465,7 @@ namespace ibex {
     }
 
         
-    int linear_conflict(int clause) {
+    int SAT_Solver::linear_conflict(int clause) {
         int var, *vars_signs, i=0, varssigns[6], j=0, res;
         vars_signs = var_sign[clause];
         for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
@@ -519,7 +519,7 @@ namespace ibex {
         }
     }
 
-    void remove_linear_reasons() {
+    void SAT_Solver::remove_linear_reasons() {
         int i, clause;
         for(i=0; i<LINEAR_REASON_STACK1_fill_pointer; i++) {
             clause=LINEAR_REASON_STACK1[i];
@@ -533,7 +533,7 @@ namespace ibex {
         }
     }      
 
-    int there_is_unit_clause( int var_to_check ) {
+    int SAT_Solver::there_is_unit_clause( int var_to_check ) {
         int unitclause_position, unitclause, var, *vars_signs;
 
         for( unitclause_position = 0;
@@ -552,7 +552,7 @@ namespace ibex {
         return FALSE;
     }
 
-    int assign_and_unitclause_process( int var, int value, int starting_point ) {
+    int SAT_Solver::assign_and_unitclause_process( int var, int value, int starting_point ) {
         int clause;
         var_current_value[var] = value;
         var_rest_value[var] = NONE;
@@ -566,7 +566,7 @@ namespace ibex {
         }
     }
 
-    int store_reason_clauses( int clause, int starting ) {
+    int SAT_Solver::store_reason_clauses( int clause, int starting ) {
         int *vars_signs, var, i;
         push(clause, REASON_STACK);
         for(i=starting; i<REASON_STACK_fill_pointer; i++) {
@@ -582,7 +582,7 @@ namespace ibex {
         return i;
     }
 
-    void remove_reason_clauses() {
+    void SAT_Solver::remove_reason_clauses() {
         int i, clause;
         for(i=0; i<REASON_STACK_fill_pointer; i++) {
             clause=REASON_STACK[i];
@@ -592,7 +592,7 @@ namespace ibex {
         REASON_STACK_fill_pointer=0;
     }
 
-    int failed_literal( int conflict ) {
+    int SAT_Solver::failed_literal( int conflict ) {
         int clause, var, la = 0;
         int saved_clause_stack_fill_pointer, saved_reducedclause_stack_fill_pointer,
             saved_unitclause_stack_fill_pointer, saved_variable_stack_fill_pointer,
@@ -655,7 +655,7 @@ namespace ibex {
         return la;
     }
 
-    int lookahead() {
+    int SAT_Solver::lookahead() {
         int saved_clause_stack_fill_pointer, saved_reducedclause_stack_fill_pointer,
             saved_unitclause_stack_fill_pointer, saved_variable_stack_fill_pointer,
             my_saved_clause_stack_fill_pointer,
@@ -727,7 +727,7 @@ namespace ibex {
         return conflict;
     }
 
-    int satisfy_unitclause(int unitclause) {
+    int SAT_Solver::satisfy_unitclause(int unitclause) {
         int *vars_signs, var, clause;
 
         vars_signs = var_sign[unitclause];
@@ -748,7 +748,7 @@ namespace ibex {
         return NO_CONFLICT;
     }
     
-    int my_unitclause_process(int starting_point) {
+    int SAT_Solver::my_unitclause_process(int starting_point) {
         int unitclause, var, *vars_signs, unitclause_position,clause,
             my_unitclause_position, my_unitclause;
 
@@ -775,14 +775,14 @@ namespace ibex {
         return NO_CONFLICT;
     }
 
-    int get_complement(int lit) {
+    int SAT_Solver::get_complement(int lit) {
         if (positive(lit))
             return lit+NB_VAR;
         else
             return lit-NB_VAR;
     }
 
-    void create_unitclause(int lit, int subsumedclause, int *clauses) {
+    void SAT_Solver::create_unitclause(int lit, int subsumedclause, int *clauses) {
         int clause, *vars_signs, flag=FALSE;
 
         vars_signs=NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
@@ -813,7 +813,7 @@ namespace ibex {
         NB_CLAUSE++;
     }
 
-    int verify_resolvent(int lit, int clause1, int clause2) {
+    int SAT_Solver::verify_resolvent(int lit, int clause1, int clause2) {
         int *vars_signs1, *vars_signs2, lit1, lit2, temp, flag=FALSE, var, nb=0;
 
         if ((clause_state[clause1]!=ACTIVE) || (clause_state[clause2]!=ACTIVE))
@@ -857,7 +857,7 @@ namespace ibex {
             printf("erreur ");
     }
 
-    int searching_two_clauses_to_fix_neglit(int clause, int lit) {
+    int SAT_Solver::searching_two_clauses_to_fix_neglit(int clause, int lit) {
         int lit1, clause1, var1, opp_lit1;
         if (lit_to_fix[clause]==NONE) {
             lit_to_fix[clause]=lit;
@@ -891,7 +891,7 @@ namespace ibex {
         return FALSE;
     }
 
-    int simple_get_neg_clause_nb(int var) {
+    int SAT_Solver::simple_get_neg_clause_nb(int var) {
         my_type neg_clause1_nb=0,neg_clause3_nb = 0, neg_clause2_nb = 0;
         int *clauses, clause, i;
         clauses = neg_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
@@ -903,7 +903,7 @@ namespace ibex {
             return neg_clause2_nb;
     }
 
-    int simple_get_pos_clause_nb(int var) {
+    int SAT_Solver::simple_get_pos_clause_nb(int var) {
         my_type pos_clause1_nb=0,pos_clause3_nb = 0, pos_clause2_nb = 0;
         int *clauses, clause, i;
         clauses = pos_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
@@ -915,7 +915,7 @@ namespace ibex {
             return pos_clause2_nb;
     }
 
-    int get_neg_clause_nb(int var) {
+    int SAT_Solver::get_neg_clause_nb(int var) {
         my_type neg_clause1_nb=0,neg_clause3_nb = 0, neg_clause2_nb = 0;
         int *clauses, clause, i;
         clauses = neg_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
@@ -950,7 +950,7 @@ namespace ibex {
     #define OTHER_LIT_FIXED 1
     #define THIS_LIT_FIXED 2
 
-    int searching_two_clauses_to_fix_poslit(int clause, int lit) {
+    int SAT_Solver::searching_two_clauses_to_fix_poslit(int clause, int lit) {
         int lit1, clause1, var1, opp_lit1;
         if (lit_to_fix[clause]==NONE) {
             lit_to_fix[clause]=lit;
@@ -1001,7 +1001,7 @@ namespace ibex {
         return FALSE;
     }
 
-    int get_pos_clause_nb(int var) {
+    int SAT_Solver::get_pos_clause_nb(int var) {
         my_type pos_clause1_nb=0, pos_clause3_nb = 0, pos_clause2_nb = 0;
         int *clauses, clause, clause1, i;
         clauses = pos_in[var];
@@ -1048,7 +1048,7 @@ namespace ibex {
         return pos_clause1_nb+pos_clause2_nb + pos_clause3_nb;
     }
 
-    int satisfy_literal(int lit) {
+    int SAT_Solver::satisfy_literal(int lit) {
         int var;
         if (positive(lit)) {
             if (var_state[lit]==ACTIVE) {
@@ -1074,7 +1074,7 @@ namespace ibex {
         return TRUE;
     }
 
-    int assign_value(int var, int current_value, int rest_value) {
+    int SAT_Solver::assign_value(int var, int current_value, int rest_value) {
         if (var_state[var]==PASSIVE)
             printf("erreur1...\n");
         var_state[var] = PASSIVE;
@@ -1087,7 +1087,7 @@ namespace ibex {
         return TRUE;
     }
 
-    int unitclause_process() {
+    int SAT_Solver::unitclause_process() {
         int unitclause, var, *vars_signs, unitclause_position,clause;
         
         for (unitclause_position = 0; unitclause_position < UNITCLAUSE_STACK_fill_pointer; unitclause_position++) {
@@ -1114,7 +1114,7 @@ namespace ibex {
         return TRUE;
     }
 
-    int choose_and_instantiate_variable() {
+    int SAT_Solver::choose_and_instantiate_variable() {
         int var, nb=0, chosen_var=NONE,cont=0, cont1; 
         int  i;
         float posi, nega;
@@ -1234,33 +1234,34 @@ namespace ibex {
             return assign_value(chosen_var, TRUE, FALSE);
         else
             return assign_value(chosen_var, FALSE, TRUE);
+    }
 
-    int dpl() {
+    int SAT_Solver::dpl() {
         int var, nb;
         do {
             if (VARIABLE_STACK_fill_pointer==NB_VAR) {
-            UB=NB_EMPTY; 
-            nb=verify_solution();
-            if (nb!=NB_EMPTY)
-                printf("problem nb...");
-            printf("o %d\n", UB);
-            for (var = 0; var < NB_VAR; var++)
-            var_best_value[var] = var_current_value[var];
-            while (backtracking()==NONE);
-            if (VARIABLE_STACK_fill_pointer==0)
-            break;
+                UB=NB_EMPTY; 
+                nb=verify_solution();
+                if (nb!=NB_EMPTY)
+                    printf("problem nb...");
+                printf("o %d\n", UB);
+                for (var = 0; var < NB_VAR; var++)
+                    var_best_v alue[var] = var_current_value[var];
+                while (backtracking()==NONE);
+                    if (VARIABLE_STACK_fill_pointer==0)
+                        break;
             }
             if (UB-NB_EMPTY==1)
-            if (unitclause_process() ==NONE)
-            while (backtracking()==NONE);
+                if (unitclause_process() ==NONE)
+                    while (backtracking()==NONE);
             if (choose_and_instantiate_variable()==NONE)
-            while (backtracking()==NONE);
-            // else if (lookahead()==NONE) 
-            //  while (backtracking()==NONE);
+                while (backtracking()==NONE);
+                // else if (lookahead()==NONE) 
+                //  while (backtracking()==NONE);
         } while (VARIABLE_STACK_fill_pointer > 0);
     }
 
-    void init(int NO_REASON, int NONE, int NB_CLAUSE, int NBVAR, int* lit_involved_in_clause, int* lit_to_fix) {
+    int SAT_Solver::init() {
         int var, clause;
         NB_EMPTY=0; REAL_NB_CLAUSE=NB_CLAUSE;
         UNITCLAUSE_STACK_fill_pointer=0;
@@ -1278,5 +1279,6 @@ namespace ibex {
             lit_to_fix[clause]=NONE;
             clause_involved[clause]=NONE;
         }
+        return 0;
     }
 }

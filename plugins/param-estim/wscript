@@ -65,30 +65,30 @@ def configure (conf):
 def build (bld):
 	if bld.env.WITH_PARAM_ESTIM:
 		# build optim binary
-		bld.program (
-		target = "param-estim1",
-		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/robust_estim1.cpp"),
-		install_path = bld.env.BINDIR,
-		)
-		bld.program (
-		target = "param-estim2",
-		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/robust_estim2.cpp"),
-		install_path = bld.env.BINDIR,
-		)
-		bld.program (
-		target = "param-estim3",
-		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/robust_estim3.cpp"),
-		install_path = bld.env.BINDIR,
-		)
-		bld.program (
-		target = "param-estim4",
-		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/robust_estim4.cpp"),
-		install_path = bld.env.BINDIR,
-		)
+		#bld.program (
+		#target = "param-estim1",
+		#use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
+		#source = bld.path.ant_glob ("examples/**/robust_estim1.cpp"),
+		#install_path = bld.env.BINDIR,
+		#)
+		#bld.program (
+		#target = "param-estim2",
+		#use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
+		#source = bld.path.ant_glob ("examples/**/robust_estim2.cpp"),
+		#install_path = bld.env.BINDIR,
+		#)
+		#bld.program (
+		#target = "param-estim3",
+		#use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
+		#source = bld.path.ant_glob ("examples/**/robust_estim3.cpp"),
+		#install_path = bld.env.BINDIR,
+		#)
+		#bld.program (
+		#target = "param-estim4",
+		#use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library
+		#source = bld.path.ant_glob ("examples/**/robust_estim4.cpp"),
+		#install_path = bld.env.BINDIR,
+		#)
 		bld.program (
 		target = "estim_optim",
 		use = [ "ibex", "PARAM_ESTIM" ], # add dependency on ibex library

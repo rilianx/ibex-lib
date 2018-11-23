@@ -6,21 +6,74 @@
 // Created     : Oct 30, 2018
 //============================================================================
 
-#ifndef __IBEX_SAT_SOLVER_H__
-#define __IBEX_SAT_SOLVER_H__
-
 #include <stdio.h>
-#include <stdlib.h>
+// #include <stdlib.h>
 #include <time.h>
 #include <sys/times.h>
 #include <sys/types.h>
 #include <limits.h>
 
-#include "SAT_Clauses.h"
+#define pop_clause(stack) stack[--stack ## _fill_pointer]
+#define push_clause(item, stack) stack[stack ## _fill_pointer++] = item
+
+#include "ibex_SAT_Clauses.h"
+#ifndef __IBEX_SAT_SOLVER_H__
+#define __IBEX_SAT_SOLVER_H__
+
 using namespace std;
 namespace ibex {
     class SAT_Solver{
         public:
+            const int NEGATIVE = 0;
+            const int POSITIVE = 1;
+            const int PASSIVE = 0;
+            const int ACTIVE = 1;
+
+            int tab_unitclause_size;
+            int my_tab_variable_size;
+            int my_tab_clause_size;
+            int my_tab_unitclause_size;
+            int tab_literal_size;
+            double double_tab_clause_size;
+            int *UNITCLAUSE_STACK;
+            SAT_Solver(){
+                if(tab_clause_size/4<2000)
+                    tab_unitclause_size = 2000;
+                else
+                    tab_unitclause_size = tab_clause_size/4;
+
+                if(tab_variable_size/2<1000)
+                    my_tab_variable_size = 1000;
+                else
+                    my_tab_variable_size = tab_variable_size/2;
+
+                if(tab_clause_size/2<2000)
+                    my_tab_clause_size = 2000;
+                else
+                    my_tab_clause_size = tab_clause_size/2;
+
+                if(tab_unitclause_size/2<1000)
+                    my_tab_unitclause_size = 1000;
+                else   
+                    my_tab_unitclause_size = tab_unitclause_size/2;
+
+                tab_literal_size = 2*tab_variable_size;
+                double_tab_clause_size = 2*tab_clause_size;
+                UNITCLAUSE_STACK = new int[tab_unitclause_size];
+            }
+            inline bool positive(int literal) { return literal<NB_VAR;}
+            inline bool negative(int literal) { return literal>=NB_VAR;}
+
+            inline int get_var_from_lit(int literal) {if(literal<NB_VAR) return literal; else return literal-NB_VAR;}
+
+            inline bool complement(int lit1, int lit2){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
+
+            inline int inverse_sign(int signe){ if(signe == POSITIVE) return NEGATIVE; else return POSITIVE;}
+
+            inline int unsat(int val){if (val==0) return 0; else return 1;} //inline string "UNS" = 0; "SAT" = 1
+
+            inline bool satisfiable() { return CLAUSE_STACK_fill_pointer == NB_CLAUSE; }
+
             void remove_clauses(int var);
             int reduce_clauses(int var);
             int my_reduce_clauses(int var);
@@ -43,7 +96,7 @@ namespace ibex {
             int linear_conflict(int clause);
             void remove_linear_reasons();
             int there_is_unit_clause( int var_to_check );
-            int assign_and_unitclause_process( int var, int value, int starting_point );
+            int assign_and_unitclause_process( int var, int value, int starting_point);
             int store_reason_clauses( int clause, int starting );
             void remove_reason_clauses();
             int failed_literal( int conflict );
@@ -64,16 +117,16 @@ namespace ibex {
             int unitclause_process();
             int choose_and_instantiate_variable();
             int dpl();
-            void init();
+            int init();
 
-            /** 
-             * Custom type
-             * */
-            typedef signed char my_type;
-            typedef unsigned char my_unsigned_type;
+            //typedef signed char my_type;
+            //typedef unsigned char my_unsigned_type;
+
             static const int tab_variable_size = 10000;
             static const int tab_clause_size = 40000;
-            int NB_EMPTY=0, UB;
+            
+            int NB_EMPTY=0;
+            int UB;
             int REAL_NB_CLAUSE;
             int UNITCLAUSE_STACK_fill_pointer = 0;
             int VARIABLE_STACK_fill_pointer = 0;
@@ -82,24 +135,6 @@ namespace ibex {
             my_type var_current_value[tab_variable_size];
             my_type clause_state[tab_clause_size];
             my_type clause_length[tab_clause_size];
-            // static const int WORD_LENGTH = 100 ;
-            // static const int TRUE = 1;
-            // static const int FALSE = 0;
-            // static const int NONE = -1;
-
-            // static const int WEIGHT = 4;
-            // static const int WEIGHT1 = 25;
-            // static const int WEIGHT2 = 5;
-            // static const int WEIGHT3 = 1;
-            // static const int T = 10;
-
-            // static const int NEGATIVE = 0;
-            // static const int POSITIVE = 1;
-            // static const int PASSIVE = 0;
-            // static const int ACTIVE = 1;
-
-            // static const int NO_CONFLICT = -3;
-            // static const int NO_REASON = -3;
 
             int *neg_in[tab_variable_size];
             int *pos_in[tab_variable_size];
@@ -128,7 +163,6 @@ namespace ibex {
 
             int VARIABLE_STACK[tab_variable_size];
             int CLAUSE_STACK[tab_clause_size];
-            int UNITCLAUSE_STACK[tab_unitclause_size];
             int REDUCEDCLAUSE_STACK[tab_clause_size];
 
             int PREVIOUS_REDUCEDCLAUSE_STACK_fill_pointer = 0;
