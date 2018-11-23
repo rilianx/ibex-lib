@@ -20,7 +20,7 @@ namespace ibex {
         for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
             if (clause_state[clause] == SAT_Clauses::ACTIVE) {
                 clause_state[clause] = SAT_Clauses::PASSIVE;
-                push(clause, CLAUSE_STACK);
+                push_clause(clause, CLAUSE_STACK);
             }
         }
     }
@@ -35,14 +35,14 @@ namespace ibex {
         for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
             if (clause_state[clause] == SAT_Clauses::ACTIVE) {
                 clause_length[clause]--;
-                push(clause, REDUCEDCLAUSE_STACK);
+                push_clause(clause, REDUCEDCLAUSE_STACK);
                 switch (clause_length[clause]) {
                     case 0:
                         NB_EMPTY++;
                         if (UB<=NB_EMPTY) return SAT_Clauses::NONE;
                         break;
                     case 1: 
-                        push(clause, UNITCLAUSE_STACK);
+                        push_clause(clause, UNITCLAUSE_STACK);
                         break;
                 }
             }
@@ -60,12 +60,12 @@ namespace ibex {
         for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
             if (clause_state[clause] == SAT_Clauses::ACTIVE) {
                 clause_length[clause]--;
-                push(clause, REDUCEDCLAUSE_STACK);
+                push_clause(clause, REDUCEDCLAUSE_STACK);
                     switch (clause_length[clause]) {
                         case 0:
                             return clause;
                         case 1: 
-                            push(clause, MY_UNITCLAUSE_STACK);
+                            push_clause(clause, MY_UNITCLAUSE_STACK);
                     break;
                 }
             }
@@ -83,12 +83,12 @@ namespace ibex {
         for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
             if (clause_state[clause] == SAT_Clauses::ACTIVE) {
                 clause_length[clause]--;
-                push(clause, REDUCEDCLAUSE_STACK);
+                push_clause(clause, REDUCEDCLAUSE_STACK);
                 switch (clause_length[clause]) {
                     case 0:
                         return clause;
                     case 1:
-                        push(clause, UNITCLAUSE_STACK);
+                        push_clause(clause, UNITCLAUSE_STACK);
                         break;
                 }
             }
@@ -116,7 +116,7 @@ namespace ibex {
         NB_BACK++;
 
         do {
-            var = pop(VARIABLE_STACK);
+            var = pop_clause(VARIABLE_STACK);
             if (var_rest_value[var] == SAT_Clauses::NONE){
                 var_state[var] = SAT_Clauses::ACTIVE;
             }else{
@@ -148,7 +148,7 @@ namespace ibex {
                 if (NB_EMPTY<UB) {
                     var_current_value[var] = var_rest_value[var];
                     var_rest_value[var] = SAT_Clauses::NONE;
-                    push(var, VARIABLE_STACK);
+                    push_clause(var, VARIABLE_STACK);
                     if (reduce_clauses(var)==SAT_Clauses::NONE)
                         return SAT_Clauses::NONE;
                     remove_clauses(var);
@@ -214,7 +214,7 @@ namespace ibex {
             if (clause==clause_to_replace) {
                 *clauses=newclause;
                 SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer]=clauses;
-                push(clause_to_replace, SAVED_CLAUSES);
+                push_clause(clause_to_replace, SAVED_CLAUSES);
                 flag=SAT_Clauses::TRUE;
                 break;
             }
@@ -303,9 +303,9 @@ namespace ibex {
             var2=varssigns[0]; sign2=1-varssigns[1];
             var3=varssigns[2]; sign3=1-varssigns[3];
             create_binaryclause(var2, sign2, var3, sign3, clause2, clause3);
-            push(clause1, CLAUSES_TO_REMOVE);
-            push(clause2, CLAUSES_TO_REMOVE);
-            push(clause3, CLAUSES_TO_REMOVE);
+            push_clause(clause1, CLAUSES_TO_REMOVE);
+            push_clause(clause2, CLAUSES_TO_REMOVE);
+            push_clause(clause3, CLAUSES_TO_REMOVE);
             return SAT_Clauses::TRUE;
         }
         else {
@@ -313,11 +313,11 @@ namespace ibex {
         }
     }
 
-    int LINEAR_REASON_STACK1[tab_clause_size];
+    int LINEAR_REASON_STACK1[SAT_Solver::tab_clause_size];
     int LINEAR_REASON_STACK1_fill_pointer=0;
-    int LINEAR_REASON_STACK2[tab_clause_size];
+    int LINEAR_REASON_STACK2[SAT_Solver::tab_clause_size];
     int LINEAR_REASON_STACK2_fill_pointer=0;
-    int clause_involved[tab_clause_size];
+    int clause_involved[SAT_Solver::tab_clause_size];
 
     int SAT_Solver::search_linear_reason1(int var) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
@@ -325,7 +325,7 @@ namespace ibex {
         for(fixed_var=var; fixed_var!=SAT_Clauses::NONE; fixed_var=new_fixed_var) {
             clause=reason[fixed_var];
             vars_signs = var_sign[clause]; new_fixed_var=SAT_Clauses::NONE;
-            push(clause, LINEAR_REASON_STACK1);
+            push_clause(clause, LINEAR_REASON_STACK1);
             clause_involved[clause]=SAT_Clauses::TRUE;
             for(index_var=*vars_signs; index_var!=SAT_Clauses::NONE; index_var=*(vars_signs+=2)) {
                 if ((index_var!=fixed_var) && (reason[index_var]!=SAT_Clauses::NO_REASON)) {
@@ -352,7 +352,7 @@ namespace ibex {
                 else
                     return SAT_Clauses::FALSE;
                 }else 
-                push(clause, LINEAR_REASON_STACK2);
+                push_clause(clause, LINEAR_REASON_STACK2);
             vars_signs = var_sign[clause]; new_fixed_var=SAT_Clauses::NONE;
             for(index_var=*vars_signs; index_var!=SAT_Clauses::NONE; index_var=*(vars_signs+=2)) {
                 if ((index_var!=fixed_var) && (reason[index_var]!=SAT_Clauses::NO_REASON)) {
@@ -445,9 +445,9 @@ namespace ibex {
             create_complementary_binclause(LINEAR_REASON_STACK1[j],
                 LINEAR_REASON_STACK1[j+1],
                 LINEAR_REASON_STACK1[j-1]);
-            push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+            push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
         }
-        push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+        push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
         create_ternary_clauses(var, sign, var1, sign1, var2, sign2,
             LINEAR_REASON_STACK1[2],
             empty_clause, empty_clause);
@@ -455,9 +455,9 @@ namespace ibex {
             LINEAR_REASON_STACK2[1],
             LINEAR_REASON_STACK1[1],
             LINEAR_REASON_STACK2[1]);
-        push(empty_clause, CLAUSES_TO_REMOVE);
-        push( LINEAR_REASON_STACK1[1], CLAUSES_TO_REMOVE);
-        push( LINEAR_REASON_STACK2[1], CLAUSES_TO_REMOVE);
+        push_clause(empty_clause, CLAUSES_TO_REMOVE);
+        push_clause( LINEAR_REASON_STACK1[1], CLAUSES_TO_REMOVE);
+        push_clause( LINEAR_REASON_STACK2[1], CLAUSES_TO_REMOVE);
         return SAT_Clauses::TRUE;
     }
 
@@ -499,18 +499,18 @@ namespace ibex {
                         create_complementary_binclause(LINEAR_REASON_STACK2[j],
                             LINEAR_REASON_STACK2[j+1],
                             LINEAR_REASON_STACK2[j-1]);
-                        push(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
+                        push_clause(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
                     }
-                    push(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
+                    push_clause(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
                 }
-                push(clause, CLAUSES_TO_REMOVE);
+                push_clause(clause, CLAUSES_TO_REMOVE);
                 for(j=1; j<LINEAR_REASON_STACK1_fill_pointer-1; j++) {
                     create_complementary_binclause(LINEAR_REASON_STACK1[j],
                         LINEAR_REASON_STACK1[j+1],
                         LINEAR_REASON_STACK1[j-1]);
-                    push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+                    push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
                 }
-                push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+                push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
             }
             return SAT_Clauses::TRUE;
         }
@@ -521,12 +521,12 @@ namespace ibex {
         for(i=0; i<LINEAR_REASON_STACK1_fill_pointer; i++) {
             clause=LINEAR_REASON_STACK1[i];
             clause_state[clause]=SAT_Clauses::PASSIVE;
-            push(clause, CLAUSE_STACK);
+            push_clause(clause, CLAUSE_STACK);
         }
         for(i=1; i<LINEAR_REASON_STACK2_fill_pointer; i++) {
             clause=LINEAR_REASON_STACK2[i];
             clause_state[clause]=SAT_Clauses::PASSIVE;
-            push(clause, CLAUSE_STACK);
+            push_clause(clause, CLAUSE_STACK);
         }
     }      
 
@@ -554,7 +554,7 @@ namespace ibex {
         var_current_value[var] = value;
         var_rest_value[var] = SAT_Clauses::NONE;
         var_state[var] = SAT_Clauses::PASSIVE;
-        push(var, VARIABLE_STACK);
+        push_clause(var, VARIABLE_STACK);
         if ((clause=my_reduce_clauses_for_fl(var))==SAT_Clauses::NO_CONFLICT) {
             remove_clauses(var);
             return my_unitclause_process( starting_point );
@@ -565,13 +565,13 @@ namespace ibex {
 
     int SAT_Solver::store_reason_clauses( int clause, int starting ) {
         int *vars_signs, var, i;
-        push(clause, REASON_STACK);
+        push_clause(clause, REASON_STACK);
         for(i=starting; i<REASON_STACK_fill_pointer; i++) {
             clause=REASON_STACK[i];
             vars_signs = var_sign[clause];
             for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
                 if (reason[var]!=SAT_Clauses::NO_REASON) {
-                    push(reason[var], REASON_STACK);
+                    push_clause(reason[var], REASON_STACK);
                     reason[var]=SAT_Clauses::NO_REASON;
                 }
             }
@@ -584,7 +584,7 @@ namespace ibex {
         for(i=0; i<REASON_STACK_fill_pointer; i++) {
             clause=REASON_STACK[i];
             clause_state[clause]=SAT_Clauses::PASSIVE;
-            push(clause, CLAUSE_STACK);
+            push_clause(clause, CLAUSE_STACK);
         }
         REASON_STACK_fill_pointer=0;
     }
@@ -680,12 +680,12 @@ namespace ibex {
                 remove_linear_reasons();
                 my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
             }else{
-                push(clause, REASON_STACK);
+                push_clause(clause, REASON_STACK);
                 for(i=0; i<REASON_STACK_fill_pointer; i++) {
                     clause=REASON_STACK[i]; vars_signs = var_sign[clause];
                     for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
                         if (reason[var]!=SAT_Clauses::NO_REASON) {
-                            push(reason[var], REASON_STACK);
+                            push_clause(reason[var], REASON_STACK);
                             reason[var]=SAT_Clauses::NO_REASON;
                         }
                     }
@@ -696,7 +696,7 @@ namespace ibex {
                         saved_variable_stack_fill_pointer);
                 for(i=0; i<REASON_STACK_fill_pointer; i++) {
                     clause=REASON_STACK[i];
-                    clause_state[clause]=SAT_Clauses::PASSIVE; push(clause, CLAUSE_STACK);
+                    clause_state[clause]=SAT_Clauses::PASSIVE; push_clause(clause, CLAUSE_STACK);
                 }
                 REASON_STACK_fill_pointer=0;
                 my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
@@ -718,7 +718,7 @@ namespace ibex {
             return SAT_Clauses::NONE;
         for (i=0; i<CLAUSES_TO_REMOVE_fill_pointer; i++) {
             clause=CLAUSES_TO_REMOVE[i];
-            push(clause, CLAUSE_STACK); clause_state[clause]=SAT_Clauses::PASSIVE;
+            push_clause(clause, CLAUSE_STACK); clause_state[clause]=SAT_Clauses::PASSIVE;
         }
         CLAUSES_TO_REMOVE_fill_pointer=0;
         return conflict;
@@ -734,7 +734,7 @@ namespace ibex {
                 var_rest_value[var] = SAT_Clauses::NONE;
                 reason[var]=unitclause;
                 var_state[var] = SAT_Clauses::PASSIVE;
-                push(var, VARIABLE_STACK);
+                push_clause(var, VARIABLE_STACK);
                 if ((clause=my_reduce_clauses(var))==SAT_Clauses::NO_CONFLICT) {
                     remove_clauses(var);
                     return SAT_Clauses::NO_CONFLICT;
@@ -794,13 +794,13 @@ namespace ibex {
         var_sign[NB_CLAUSE]=vars_signs;
         clause_state[NB_CLAUSE]=SAT_Clauses::ACTIVE;
         clause_length[NB_CLAUSE]=1;
-        push(NB_CLAUSE, UNITCLAUSE_STACK);
+        push_clause(NB_CLAUSE, UNITCLAUSE_STACK);
 
         for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
             if (clause==subsumedclause) {
                 *clauses=NB_CLAUSE;
                 SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer]=clauses;
-                push(subsumedclause, SAVED_CLAUSES);
+                push_clause(subsumedclause, SAVED_CLAUSES);
                 flag=SAT_Clauses::TRUE;
                 break;
             }
@@ -869,9 +869,9 @@ namespace ibex {
                 fixing_clause[opp_lit1]=SAT_Clauses::NONE;
                 lit_involved_in_clause[opp_lit1]=SAT_Clauses::NONE;
                 // verify_resolvent(lit, clause1, clause);
-                push(clause1, CLAUSE_STACK);
+                push_clause(clause1, CLAUSE_STACK);
                 clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push(clause, CLAUSE_STACK);
+                push_clause(clause, CLAUSE_STACK);
                 clause_state[clause]=SAT_Clauses::PASSIVE;
                 create_unitclause(lit, clause1, neg_in[lit-NB_VAR]);
                 var1=get_var_from_lit(lit1);
@@ -880,9 +880,9 @@ namespace ibex {
                 return SAT_Clauses::TRUE;
             }else {
                 fixing_clause[lit1]=clause;
-                push(lit1, CANDIDATE_LITERALS);
+                push_clause(lit1, CANDIDATE_LITERALS);
                 lit_involved_in_clause[lit1]=clause;
-                push(lit1, INVOLVED_LIT_STACK);
+                push_clause(lit1, INVOLVED_LIT_STACK);
             }
         }
         return SAT_Clauses::FALSE;
@@ -922,7 +922,7 @@ namespace ibex {
                 switch(clause_length[clause]) {
                     case 1:
                         neg_clause1_nb++; 
-                        push(clause, MY_UNITCLAUSE_STACK); break;
+                        push_clause(clause, MY_UNITCLAUSE_STACK); break;
                     case 2:
                         neg_clause2_nb++; 
                         if (searching_two_clauses_to_fix_neglit(clause, var+NB_VAR)==SAT_Clauses::TRUE) {
@@ -959,9 +959,9 @@ namespace ibex {
             clause1=lit_involved_in_clause[lit1];
             if ((clause1!=SAT_Clauses::NONE) && (clause_state[clause1]==SAT_Clauses::ACTIVE)) {
                 //  verify_resolvent(lit1, clause1, clause);
-                push(clause1, CLAUSE_STACK);
+                push_clause(clause1, CLAUSE_STACK);
                 clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push(clause, CLAUSE_STACK);
+                push_clause(clause, CLAUSE_STACK);
                 clause_state[clause]=SAT_Clauses::PASSIVE;
                 if (lit1<NB_VAR) {
                     create_unitclause(lit1, clause1, pos_in[lit1]);
@@ -979,9 +979,9 @@ namespace ibex {
                 if ((clause1!= SAT_Clauses::NONE) && (clause_state[clause1]==SAT_Clauses::ACTIVE)) {
                 fixing_clause[opp_lit1]=SAT_Clauses::NONE;
                 //	verify_resolvent(lit, clause1, clause);
-                push(clause1, CLAUSE_STACK);
+                push_clause(clause1, CLAUSE_STACK);
                 clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push(clause, CLAUSE_STACK);
+                push_clause(clause, CLAUSE_STACK);
                 clause_state[clause]=SAT_Clauses::PASSIVE;
                 create_unitclause(lit, clause1, pos_in[lit]);
                 var1=get_var_from_lit(lit1);
@@ -991,7 +991,7 @@ namespace ibex {
                 }
                 else {
                 fixing_clause[lit1]=clause;
-                push(lit1, CANDIDATE_LITERALS);
+                push_clause(lit1, CANDIDATE_LITERALS);
                 }
             }
         }
@@ -1007,11 +1007,11 @@ namespace ibex {
                 switch(clause_length[clause]) {
                     case 1:
                         if (MY_UNITCLAUSE_STACK_fill_pointer>0) {
-                            clause1=pop(MY_UNITCLAUSE_STACK);
+                            clause1=pop_clause(MY_UNITCLAUSE_STACK);
                             clause_state[clause]=SAT_Clauses::PASSIVE;
-                            push(clause, CLAUSE_STACK);
+                            push_clause(clause, CLAUSE_STACK);
                             clause_state[clause1]=SAT_Clauses::PASSIVE;
-                            push(clause1, CLAUSE_STACK);
+                            push_clause(clause1, CLAUSE_STACK);
                             nb_neg_clause_of_length1[var]--;
                             NB_EMPTY++;
                         }else pos_clause1_nb++; 
@@ -1054,7 +1054,7 @@ namespace ibex {
                     return SAT_Clauses::NONE;
                 var_rest_value[lit]=SAT_Clauses::NONE;
                 var_state[lit] = SAT_Clauses::PASSIVE;
-                push(lit, VARIABLE_STACK);
+                push_clause(lit, VARIABLE_STACK);
                 remove_clauses(lit);
             }else if (var_current_value[lit]==SAT_Clauses::FALSE) return SAT_Clauses::NONE;
         }else {
@@ -1064,7 +1064,7 @@ namespace ibex {
                 if (reduce_clauses(var)==SAT_Clauses::FALSE) return SAT_Clauses::NONE;
                 var_rest_value[var]=SAT_Clauses::NONE;
                 var_state[var] = SAT_Clauses::PASSIVE;
-                push(var, VARIABLE_STACK);
+                push_clause(var, VARIABLE_STACK);
                 remove_clauses(var);
             }else if (var_current_value[var]==SAT_Clauses::TRUE) return SAT_Clauses::NONE;
         }
@@ -1075,7 +1075,7 @@ namespace ibex {
         if (var_state[var]==SAT_Clauses::PASSIVE)
             printf("erreur1...\n");
         var_state[var] = SAT_Clauses::PASSIVE;
-        push(var, VARIABLE_STACK);
+        push_clause(var, VARIABLE_STACK);
         var_current_value[var] = current_value;
         var_rest_value[var] = rest_value;
         if (reduce_clauses(var)==SAT_Clauses::NONE) 
@@ -1096,7 +1096,7 @@ namespace ibex {
                         var_current_value[var] = *(vars_signs+1);
                         var_rest_value[var] = SAT_Clauses::NONE;
                         var_state[var] = SAT_Clauses::PASSIVE;
-                        push(var, VARIABLE_STACK);
+                        push_clause(var, VARIABLE_STACK);
                         if ((clause=reduce_clauses(var)) !=SAT_Clauses::NONE) {
                             remove_clauses(var);
                             break;
@@ -1142,14 +1142,14 @@ namespace ibex {
                     var_current_value[var] = SAT_Clauses::TRUE;
                     var_rest_value[var] = SAT_Clauses::NONE;
                     var_state[var] = SAT_Clauses::PASSIVE;
-                    push(var, VARIABLE_STACK);
+                    push_clause(var, VARIABLE_STACK);
                     remove_clauses(var);
                 }else if (get_pos_clause_nb(var) == 0) {
                     NB_MONO++;
                     var_current_value[var] = SAT_Clauses::FALSE;
                     var_rest_value[var] = SAT_Clauses::NONE;
                     var_state[var] = SAT_Clauses::PASSIVE;
-                    push(var, VARIABLE_STACK);
+                    push_clause(var, VARIABLE_STACK);
                     remove_clauses(var);
                 }else if (nb_neg_clause_of_length1[var]+NB_EMPTY>=UB) {
                     flag++;

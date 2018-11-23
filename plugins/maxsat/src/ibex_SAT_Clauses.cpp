@@ -49,14 +49,14 @@ namespace ibex {
 
     void SAT_Clauses::remove_passive_clauses() {
         int  clause, put_in, first=NONE;
-        for (clause=0; clause<s->NB_CLAUSE; clause++) {
+        for (clause=0; clause<NB_CLAUSE; clause++) {
             if (clause_state[clause]==PASSIVE) {
                 first=clause; break;
             }
         }
         if (first!=NONE) {
             put_in=first;
-            for(clause=first+1; clause<s->NB_CLAUSE; clause++) {
+            for(clause=first+1; clause<NB_CLAUSE; clause++) {
                 if (clause_state[clause]==ACTIVE) {
                     sat[put_in]=sat[clause]; var_sign[put_in]=var_sign[clause];
                     clause_state[put_in]=ACTIVE; 
@@ -64,7 +64,7 @@ namespace ibex {
                     put_in++;
                 }
             }
-            s->NB_CLAUSE=put_in;
+            NB_CLAUSE=put_in;
         }
     }
 
@@ -217,7 +217,7 @@ namespace ibex {
         for (i=0; i<NB_CLAUSE; i++) {
             if (clause_state[i]==ACTIVE) {
                 if (clause_length[i]==1)
-                push(i, UNITCLAUSE_STACK);
+                push_clause(i, UNITCLAUSE_STACK);
                 /*
                 lits = sat[i];
                 for(lit=*lits; lit!=NONE; lit=*(++lits)) {

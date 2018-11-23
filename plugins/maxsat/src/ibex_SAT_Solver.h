@@ -13,9 +13,6 @@
 #include <sys/types.h>
 #include <limits.h>
 
-#define pop_clause(stack) stack[--stack ## _fill_pointer]
-#define push_clause(item, stack) stack[stack ## _fill_pointer++] = item
-
 #include "ibex_SAT_Clauses.h"
 #ifndef __IBEX_SAT_SOLVER_H__
 #define __IBEX_SAT_SOLVER_H__

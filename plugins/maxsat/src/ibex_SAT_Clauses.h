@@ -9,6 +9,9 @@
 #ifndef __IBEX_SAT_CLAUSES_H__
 #define __IBEX_SAT_CLAUSES_H__
 
+#define pop_clause(stack) stack[--stack ## _fill_pointer]
+#define push_clause(item, stack) stack[stack ## _fill_pointer++] = item
+
 typedef signed char my_type;
 typedef unsigned char my_unsigned_type;
 

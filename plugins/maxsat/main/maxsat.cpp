@@ -20,7 +20,7 @@ int main(int argc, char *argv[]) {
         SAT_Clauses *cl = new SAT_Clauses();
         SAT_Solver *s = new SAT_Solver();
 
-        char saved_input_file[WORD_LENGTH];
+        char saved_input_file[SAT_Clauses::WORD_LENGTH];
         int i,  var;
         long begintime, endtime, mess;
         struct tms *a_tms;
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
                 s->init();
                 s->dpl();
                 break;
-            case NONE:
+            case SAT_Clauses::NONE:
                 s->INIT_NB_CLAUSE = s->NB_CLAUSE;
                 printf("An empty resolvant is found!\n"); break;
         }
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
             s->NB_BRANCHE, s->NB_BACK,
             s->UB, s->NB_VAR, s->INIT_NB_CLAUSE, s->NB_CLAUSE-s->INIT_NB_CLAUSE);
         fclose(fp_time);
-        return TRUE;
+        return SAT_Clauses::TRUE;
     }catch(ibex::SyntaxError& e){
 		cout << e << endl;
 	}
