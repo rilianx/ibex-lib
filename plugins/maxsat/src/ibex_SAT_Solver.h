@@ -53,8 +53,8 @@ namespace ibex {
                 double_tab_clause_size = 2*tab_clause_size;
                 UNITCLAUSE_STACK = new int[tab_unitclause_size];
             }
-            inline bool positive(int literal) { return literal<NB_VAR;}
-            inline bool negative(int literal) { return literal>=NB_VAR;}
+            // inline bool positive(int literal) { return literal<NB_VAR;}
+            // inline bool negative(int literal) { return literal>=NB_VAR;}
 
             inline int get_var_from_lit(int literal) {if(literal<NB_VAR) return literal; else return literal-NB_VAR;}
 

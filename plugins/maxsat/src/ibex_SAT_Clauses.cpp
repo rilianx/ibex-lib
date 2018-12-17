@@ -56,7 +56,7 @@ namespace ibex {
         }
         if (first!=NONE) {
             put_in=first;
-            for(clause=first+1; clause<NB_CLAUSE; clause++, ) {
+            for(clause=first+1; clause<NB_CLAUSE; clause++) {
                 if (clause_state[clause]==ACTIVE) {
                     sat[put_in]=sat[clause]; var_sign[put_in]=var_sign[clause];
                     clause_state[put_in]=ACTIVE; 
@@ -68,9 +68,9 @@ namespace ibex {
         }
     }
 
-    void SAT_Clauses::remove_passive_vars_in_clause(int clause, int *var_sign, int *var_state) {
+    void SAT_Clauses::remove_passive_vars_in_clause(int clause, int **var_sign, int *var_state) {
         int *vars_signs, *vars_signs1, var, var1, first=NONE;
-        vars_signs = var_sign[clause]; //NOTE: qué hacer?
+        vars_signs = var_sign[clause]; //NOTE: a value of type "int" cannot be assigned to an entity of type "int *"
         for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
             if (var_state[var]!=ACTIVE) {
                 first=var; break;
@@ -88,13 +88,13 @@ namespace ibex {
         }
     }
 
-    int SAT_Clauses::clean_structure(int NB_CLAUSE, int NB_VAR, int *neg_nb, int *pos_nb, int *var_sign, int *pos_in, int *neg_in) {
+    int SAT_Clauses::clean_structure(int NB_CLAUSE, int NB_VAR, int **neg_nb, int **pos_nb, int **var_sign, int **pos_in, int **neg_in, int *clause_state, int *sat, int *clause_length, int *var_state) {
         int clause, var, *vars_signs;
-        remove_passive_clauses();
+        remove_passive_clauses(NB_CLAUSE, clause_state, sat, *var_sign, clause_length);
         if (NB_CLAUSE==0)
             return FALSE;
         for (clause=0; clause<NB_CLAUSE; clause++) 
-            remove_passive_vars_in_clause(clause);
+            remove_passive_vars_in_clause(clause, var_sign, var_state);
         for (var=0; var<NB_VAR; var++) { 
             neg_nb[var] = 0;
             pos_nb[var] = 0;
@@ -103,19 +103,19 @@ namespace ibex {
             vars_signs = var_sign[clause]; //NOTE: a value of type "int" cannot be assigned to an entity of type "int *"
             for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
                 if (*(vars_signs+1)==POSITIVE) 
-                    pos_in[var][pos_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
+                    pos_in[var][*pos_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
                 else 
-                    neg_in[var][neg_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
+                    neg_in[var][*neg_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
             }
         }
         for (var=0; var<NB_VAR; var++) { 
-            neg_in[var][neg_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
-            pos_in[var][pos_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
+            neg_in[var][*neg_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
+            pos_in[var][*pos_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
         }
         return TRUE;
     }
 
-    void SAT_Clauses::lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int *sat, int *clause_length, int *clause_state) {
+    void SAT_Clauses::lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int **sat, int *clause_length, int *clause_state) {
         int i, j, jj, ii, length, tautologie, lits[1000], lit, lit1;
         for (i=0; i<NB_CLAUSE; i++) {
             length=0; 
@@ -160,7 +160,7 @@ namespace ibex {
         }
     }
 
-    void SAT_Clauses::build_structure(int NB_VAR, int NB_CLAUSE, int *neg_nb, int *pos_nb, int *clause_length, int *sat, int *var_sign, int *neg_in, int *pos_in, int *var_state) {
+    void SAT_Clauses::build_structure(int NB_VAR, int NB_CLAUSE, int **neg_nb, int **pos_nb, int *clause_length, int **sat, int **var_sign, int **neg_in, int **pos_in, int *var_state) {
         int i, j, var, *lits1, length, clause, *vars_signs, lit;
         for (i = 0; i < NB_VAR; i++) { 
             neg_nb[i] = 0; pos_nb[i] = 0;
@@ -194,7 +194,7 @@ namespace ibex {
         for (i=0; i<NB_VAR; i++) { 
             neg_in[i] = (int *)malloc((neg_nb[i]+1) * sizeof(int));
             pos_in[i] = (int *)malloc((pos_nb[i]+1) * sizeof(int));
-            neg_in[i][neg_nb[i]]=NONE; pos_in[i][pos_nb[i]] = NONE; //NOTE: expression must have pointer-to-object type
+            neg_in[i][*neg_nb[i]]=NONE; pos_in[i][*pos_nb[i]] = NONE; //NOTE: expression must have pointer-to-object type
             neg_nb[i] = 0; pos_nb[i] = 0;
             var_state[i] = ACTIVE;
         }   
@@ -204,14 +204,14 @@ namespace ibex {
             lits1 = sat[i];
             for(lit=*lits1; lit!=NONE; lit=*(++lits1)) {
                 if (positive(lit)) 
-                    pos_in[lit][pos_nb[lit]++] = i;
+                    pos_in[lit][*pos_nb[lit]++] = i;
                 else
                     neg_in[get_var_from_lit(lit)][neg_nb[get_var_from_lit(lit)]++] = i;
             }
         }
     }
 
-    void SAT_Clauses::eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length) {
+    void SAT_Clauses::eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length, int UNITCLAUSE_STACK) {
         int *lits, i, lit, *clauses, res, clause;
 
         for (i=0; i<NB_CLAUSE; i++) {
@@ -243,7 +243,8 @@ namespace ibex {
         }
     }
 
-    my_type SAT_Clauses::build_simple_sat_instance(char *input_file) {
+    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int NB_CLAUSE, int NB_VAR, int **sat, int **neg_nb, int **pos_nb,
+                        int *clause_length, int *clause_state, int **var_sign, int **neg_in, int **pos_in, int *var_state, int UNITCLAUSE_STACK) {
         FILE* fp_in=fopen(input_file, "r");
         char ch, word2[WORD_LENGTH];
         int i, j, length, NB_CLAUSE1, res, ii, jj, tautologie, lit1,
@@ -261,14 +262,14 @@ namespace ibex {
         // INIT_NB_CLAUSE = NB_CLAUSE;
 
         // void lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int *sat, int *clause_length, int *clause_state);
-        lire_clauses(fp_in, NB_CLAUSE, NB_VAR, *sat, *clause_length, *clause_state);
+        lire_clauses(fp_in, NB_CLAUSE, NB_VAR, sat, clause_length, clause_state);
         fclose(fp_in);
         // void build_structure(int NB_VAR, int NB_CLAUSE, int *neg_nb, int *pos_nb, int *clause_length, int *sat, int *var_sign, int *neg_in, int *pos_in, int *var_state);
-        build_structure(NB_VAR, NB_CLAUSE, neg_nb, *pos_nb, *clause_length, *sat, *vars_sign, *neg_in, *pos_in, *var_state);
+        build_structure(NB_VAR, NB_CLAUSE, neg_nb, pos_nb, clause_length, sat, var_sign, neg_in, pos_in, var_state);
         // void eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length);
-        eliminate_redundance();
+        eliminate_redundance(NB_CLAUSE, clause_state, clause_length, UNITCLAUSE_STACK);
         // int clean_structure(int NB_CLAUSE, int NB_VAR, int *neg_nb, int *pos_nb, int *var_sign, int *pos_in, int *neg_in);
-        if (clean_structure()==FALSE)
+        if (clean_structure(NB_CLAUSE, NB_VAR, neg_nb, pos_nb, var_sign, pos_in, neg_in, clause_state, sat, clause_length, var_state) == FALSE)
             return FALSE;
         return TRUE;
     }

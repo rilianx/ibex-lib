@@ -4,6 +4,7 @@
 #include <ctime>
 #include <fstream>
 #include <set>
+
 #include "ibex_SAT_Solver.h"
 #include "ibex_SAT_Clauses.h"
 
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
         a_tms = ( struct tms *) malloc( sizeof (struct tms));
         mess=times(a_tms); begintime = a_tms->tms_utime;
 
-        switch (cl->build_simple_sat_instance(argv[1])){
+        switch (cl->build_simple_sat_instance(argv[1], s->NB_CLAUSE, s->NB_VAR, s->sat, s->neg_nb, s->pos_nb, s->clause_length, s->clause_state, s->var_sign, s->neg_in, s->pos_in, s->var_state, s->UNITCLAUSE_STACK)){
             case SAT_Clauses::FALSE:
                 s->INIT_NB_CLAUSE = s->NB_CLAUSE;
                 printf("Input file error\n");
