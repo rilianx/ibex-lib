@@ -20,13 +20,13 @@ namespace ibex {
     class SAT_Clauses{
         public:
             int smaller_than(int lit1, int lit2);
-            my_type redundant(int *new_clause, int *old_clause);
-            void remove_passive_clauses();
-            void remove_passive_vars_in_clause(int clause);
-            int clean_structure();
-            void lire_clauses(FILE *fp_in);
-            void build_structure();
-            void eliminate_redundance();
+            my_type redundant(int *new_clause, int *old_clause, int NB_VAR);
+            void remove_passive_clauses(int NB_CLAUSE, int *clause_state, int *sat, int *var_sign, int *clause_length);
+            void remove_passive_vars_in_clause(int clause, int *var_sign, int *var_state);
+            int clean_structure(int NB_CLAUSE, int NB_VAR, int *neg_nb, int *pos_nb, int *var_sign, int *pos_in, int *neg_in);
+            void lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int *sat, int *clause_length, int *clause_state);
+            void build_structure(int NB_VAR, int NB_CLAUSE, int *neg_nb, int *pos_nb, int *clause_length, int *sat, int *var_sign, int *neg_in, int *pos_in, int *var_state);
+            void eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length);
             my_type build_simple_sat_instance(char *input_file);
 
             static bool complement(int lit1, int lit2, int NB_VAR){if(lit1<lit2) return lit2-lit1 == NB_VAR; else return lit1-lit2 == NB_VAR;}
