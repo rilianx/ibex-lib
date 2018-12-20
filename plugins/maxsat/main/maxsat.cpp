@@ -6,6 +6,7 @@
 #include <set>
 
 #include "ibex_SAT_Solver.h"
+#include "ibex_SAT_Clauses.h"
 
 #define tab_variable_size  10000
 #define tab_clause_size 40000
@@ -147,10 +148,15 @@ main(int argc, char *argv[]) {
   a_tms = ( struct tms *) malloc( sizeof (struct tms));
   mess=times(a_tms); begintime = a_tms->tms_utime;
 
-  switch (build_simple_sat_instance(argv[1])) {
+  SAT_Clauses *sat_clauses = new SAT_Clauses();
+
+  switch (sat_clauses->build_simple_sat_instance(argv[1])) {
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
-      if (argc>2) UB=atoi(argv[2]); else UB=NB_CLAUSE;
+      if (argc>2)
+        UB=atoi(argv[2]);
+      else
+        UB=NB_CLAUSE;
       init();
       dpl();
       break;

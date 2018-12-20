@@ -7,6 +7,11 @@
 //============================================================================
 
 #include "ibex_SAT_Solver.h"
+
+typedef signed char my_type;
+typedef unsigned char my_unsigned_type;
+
+/* global? */
 int NO_CONFLICT = -3;
 int NO_REASON = -3;
 int NEGATIVE = 0;
