@@ -7,20 +7,35 @@
 //============================================================================
 
 #include "ibex_SAT_Solver.h"
+int NO_CONFLICT = -3;
+int NO_REASON = -3;
+int NEGATIVE = 0;
+int POSITIVE = 1;
+int PASSIVE = 0;
+int ACTIVE = 1;
+
+int WORD_LENGTH = 100;
+int TRUE = 1;
+int FALSE = 0;
+int NONE = -1;
+
+int WEIGHT = 4;
+int WEIGHT1 = 25;
+int WEIGHT2 = 5;
+int WEIGHT3 = 1;
+int T = 10;
+
 using namespace std;
 namespace ibex {
-
     void SAT_Solver::remove_clauses(int var) {
         register int clause;
         register int *clauses;
-        if (var_current_value[var] == SAT_Clauses::POSITIVE)
-            clauses = pos_in[var];
-        else
-            clauses = neg_in[var];
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause_state[clause] == SAT_Clauses::ACTIVE) {
-                clause_state[clause] = SAT_Clauses::PASSIVE;
-                push_clause(clause, CLAUSE_STACK);
+        if (var_current_value[var] == POSITIVE) clauses = pos_in[var];
+        else clauses = neg_in[var];
+        for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
+            if (clause_state[clause] == ACTIVE) {
+            clause_state[clause] = PASSIVE;
+            push(clause, CLAUSE_STACK);
             }
         }
     }
@@ -28,72 +43,63 @@ namespace ibex {
     int SAT_Solver::reduce_clauses(int var) {
         register int clause;
         register int *clauses;
-        if (var_current_value[var] == SAT_Clauses::POSITIVE)
-            clauses = neg_in[var];
-        else
-            clauses = pos_in[var];
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause_state[clause] == SAT_Clauses::ACTIVE) {
-                clause_length[clause]--;
-                push_clause(clause, REDUCEDCLAUSE_STACK);
-                switch (clause_length[clause]) {
-                    case 0:
-                        NB_EMPTY++;
-                        if (UB<=NB_EMPTY) return SAT_Clauses::NONE;
-                        break;
-                    case 1: 
-                        push_clause(clause, UNITCLAUSE_STACK);
-                        break;
-                }
+        if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
+        else clauses = pos_in[var];
+        for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
+            if (clause_state[clause] == ACTIVE) {
+            clause_length[clause]--;
+            push(clause, REDUCEDCLAUSE_STACK);
+            switch (clause_length[clause]) {
+            case 0: NB_EMPTY++;
+            if (UB <= NB_EMPTY) return NONE;
+            break;
+            case 1: 
+            push(clause, UNITCLAUSE_STACK);
+            break;
+            }
             }
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     int SAT_Solver::my_reduce_clauses(int var) {
         register int clause;
         register int *clauses;
-        if (var_current_value[var] == SAT_Clauses::POSITIVE)
-            clauses = neg_in[var];
-        else
-            clauses = pos_in[var];
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause_state[clause] == SAT_Clauses::ACTIVE) {
-                clause_length[clause]--;
-                push_clause(clause, REDUCEDCLAUSE_STACK);
-                    switch (clause_length[clause]) {
-                        case 0:
-                            return clause;
-                        case 1: 
-                            push_clause(clause, MY_UNITCLAUSE_STACK);
-                    break;
-                }
+        if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
+        else clauses = pos_in[var];
+        for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
+            if (clause_state[clause] == ACTIVE) {
+            clause_length[clause]--;
+            push(clause, REDUCEDCLAUSE_STACK);
+            switch (clause_length[clause]) {
+            case 0: return clause;
+            case 1: 
+            push(clause, MY_UNITCLAUSE_STACK);
+            break;
+            }
             }
         }
-        return SAT_Clauses::NO_CONFLICT;
+        return NO_CONFLICT;
     }
 
     int SAT_Solver::my_reduce_clauses_for_fl(int var) {
         register int clause;
         register int *clauses;
-        if (var_current_value[var] == SAT_Clauses::POSITIVE)
-            clauses = neg_in[var];
-        else
-            clauses = pos_in[var];
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause_state[clause] == SAT_Clauses::ACTIVE) {
-                clause_length[clause]--;
-                push_clause(clause, REDUCEDCLAUSE_STACK);
-                switch (clause_length[clause]) {
-                    case 0:
-                        return clause;
-                    case 1:
-                        push_clause(clause, UNITCLAUSE_STACK);
-                        break;
-                }
+        if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
+        else clauses = pos_in[var];
+        for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
+            if (clause_state[clause] == ACTIVE) {
+            clause_length[clause]--;
+            push(clause, REDUCEDCLAUSE_STACK);
+            switch (clause_length[clause]) {
+            case 0: return clause;
+            case 1: 
+            push(clause, UNITCLAUSE_STACK);
+            break;
+            }
             }
         }
-        return SAT_Clauses::NO_CONFLICT;
+        return NO_CONFLICT;
     }
 
     void SAT_Solver::print_values(int nb_var) {
@@ -102,9 +108,9 @@ namespace ibex {
         fp_out = fopen("satx.sol", "w");
         for (i=0; i<nb_var; i++) {
             if (var_current_value[i] == 1) 
-                fprintf(fp_out, "%d ", i+1);
+            fprintf(fp_out, "%d ", i+1);
             else
-                fprintf(fp_out, "%d ", 0-i-1);
+            fprintf(fp_out, "%d ", 0-i-1);
         }
         fprintf(fp_out, "\n");
         fclose(fp_out);			
@@ -116,137 +122,125 @@ namespace ibex {
         NB_BACK++;
 
         do {
-            var = pop_clause(VARIABLE_STACK);
-            if (var_rest_value[var] == SAT_Clauses::NONE){
-                var_state[var] = SAT_Clauses::ACTIVE;
-            }else{
-                for (index = saved_clause_stack[var]; 
-                        index < CLAUSE_STACK_fill_pointer;
-                        index++)
-                    clause_state[CLAUSE_STACK[index]] = SAT_Clauses::ACTIVE;
-                CLAUSE_STACK_fill_pointer = saved_clause_stack[var];
+            var = pop(VARIABLE_STACK);
+            if (var_rest_value[var] == NONE) 
+            var_state[var] = ACTIVE;
+            else {
+            for (index = saved_clause_stack[var]; 
+            index < CLAUSE_STACK_fill_pointer;
+            index++)
+            clause_state[CLAUSE_STACK[index]] = ACTIVE;
+            CLAUSE_STACK_fill_pointer = saved_clause_stack[var];
 
-                for (index = saved_reducedclause_stack[var];
-                        index < REDUCEDCLAUSE_STACK_fill_pointer;
-                        index++) {	
-                    clause = REDUCEDCLAUSE_STACK[index];
-                    clause_length[REDUCEDCLAUSE_STACK[index]]++;
-                }
-                REDUCEDCLAUSE_STACK_fill_pointer = saved_reducedclause_stack[var];
-                UNITCLAUSE_STACK_fill_pointer=saved_unitclause_stack[var];
-                NB_EMPTY=saved_nb_empty[var];
-                NB_CLAUSE=saved_nb_clause[var];
-                NEW_CLAUSES_fill_pointer=saved_new_clauses[var];
-                
-                saved=saved_saved_clauses[var];
-                for (index = SAVED_CLAUSES_fill_pointer-1 ;
-                        index >= saved;
-                        index--)
-                    *SAVED_CLAUSE_POSITIONS[index]=SAVED_CLAUSES[index];
-                SAVED_CLAUSES_fill_pointer=saved;
+            for (index = saved_reducedclause_stack[var];
+            index < REDUCEDCLAUSE_STACK_fill_pointer;
+            index++) {	
+            clause = REDUCEDCLAUSE_STACK[index];
+            clause_length[REDUCEDCLAUSE_STACK[index]]++;
+            }
+            REDUCEDCLAUSE_STACK_fill_pointer = saved_reducedclause_stack[var];
+            UNITCLAUSE_STACK_fill_pointer=saved_unitclause_stack[var];
+            NB_EMPTY=saved_nb_empty[var];
+            NB_CLAUSE=saved_nb_clause[var];
+            NEW_CLAUSES_fill_pointer=saved_new_clauses[var];
+            
+            saved=saved_saved_clauses[var];
+            for (index = SAVED_CLAUSES_fill_pointer-1 ;
+            index >= saved;
+            index--) 
+            *SAVED_CLAUSE_POSITIONS[index]=SAVED_CLAUSES[index];
+            SAVED_CLAUSES_fill_pointer=saved;
 
-                if (NB_EMPTY<UB) {
-                    var_current_value[var] = var_rest_value[var];
-                    var_rest_value[var] = SAT_Clauses::NONE;
-                    push_clause(var, VARIABLE_STACK);
-                    if (reduce_clauses(var)==SAT_Clauses::NONE)
-                        return SAT_Clauses::NONE;
-                    remove_clauses(var);
-                    return SAT_Clauses::TRUE;
-                }else
-                    var_state[var] = SAT_Clauses::ACTIVE;
+            if (NB_EMPTY<UB) {
+            var_current_value[var] = var_rest_value[var];
+            var_rest_value[var] = NONE;
+            push(var, VARIABLE_STACK);
+            if (reduce_clauses(var) == NONE)
+                return NONE;
+            remove_clauses(var);
+                return TRUE;
+            }
+            else  var_state[var] = ACTIVE;
             }
         } while (VARIABLE_STACK_fill_pointer > 0);
-        return SAT_Clauses::FALSE;
+        return FALSE;
     }
 
     int SAT_Solver::verify_solution() {
         int i, nb=0, var, *vars_signs, clause_truth,cpt;
 
         for (i=0; i<REAL_NB_CLAUSE; i++) {
-            clause_truth = SAT_Clauses::FALSE;
+            clause_truth = FALSE;
             vars_signs = var_sign[i];
-            for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2))
-                if (*(vars_signs+1) == var_current_value[var] ) {
-                    clause_truth = SAT_Clauses::TRUE;
-                    break;
+            for(var=*vars_signs; var != NONE; var=*(vars_signs+=2))
+            if (*(vars_signs+1) == var_current_value[var] ) {
+            clause_truth = TRUE;
+            break;
             }
-            if (clause_truth == SAT_Clauses::FALSE) nb++;
+            if (clause_truth == FALSE) nb++;
         }
         return nb;
     }
 
-    void SAT_Solver::reset_context(int saved_clause_stack_fill_pointer, 
-            int saved_reducedclause_stack_fill_pointer,
-            int saved_unitclause_stack_fill_pointer,
-            int saved_variable_stack_fill_pointer) {
+    void SAT_Solver::reset_context(int saved_clause_stack_fill_pointer, int saved_reducedclause_stack_fill_pointer, int saved_unitclause_stack_fill_pointer, int saved_variable_stack_fill_pointer) {
         int index, var, clause;
         for (index = saved_clause_stack_fill_pointer; 
-                index < CLAUSE_STACK_fill_pointer;
-                index++)
-            clause_state[CLAUSE_STACK[index]] = SAT_Clauses::ACTIVE;
+            index < CLAUSE_STACK_fill_pointer;
+            index++)
+            clause_state[CLAUSE_STACK[index]] = ACTIVE;
         CLAUSE_STACK_fill_pointer = saved_clause_stack_fill_pointer;
 
         for (index = saved_reducedclause_stack_fill_pointer;
-                index < REDUCEDCLAUSE_STACK_fill_pointer;
-                index++) {	
+            index < REDUCEDCLAUSE_STACK_fill_pointer;
+            index++) {	
             clause = REDUCEDCLAUSE_STACK[index];
             clause_length[REDUCEDCLAUSE_STACK[index]]++;
         }
         REDUCEDCLAUSE_STACK_fill_pointer = saved_reducedclause_stack_fill_pointer;
 
-        for(index=saved_variable_stack_fill_pointer;
-                index<VARIABLE_STACK_fill_pointer;
-                index++) {
+        for(index=saved_variable_stack_fill_pointer; index<VARIABLE_STACK_fill_pointer; index++){
             var=VARIABLE_STACK[index];
-            reason[var]=SAT_Clauses::NO_REASON;
-            var_state[var]=SAT_Clauses::ACTIVE;
+            reason[var] = NO_REASON;
+            var_state[var] = ACTIVE;
         }
-        VARIABLE_STACK_fill_pointer=saved_variable_stack_fill_pointer;
+        VARIABLE_STACK_fill_pointer = saved_variable_stack_fill_pointer;
 
-        UNITCLAUSE_STACK_fill_pointer=saved_unitclause_stack_fill_pointer;
+        UNITCLAUSE_STACK_fill_pointer = saved_unitclause_stack_fill_pointer;
     }
 
     int SAT_Solver::replace_clause(int newclause, int clause_to_replace, int *clauses) {
-        int clause, flag=SAT_Clauses::FALSE;
-        
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause==clause_to_replace) {
-                *clauses=newclause;
-                SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer]=clauses;
-                push_clause(clause_to_replace, SAVED_CLAUSES);
-                flag=SAT_Clauses::TRUE;
-                break;
+        int clause, flag = FALSE;
+        for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
+            if (clause == clause_to_replace) {
+            *clauses = newclause;
+            SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer] = clauses;
+            push(clause_to_replace, SAVED_CLAUSES);
+            flag = TRUE;
+            break;
             }
         }
-        if (flag==SAT_Clauses::FALSE)
+        if (flag == FALSE)
             printf("problem...");
         return flag;
     }
 
-    void SAT_Solver::create_binaryclause(int var1, int sign1, int var2, int sign2, 
-            int clause1, int clause2) {
-        int clause, *vars_signs, flag=SAT_Clauses::FALSE, *clauses1, *clauses2;
-        if (sign1==SAT_Clauses::POSITIVE)
-            clauses1=pos_in[var1];
-        else
-            clauses1=neg_in[var1];
-        if (sign2==SAT_Clauses::POSITIVE)
-            clauses2=pos_in[var2];
-        else
-            clauses2=neg_in[var2];
-        vars_signs=NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
-        if (var1<var2) {
-            vars_signs[0]=var1; vars_signs[1]=sign1;
-            vars_signs[2]=var2; vars_signs[3]=sign2;
-        }else{
-            vars_signs[0]=var2; vars_signs[1]=sign2;
-            vars_signs[2]=var1; vars_signs[3]=sign1;
+    void SAT_Solver::create_binaryclause(int var1, int sign1, int var2, int sign2, int clause1, int clause2) {
+        int clause, *vars_signs, flag = FALSE, *clauses1, *clauses2;
+        if (sign1 == POSITIVE) clauses1 = pos_in[var1]; else clauses1 = neg_in[var1];
+        if (sign2 == POSITIVE) clauses2 = pos_in[var2]; else clauses2 = neg_in[var2];
+        vars_signs = NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
+        if (var1 < var2) {
+            vars_signs[0] = var1; vars_signs[1] = sign1;
+            vars_signs[2] = var2; vars_signs[3] = sign2;
         }
-        vars_signs[4]=SAT_Clauses::NONE;
-        var_sign[NB_CLAUSE]=vars_signs;
-        clause_state[NB_CLAUSE]=SAT_Clauses::ACTIVE;
-        clause_length[NB_CLAUSE]=2;
+        else {
+            vars_signs[0] = var2; vars_signs[1] = sign2;
+            vars_signs[2] = var1; vars_signs[3] = sign1;
+        }
+        vars_signs[4] = NONE;
+        var_sign[NB_CLAUSE] = vars_signs;
+        clause_state[NB_CLAUSE] = ACTIVE;
+        clause_length[NB_CLAUSE] = 2;
         // if (NB_CLAUSE==305)
         // printf("aaa...");
         replace_clause(NB_CLAUSE, clause1, clauses1);
@@ -255,46 +249,45 @@ namespace ibex {
     }
 
     int SAT_Solver::verify_binary_clauses(int *varssigns, int var1, int sign1, int var2, int sign2) {
-        int nb=0;
+        int nb = 0;
 
-        if (var1==*varssigns) {
-            if ((*(varssigns+1)!=1-sign1) || (var2!=*(varssigns+2)) || (*(varssigns+3)!=1-sign2)) {
-                printf("problem..");
-                return SAT_Clauses::FALSE;
+        if (var1 == *varssigns) {
+            if ((*(varssigns+1) != 1-sign1) || (var2 != *(varssigns + 2)) || (*(varssigns + 3) != 1 - sign2)) {
+            printf("problem..");
+            return FALSE;
             }
-        }else{
-            if ((var2 != *varssigns) || (*(varssigns+1)!=1-sign2) || (var1!=*(varssigns+2)) || (*(varssigns+3)!=1-sign1)) {
-                printf("problem..");
-                return SAT_Clauses::FALSE;
+        } else {
+            if ((var2 != *varssigns) || (*(varssigns+1) != 1 - sign2) || (var1 != *(varssigns + 2)) || (*(varssigns + 3) != 1 - sign1)) {
+            printf("problem..");
+            return FALSE;
             }
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     int SAT_Solver::create_clause_from_conflict_clauses(int clause1, int clause2, int clause3) {
         int var3, sign3, var2, sign2,*clauses2, *clauses3, *vars_signs, 
-            varssigns[4], i=0, var;
+            varssigns[4], i = 0, var;
 
-        if ((clause_state[clause1]==SAT_Clauses::ACTIVE) && (clause_length[clause1]==2) &&
-                (clause_state[clause2]==SAT_Clauses::ACTIVE) && (clause_length[clause2]==1) &&
-                (clause_state[clause3]==SAT_Clauses::ACTIVE) && (clause_length[clause3]==1)) {
+        if ((clause_state[clause1] == ACTIVE) && (clause_length[clause1] == 2) &&
+            (clause_state[clause2] == ACTIVE) && (clause_length[clause2] == 1) &&
+            (clause_state[clause3] == ACTIVE) && (clause_length[clause3] == 1)) {
             vars_signs = var_sign[clause1];
-            for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-                if (var_state[var]==SAT_Clauses::ACTIVE) {
-                    varssigns[i++]=var;
-                    varssigns[i++]=*(vars_signs+1);
-                }
+            for(var = *vars_signs; var != NONE; var = *(vars_signs += 2)) {
+            if (var_state[var] == ACTIVE) {
+                varssigns[i++] = var; varssigns[i++] = *(vars_signs + 1);
+            }
             }
             /*
             vars_signs = var_sign[clause2];
-            for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if (var_state[var]==SAT_Clauses::ACTIVE) {
+            for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
+            if (var_state[var]==ACTIVE) {
             var2=var; sign2=*(vars_signs+1);
             }
             }
             vars_signs = var_sign[clause3];
-            for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if (var_state[var]==SAT_Clauses::ACTIVE) {
+            for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
+            if (var_state[var]==ACTIVE) {
             var3=var; sign3=*(vars_signs+1);
             }
             }
@@ -303,67 +296,59 @@ namespace ibex {
             var2=varssigns[0]; sign2=1-varssigns[1];
             var3=varssigns[2]; sign3=1-varssigns[3];
             create_binaryclause(var2, sign2, var3, sign3, clause2, clause3);
-            push_clause(clause1, CLAUSES_TO_REMOVE);
-            push_clause(clause2, CLAUSES_TO_REMOVE);
-            push_clause(clause3, CLAUSES_TO_REMOVE);
-            return SAT_Clauses::TRUE;
-        }
-        else {
-            return SAT_Clauses::FALSE;
+            push(clause1, CLAUSES_TO_REMOVE);
+            push(clause2, CLAUSES_TO_REMOVE);
+            push(clause3, CLAUSES_TO_REMOVE);
+            return TRUE;
+        } else {
+            return FALSE;
         }
     }
 
-    int LINEAR_REASON_STACK1[SAT_Solver::tab_clause_size];
-    int LINEAR_REASON_STACK1_fill_pointer=0;
-    int LINEAR_REASON_STACK2[SAT_Solver::tab_clause_size];
-    int LINEAR_REASON_STACK2_fill_pointer=0;
-    int clause_involved[SAT_Solver::tab_clause_size];
 
     int SAT_Solver::search_linear_reason1(int var) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
-        for(fixed_var=var; fixed_var!=SAT_Clauses::NONE; fixed_var=new_fixed_var) {
+        for(fixed_var=var; fixed_var != NONE; fixed_var=new_fixed_var) {
             clause=reason[fixed_var];
-            vars_signs = var_sign[clause]; new_fixed_var=SAT_Clauses::NONE;
-            push_clause(clause, LINEAR_REASON_STACK1);
-            clause_involved[clause]=SAT_Clauses::TRUE;
-            for(index_var=*vars_signs; index_var!=SAT_Clauses::NONE; index_var=*(vars_signs+=2)) {
-                if ((index_var!=fixed_var) && (reason[index_var]!=SAT_Clauses::NO_REASON)) {
-                    if (new_fixed_var==SAT_Clauses::NONE)
+            vars_signs = var_sign[clause]; new_fixed_var = NONE;
+            push(clause, LINEAR_REASON_STACK1);
+            clause_involved[clause] = TRUE;
+            for(index_var=*vars_signs; index_var != NONE; index_var=*(vars_signs+=2)) {
+                if ((index_var!=fixed_var) && (reason[index_var] != NO_REASON)) {
+                    if (new_fixed_var == NONE)
                         new_fixed_var=index_var;
-                    else
-                        return SAT_Clauses::FALSE;
+                        else return FALSE;
                 }
             }
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
-    #define SIMPLE_NON_LINEAR_CASE 2
 
     int SAT_Solver::search_linear_reason2(int var) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
-        for(fixed_var=var; fixed_var!=SAT_Clauses::NONE; fixed_var=new_fixed_var) {
+        for(fixed_var=var; fixed_var != NONE; fixed_var=new_fixed_var) {
             clause=reason[fixed_var];
-            if (clause_involved[clause]==SAT_Clauses::TRUE) {
-                if ( LINEAR_REASON_STACK2_fill_pointer == 2 && LINEAR_REASON_STACK1_fill_pointer > 2 && LINEAR_REASON_STACK1[ 2 ] == clause ) 
-                    return SIMPLE_NON_LINEAR_CASE;
+            if (clause_involved[clause]==TRUE) {
+            if ( LINEAR_REASON_STACK2_fill_pointer == 2 && LINEAR_REASON_STACK1_fill_pointer > 2 && LINEAR_REASON_STACK1[ 2 ] == clause ) 
+                return SIMPLE_NON_LINEAR_CASE;
+            else
+                return FALSE;
+            } else 
+            push(clause, LINEAR_REASON_STACK2);
+            vars_signs = var_sign[clause]; new_fixed_var = NONE;
+            for(index_var=*vars_signs; index_var != NONE; index_var=*(vars_signs+=2)) {
+            if ((index_var!=fixed_var) && (reason[index_var] != NO_REASON)) {
+                if (new_fixed_var == NONE)
+                new_fixed_var=index_var;
                 else
-                    return SAT_Clauses::FALSE;
-                }else 
-                push_clause(clause, LINEAR_REASON_STACK2);
-            vars_signs = var_sign[clause]; new_fixed_var=SAT_Clauses::NONE;
-            for(index_var=*vars_signs; index_var!=SAT_Clauses::NONE; index_var=*(vars_signs+=2)) {
-                if ((index_var!=fixed_var) && (reason[index_var]!=SAT_Clauses::NO_REASON)) {
-                    if (new_fixed_var==SAT_Clauses::NONE)
-                        new_fixed_var=index_var;
-                    else
-                        return SAT_Clauses::FALSE;
-                }
+                return FALSE;
+            }
             }
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     // clause1 is l1->l2, clause is l2->l3, clause3 is ((not l3) or (not l4))
@@ -371,61 +356,60 @@ namespace ibex {
     int SAT_Solver::check_reason(int *varssigns, int clause, int clause1, int clause2) {
         int var, *vars_signs, var1, var2, flag;
 
-        if ((reason[varssigns[0]]!=clause1) || (reason[varssigns[2]]!=clause)) 
-            return SAT_Clauses::FALSE;
-        vars_signs = var_sign[clause2]; flag=SAT_Clauses::FALSE;
-        for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if ((varssigns[2]==var) && (reason[var]!=SAT_Clauses::NO_REASON) && (*(vars_signs+1) != var_current_value[var])) {
-                flag=SAT_Clauses::TRUE;
+        if ((reason[varssigns[0]] != clause1) || (reason[varssigns[2]] != clause)) 
+            return FALSE;
+        vars_signs = var_sign[clause2]; flag = FALSE;
+        for(var = *vars_signs; var != NONE; var = *(vars_signs+=2)) {
+            if ((varssigns[2] == var) && (reason[var] != NO_REASON) && (*(vars_signs+1) != var_current_value[var])) {
+            flag = TRUE;
             }
         }
         return flag;
     }
 
     int SAT_Solver::create_complementary_binclause(int clause, int clause1, int clause2) {
-        int var, *vars_signs, i=0, varssigns[4], sign, j=0;
+        int var, *vars_signs, i = 0, varssigns[4], sign, j = 0;
         vars_signs = var_sign[clause];
-        for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if (reason[var]!=SAT_Clauses::NO_REASON) {
-                varssigns[i++]=var; varssigns[i++]=*(vars_signs+1); 
+        for(var = *vars_signs; var != NONE; var = *(vars_signs += 2)) {
+            if (reason[var] != NO_REASON) {
+            varssigns[i++] = var; varssigns[i++] = *(vars_signs + 1); 
             }
         }
-        if (reason[varssigns[2]]==clause1) {
+        if (reason[varssigns[2]] == clause1) {
             var=varssigns[2]; sign=varssigns[3];
             varssigns[2]=varssigns[0]; varssigns[3]=varssigns[1];
             varssigns[0]=var; varssigns[1]=sign;
         }
-        if ((i!=4) || (check_reason(varssigns, clause, clause1, clause2)==SAT_Clauses::FALSE))
+        if ((i!=4) || (check_reason(varssigns, clause, clause1, clause2) == FALSE))
             printf("problem...");
-        create_binaryclause(varssigns[0], 1-varssigns[1],
-            varssigns[2], 1-varssigns[3], clause1, clause2);
-        return SAT_Clauses::TRUE;
+        create_binaryclause(varssigns[0], 1-varssigns[1], varssigns[2], 1-varssigns[3], clause1, clause2);
+        return TRUE;
     }
 
     int SAT_Solver::get_satisfied_literal(int clause) {
         int var, *vars_signs;
         vars_signs = var_sign[clause];
-        for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
+        for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
             if (*(vars_signs+1) == var_current_value[var])
-                return var;
+            return var;
         }
         printf("erreur");
-        return SAT_Clauses::NONE;
+        return NONE;
     }
 
     void SAT_Solver::create_ternary_clauses(int var1, int sign1, int var2, int sign2, int var3, int sign3, int clause1, int clause2, int clause3) {
-        int clause, *vars_signs, flag=SAT_Clauses::FALSE, *clauses1, *clauses2, *clauses3;
-        if (sign1==SAT_Clauses::POSITIVE) clauses1=pos_in[var1]; else clauses1=neg_in[var1];
-        if (sign2==SAT_Clauses::POSITIVE) clauses2=pos_in[var2]; else clauses2=neg_in[var2];
-        if (sign3==SAT_Clauses::POSITIVE) clauses3=pos_in[var3]; else clauses3=neg_in[var3];
-        vars_signs=NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
-        vars_signs[0]=var1; vars_signs[1]=sign1;
-        vars_signs[2]=var2; vars_signs[3]=sign2;
-        vars_signs[4]=var3; vars_signs[5]=sign3;
-        vars_signs[6]=SAT_Clauses::NONE;
-        var_sign[NB_CLAUSE]=vars_signs;
-        clause_state[NB_CLAUSE]=SAT_Clauses::ACTIVE;
-        clause_length[NB_CLAUSE]=3;
+        int clause, *vars_signs, flag = FALSE, *clauses1, *clauses2, *clauses3;
+        if (sign1 == POSITIVE) clauses1 = pos_in[var1]; else clauses1 = neg_in[var1];
+        if (sign2 == POSITIVE) clauses2 = pos_in[var2]; else clauses2 = neg_in[var2];
+        if (sign3 == POSITIVE) clauses3 = pos_in[var3]; else clauses3 = neg_in[var3];
+        vars_signs = NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
+        vars_signs[0] = var1; vars_signs[1]=sign1;
+        vars_signs[2] = var2; vars_signs[3]=sign2;
+        vars_signs[4] = var3; vars_signs[5]=sign3;
+        vars_signs[6] = NONE;
+        var_sign[NB_CLAUSE] = vars_signs;
+        clause_state[NB_CLAUSE] = ACTIVE;
+        clause_length[NB_CLAUSE] = 3;
         // if (NB_CLAUSE==305)
         // printf("aaa...");
         replace_clause(NB_CLAUSE, clause1, clauses1);
@@ -443,76 +427,76 @@ namespace ibex {
         sign=var_current_value[var];
         for(j=2; j<LINEAR_REASON_STACK1_fill_pointer-1; j++) {
             create_complementary_binclause(LINEAR_REASON_STACK1[j],
-                LINEAR_REASON_STACK1[j+1],
-                LINEAR_REASON_STACK1[j-1]);
-            push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+                        LINEAR_REASON_STACK1[j+1],
+                        LINEAR_REASON_STACK1[j-1]);
+            push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
         }
-        push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+        push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
         create_ternary_clauses(var, sign, var1, sign1, var2, sign2,
-            LINEAR_REASON_STACK1[2],
-            empty_clause, empty_clause);
+                    LINEAR_REASON_STACK1[2],
+                    empty_clause, empty_clause);
         create_ternary_clauses(var, 1-sign, var1, 1-sign1, var2, 1-sign2,
-            LINEAR_REASON_STACK2[1],
-            LINEAR_REASON_STACK1[1],
-            LINEAR_REASON_STACK2[1]);
-        push_clause(empty_clause, CLAUSES_TO_REMOVE);
-        push_clause( LINEAR_REASON_STACK1[1], CLAUSES_TO_REMOVE);
-        push_clause( LINEAR_REASON_STACK2[1], CLAUSES_TO_REMOVE);
-        return SAT_Clauses::TRUE;
+                    LINEAR_REASON_STACK2[1],
+                    LINEAR_REASON_STACK1[1],
+                    LINEAR_REASON_STACK2[1]);
+        push(empty_clause, CLAUSES_TO_REMOVE);
+        push( LINEAR_REASON_STACK1[1], CLAUSES_TO_REMOVE);
+        push( LINEAR_REASON_STACK2[1], CLAUSES_TO_REMOVE);
+        return TRUE;
     }
 
         
     int SAT_Solver::linear_conflict(int clause) {
         int var, *vars_signs, i=0, varssigns[6], j=0, res;
         vars_signs = var_sign[clause];
-        for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if (reason[var]!=SAT_Clauses::NO_REASON) {
-                varssigns[i++]=var; varssigns[i++]=*(vars_signs+1); 
-                if (i>4)
-                    return SAT_Clauses::FALSE;
+        for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+            if (reason[var] != NO_REASON) {
+            varssigns[i++]=var; varssigns[i++]=*(vars_signs+1); 
+            if (i>4)
+                return FALSE;
             }
         }
-        if (i>4) return SAT_Clauses::FALSE;
-        if (i==0){
+        if (i>4) return FALSE;
+        if (i==0)
             printf("bizzar...\n");
-        }else {
+        else {
             for(j=0; j<LINEAR_REASON_STACK1_fill_pointer; j++) 
-                clause_involved[LINEAR_REASON_STACK1[j]]=SAT_Clauses::NONE;
+            clause_involved[LINEAR_REASON_STACK1[j]] = NONE;
             LINEAR_REASON_STACK1_fill_pointer=1; LINEAR_REASON_STACK2_fill_pointer=1;
             LINEAR_REASON_STACK1[0]=clause; LINEAR_REASON_STACK2[0]=clause;
-            if (search_linear_reason1(varssigns[0])==SAT_Clauses::FALSE){
-                return SAT_Clauses::FALSE;
-            }else {
-                if (i==4) {
-                    res=search_linear_reason2(varssigns[2]);
-                    if (res==SAT_Clauses::FALSE){
-                        return SAT_Clauses::FALSE;
-                    }else if (res==SIMPLE_NON_LINEAR_CASE) {
-                        // printf("zskjehrz  \n");
-                        return non_linear_conflict(clause, varssigns[0], varssigns[1], 
-                            varssigns[2], varssigns[3]);
-                    }
-                    create_binaryclause(varssigns[0], 1-varssigns[1], 
+            if (search_linear_reason1(varssigns[0]) == FALSE)
+            return FALSE;
+            else {
+            if (i==4) {
+                res=search_linear_reason2(varssigns[2]);
+                if (res == FALSE)
+                return FALSE;
+                else if (res==SIMPLE_NON_LINEAR_CASE) {
+                // printf("zskjehrz  \n");
+                return non_linear_conflict(clause, varssigns[0], varssigns[1], 
+                        varssigns[2], varssigns[3]);
+                }
+                create_binaryclause(varssigns[0], 1-varssigns[1], 
                         varssigns[2], 1-varssigns[3], 
                         LINEAR_REASON_STACK1[1], LINEAR_REASON_STACK2[1]);
-                    for(j=1; j<LINEAR_REASON_STACK2_fill_pointer-1; j++) {
-                        create_complementary_binclause(LINEAR_REASON_STACK2[j],
-                            LINEAR_REASON_STACK2[j+1],
-                            LINEAR_REASON_STACK2[j-1]);
-                        push_clause(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
-                    }
-                    push_clause(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
+                for(j=1; j<LINEAR_REASON_STACK2_fill_pointer-1; j++) {
+                create_complementary_binclause(LINEAR_REASON_STACK2[j],
+                        LINEAR_REASON_STACK2[j+1],
+                        LINEAR_REASON_STACK2[j-1]);
+                push(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
                 }
-                push_clause(clause, CLAUSES_TO_REMOVE);
-                for(j=1; j<LINEAR_REASON_STACK1_fill_pointer-1; j++) {
-                    create_complementary_binclause(LINEAR_REASON_STACK1[j],
+                push(LINEAR_REASON_STACK2[j], CLAUSES_TO_REMOVE);
+            }
+            push(clause, CLAUSES_TO_REMOVE);
+            for(j=1; j<LINEAR_REASON_STACK1_fill_pointer-1; j++) {
+                create_complementary_binclause(LINEAR_REASON_STACK1[j],
                         LINEAR_REASON_STACK1[j+1],
                         LINEAR_REASON_STACK1[j-1]);
-                    push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
-                }
-                push_clause(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+                push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
             }
-            return SAT_Clauses::TRUE;
+            push(LINEAR_REASON_STACK1[j], CLAUSES_TO_REMOVE);
+            }
+            return TRUE;
         }
     }
 
@@ -520,13 +504,13 @@ namespace ibex {
         int i, clause;
         for(i=0; i<LINEAR_REASON_STACK1_fill_pointer; i++) {
             clause=LINEAR_REASON_STACK1[i];
-            clause_state[clause]=SAT_Clauses::PASSIVE;
-            push_clause(clause, CLAUSE_STACK);
+            clause_state[clause] = PASSIVE;
+            push(clause, CLAUSE_STACK);
         }
         for(i=1; i<LINEAR_REASON_STACK2_fill_pointer; i++) {
             clause=LINEAR_REASON_STACK2[i];
-            clause_state[clause]=SAT_Clauses::PASSIVE;
-            push_clause(clause, CLAUSE_STACK);
+            clause_state[clause] = PASSIVE;
+            push(clause, CLAUSE_STACK);
         }
     }      
 
@@ -537,43 +521,43 @@ namespace ibex {
             unitclause_position < UNITCLAUSE_STACK_fill_pointer;
             unitclause_position++) {
             unitclause = UNITCLAUSE_STACK[ unitclause_position ];
-            if ((clause_state[unitclause] == SAT_Clauses::ACTIVE)  && (clause_length[unitclause]>0)){
-                vars_signs = var_sign[unitclause];
-                for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-                    if ( var == var_to_check && var_state[var] == SAT_Clauses::ACTIVE ) {
-                        return SAT_Clauses::TRUE;
-                    }
+            if ((clause_state[unitclause] == ACTIVE)  && (clause_length[unitclause]>0)) {
+            vars_signs = var_sign[unitclause];
+            for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+                if ( var == var_to_check && var_state[var] == ACTIVE ) {
+                return TRUE;
                 }
             }
+            }
         }
-        return SAT_Clauses::FALSE;
+        return FALSE;
     }
 
     int SAT_Solver::assign_and_unitclause_process( int var, int value, int starting_point ) {
         int clause;
         var_current_value[var] = value;
-        var_rest_value[var] = SAT_Clauses::NONE;
-        var_state[var] = SAT_Clauses::PASSIVE;
-        push_clause(var, VARIABLE_STACK);
-        if ((clause=my_reduce_clauses_for_fl(var))==SAT_Clauses::NO_CONFLICT) {
+        var_rest_value[var] = NONE;
+        var_state[var] = PASSIVE;
+        push(var, VARIABLE_STACK);
+        if ((clause=my_reduce_clauses_for_fl(var)) == NO_CONFLICT) {
             remove_clauses(var);
             return my_unitclause_process( starting_point );
-        }else {
+        } else {
             return clause;
         }
     }
 
     int SAT_Solver::store_reason_clauses( int clause, int starting ) {
         int *vars_signs, var, i;
-        push_clause(clause, REASON_STACK);
+        push(clause, REASON_STACK);
         for(i=starting; i<REASON_STACK_fill_pointer; i++) {
             clause=REASON_STACK[i];
             vars_signs = var_sign[clause];
-            for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-                if (reason[var]!=SAT_Clauses::NO_REASON) {
-                    push_clause(reason[var], REASON_STACK);
-                    reason[var]=SAT_Clauses::NO_REASON;
-                }
+            for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+            if (reason[var] != NO_REASON) {
+                push(reason[var], REASON_STACK);
+                reason[var] = NO_REASON;
+            }
             }
         }
         return i;
@@ -582,11 +566,11 @@ namespace ibex {
     void SAT_Solver::remove_reason_clauses() {
         int i, clause;
         for(i=0; i<REASON_STACK_fill_pointer; i++) {
-            clause=REASON_STACK[i];
-            clause_state[clause]=SAT_Clauses::PASSIVE;
-            push_clause(clause, CLAUSE_STACK);
+            clause = REASON_STACK[i];
+            clause_state[clause] = PASSIVE;
+            push(clause, CLAUSE_STACK);
         }
-        REASON_STACK_fill_pointer=0;
+        REASON_STACK_fill_pointer = 0;
     }
 
     int SAT_Solver::failed_literal( int conflict ) {
@@ -602,13 +586,13 @@ namespace ibex {
         my_saved_clause_stack_fill_pointer= CLAUSE_STACK_fill_pointer;
 
         for( var=0; var < NB_VAR && la+conflict+NB_EMPTY<UB; var++ ) {
-            if ( var_state[ var ] == SAT_Clauses::ACTIVE &&
+            if ( var_state[ var ] == ACTIVE &&
                 !there_is_unit_clause( var )) {
             simple_get_pos_clause_nb(var); simple_get_neg_clause_nb(var);
             if (nb_neg_clause_of_length2[ var ] > 1 &&  nb_pos_clause_of_length2[ var ] > 1 ) {
-            //do {
-                if ((clause=assign_and_unitclause_process(var, SAT_Clauses::FALSE, saved_unitclause_stack_fill_pointer))!=SAT_Clauses::NO_CONFLICT) {
-            //  printf("One conflict found\n");
+                //do {
+                if ((clause=assign_and_unitclause_process(var, FALSE, saved_unitclause_stack_fill_pointer)) != NO_CONFLICT) {
+                //  printf("One conflict found\n");
                 saved_reason_stack_fill_pointer = store_reason_clauses( clause, 0 );
                 reset_context(my_saved_clause_stack_fill_pointer,
                                 saved_reducedclause_stack_fill_pointer,
@@ -617,7 +601,7 @@ namespace ibex {
                 //remove_reason_clauses();
                 //saved_reason_stack_fill_pointer = 0;
                 my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
-                if ((clause=assign_and_unitclause_process(var, SAT_Clauses::TRUE, saved_unitclause_stack_fill_pointer))>=0) {
+                if ((clause=assign_and_unitclause_process(var, TRUE, saved_unitclause_stack_fill_pointer))>=0) {
                     la++;
                     store_reason_clauses( clause, saved_reason_stack_fill_pointer );
                     reset_context(my_saved_clause_stack_fill_pointer,
@@ -640,7 +624,7 @@ namespace ibex {
                                 saved_variable_stack_fill_pointer);
                 }
                 //!!There could be more conflicts than just one
-                //} while( clause != SAT_Clauses::NO_CONFLICT );
+                //} while( clause != NO_CONFLICT );
             }
             }
         }
@@ -661,45 +645,45 @@ namespace ibex {
         // if (NB_BACK==160)
         //  printf("sqhvdzhj");
 
-        CLAUSES_TO_REMOVE_fill_pointer=0;
-        saved_clause_stack_fill_pointer= CLAUSE_STACK_fill_pointer;
+        CLAUSES_TO_REMOVE_fill_pointer = 0;
+        saved_clause_stack_fill_pointer = CLAUSE_STACK_fill_pointer;
         saved_reducedclause_stack_fill_pointer = REDUCEDCLAUSE_STACK_fill_pointer;
         saved_unitclause_stack_fill_pointer = UNITCLAUSE_STACK_fill_pointer;
-        saved_variable_stack_fill_pointer=VARIABLE_STACK_fill_pointer;
-        my_saved_clause_stack_fill_pointer= CLAUSE_STACK_fill_pointer;
-        while ((clause=my_unitclause_process(0))!=SAT_Clauses::NO_CONFLICT) {
+        saved_variable_stack_fill_pointer = VARIABLE_STACK_fill_pointer;
+        my_saved_clause_stack_fill_pointer = CLAUSE_STACK_fill_pointer;
+        while ((clause=my_unitclause_process(0)) != NO_CONFLICT) {
             conflict++;
             if (conflict+NB_EMPTY>=UB) break;
             
-            if (linear_conflict(clause)==SAT_Clauses::TRUE) {
-                conflict--; NB_EMPTY++;
-                reset_context(my_saved_clause_stack_fill_pointer, 
-                        saved_reducedclause_stack_fill_pointer,
-                        saved_unitclause_stack_fill_pointer,
-                        saved_variable_stack_fill_pointer);
-                remove_linear_reasons();
-                my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
-            }else{
-                push_clause(clause, REASON_STACK);
-                for(i=0; i<REASON_STACK_fill_pointer; i++) {
-                    clause=REASON_STACK[i]; vars_signs = var_sign[clause];
-                    for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-                        if (reason[var]!=SAT_Clauses::NO_REASON) {
-                            push_clause(reason[var], REASON_STACK);
-                            reason[var]=SAT_Clauses::NO_REASON;
-                        }
-                    }
+            if (linear_conflict(clause) == TRUE) {
+            conflict--; NB_EMPTY++;
+            reset_context(my_saved_clause_stack_fill_pointer, 
+                    saved_reducedclause_stack_fill_pointer,
+                    saved_unitclause_stack_fill_pointer,
+                    saved_variable_stack_fill_pointer);
+            remove_linear_reasons();
+            my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
+            } else {
+            push(clause, REASON_STACK);
+            for(i=0; i<REASON_STACK_fill_pointer; i++) {
+                clause=REASON_STACK[i]; vars_signs = var_sign[clause];
+                for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+                if (reason[var] != NO_REASON) {
+                    push(reason[var], REASON_STACK);
+                    reason[var] = NO_REASON;
                 }
-                reset_context(my_saved_clause_stack_fill_pointer, 
-                        saved_reducedclause_stack_fill_pointer,
-                        saved_unitclause_stack_fill_pointer,
-                        saved_variable_stack_fill_pointer);
-                for(i=0; i<REASON_STACK_fill_pointer; i++) {
-                    clause=REASON_STACK[i];
-                    clause_state[clause]=SAT_Clauses::PASSIVE; push_clause(clause, CLAUSE_STACK);
                 }
-                REASON_STACK_fill_pointer=0;
-                my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
+            }
+            reset_context(my_saved_clause_stack_fill_pointer, 
+                    saved_reducedclause_stack_fill_pointer,
+                    saved_unitclause_stack_fill_pointer,
+                    saved_variable_stack_fill_pointer);
+            for(i=0; i<REASON_STACK_fill_pointer; i++) {
+                clause=REASON_STACK[i];
+                clause_state[clause] = PASSIVE; push(clause, CLAUSE_STACK);
+            }
+            REASON_STACK_fill_pointer=0;
+            my_saved_clause_stack_fill_pointer=CLAUSE_STACK_fill_pointer;
             }
         }
         if ( conflict+NB_EMPTY < UB ) {
@@ -715,10 +699,11 @@ namespace ibex {
                 saved_unitclause_stack_fill_pointer,
                 saved_variable_stack_fill_pointer);
         if (conflict+NB_EMPTY>=UB) 
-            return SAT_Clauses::NONE;
+            return NONE;
         for (i=0; i<CLAUSES_TO_REMOVE_fill_pointer; i++) {
             clause=CLAUSES_TO_REMOVE[i];
-            push_clause(clause, CLAUSE_STACK); clause_state[clause]=SAT_Clauses::PASSIVE;
+            push(clause, CLAUSE_STACK);
+            clause_state[clause] = PASSIVE;
         }
         CLAUSES_TO_REMOVE_fill_pointer=0;
         return conflict;
@@ -726,166 +711,162 @@ namespace ibex {
 
     int SAT_Solver::satisfy_unitclause(int unitclause) {
         int *vars_signs, var, clause;
-
         vars_signs = var_sign[unitclause];
-        for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-            if (var_state[var] == SAT_Clauses::ACTIVE ){
-                var_current_value[var] = *(vars_signs+1);
-                var_rest_value[var] = SAT_Clauses::NONE;
-                reason[var]=unitclause;
-                var_state[var] = SAT_Clauses::PASSIVE;
-                push_clause(var, VARIABLE_STACK);
-                if ((clause=my_reduce_clauses(var))==SAT_Clauses::NO_CONFLICT) {
-                    remove_clauses(var);
-                    return SAT_Clauses::NO_CONFLICT;
-                }else 
-                    return clause;
+        for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+            if (var_state[var] == ACTIVE ){
+            var_current_value[var] = *(vars_signs+1);
+            var_rest_value[var] = NONE;
+            reason[var]=unitclause;
+            var_state[var] = PASSIVE;
+            push(var, VARIABLE_STACK);
+            if ((clause=my_reduce_clauses(var)) == NO_CONFLICT) {
+                remove_clauses(var);
+                return NO_CONFLICT;
+            } else return clause;
             }
         }
-        return SAT_Clauses::NO_CONFLICT;
+        return NO_CONFLICT;
     }
     
     int SAT_Solver::my_unitclause_process(int starting_point) {
         int unitclause, var, *vars_signs, unitclause_position,clause,
             my_unitclause_position, my_unitclause;
 
-        for (unitclause_position = starting_point;unitclause_position < UNITCLAUSE_STACK_fill_pointer;unitclause_position++) {
+        for (unitclause_position = starting_point; 
+            unitclause_position < UNITCLAUSE_STACK_fill_pointer;
+            unitclause_position++) {
             unitclause = UNITCLAUSE_STACK[unitclause_position];
-            if ((clause_state[unitclause] == SAT_Clauses::ACTIVE)  && (clause_length[unitclause]>0)) {
-                MY_UNITCLAUSE_STACK_fill_pointer=0;
-                if ((clause=satisfy_unitclause(unitclause)) != SAT_Clauses::NO_CONFLICT){
+            if ((clause_state[unitclause] == ACTIVE)  && (clause_length[unitclause]>0)) {
+            MY_UNITCLAUSE_STACK_fill_pointer=0;
+            if ((clause=satisfy_unitclause(unitclause)) != NO_CONFLICT)
+                return clause;
+            else {
+                for (my_unitclause_position = 0; 
+                    my_unitclause_position < MY_UNITCLAUSE_STACK_fill_pointer;
+                    my_unitclause_position++) {
+                my_unitclause = MY_UNITCLAUSE_STACK[my_unitclause_position];
+                if ((clause_state[my_unitclause] == ACTIVE) && (clause_length[my_unitclause]>0)) {
+                    if ((clause=satisfy_unitclause(my_unitclause)) != NO_CONFLICT)
                     return clause;
-                }else{
-                    for (my_unitclause_position = 0; 
-                        my_unitclause_position < MY_UNITCLAUSE_STACK_fill_pointer;
-                        my_unitclause_position++) {
-                    my_unitclause = MY_UNITCLAUSE_STACK[my_unitclause_position];
-                    if ((clause_state[my_unitclause] == SAT_Clauses::ACTIVE)  
-                        && (clause_length[my_unitclause]>0)) {
-                        if ((clause=satisfy_unitclause(my_unitclause)) != SAT_Clauses::NO_CONFLICT)
-                        return clause;
-                    }     
-                    }
+                }     
                 }
             }
+            }
         }
-        return SAT_Clauses::NO_CONFLICT;
+        return NO_CONFLICT;
     }
 
     int SAT_Solver::get_complement(int lit) {
-        if (positive(lit))
-            return lit+NB_VAR;
-        else
-            return lit-NB_VAR;
+        if (positive(lit)) return lit + NB_VAR;
+        else return lit - NB_VAR;
     }
 
     void SAT_Solver::create_unitclause(int lit, int subsumedclause, int *clauses) {
-        int clause, *vars_signs, flag=SAT_Clauses::FALSE;
+        int clause, *vars_signs, flag = FALSE;
 
-        vars_signs=NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
-        if (lit<NB_VAR) {
-            vars_signs[0]=lit;
-            vars_signs[1]=SAT_Clauses::POSITIVE;
-        }else{
-            vars_signs[0]=lit-NB_VAR;
-            vars_signs[1]=SAT_Clauses::NEGATIVE;
+        vars_signs = NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
+        if (lit < NB_VAR) {
+            vars_signs[0] = lit;
+            vars_signs[1] = POSITIVE;
+        } else {
+            vars_signs[0] = lit-NB_VAR;
+            vars_signs[1] = NEGATIVE;
         }
-        vars_signs[2]=SAT_Clauses::NONE;
+        vars_signs[2] = NONE;
         var_sign[NB_CLAUSE]=vars_signs;
-        clause_state[NB_CLAUSE]=SAT_Clauses::ACTIVE;
+        clause_state[NB_CLAUSE] = ACTIVE;
         clause_length[NB_CLAUSE]=1;
-        push_clause(NB_CLAUSE, UNITCLAUSE_STACK);
+        push(NB_CLAUSE, UNITCLAUSE_STACK);
 
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if (clause==subsumedclause) {
-                *clauses=NB_CLAUSE;
-                SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer]=clauses;
-                push_clause(subsumedclause, SAVED_CLAUSES);
-                flag=SAT_Clauses::TRUE;
-                break;
+        for(clause=*clauses; clause!=NONE; clause=*(++clauses)) {
+            if (clause == subsumedclause) {
+            *clauses = NB_CLAUSE;
+            SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer]=clauses;
+            push(subsumedclause, SAVED_CLAUSES);
+            flag = TRUE;
+            break;
             }
         }
-        if (flag==SAT_Clauses::FALSE)
+        if (flag == FALSE)
             printf("erreur ");
         NB_CLAUSE++;
     }
 
     int SAT_Solver::verify_resolvent(int lit, int clause1, int clause2) {
-        int *vars_signs1, *vars_signs2, lit1, lit2, temp, flag=SAT_Clauses::FALSE, var, nb=0;
+        int *vars_signs1, *vars_signs2, lit1, lit2, temp, flag=FALSE, var, nb=0;
 
-        if ((clause_state[clause1]!=SAT_Clauses::ACTIVE) || (clause_state[clause2]!=SAT_Clauses::ACTIVE))
+        if ((clause_state[clause1] != ACTIVE) || (clause_state[clause2] != ACTIVE))
             printf("erreur ");
-        if ((clause_length[clause1]!=2) || (clause_length[clause2]!=2))
+        if ((clause_length[clause1] != 2) || (clause_length[clause2] != 2))
             printf("erreur ");
-        vars_signs1=var_sign[clause1];
-        vars_signs2=var_sign[clause2];
-        for(var=*vars_signs1; var!=SAT_Clauses::NONE; var=*(vars_signs1+=2)) {
-            if (var_state[var] == SAT_Clauses::ACTIVE ) {
-                nb++;
-                if (*(vars_signs1+1)==SAT_Clauses::POSITIVE) 
-                    temp=var;
-                else
-                    temp=var+NB_VAR;
+        vars_signs1 = var_sign[clause1];
+        vars_signs2 = var_sign[clause2];
+        for(var = *vars_signs1; var != NONE; var = *(vars_signs1+=2)) {
+            if (var_state[var] == ACTIVE ) {
+            nb++;
+            if (*(vars_signs1+1) == POSITIVE) 
+                temp=var;
+            else temp=var+NB_VAR;
                 if (temp==lit)
-                    flag=SAT_Clauses::TRUE;
-                else
-                    lit1=temp;
+                flag = TRUE;
+                else {
+                lit1 = temp;
+                }
             }
         }
-        if ((nb!=2) || (flag==SAT_Clauses::FALSE))
-            printf("error ");
-        nb=0; flag=SAT_Clauses::FALSE;
-        for(var=*vars_signs2; var!=SAT_Clauses::NONE; var=*(vars_signs2+=2)) {
-            if (var_state[var] == SAT_Clauses::ACTIVE ) {
-                nb++;
-                if (*(vars_signs2+1)==SAT_Clauses::POSITIVE) 
-                    temp=var;
-                else
-                    temp=var+NB_VAR;
-                if (temp==lit)
-                    flag=SAT_Clauses::TRUE;
-                else
+        if ((nb!=2) || (flag == FALSE))
+            printf("erreur ");
+        nb=0; flag = FALSE;
+        for(var=*vars_signs2; var != NONE; var=*(vars_signs2+=2)) {
+            if (var_state[var] == ACTIVE ) {
+            nb++;
+            if (*(vars_signs2+1) == POSITIVE) 
+                temp=var;
+            else temp=var+NB_VAR;
+                if (temp==lit) flag = TRUE;
+                else {
                     lit2=temp;
+                }
             }
         }
-        if ((nb!=2) || (flag==SAT_Clauses::FALSE))
-            printf("error ");
-        if (!SAT_Clauses::complement(lit1, lit2, NB_VAR))
-            printf("error ");
+        if ((nb!=2) || (flag == FALSE))
+            printf("erreur ");
+        if (!complement(lit1, lit2))
+            printf("erreur ");
     }
 
     int SAT_Solver::searching_two_clauses_to_fix_neglit(int clause, int lit) {
         int lit1, clause1, var1, opp_lit1;
-        if (lit_to_fix[clause]==SAT_Clauses::NONE) {
-            lit_to_fix[clause]=lit;
-        }else{
+        if (lit_to_fix[clause] == NONE) {
+            lit_to_fix[clause] = lit;
+        } else {
             lit1=lit_to_fix[clause];
             var1=get_var_from_lit(lit1);
-            //  if (var_state[var1]!=SAT_Clauses::ACTIVE)
+            //  if (var_state[var1]!=ACTIVE)
             //    printf("erreur2  ");
             opp_lit1=get_complement(lit1);
             clause1=fixing_clause[opp_lit1];
-            if ((clause1!= SAT_Clauses::NONE) && (clause_state[clause1]==SAT_Clauses::ACTIVE)) {
-                fixing_clause[opp_lit1]=SAT_Clauses::NONE;
-                lit_involved_in_clause[opp_lit1]=SAT_Clauses::NONE;
-                // verify_resolvent(lit, clause1, clause);
-                push_clause(clause1, CLAUSE_STACK);
-                clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push_clause(clause, CLAUSE_STACK);
-                clause_state[clause]=SAT_Clauses::PASSIVE;
-                create_unitclause(lit, clause1, neg_in[lit-NB_VAR]);
-                var1=get_var_from_lit(lit1);
-                nb_neg_clause_of_length2[var1]--;
-                nb_pos_clause_of_length2[var1]--;
-                return SAT_Clauses::TRUE;
-            }else {
-                fixing_clause[lit1]=clause;
-                push_clause(lit1, CANDIDATE_LITERALS);
-                lit_involved_in_clause[lit1]=clause;
-                push_clause(lit1, INVOLVED_LIT_STACK);
+            if ((clause1 != NONE) && (clause_state[clause1]==ACTIVE)) {
+            fixing_clause[opp_lit1] = NONE;
+            lit_involved_in_clause[opp_lit1] = NONE;
+            // verify_resolvent(lit, clause1, clause);
+            push(clause1, CLAUSE_STACK);
+            clause_state[clause1] = PASSIVE;
+            push(clause, CLAUSE_STACK);
+            clause_state[clause] = PASSIVE;
+            create_unitclause(lit, clause1, neg_in[lit-NB_VAR]);
+            var1=get_var_from_lit(lit1);
+            nb_neg_clause_of_length2[var1]--;
+            nb_pos_clause_of_length2[var1]--;
+            return TRUE;
+            } else {
+            fixing_clause[lit1]=clause;
+            push(lit1, CANDIDATE_LITERALS);
+            lit_involved_in_clause[lit1]=clause;
+            push(lit1, INVOLVED_LIT_STACK);
             }
         }
-        return SAT_Clauses::FALSE;
+        return FALSE;
     }
 
     int SAT_Solver::simple_get_neg_clause_nb(int var) {
@@ -893,11 +874,11 @@ namespace ibex {
         int *clauses, clause, i;
         clauses = neg_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
 
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses))
-            if ((clause_state[clause] == SAT_Clauses::ACTIVE) && (clause_length[clause]==2))
+        for(clause=*clauses; clause != NONE; clause=*(++clauses))
+            if ((clause_state[clause] == ACTIVE) && (clause_length[clause]==2))
                 neg_clause2_nb++;
-            nb_neg_clause_of_length2[var] = neg_clause2_nb;
-            return neg_clause2_nb;
+        nb_neg_clause_of_length2[var] = neg_clause2_nb;
+        return neg_clause2_nb;
     }
 
     int SAT_Solver::simple_get_pos_clause_nb(int var) {
@@ -905,11 +886,11 @@ namespace ibex {
         int *clauses, clause, i;
         clauses = pos_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
 
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses))
-            if ((clause_state[clause] == SAT_Clauses::ACTIVE) && (clause_length[clause]==2))
-                pos_clause2_nb++;
-            nb_pos_clause_of_length2[var] = pos_clause2_nb;
-            return pos_clause2_nb;
+        for(clause=*clauses; clause != NONE; clause=*(++clauses))
+            if ((clause_state[clause] == ACTIVE) && (clause_length[clause]==2))
+            pos_clause2_nb++;
+        nb_pos_clause_of_length2[var] = pos_clause2_nb;
+        return pos_clause2_nb;
     }
 
     int SAT_Solver::get_neg_clause_nb(int var) {
@@ -917,26 +898,25 @@ namespace ibex {
         int *clauses, clause, i;
         clauses = neg_in[var]; MY_UNITCLAUSE_STACK_fill_pointer=0;
 
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if ((clause_state[clause] == SAT_Clauses::ACTIVE) && (clause_length[clause]>0)) {
-                switch(clause_length[clause]) {
-                    case 1:
-                        neg_clause1_nb++; 
-                        push_clause(clause, MY_UNITCLAUSE_STACK); break;
-                    case 2:
-                        neg_clause2_nb++; 
-                        if (searching_two_clauses_to_fix_neglit(clause, var+NB_VAR)==SAT_Clauses::TRUE) {
-                            neg_clause2_nb-=2; neg_clause1_nb++; 
-                        }
-                        break;
-                    default:
-                        neg_clause3_nb++;
-                        break;
-                }
+        for(clause=*clauses; clause != NONE; clause=*(++clauses)) {
+            if ((clause_state[clause] == ACTIVE) && (clause_length[clause]>0)) {
+            switch(clause_length[clause]) {
+                case 1:
+                    neg_clause1_nb++; 
+                    push(clause, MY_UNITCLAUSE_STACK);
+                    break;
+                case 2:
+                    neg_clause2_nb++; 
+                    if (searching_two_clauses_to_fix_neglit(clause, var+NB_VAR) == TRUE) {
+                        neg_clause2_nb-=2; neg_clause1_nb++; 
+                    }
+                    break;
+                default: neg_clause3_nb++; break;
+            }
             }
         }
         for(i=0; i<CANDIDATE_LITERALS_fill_pointer; i++) 
-            fixing_clause[CANDIDATE_LITERALS[i]]=SAT_Clauses::NONE;
+            fixing_clause[CANDIDATE_LITERALS[i]] = NONE;
         CANDIDATE_LITERALS_fill_pointer=0;
         nb_neg_clause_of_length1[var] = neg_clause1_nb;
         nb_neg_clause_of_length2[var] = neg_clause2_nb;
@@ -944,100 +924,96 @@ namespace ibex {
         return neg_clause1_nb+neg_clause2_nb + neg_clause3_nb;
     }
 
-    #define OTHER_LIT_FIXED 1
-    #define THIS_LIT_FIXED 2
+
+
 
     int SAT_Solver::searching_two_clauses_to_fix_poslit(int clause, int lit) {
         int lit1, clause1, var1, opp_lit1;
-        if (lit_to_fix[clause]==SAT_Clauses::NONE) {
-            lit_to_fix[clause]=lit;
-        }else{
+        if (lit_to_fix[clause] == NONE) {
+            lit_to_fix[clause] = lit;
+        } else {
             lit1=lit_to_fix[clause];
             var1=get_var_from_lit(lit1);
-            //   if (var_state[var1]!=SAT_Clauses::ACTIVE)
+            //   if (var_state[var1]!=ACTIVE)
             //   printf("erreur2  ");
             clause1=lit_involved_in_clause[lit1];
-            if ((clause1!=SAT_Clauses::NONE) && (clause_state[clause1]==SAT_Clauses::ACTIVE)) {
-                //  verify_resolvent(lit1, clause1, clause);
-                push_clause(clause1, CLAUSE_STACK);
-                clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push_clause(clause, CLAUSE_STACK);
-                clause_state[clause]=SAT_Clauses::PASSIVE;
-                if (lit1<NB_VAR) {
-                    create_unitclause(lit1, clause1, pos_in[lit1]);
-                    nb_pos_clause_of_length2[lit1]-=2;
-                    nb_pos_clause_of_length1[lit1]++;
-                }else{
-                    create_unitclause(lit1, clause1, neg_in[lit1-NB_VAR]);
-                    nb_neg_clause_of_length2[lit1-NB_VAR]-=2;
-                    nb_neg_clause_of_length1[lit1-NB_VAR]++;
-                }
-                return OTHER_LIT_FIXED;
-            }else{
-                opp_lit1=get_complement(lit1);
-                clause1=fixing_clause[opp_lit1];
-                if ((clause1!= SAT_Clauses::NONE) && (clause_state[clause1]==SAT_Clauses::ACTIVE)) {
-                fixing_clause[opp_lit1]=SAT_Clauses::NONE;
+            if ((clause1 != NONE) && (clause_state[clause1] == ACTIVE)) {
+            //  verify_resolvent(lit1, clause1, clause);
+            push(clause1, CLAUSE_STACK);
+            clause_state[clause1] = PASSIVE;
+            push(clause, CLAUSE_STACK);
+            clause_state[clause] = PASSIVE;
+            if (lit1<NB_VAR) {
+                create_unitclause(lit1, clause1, pos_in[lit1]);
+                nb_pos_clause_of_length2[lit1]-=2;
+                nb_pos_clause_of_length1[lit1]++;
+            } else {
+                create_unitclause(lit1, clause1, neg_in[lit1-NB_VAR]);
+                nb_neg_clause_of_length2[lit1-NB_VAR]-=2;
+                nb_neg_clause_of_length1[lit1-NB_VAR]++;
+            }
+            return OTHER_LIT_FIXED;
+            } else {
+            opp_lit1=get_complement(lit1);
+            clause1=fixing_clause[opp_lit1];
+            if ((clause1 != NONE) && (clause_state[clause1] == ACTIVE)) {
+            fixing_clause[opp_lit1] = NONE;
                 //	verify_resolvent(lit, clause1, clause);
-                push_clause(clause1, CLAUSE_STACK);
-                clause_state[clause1]=SAT_Clauses::PASSIVE;
-                push_clause(clause, CLAUSE_STACK);
-                clause_state[clause]=SAT_Clauses::PASSIVE;
+                push(clause1, CLAUSE_STACK);
+                clause_state[clause1] = PASSIVE;
+                push(clause, CLAUSE_STACK);
+                clause_state[clause] = PASSIVE;
                 create_unitclause(lit, clause1, pos_in[lit]);
                 var1=get_var_from_lit(lit1);
                 nb_neg_clause_of_length2[var1]--;
                 nb_pos_clause_of_length2[var1]--;
                 return THIS_LIT_FIXED;
-                }
-                else {
+            } else {
                 fixing_clause[lit1]=clause;
-                push_clause(lit1, CANDIDATE_LITERALS);
-                }
+                push(lit1, CANDIDATE_LITERALS);
+            }
             }
         }
-        return SAT_Clauses::FALSE;
+        return FALSE;
     }
 
     int SAT_Solver::get_pos_clause_nb(int var) {
         my_type pos_clause1_nb=0, pos_clause3_nb = 0, pos_clause2_nb = 0;
         int *clauses, clause, clause1, i;
         clauses = pos_in[var];
-        for(clause=*clauses; clause!=SAT_Clauses::NONE; clause=*(++clauses)) {
-            if ((clause_state[clause] == SAT_Clauses::ACTIVE) && (clause_length[clause]>0)) {
-                switch(clause_length[clause]) {
-                    case 1:
-                        if (MY_UNITCLAUSE_STACK_fill_pointer>0) {
-                            clause1=pop_clause(MY_UNITCLAUSE_STACK);
-                            clause_state[clause]=SAT_Clauses::PASSIVE;
-                            push_clause(clause, CLAUSE_STACK);
-                            clause_state[clause1]=SAT_Clauses::PASSIVE;
-                            push_clause(clause1, CLAUSE_STACK);
-                            nb_neg_clause_of_length1[var]--;
-                            NB_EMPTY++;
-                        }else pos_clause1_nb++; 
-                        break;
-                    case 2:
-                        pos_clause2_nb++; 
-                        switch(searching_two_clauses_to_fix_poslit(clause, var)) {
-                            case OTHER_LIT_FIXED: nb_neg_clause_of_length2[var]--;
-                            pos_clause2_nb--;
-                            break;
-                            case THIS_LIT_FIXED: pos_clause2_nb-=2;
-                            pos_clause1_nb++;
-                            break;
-                        }
-                        break;
-                    default:
-                        pos_clause3_nb++;
-                        break;
+        for(clause=*clauses; clause != NONE; clause=*(++clauses)) {
+            if ((clause_state[clause] == ACTIVE) && (clause_length[clause]>0)) {
+            switch(clause_length[clause]) {
+                case 1:
+                if (MY_UNITCLAUSE_STACK_fill_pointer>0) {
+                    clause1=pop(MY_UNITCLAUSE_STACK);
+                    clause_state[clause] = PASSIVE;
+                    push(clause, CLAUSE_STACK);
+                    clause_state[clause1] = PASSIVE;
+                    push(clause1, CLAUSE_STACK);
+                    nb_neg_clause_of_length1[var]--;
+                    NB_EMPTY++;
+                } else pos_clause1_nb++; 
+                break;
+                case 2: pos_clause2_nb++; 
+                switch(searching_two_clauses_to_fix_poslit(clause, var)) {
+                    case OTHER_LIT_FIXED: nb_neg_clause_of_length2[var]--;
+                    pos_clause2_nb--;
+                    break;
+                    case THIS_LIT_FIXED: pos_clause2_nb-=2;
+                    pos_clause1_nb++;
+                    break;
                 }
+                break;
+                default: pos_clause3_nb++; break;
+            }
             }
         }
         for(i=0; i<CANDIDATE_LITERALS_fill_pointer; i++) 
-            fixing_clause[CANDIDATE_LITERALS[i]]=SAT_Clauses::NONE;
+            fixing_clause[CANDIDATE_LITERALS[i]] = NONE;
         CANDIDATE_LITERALS_fill_pointer=0;
         for(i=0; i<INVOLVED_LIT_STACK_fill_pointer; i++) 
-            lit_involved_in_clause[INVOLVED_LIT_STACK[i]]=SAT_Clauses::NONE;
+            lit_involved_in_clause[INVOLVED_LIT_STACK[i]] = NONE;
         INVOLVED_LIT_STACK_fill_pointer=0;
         nb_pos_clause_of_length1[var] = pos_clause1_nb;
         nb_pos_clause_of_length2[var] = pos_clause2_nb;
@@ -1048,71 +1024,75 @@ namespace ibex {
     int SAT_Solver::satisfy_literal(int lit) {
         int var;
         if (positive(lit)) {
-            if (var_state[lit]==SAT_Clauses::ACTIVE) {
-                var_current_value[lit] = SAT_Clauses::TRUE;
-                if (reduce_clauses(lit)==SAT_Clauses::FALSE)
-                    return SAT_Clauses::NONE;
-                var_rest_value[lit]=SAT_Clauses::NONE;
-                var_state[lit] = SAT_Clauses::PASSIVE;
-                push_clause(lit, VARIABLE_STACK);
-                remove_clauses(lit);
-            }else if (var_current_value[lit]==SAT_Clauses::FALSE) return SAT_Clauses::NONE;
-        }else {
+            if (var_state[lit] == ACTIVE) {
+            var_current_value[lit] = TRUE;
+            if (reduce_clauses(lit) == FALSE) return NONE;
+            var_rest_value[lit] = NONE;
+            var_state[lit] = PASSIVE;
+            push(lit, VARIABLE_STACK);
+            remove_clauses(lit);
+            }
+            else
+            if (var_current_value[lit] == FALSE) return NONE;
+        } else {
             var = get_var_from_lit(lit);
-            if (var_state[var]==SAT_Clauses::ACTIVE) {
-                var_current_value[var] = SAT_Clauses::FALSE;
-                if (reduce_clauses(var)==SAT_Clauses::FALSE) return SAT_Clauses::NONE;
-                var_rest_value[var]=SAT_Clauses::NONE;
-                var_state[var] = SAT_Clauses::PASSIVE;
-                push_clause(var, VARIABLE_STACK);
-                remove_clauses(var);
-            }else if (var_current_value[var]==SAT_Clauses::TRUE) return SAT_Clauses::NONE;
+            if (var_state[var] == ACTIVE) {
+            var_current_value[var] = FALSE;
+            if (reduce_clauses(var) == FALSE) return NONE;
+            var_rest_value[var] = NONE;
+            var_state[var] = PASSIVE;
+            push(var, VARIABLE_STACK);
+            remove_clauses(var);
+            }
+            else
+            if (var_current_value[var] == TRUE) return NONE;
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     int SAT_Solver::assign_value(int var, int current_value, int rest_value) {
-        if (var_state[var]==SAT_Clauses::PASSIVE)
+        if (var_state[var] == PASSIVE)
             printf("erreur1...\n");
-        var_state[var] = SAT_Clauses::PASSIVE;
-        push_clause(var, VARIABLE_STACK);
+        var_state[var] = PASSIVE;
+        push(var, VARIABLE_STACK);
         var_current_value[var] = current_value;
         var_rest_value[var] = rest_value;
-        if (reduce_clauses(var)==SAT_Clauses::NONE) 
-            return SAT_Clauses::NONE;
+        if (reduce_clauses(var) == NONE) 
+            return NONE;
         remove_clauses(var);
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     int SAT_Solver::unitclause_process() {
         int unitclause, var, *vars_signs, unitclause_position,clause;
         
-        for (unitclause_position = 0; unitclause_position < UNITCLAUSE_STACK_fill_pointer; unitclause_position++) {
+        for (unitclause_position = 0; 
+            unitclause_position < UNITCLAUSE_STACK_fill_pointer;
+            unitclause_position++) {
             unitclause = UNITCLAUSE_STACK[unitclause_position];
-            if ((clause_state[unitclause] == SAT_Clauses::ACTIVE)  && (clause_length[unitclause]>0)) {
-                vars_signs = var_sign[unitclause];
-                for(var=*vars_signs; var!=SAT_Clauses::NONE; var=*(vars_signs+=2)) {
-                    if (var_state[var] == SAT_Clauses::ACTIVE ){
-                        var_current_value[var] = *(vars_signs+1);
-                        var_rest_value[var] = SAT_Clauses::NONE;
-                        var_state[var] = SAT_Clauses::PASSIVE;
-                        push_clause(var, VARIABLE_STACK);
-                        if ((clause=reduce_clauses(var)) !=SAT_Clauses::NONE) {
-                            remove_clauses(var);
-                            break;
-                        }
-                        else {
-                            return SAT_Clauses::NONE;
-                        }
-                    }
+            if ((clause_state[unitclause] == ACTIVE)  && (clause_length[unitclause]>0)) {
+            vars_signs = var_sign[unitclause];
+            for(var=*vars_signs; var != NONE; var=*(vars_signs+=2)) {
+                if (var_state[var] == ACTIVE ){
+                var_current_value[var] = *(vars_signs+1);
+                var_rest_value[var] = NONE;
+                var_state[var] = PASSIVE;
+                push(var, VARIABLE_STACK);
+                if ((clause=reduce_clauses(var)) != NONE) {
+                    remove_clauses(var);
+                    break;
+                } else {
+                    return NONE;
                 }
+                }
+            }
             }     
         }
-        return SAT_Clauses::TRUE;
+        return TRUE;
     }
 
     int SAT_Solver::choose_and_instantiate_variable() {
-        int var, nb = 0, chosen_var = SAT_Clauses::NONE, cont = 0, cont1; 
+        int var, nb=0, chosen_var=NONE,cont=0, cont1; 
         int  i;
         float posi, nega;
         int a,b,c,clause;
@@ -1123,159 +1103,157 @@ namespace ibex {
         // if (NB_BRANCHE==173)
         //   printf("zerza ");
 
-        if (lookahead() == SAT_Clauses::NONE)
-            return SAT_Clauses::NONE;
+        if (lookahead() == NONE)
+            return NONE;
 
         if (UB-NB_EMPTY==1)
-            if (unitclause_process() == SAT_Clauses::NONE)
-                return SAT_Clauses::NONE;
+            if (unitclause_process() == NONE)
+            return NONE;
 
         for (clause=0; clause<NB_CLAUSE; clause++) 
-            lit_to_fix[clause]=SAT_Clauses::NONE;
+            lit_to_fix[clause] = NONE;
 
         for (var = 0; var < NB_VAR; var++) {
-            if (var_state[var] == SAT_Clauses::ACTIVE) {
-                reduce_if_negative[var] = 0;
-                reduce_if_positive[var] = 0;
+            if (var_state[var] == ACTIVE) {
+                reduce_if_negative[var]=0;
+                reduce_if_positive[var]=0;
                 if (get_neg_clause_nb(var) == 0) {
                     NB_MONO++;
-                    var_current_value[var] = SAT_Clauses::TRUE;
-                    var_rest_value[var] = SAT_Clauses::NONE;
-                    var_state[var] = SAT_Clauses::PASSIVE;
-                    push_clause(var, VARIABLE_STACK);
+                    var_current_value[var] = TRUE;
+                    var_rest_value[var] = NONE;
+                    var_state[var] = PASSIVE;
+                    push(var, VARIABLE_STACK);
                     remove_clauses(var);
-                }else if (get_pos_clause_nb(var) == 0) {
+                } else if (get_pos_clause_nb(var) == 0) {
                     NB_MONO++;
-                    var_current_value[var] = SAT_Clauses::FALSE;
-                    var_rest_value[var] = SAT_Clauses::NONE;
-                    var_state[var] = SAT_Clauses::PASSIVE;
-                    push_clause(var, VARIABLE_STACK);
+                    var_current_value[var] = FALSE;
+                    var_rest_value[var] = NONE;
+                    var_state[var] = PASSIVE;
+                    push(var, VARIABLE_STACK);
                     remove_clauses(var);
-                }else if (nb_neg_clause_of_length1[var]+NB_EMPTY >= UB) {
+                } else if (nb_neg_clause_of_length1[var]+NB_EMPTY>=UB) {
                     flag++;
-                    if (assign_value(var, SAT_Clauses::FALSE, SAT_Clauses::NONE) == SAT_Clauses::NONE)
-                        return SAT_Clauses::NONE;
-                }else if (nb_pos_clause_of_length1[var]+NB_EMPTY >= UB) {
+                    if (assign_value(var, FALSE, NONE) == NONE)
+                        return NONE;
+                } else if (nb_pos_clause_of_length1[var]+NB_EMPTY>=UB) {
                     flag++;
-                    if (assign_value(var, SAT_Clauses::TRUE, SAT_Clauses::NONE) == SAT_Clauses::NONE)
-                        return SAT_Clauses::NONE;
-                }else if (nb_neg_clause_of_length1[var] >=
-                        nb_pos_clause_of_length1[var]
-                        + nb_pos_clause_of_length2[var]
-                        + nb_pos_clause_of_length3[var]){
+                    if (assign_value(var, TRUE, NONE) == NONE)
+                        return NONE;
+                } else if (nb_neg_clause_of_length1[var]>=
+                        nb_pos_clause_of_length1[var]+
+                        nb_pos_clause_of_length2[var]+ 
+                        nb_pos_clause_of_length3[var]) {
                     flag++;
-                    if (assign_value(var, SAT_Clauses::FALSE, SAT_Clauses::NONE) == SAT_Clauses::NONE)
-                        return SAT_Clauses::NONE;
-                }else if (nb_pos_clause_of_length1[var] >= nb_neg_clause_of_length1[var]
-                        + nb_neg_clause_of_length2[var]
-                        + nb_neg_clause_of_length3[var]){
+                    if (assign_value(var, FALSE, NONE) == NONE)
+                        return NONE;
+                } else if (nb_pos_clause_of_length1[var]>=
+                        nb_neg_clause_of_length1[var]+
+                        nb_neg_clause_of_length2[var]+ 
+                        nb_neg_clause_of_length3[var]) {
                     flag++;
-                    if (assign_value(var, SAT_Clauses::TRUE, SAT_Clauses::NONE) == SAT_Clauses::NONE)
-                        return SAT_Clauses::NONE;
-                }else{
+                    if (assign_value(var, TRUE, NONE) == NONE)
+                        return NONE;
+                } else {
                     if (nb_neg_clause_of_length1[var]>nb_pos_clause_of_length1[var]) {
                     cont+=nb_pos_clause_of_length1[var];
-                    }else{
+                    } else {
                     cont+=nb_neg_clause_of_length1[var];
                     }
                 }
             }
         }
 
-        if (cont+NB_EMPTY >= UB)
-            return SAT_Clauses::NONE;
+        if (cont+NB_EMPTY>=UB)
+            return NONE;
         for (var = 0; var < NB_VAR; var++) {
-            if (var_state[var] == SAT_Clauses::ACTIVE) {
-                /*   
+            if (var_state[var] == ACTIVE) {
+            /*   
                 if (nb_neg_clause_of_length1[var]>nb_pos_clause_of_length1[var])
-                cont1=cont-nb_pos_clause_of_length1[var];
+            cont1=cont-nb_pos_clause_of_length1[var];
                 else cont1=cont-nb_neg_clause_of_length1[var];
                 if (nb_neg_clause_of_length1[var]+cont1+NB_EMPTY>=UB) {
-                if (assign_value(var, SAT_Clauses::FALSE, SAT_Clauses::NONE)==SAT_Clauses::NONE)
-                return SAT_Clauses::NONE;
+            if (assign_value(var, FALSE, NONE)==NONE)
+                return NONE;
                 }
                 else if (nb_pos_clause_of_length1[var]+cont1+NB_EMPTY>=UB) {
-                if (assign_value(var, SAT_Clauses::TRUE, SAT_Clauses::NONE)==SAT_Clauses::NONE)
-                return SAT_Clauses::NONE;
+            if (assign_value(var, TRUE, NONE)==NONE)
+                return NONE;
                 }
                 else {
                 */
-                reduce_if_positive[var] = nb_neg_clause_of_length1[var]*2+
+            reduce_if_positive[var]=nb_neg_clause_of_length1[var]*2+
                 nb_neg_clause_of_length2[var]*4+ 
                 nb_neg_clause_of_length3[var];
-                reduce_if_negative[var] = nb_pos_clause_of_length1[var]*2+
+            reduce_if_negative[var]=nb_pos_clause_of_length1[var]*2+
                 nb_pos_clause_of_length2[var]*4+ 
                 nb_pos_clause_of_length3[var];
-                poid=reduce_if_positive[var]*reduce_if_negative[var]*64+
+            poid=reduce_if_positive[var]*reduce_if_negative[var]*64+
                 reduce_if_positive[var]+reduce_if_negative[var];
-                if (poid>max_poid) {
-                    chosen_var=var;
-                    max_poid=poid;
-                }
-                //	 }
+            if (poid>max_poid) {
+                chosen_var=var;
+                max_poid=poid;
+            }
+            //	 }
             }
         }
-        if (chosen_var == SAT_Clauses::NONE) return SAT_Clauses::FALSE;
-        // printf("%d \n",NB_BACK);
-        // printf("Chosen_va %d\n",chosen_var);
+        if (chosen_var == NONE) return FALSE;
+        //      printf("%d \n",NB_BACK);
+        //   printf("Chosen_va %d\n",chosen_var);
         saved_clause_stack[chosen_var] = CLAUSE_STACK_fill_pointer;
         saved_reducedclause_stack[chosen_var] = REDUCEDCLAUSE_STACK_fill_pointer;
         saved_unitclause_stack[chosen_var] = UNITCLAUSE_STACK_fill_pointer;
-        saved_nb_empty[chosen_var]=NB_EMPTY;
-        // return assign_value(chosen_var, SAT_Clauses::TRUE, SAT_Clauses::FALSE);
+        saved_nb_empty[chosen_var] = NB_EMPTY;
+        // return assign_value(chosen_var, TRUE, FALSE);
         saved_nb_clause[chosen_var]=NB_CLAUSE;
         saved_saved_clauses[chosen_var]=SAVED_CLAUSES_fill_pointer;
         saved_new_clauses[chosen_var]=NEW_CLAUSES_fill_pointer;
-        
         if (reduce_if_positive[chosen_var]<reduce_if_negative[chosen_var])
-            return assign_value(chosen_var, SAT_Clauses::TRUE, SAT_Clauses::FALSE);
-        else
-            return assign_value(chosen_var, SAT_Clauses::FALSE, SAT_Clauses::TRUE);
+            return assign_value(chosen_var, TRUE, FALSE);
+        else return assign_value(chosen_var, FALSE, TRUE);
     }
 
     int SAT_Solver::dpl() {
         int var, nb;
         do {
             if (VARIABLE_STACK_fill_pointer==NB_VAR) {
-                UB=NB_EMPTY; 
-                nb=verify_solution();
-                if (nb!=NB_EMPTY)
-                    printf("problem nb...");
-                printf("o %d\n", UB);
-                for (var = 0; var < NB_VAR; var++)
-                    var_best_value[var] = var_current_value[var];
-                while (backtracking() == SAT_Clauses::NONE);
-                    if (VARIABLE_STACK_fill_pointer==0)
-                        break;
+            UB=NB_EMPTY; 
+            nb=verify_solution();
+            if (nb!=NB_EMPTY)
+                printf("problem nb...");
+            printf("o %d\n", UB);
+            for (var = 0; var < NB_VAR; var++)
+                var_best_value[var] = var_current_value[var];
+            while (backtracking() == NONE);
+                if (VARIABLE_STACK_fill_pointer==0)
+            break;
             }
             if (UB-NB_EMPTY==1)
-                if (unitclause_process() == SAT_Clauses::NONE)
-                    while (backtracking() == SAT_Clauses::NONE);
-            if (choose_and_instantiate_variable()==SAT_Clauses::NONE)
-                while (backtracking() == SAT_Clauses::NONE);
-            // else if (lookahead()==SAT_Clauses::NONE) 
-                // while (backtracking()==SAT_Clauses::NONE);
+            if (unitclause_process() == NONE)
+                while (backtracking() == NONE);
+                if (choose_and_instantiate_variable() == NONE)
+                    while (backtracking() == NONE);
+                // else if (lookahead()==NONE) 
+                //  while (backtracking()==NONE);
         } while (VARIABLE_STACK_fill_pointer > 0);
     }
 
-    int SAT_Solver::init() {
+    void SAT_Solver::init() {
         int var, clause;
-        NB_EMPTY=0; REAL_NB_CLAUSE = NB_CLAUSE;
-        UNITCLAUSE_STACK_fill_pointer = 0;
-        VARIABLE_STACK_fill_pointer = 0;
+        NB_EMPTY=0; REAL_NB_CLAUSE=NB_CLAUSE;
+        UNITCLAUSE_STACK_fill_pointer=0;
+        VARIABLE_STACK_fill_pointer=0;
         CLAUSE_STACK_fill_pointer = 0;
         REDUCEDCLAUSE_STACK_fill_pointer = 0;
-        for (var=0; var < NB_VAR; var++) {
-            reason[var] = SAT_Clauses::NO_REASON;
-            fixing_clause[var] = SAT_Clauses::NONE;
-            fixing_clause[var+NB_VAR] = SAT_Clauses::NONE;
-            lit_involved_in_clause[var] = SAT_Clauses::NONE;
-            lit_involved_in_clause[var+NB_VAR] = SAT_Clauses::NONE;
+        for (var=0; var<NB_VAR; var++) {
+            reason[var] = NO_REASON;
+            fixing_clause[var] = NONE;
+            fixing_clause[var+NB_VAR] = NONE;
+            lit_involved_in_clause[var] = NONE;
+            lit_involved_in_clause[var+NB_VAR] = NONE;
         }
-        for (clause=0; clause < NB_CLAUSE; clause++) {
-            lit_to_fix[clause] = SAT_Clauses::NONE;
-            clause_involved[clause] = SAT_Clauses::NONE;
+        for (clause=0; clause<NB_CLAUSE; clause++) {
+            lit_to_fix[clause] = NONE;
+            clause_involved[clause] = NONE;
         }
-        return 0;
     }
 }

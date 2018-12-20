@@ -15,110 +15,138 @@
 typedef signed char my_type;
 typedef unsigned char my_unsigned_type;
 
+/* global? */
+int OLD_CLAUSE_REDUNDANT = -77;
+int NEW_CLAUSE_REDUNDANT = -7;
+
+int NO_CONFLICT = -3;
+int NO_REASON = -3;
+int NEGATIVE = 0;
+int POSITIVE = 1;
+int PASSIVE = 0;
+int ACTIVE = 1;
+
+int WORD_LENGTH = 100;
+int TRUE = 1;
+int FALSE = 0;
+int NONE = -1;
+
+int WEIGHT = 4;
+int WEIGHT1 = 25;
+int WEIGHT2 = 5;
+int WEIGHT3 = 1;
+int T = 10;
+
 using namespace std;
 namespace ibex {
     /* test if the new clause is redundant or subsompted by another */
-    int smaller_than(int lit1, int lit2, int NB_VAR) {
-        return ((lit1<NB_VAR) ? lit1 : lit1-NB_VAR) < 
-        ((lit2<NB_VAR) ? lit2 : lit2-NB_VAR);
+    int smaller_than(int lit1, int lit2) {
+    return ((lit1 < NB_VAR) ? lit1 : lit1 - NB_VAR) < 
+        ((lit2 < NB_VAR) ? lit2 : lit2 - NB_VAR);
     }
 
-    my_type SAT_Clauses::redundant(int *new_clause, int *old_clause, int NB_VAR) {
+    my_type redundant(int *new_clause, int *old_clause) {
         int lit1, lit2, old_clause_diff=0, new_clause_diff=0;
-
-        lit1=*old_clause; lit2=*new_clause;
+            
+        lit1 = *old_clause; lit2 = *new_clause;
         while ((lit1 != NONE) && (lit2 != NONE)) {
             if (smaller_than(lit1, lit2)) {
-                lit1=*(++old_clause); old_clause_diff++;
+                lit1 = *(++old_clause);
+                old_clause_diff++;
             }else if (smaller_than(lit2, lit1)) {
-                lit2=*(++new_clause); new_clause_diff++;
-            }else if (complement(lit1, lit2, NB_VAR)) {
+                lit2 = *(++new_clause);
+                new_clause_diff++;
+            }
+            else if (complement(lit1, lit2)) {
                 return FALSE; /* old_clause_diff++; new_clause_diff++; j1++; j2++; */
             }else{
-                lit1=*(++old_clause);  lit2=*(++new_clause);
+                lit1 =* (++old_clause); 
+                lit2 =* (++new_clause);
             }
         }
         if ((lit1 == NONE) && (old_clause_diff == 0))
             /* la nouvelle clause est redondante ou subsumee */
-            return NEW_CLAUSE_REDUNDANT;
+            return SAT_Clauses::NEW_CLAUSE_REDUNDANT;
         if ((lit2 == NONE) && (new_clause_diff == 0))
             /* la old clause est redondante ou subsumee */
-            return OLD_CLAUSE_REDUNDANT;
+            return SAT_Clauses::OLD_CLAUSE_REDUNDANT;
         return FALSE;
     }
 
-    void SAT_Clauses::remove_passive_clauses(int NB_CLAUSE, int *clause_state, int *sat, int *var_sign, int *clause_length) {
-        int  clause, put_in, first=NONE;
-        for (clause=0; clause<NB_CLAUSE; clause++) {
-            if (clause_state[clause]==PASSIVE) {
+    void remove_passive_clauses() {
+        int  clause, put_in, first = NONE;
+        for (clause=0; clause < NB_CLAUSE; clause++) {
+            if (clause_state[clause] == PASSIVE) {
                 first=clause; break;
             }
         }
-        if (first!=NONE) {
-            put_in=first;
-            for(clause=first+1; clause<NB_CLAUSE; clause++) {
-                if (clause_state[clause]==ACTIVE) {
-                    sat[put_in]=sat[clause]; var_sign[put_in]=var_sign[clause];
-                    clause_state[put_in]=ACTIVE; 
-                    clause_length[put_in]=clause_length[clause];
+        if (first != NONE) {
+            put_in = first;
+            for(clause = first + 1; clause < NB_CLAUSE; clause++) {
+                if (clause_state[clause] == ACTIVE) {
+                    sat[put_in] = sat[clause];
+                    var_sign[put_in] = var_sign[clause];
+                    clause_state[put_in] = ACTIVE; 
+                    clause_length[put_in] = clause_length[clause];
                     put_in++;
                 }
             }
-            NB_CLAUSE=put_in;
+            NB_CLAUSE = put_in;
         }
     }
 
-    void SAT_Clauses::remove_passive_vars_in_clause(int clause, int **var_sign, int *var_state) {
-        int *vars_signs, *vars_signs1, var, var1, first=NONE;
-        vars_signs = var_sign[clause]; //NOTE: a value of type "int" cannot be assigned to an entity of type "int *"
-        for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
-            if (var_state[var]!=ACTIVE) {
-                first=var; break;
+    void remove_passive_vars_in_clause(int clause) {
+        int *vars_signs, *vars_signs1, var, var1, first = NONE;
+        vars_signs = var_sign[clause];
+        for(var =* vars_signs; var != NONE; var =* (vars_signs += 2)) {
+            if (var_state[var] != ACTIVE) {
+                first = var;
+                break;
             }
         }
-        if (first!=NONE) {
-            for(vars_signs1=vars_signs+2, var1=*vars_signs1; var1!=NONE; 
-                    var1=*(vars_signs1+=2)) {
-                if (var_state[var1]==ACTIVE) {
-                    *vars_signs=var1; *(vars_signs+1) = *(vars_signs1+1);
-                    vars_signs+=2;
-                }
+        if (first != NONE) {
+            for(vars_signs1 = vars_signs + 2, var1 =* vars_signs1; var1 != NONE; 
+            var1 =* (vars_signs1 += 2)) {
+            if (var_state[var1] == ACTIVE) {
+            *vars_signs = var1;
+            *(vars_signs + 1) = *(vars_signs1 + 1);
+            vars_signs+=2;
+            }
             }
             *vars_signs=NONE;
         }
     }
 
-    int SAT_Clauses::clean_structure(int NB_CLAUSE, int NB_VAR, int **neg_nb, int **pos_nb, int **var_sign, int **pos_in, int **neg_in, int *clause_state, int *sat, int *clause_length, int *var_state) {
-        int clause, var, *vars_signs;
-        remove_passive_clauses(NB_CLAUSE, clause_state, sat, *var_sign, clause_length);
-        if (NB_CLAUSE==0)
-            return FALSE;
-        for (clause=0; clause<NB_CLAUSE; clause++) 
-            remove_passive_vars_in_clause(clause, var_sign, var_state);
-        for (var=0; var<NB_VAR; var++) { 
-            neg_nb[var] = 0;
-            pos_nb[var] = 0;
+    int clean_structure() {
+    int clause, var, *vars_signs;
+    remove_passive_clauses();
+    if (NB_CLAUSE == 0) return FALSE;
+    for (clause = 0; clause < NB_CLAUSE; clause++) 
+        remove_passive_vars_in_clause(clause);
+    for (var=0; var < NB_VAR; var++) { 
+        neg_nb[var] = 0;
+        pos_nb[var] = 0;
+    }
+    for (clause=0; clause < NB_CLAUSE; clause++) {
+        vars_signs = var_sign[clause];
+        for(var = *vars_signs; var != NONE; var = *(vars_signs+=2)) {
+            if (*(vars_signs+1) == POSITIVE) 
+                pos_in[var][pos_nb[var]++] = clause;
+            else 
+                neg_in[var][neg_nb[var]++] = clause;
         }
-        for (clause=0; clause<NB_CLAUSE; clause++) {
-            vars_signs = var_sign[clause]; //NOTE: a value of type "int" cannot be assigned to an entity of type "int *"
-            for(var=*vars_signs; var!=NONE; var=*(vars_signs+=2)) {
-                if (*(vars_signs+1)==POSITIVE) 
-                    pos_in[var][*pos_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
-                else 
-                    neg_in[var][*neg_nb[var]++]=clause; //NOTE: expression must have pointer-to-object type
-            }
-        }
-        for (var=0; var<NB_VAR; var++) { 
-            neg_in[var][*neg_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
-            pos_in[var][*pos_nb[var]]=NONE; //NOTE: expression must have pointer-to-object type
-        }
-        return TRUE;
+    }
+    for (var = 0; var < NB_VAR; var++) { 
+        neg_in[var][neg_nb[var]] = NONE;
+        pos_in[var][pos_nb[var]] = NONE;
+    }
+    return TRUE;
     }
 
-    void SAT_Clauses::lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int **sat, int *clause_length, int *clause_state) {
+    void lire_clauses(FILE *fp_in) {
         int i, j, jj, ii, length, tautologie, lits[1000], lit, lit1;
-        for (i=0; i<NB_CLAUSE; i++) {
-            length=0; 
+        for (i = 0; i < NB_CLAUSE; i++) {
+            length = 0; 
             fscanf(fp_in, "%d", &lits[length]);
             while (lits[length] != 0) {
                 length++;
@@ -135,89 +163,95 @@ namespace ibex {
                         lits[jj] = lits[length-1]; 
                         jj--; length--; lits[length] = 0;
                         printf("literal %d is redundant in clause %d \n", lit, i+1);
-                    }else if (abs(lit) == abs(lits[jj])) {
-                        tautologie = TRUE; break;
-                    }
+                    }else
+                        if (abs(lit) == abs(lits[jj])) {
+                            tautologie = TRUE; break;
+                        }
                 }
-                if (tautologie == TRUE) break;
-                else lits[ii] = lit;
+                if (tautologie == TRUE)
+                    break;
+                else
+                    lits[ii] = lit;
             }
             if (tautologie == FALSE) {
-                sat[i]= (int *)malloc((length+1) * sizeof(int));
-                for (j=0; j<length; j++) {
+                sat[i] = (int *)malloc((length+1) * sizeof(int));
+                for (j = 0; j < length; j++) {
                     if (lits[j] < 0) 
                         sat[i][j] = abs(lits[j]) - 1 + NB_VAR ;
                     else 
                         sat[i][j] = lits[j]-1;
                 }
-                sat[i][length] = NONE; //NOTE: expression must have pointer-to-object type
+                sat[i][length] = NONE;
                 clause_length[i] = length;
                 clause_state[i] = ACTIVE;
             }else{
-                i--;
-                NB_CLAUSE--;
+                i--; NB_CLAUSE--;
             }
         }
     }
 
-    void SAT_Clauses::build_structure(int NB_VAR, int NB_CLAUSE, int **neg_nb, int **pos_nb, int *clause_length, int **sat, int **var_sign, int **neg_in, int **pos_in, int *var_state) {
-        int i, j, var, *lits1, length, clause, *vars_signs, lit;
-        for (i = 0; i < NB_VAR; i++) { 
-            neg_nb[i] = 0; pos_nb[i] = 0;
+    void build_structure() {
+    int i, j, var, *lits1, length, clause, *vars_signs, lit;
+    for (i = 0; i < NB_VAR; i++) { 
+        neg_nb[i] = 0; pos_nb[i] = 0;
+    }
+    for (i = 0; i < NB_CLAUSE; i++) {
+        for(j = 0; j < clause_length[i]; j++) {
+        if (sat[i][j] >= NB_VAR) {
+        var=sat[i][j] - NB_VAR;
+        neg_nb[var]++;
         }
-        for (i = 0; i < NB_CLAUSE; i++) {
-            for(j = 0; j<clause_length[i]; j++) {
-                if (sat[i][j]>=NB_VAR) {
-                    var=sat[i][j] - NB_VAR; neg_nb[var]++; //NOTE: expression must have pointer-to-object type
-                }else {
-                    var=sat[i][j]; pos_nb[var]++;
-                }
-            }
-            if (sat[i][clause_length[i]] != NONE) //NOTE: expression must have pointer-to-object type
-                printf("erreur ");
+        else {
+        var=sat[i][j]; pos_nb[var]++;
         }
-        for(clause=0;clause<NB_CLAUSE;clause++) {
-            length = clause_length[clause];
-            var_sign[clause] = (int *)malloc((2*length+1)*sizeof(int));
-            lits1 = sat[clause]; vars_signs = var_sign[clause];
-            for(lit=*lits1; lit!=NONE; lit=*(++lits1),(vars_signs+=2)) {
-                if (negative(lit)) {
-                    *(vars_signs+1)= NEGATIVE;
-                    *vars_signs = get_var_from_lit(lit);
-                }else{
-                    *(vars_signs+1)=POSITIVE;
-                    *vars_signs = lit;
-                }
-            }
-            *vars_signs = NONE;  
         }
-        for (i=0; i<NB_VAR; i++) { 
-            neg_in[i] = (int *)malloc((neg_nb[i]+1) * sizeof(int));
-            pos_in[i] = (int *)malloc((pos_nb[i]+1) * sizeof(int));
-            neg_in[i][*neg_nb[i]]=NONE; pos_in[i][*pos_nb[i]] = NONE; //NOTE: expression must have pointer-to-object type
-            neg_nb[i] = 0; pos_nb[i] = 0;
-            var_state[i] = ACTIVE;
-        }   
-        for (i=0; i<NB_CLAUSE; i++) {
-            // if (i==774)
-            //  printf("kjhsdf");
-            lits1 = sat[i];
-            for(lit=*lits1; lit!=NONE; lit=*(++lits1)) {
-                if (positive(lit)) 
-                    pos_in[lit][*pos_nb[lit]++] = i;
-                else
-                    neg_in[get_var_from_lit(lit)][neg_nb[get_var_from_lit(lit)]++] = i;
+        if (sat[i][clause_length[i]] != NONE)
+        printf("erreur ");
+    }
+    for(clause=0;clause<NB_CLAUSE;clause++) {
+        length = clause_length[clause];
+        var_sign[clause] = (int *)malloc((2*length+1)*sizeof(int));
+        lits1 = sat[clause]; vars_signs = var_sign[clause];
+        for(lit=*lits1; lit != NONE; lit=*(++lits1),(vars_signs+=2)) {
+            if (negative(lit)) {
+                *(vars_signs+1) = NEGATIVE;
+                *vars_signs = get_var_from_lit(lit);
             }
+            else {
+                *(vars_signs+1) = POSITIVE;
+                *vars_signs = lit;
+            }
+        }
+        *vars_signs = NONE;  
+    }
+    for (i=0; i<NB_VAR; i++) { 
+        neg_in[i] = (int *)malloc((neg_nb[i]+1) * sizeof(int));
+        pos_in[i] = (int *)malloc((pos_nb[i]+1) * sizeof(int));
+        neg_in[i][neg_nb[i]]=NONE; pos_in[i][pos_nb[i]]=NONE;
+        neg_nb[i] = 0; pos_nb[i] = 0;
+        var_state[i] = ACTIVE;
+    }   
+    for (i=0; i<NB_CLAUSE; i++) {
+        // if (i==774)
+        //  printf("kjhsdf");
+        lits1 = sat[i];
+        for(lit=*lits1; lit!=NONE; lit=*(++lits1)) {
+            if (positive(lit)) 
+                pos_in[lit][pos_nb[lit]++] = i;
+            else
+                neg_in[get_var_from_lit(lit)]
+            [neg_nb[get_var_from_lit(lit)]++] = i;
         }
     }
+    }
 
-    void SAT_Clauses::eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length, int UNITCLAUSE_STACK) {
+    void eliminate_redundance() {
         int *lits, i, lit, *clauses, res, clause;
 
         for (i=0; i<NB_CLAUSE; i++) {
-            if (clause_state[i]==ACTIVE) {
+            if (clause_state[i] == ACTIVE) {
                 if (clause_length[i]==1)
-                push_clause(i, UNITCLAUSE_STACK);
+                push(i, UNITCLAUSE_STACK);
                 /*
                 lits = sat[i];
                 for(lit=*lits; lit!=NONE; lit=*(++lits)) {
@@ -226,13 +260,13 @@ namespace ibex {
                 else clauses=neg_in[lit-NB_VAR];
                 for(clause=*clauses; clause!=NONE; clause=*(++clauses)) {
                 if ((clause<i) && (clause_state[clause]==ACTIVE)) {
-                res=redundant(sat[i], sat[clause]);
-                if (res==NEW_CLAUSE_REDUNDANT) {
-                clause_state[i]=PASSIVE;
-                break;
-                }
-                else if (res==OLD_CLAUSE_REDUNDANT)
-                clause_state[clause]=PASSIVE;
+                    res=redundant(sat[i], sat[clause]);
+                    if (res==NEW_CLAUSE_REDUNDANT) {
+                    clause_state[i]=PASSIVE;
+                    break;
+                    }
+                    else if (res==OLD_CLAUSE_REDUNDANT)
+                    clause_state[clause]=PASSIVE;
                 }
                 }
                 if (res==NEW_CLAUSE_REDUNDANT)
@@ -243,33 +277,28 @@ namespace ibex {
         }
     }
 
-    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int NB_CLAUSE, int NB_VAR, int **sat, int **neg_nb, int **pos_nb,
-                        int *clause_length, int *clause_state, int **var_sign, int **neg_in, int **pos_in, int *var_state, int UNITCLAUSE_STACK) {
+    my_type build_simple_sat_instance(char *input_file) {
         FILE* fp_in=fopen(input_file, "r");
         char ch, word2[WORD_LENGTH];
         int i, j, length, NB_CLAUSE1, res, ii, jj, tautologie, lit1,
-        lits[1000], *lits1, lit, var, *pos_nb, *neg_nb;
+            lits[1000], *lits1, lit, var, *pos_nb, *neg_nb;
         int clause,*vars_signs,cpt;
         if (fp_in == NULL) return FALSE;
 
         fscanf(fp_in, "%c", &ch);
         while (ch!='p') {
             while (ch!='\n') fscanf(fp_in, "%c", &ch);  
-                fscanf(fp_in, "%c", &ch);
+            fscanf(fp_in, "%c", &ch);
         }
+        
+        fscanf(fp_in, "%s%d%d", word2, &NB_VAR, &NB_CLAUSE);
+        INIT_NB_CLAUSE = NB_CLAUSE;
 
-        // fscanf(fp_in, "%s%d%d", word2, &NB_VAR, &NB_CLAUSE);
-        // INIT_NB_CLAUSE = NB_CLAUSE;
-
-        // void lire_clauses(FILE *fp_in, int NB_CLAUSE, int NB_VAR, int *sat, int *clause_length, int *clause_state);
-        lire_clauses(fp_in, NB_CLAUSE, NB_VAR, sat, clause_length, clause_state);
+        lire_clauses(fp_in);
         fclose(fp_in);
-        // void build_structure(int NB_VAR, int NB_CLAUSE, int *neg_nb, int *pos_nb, int *clause_length, int *sat, int *var_sign, int *neg_in, int *pos_in, int *var_state);
-        build_structure(NB_VAR, NB_CLAUSE, neg_nb, pos_nb, clause_length, sat, var_sign, neg_in, pos_in, var_state);
-        // void eliminate_redundance(int NB_CLAUSE, int *clause_state, int *clause_length);
-        eliminate_redundance(NB_CLAUSE, clause_state, clause_length, UNITCLAUSE_STACK);
-        // int clean_structure(int NB_CLAUSE, int NB_VAR, int *neg_nb, int *pos_nb, int *var_sign, int *pos_in, int *neg_in);
-        if (clean_structure(NB_CLAUSE, NB_VAR, neg_nb, pos_nb, var_sign, pos_in, neg_in, clause_state, sat, clause_length, var_state) == FALSE)
+        build_structure();
+        eliminate_redundance();
+        if (clean_structure() == FALSE)
             return FALSE;
         return TRUE;
     }
