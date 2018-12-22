@@ -56,6 +56,8 @@ static const int T = 10;
 typedef signed char my_type;
 typedef unsigned char my_unsigned_type;
 
+my_type var_best_value[tab_variable_size];
+
 /* the tables of variables and clauses are statically allocated. Modify the 
    parameters tab_variable_size and tab_clause_size before compilation if 
    necessary */
@@ -151,7 +153,8 @@ main(int argc, char *argv[]) {
 
   SAT_Clauses *sat_clauses = new SAT_Clauses();
 
-  switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE)) {
+  switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE, &clause_state, &sat, &var_sign,
+  &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb)) {
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
       if (argc > 2)
