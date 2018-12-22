@@ -294,7 +294,7 @@ namespace ibex {
         fscanf(fp_in, "%s%d%d", word2, &NB_VAR, &NB_CLAUSE);
         INIT_NB_CLAUSE = NB_CLAUSE;
 
-        lire_clauses(fp_in);
+        // lire_clauses(fp_in);
         fclose(fp_in);
         build_structure();
         eliminate_redundance();

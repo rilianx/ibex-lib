@@ -2,11 +2,12 @@
 #include <iostream>
 #include <stdlib.h>
 #include <ctime>
+#include <linux/times.h>
 #include <fstream>
 #include <set>
 
-#include "ibex_SAT_Solver.h"
-#include "ibex_SAT_Clauses.h"
+// #include "ibex_SAT_Solver.h"
+// #include "ibex_SAT_Clauses.h"
 
 #define tab_variable_size  10000
 #define tab_clause_size 40000
@@ -145,24 +146,24 @@ main(int argc, char *argv[]) {
   //for (i=0; i<WORD_LENGTH; i++) saved_input_file[i]=argv[1][i];
   //for (i=0; i<WORD_LENGTH; i++) cout << saved_input_file[i] << endl;
 
-  a_tms = ( struct tms *) malloc( sizeof (struct tms));
-  mess=times(a_tms); begintime = a_tms->tms_utime;
+  a_tms = (struct tms*) malloc(sizeof(struct tms));
+  mess = times(a_tms); begintime = a_tms->tms_utime;
 
   SAT_Clauses *sat_clauses = new SAT_Clauses();
 
   switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE)) {
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
-      if (argc>2)
-        UB=atoi(argv[2]);
+      if (argc > 2)
+        UB = atoi(argv[2]);
       else
-        UB=NB_CLAUSE;
-      init();
-      dpl();
+        UB = NB_CLAUSE;
+      // init();
+      // dpl();
       break;
     case NONE: printf("An empty resolvant is found!\n"); break;
   }
-  mess=times(a_tms); endtime = a_tms->tms_utime;
+  mess = times(a_tms); endtime = a_tms->tms_utime;
 
   printf("s OPTIMUM FOUND\nc Optimal Solution (minimum number of unsatisfied clauses) = %d\n", UB);
   printf("v");
@@ -177,15 +178,15 @@ main(int argc, char *argv[]) {
 	 NB_MONO, NB_UNIT, NB_BRANCHE, NB_BACK);
 	        
   printf ("Program terminated in %5.3f seconds.\n",
-	  ((double)(endtime-begintime)/CLOCKS_PER_SEC));
+	  ((double)(endtime - begintime) / CLOCKS_PER_SEC));
 
   fp_time = fopen("timetable", "a");
   fprintf(fp_time, "maxsatz14bis+fl %s %5.3f %ld %ld %d %d %d %d\n", 
-	  saved_input_file, ((double)(endtime-begintime)/CLOCKS_PER_SEC), 
+	  saved_input_file, ((double)(endtime - begintime) / CLOCKS_PER_SEC), 
 	  NB_BRANCHE, NB_BACK,  
 	  UB, NB_VAR, INIT_NB_CLAUSE, NB_CLAUSE-INIT_NB_CLAUSE);
   printf("maxsatz14bis+fl %s %5.3f %ld %ld %d %d %d %d\n", 
-	 saved_input_file, ((double)(endtime-begintime)/CLOCKS_PER_SEC), 
+	 saved_input_file, ((double)(endtime - begintime) / CLOCKS_PER_SEC), 
 	 NB_BRANCHE, NB_BACK,
 	 UB, NB_VAR, INIT_NB_CLAUSE, NB_CLAUSE-INIT_NB_CLAUSE);
   fclose(fp_time);
