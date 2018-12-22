@@ -154,7 +154,7 @@ main(int argc, char *argv[]) {
   SAT_Clauses *sat_clauses = new SAT_Clauses();
 
   switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE, &clause_state, &sat, &var_sign,
-  &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb)) {
+  &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, &UNITCLAUSE_STACK, &UNITCLAUSE_STACK_fill_pointer)) {
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
       if (argc > 2)

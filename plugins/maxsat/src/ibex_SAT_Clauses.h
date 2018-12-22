@@ -48,10 +48,14 @@ namespace ibex {
             int clean_structure(int *NB_CLAUSE, int *NB_VAR, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb);
             void lire_clauses(FILE *fp_in, int *NB_CLAUSE, int *NB_VAR, int **sat, my_type *clause_length, my_type *clause_state);
             void build_structure(int *NB_VAR, int *NB_CLAUSE, int *neg_nb, int **neg_in, int *pos_nb, int **pos_in, my_type *clause_length, int **sat, int **var_sign, my_type *var_state);
-            void eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length);
+            void eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer);
 
-            // ibex::SAT_Clauses::build_simple_sat_instance(char*&, int*, int*, int*, my_type (*)[40000], int* (*)[40000], int* (*)[40000], my_type (*)[40000], my_type (*)[10000], int* (*)[10000], int (*)[10000], int* (*)[10000], int (*)[10000])
-            my_type build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb);
+            my_type build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer);
+
+            void push_clause(int item, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer){
+                (*UNITCLAUSE_STACK_fill_pointer)++;
+                UNITCLAUSE_STACK[(*UNITCLAUSE_STACK_fill_pointer)] = item;
+            }
 
     };
 }

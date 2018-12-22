@@ -246,13 +246,14 @@ namespace ibex {
     }
 
     // char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb
-    void SAT_Clauses::eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length) {
+    void SAT_Clauses::eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
         int *lits, i, lit, *clauses, res, clause;
 
         for (i=0; i < (*NB_CLAUSE); i++) {
             if (clause_state[i] == ACTIVE) {
                 if (clause_length[i]==1)
-                push(i, UNITCLAUSE_STACK);
+                // push(i, UNITCLAUSE_STACK);
+                push_clause(i, UNITCLAUSE_STACK, UNITCLAUSE_STACK_fill_pointer);
                 /*
                 lits = sat[i];
                 for(lit=*lits; lit!=NONE; lit=*(++lits)) {
@@ -278,7 +279,8 @@ namespace ibex {
         }
     }
 
-    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb) {
+    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE,
+    my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
         FILE* fp_in=fopen(input_file, "r");
         char ch, word2[WORD_LENGTH];
         int i, j, length, NB_CLAUSE1, res, ii, jj, tautologie, lit1,
@@ -298,7 +300,7 @@ namespace ibex {
         // lire_clauses(fp_in);
         fclose(fp_in);
         build_structure(NB_VAR, NB_CLAUSE, neg_nb, neg_in, pos_nb, pos_in, clause_length, sat, var_sign, var_state);
-        eliminate_redundance(NB_CLAUSE, clause_state, clause_length);
+        eliminate_redundance(NB_CLAUSE, clause_state, clause_length, UNITCLAUSE_STACK, UNITCLAUSE_STACK_fill_pointer);
         if (clean_structure(NB_CLAUSE, NB_VAR, clause_state, sat, var_sign, clause_length, var_state, pos_in, pos_nb, neg_in, neg_nb) == FALSE)
             return FALSE;
         return TRUE;
