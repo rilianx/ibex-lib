@@ -57,6 +57,33 @@ namespace ibex {
                 UNITCLAUSE_STACK[(*UNITCLAUSE_STACK_fill_pointer)] = item;
             }
 
+            // #define complement(lit1, lit2) \ ((lit1<lit2) ? lit2-lit1 == NB_VAR : lit1-lit2 == NB_VAR)
+            int complement(int lit1, int lit2, int NB_VAR){ // TODO: revisar
+                if (lit2-lit1 == NB_VAR)
+                    return 1;
+                else if (lit1-lit2 == NB_VAR)
+                    return 1;
+                else
+                    return 0;
+            }
+
+            // #define negative(literal) literal>=NB_VAR
+
+            inline int negative_clause(int literal, int NB_VAR) { return literal >= NB_VAR; }
+
+            // #define positive(literal) literal<NB_VAR
+
+            inline int positive_clause(int literal, int NB_VAR) { return literal < NB_VAR; }
+
+            // #define get_var_from_lit(literal) \ ((literal<NB_VAR) ? literal : literal-NB_VAR)
+
+            int get_var_from_lit_clause(int literal, int NB_VAR){
+                if (literal < NB_VAR)
+                    return literal;
+                else
+                    return literal - NB_VAR;
+            }
+
     };
 }
 

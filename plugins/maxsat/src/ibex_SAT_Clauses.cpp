@@ -56,7 +56,7 @@ namespace ibex {
                 lit2 = *(++new_clause);
                 new_clause_diff++;
             }
-            else if (complement(lit1, lit2)) {
+            else if (complement(lit1, lit2, (*NB_VAR))) {
                 return FALSE; /* old_clause_diff++; new_clause_diff++; j1++; j2++; */
             }else{
                 lit1 =* (++old_clause); 
@@ -213,10 +213,10 @@ namespace ibex {
             var_sign[clause] = (int *)malloc((2*length+1)*sizeof(int));
             lits1 = sat[clause]; vars_signs = var_sign[clause];
             for(lit=*lits1; lit != NONE; lit=*(++lits1),(vars_signs+=2)) {
-                if (negative(lit)) {
+                if (negative_clause(lit, (*NB_VAR))) {
                     *(vars_signs+1) = NEGATIVE;
-                    *vars_signs = get_var_from_lit(lit);
-                }
+                    *vars_signs = get_var_from_lit_clause(lit, (*NB_VAR));
+                }   
                 else {
                     *(vars_signs+1) = POSITIVE;
                     *vars_signs = lit;
@@ -236,11 +236,11 @@ namespace ibex {
             //  printf("kjhsdf");
             lits1 = sat[i];
             for(lit=*lits1; lit!=NONE; lit=*(++lits1)) {
-                if (positive(lit)) 
+                if (positive_clause(lit, (*NB_VAR))) 
                     pos_in[lit][pos_nb[lit]++] = i;
                 else
-                    neg_in[get_var_from_lit(lit)]
-                [neg_nb[get_var_from_lit(lit)]++] = i;
+                    neg_in[get_var_from_lit_clause(lit, (*NB_VAR))]
+                [neg_nb[get_var_from_lit_clause(lit, (*NB_VAR))]++] = i;
             }
         }
     }
@@ -279,8 +279,7 @@ namespace ibex {
         }
     }
 
-    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE,
-    my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
+    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
         FILE* fp_in=fopen(input_file, "r");
         char ch, word2[WORD_LENGTH];
         int i, j, length, NB_CLAUSE1, res, ii, jj, tautologie, lit1,

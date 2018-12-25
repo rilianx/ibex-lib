@@ -2,7 +2,6 @@
 #include <iostream>
 #include <stdlib.h>
 #include <ctime>
-#include <linux/times.h>
 #include <fstream>
 #include <set>
 
@@ -148,13 +147,14 @@ main(int argc, char *argv[]) {
   //for (i=0; i<WORD_LENGTH; i++) saved_input_file[i]=argv[1][i];
   //for (i=0; i<WORD_LENGTH; i++) cout << saved_input_file[i] << endl;
 
-  a_tms = (struct tms*) malloc(sizeof(struct tms));
-  mess = times(a_tms); begintime = a_tms->tms_utime;
+  // a_tms = (struct tms*) malloc(sizeof(struct tms));
+  // mess = times(a_tms); begintime = a_tms->tms_utime;
 
   SAT_Clauses *sat_clauses = new SAT_Clauses();
 
-  switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE, &clause_state, &sat, &var_sign,
-  &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, &UNITCLAUSE_STACK, &UNITCLAUSE_STACK_fill_pointer)) {
+  // switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE, &clause_state, &sat, &var_sign, &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, &UNITCLAUSE_STACK, &UNITCLAUSE_STACK_fill_pointer)) {
+    // TODO: revisar
+  switch (sat_clauses->build_simple_sat_instance(argv[1], NB_VAR, NB_CLAUSE, INIT_NB_CLAUSE, &clause_state, &sat, &var_sign, &clause_length, var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, UNITCLAUSE_STACK, UNITCLAUSE_STACK_fill_pointer)){
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
       if (argc > 2)
@@ -166,7 +166,7 @@ main(int argc, char *argv[]) {
       break;
     case NONE: printf("An empty resolvant is found!\n"); break;
   }
-  mess = times(a_tms); endtime = a_tms->tms_utime;
+  // mess = times(a_tms); endtime = a_tms->tms_utime;
 
   printf("s OPTIMUM FOUND\nc Optimal Solution (minimum number of unsatisfied clauses) = %d\n", UB);
   printf("v");
