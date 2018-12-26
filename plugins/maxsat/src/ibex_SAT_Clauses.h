@@ -41,16 +41,16 @@ namespace ibex {
                 // double_tab_clause_size = 2*tab_clause_size;
                 // UNITCLAUSE_STACK = new int[tab_unitclause_size];
             }
-            int smaller_than(int lit1, int lit2, int *NB_VAR);
-            my_type redundant(int *new_clause, int *old_clause, int *NB_VAR);
-            void remove_passive_clauses(int *NB_CLAUSE, my_type *clause_state, int **sat, int *var_sign, my_type *clause_length);
-            void remove_passive_vars_in_clause(int clause, int **var_sign, my_type *var_state);
-            int clean_structure(int *NB_CLAUSE, int *NB_VAR, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb);
-            void lire_clauses(FILE *fp_in, int *NB_CLAUSE, int *NB_VAR, int **sat, my_type *clause_length, my_type *clause_state);
-            void build_structure(int *NB_VAR, int *NB_CLAUSE, int *neg_nb, int **neg_in, int *pos_nb, int **pos_in, my_type *clause_length, int **sat, int **var_sign, my_type *var_state);
-            void eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer);
+            int smaller_than(int lit1, int lit2);
+            my_type redundant(int *new_clause, int *old_clause);
+            void remove_passive_clauses();
+            void remove_passive_vars_in_clause(int clause);
+            int clean_structure();
+            void lire_clauses(FILE *fp_in);
+            void build_structure();
+            void eliminate_redundance();
 
-            my_type build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer);
+            my_type build_simple_sat_instance(char *input_file);
 
             void push_clause(int item, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer){
                 (*UNITCLAUSE_STACK_fill_pointer)++;

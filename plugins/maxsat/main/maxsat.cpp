@@ -139,6 +139,10 @@ int LINEAR_REASON_STACK2[tab_clause_size];
 int LINEAR_REASON_STACK2_fill_pointer=0;
 int clause_involved[tab_clause_size];
 
+struct params{
+
+};
+
 using namespace std;
 using namespace ibex;
 
@@ -163,7 +167,7 @@ main(int argc, char *argv[]) {
 
   // switch (sat_clauses->build_simple_sat_instance(argv[1], &NB_VAR, &NB_CLAUSE, &INIT_NB_CLAUSE, &clause_state, &sat, &var_sign, &clause_length, &var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, &UNITCLAUSE_STACK, &UNITCLAUSE_STACK_fill_pointer)) {
     // TODO: revisar
-  switch (sat_clauses->build_simple_sat_instance(argv[1], NB_VAR, NB_CLAUSE, INIT_NB_CLAUSE, &clause_state, &sat, &var_sign, &clause_length, var_state, &pos_in, &pos_nb, &neg_in, &neg_nb, UNITCLAUSE_STACK, UNITCLAUSE_STACK_fill_pointer)){
+  switch (sat_clauses->build_simple_sat_instance(argv[1])){
     case FALSE: printf("Input file error\n"); return FALSE;
     case TRUE:
       if (argc > 2)

@@ -40,11 +40,11 @@ int T = 10;
 using namespace std;
 namespace ibex {
     /* test if the new clause is redundant or subsompted by another */
-    int SAT_Clauses::smaller_than(int lit1, int lit2, int *NB_VAR) {
+    int SAT_Clauses::smaller_than(int lit1, int lit2) {
     return ((lit1 < (*NB_VAR)) ? lit1 : lit1 - (*NB_VAR)) < ((lit2 < (*NB_VAR)) ? lit2 : lit2 - (*NB_VAR));
     }
 
-    my_type SAT_Clauses::redundant(int *new_clause, int *old_clause, int *NB_VAR) {
+    my_type SAT_Clauses::redundant(int *new_clause, int *old_clause) {
         int lit1, lit2, old_clause_diff=0, new_clause_diff=0;
             
         lit1 = *old_clause; lit2 = *new_clause;
@@ -72,7 +72,7 @@ namespace ibex {
         return FALSE;
     }
 
-    void SAT_Clauses::remove_passive_clauses(int *NB_CLAUSE, my_type *clause_state, int **sat, int *var_sign, my_type *clause_length) {
+    void SAT_Clauses::remove_passive_clauses() {
         int  clause, put_in, first = NONE;
         for (clause=0; clause < (*NB_CLAUSE); clause++) {
             if (clause_state[clause] == PASSIVE) {
@@ -94,7 +94,7 @@ namespace ibex {
         }
     }
 
-    void SAT_Clauses::remove_passive_vars_in_clause(int clause, int **var_sign, my_type *var_state) {
+    void SAT_Clauses::remove_passive_vars_in_clause(int clause) {
         int *vars_signs, *vars_signs1, var, var1, first = NONE;
         vars_signs = var_sign[clause];
         for(var =* vars_signs; var != NONE; var =* (vars_signs += 2)) {
@@ -116,7 +116,7 @@ namespace ibex {
         }
     }
 
-    int SAT_Clauses::clean_structure(int *NB_CLAUSE, int *NB_VAR, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb) {
+    int SAT_Clauses::clean_structure() {
         int clause, var, *vars_signs;
         remove_passive_clauses(NB_CLAUSE, clause_state, sat, *var_sign, clause_length);
         if (NB_CLAUSE == 0) return FALSE;
@@ -142,7 +142,7 @@ namespace ibex {
         return TRUE;
     }
 
-    void SAT_Clauses::lire_clauses(FILE *fp_in, int *NB_CLAUSE, int *NB_VAR, int **sat, my_type *clause_length, my_type *clause_state) {
+    void SAT_Clauses::lire_clauses(FILE *fp_in) {
         int i, j, jj, ii, length, tautologie, lits[1000], lit, lit1;
         for (i = 0; i < (*NB_CLAUSE); i++) {
             length = 0; 
@@ -189,8 +189,7 @@ namespace ibex {
         }
     }
 
-    // int *NB_CLAUSE, my_type *clause_state, my_type *clause_length
-    void SAT_Clauses::build_structure(int *NB_VAR, int *NB_CLAUSE, int *neg_nb, int **neg_in, int *pos_nb, int **pos_in, my_type *clause_length, int **sat, int **var_sign, my_type *var_state) {
+    void SAT_Clauses::build_structure() {
         int i, j, var, *lits1, length, clause, *vars_signs, lit;
         for (i = 0; i < (*NB_VAR); i++) { 
             neg_nb[i] = 0; pos_nb[i] = 0;
@@ -246,7 +245,7 @@ namespace ibex {
     }
 
     // char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb
-    void SAT_Clauses::eliminate_redundance(int *NB_CLAUSE, my_type *clause_state, my_type *clause_length, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
+    void SAT_Clauses::eliminate_redundance() {
         int *lits, i, lit, *clauses, res, clause;
 
         for (i=0; i < (*NB_CLAUSE); i++) {
@@ -279,7 +278,7 @@ namespace ibex {
         }
     }
 
-    my_type SAT_Clauses::build_simple_sat_instance(char *input_file, int *NB_VAR, int *NB_CLAUSE, int *INIT_NB_CLAUSE, my_type *clause_state, int **sat, int **var_sign, my_type *clause_length, my_type *var_state, int **pos_in, int *pos_nb, int **neg_in, int *neg_nb, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer) {
+    my_type SAT_Clauses::build_simple_sat_instance(char *input_file) {
         FILE* fp_in=fopen(input_file, "r");
         char ch, word2[WORD_LENGTH];
         int i, j, length, NB_CLAUSE1, res, ii, jj, tautologie, lit1,
