@@ -6,7 +6,7 @@
 #include <set>
 
 // #include "ibex_SAT_Solver.h"
-// #include "ibex_SAT_Clauses.h"
+#include "ibex_SAT_Clauses.h"
 
 #define tab_variable_size  10000
 #define tab_clause_size 40000
@@ -129,6 +129,15 @@ int fixing_clause[2*tab_variable_size];
 int saved_nb_clause[tab_variable_size];
 int saved_saved_clauses[tab_variable_size];
 int saved_new_clauses[tab_variable_size];
+
+int CLAUSES_TO_REMOVE[tab_clause_size];
+int CLAUSES_TO_REMOVE_fill_pointer=0;
+
+int LINEAR_REASON_STACK1[tab_clause_size];
+int LINEAR_REASON_STACK1_fill_pointer=0;
+int LINEAR_REASON_STACK2[tab_clause_size];
+int LINEAR_REASON_STACK2_fill_pointer=0;
+int clause_involved[tab_clause_size];
 
 using namespace std;
 using namespace ibex;

@@ -12,27 +12,29 @@ typedef signed char my_type;
 typedef unsigned char my_unsigned_type;
 
 /* global? */
-int NO_CONFLICT = -3;
-int NO_REASON = -3;
-int NEGATIVE = 0;
-int POSITIVE = 1;
-int PASSIVE = 0;
-int ACTIVE = 1;
+static const int NO_CONFLICT = -3;
+static const int NO_REASON = -3;
+static const int NEGATIVE = 0;
+static const int POSITIVE = 1;
+static const int PASSIVE = 0;
+static const int ACTIVE = 1;
 
-int WORD_LENGTH = 100;
-int TRUE = 1;
-int FALSE = 0;
-int NONE = -1;
+static const int WORD_LENGTH = 100;
+static const int TRUE = 1;
+static const int FALSE = 0;
+static const int NONE = -1;
 
-int WEIGHT = 4;
-int WEIGHT1 = 25;
-int WEIGHT2 = 5;
-int WEIGHT3 = 1;
-int T = 10;
+static const int SIMPLE_NON_LINEAR_CASE = 2;
+
+static const int WEIGHT = 4;
+static const int WEIGHT1 = 25;
+static const int WEIGHT2 = 5;
+static const int WEIGHT3 = 1;
+static const int T = 10;
 
 using namespace std;
 namespace ibex {
-    void SAT_Solver::remove_clauses(int var) {
+    void SAT_Solver::remove_clauses(int var, int **pos_in, int **neg_in, my_type *var_current_value, my_type *clause_state, int *CLAUSE_STACK, int *CLAUSE_STACK_fill_pointer) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE) clauses = pos_in[var];
@@ -45,29 +47,31 @@ namespace ibex {
         }
     }
 
-    int SAT_Solver::reduce_clauses(int var) {
+    int SAT_Solver::reduce_clauses(int var, int *NB_EMPTY, int *UB, int **neg_in, int **pos_in, int *REDUCEDCLAUSE_STACK, int *UNITCLAUSE_STACK,
+                    int *UNITCLAUSE_STACK_fill_pointer, int *REDUCEDCLAUSE_STACK_fill_pointer, my_type *var_current_value, my_type *clause_state, my_type *clause_length) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
         else clauses = pos_in[var];
         for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
             if (clause_state[clause] == ACTIVE) {
-            clause_length[clause]--;
-            push(clause, REDUCEDCLAUSE_STACK);
-            switch (clause_length[clause]) {
-            case 0: NB_EMPTY++;
-            if (UB <= NB_EMPTY) return NONE;
-            break;
-            case 1: 
-            push(clause, UNITCLAUSE_STACK);
-            break;
-            }
+                clause_length[clause]--;
+                push(clause, REDUCEDCLAUSE_STACK);
+                switch (clause_length[clause]) {
+                    case 0: NB_EMPTY++;
+                        if (UB <= NB_EMPTY) return NONE;
+                        break;
+                    case 1: 
+                        push(clause, UNITCLAUSE_STACK);
+                        break;
+                    }
             }
         }
         return TRUE;
     }
 
-    int SAT_Solver::my_reduce_clauses(int var) {
+    int SAT_Solver::my_reduce_clauses(int var, int **neg_in, int **pos_in, int *REDUCEDCLAUSE_STACK, int *MY_UNITCLAUSE_STACK, int *REDUCEDCLAUSE_STACK_fill_pointer,
+                    int *MY_UNITCLAUSE_STACK_fill_pointer, my_type *var_current_value ,my_type *clause_state, my_type *clause_length) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
@@ -77,37 +81,40 @@ namespace ibex {
             clause_length[clause]--;
             push(clause, REDUCEDCLAUSE_STACK);
             switch (clause_length[clause]) {
-            case 0: return clause;
-            case 1: 
-            push(clause, MY_UNITCLAUSE_STACK);
-            break;
+                case 0:
+                    return clause;
+                case 1: 
+                    push(clause, MY_UNITCLAUSE_STACK);
+                break;
             }
             }
         }
         return NO_CONFLICT;
     }
 
-    int SAT_Solver::my_reduce_clauses_for_fl(int var) {
+    int SAT_Solver::my_reduce_clauses_for_fl(int var, int **neg_in, int **pos_in, int *REDUCEDCLAUSE_STACK, int *UNITCLAUSE_STACK, int *REDUCEDCLAUSE_STACK_fill_pointer,
+                    int *UNITCLAUSE_STACK_fill_pointer, my_type *var_current_value, my_type *clause_state, my_type *clause_length) {
         register int clause;
         register int *clauses;
         if (var_current_value[var] == POSITIVE) clauses = neg_in[var];
         else clauses = pos_in[var];
         for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
             if (clause_state[clause] == ACTIVE) {
-            clause_length[clause]--;
-            push(clause, REDUCEDCLAUSE_STACK);
-            switch (clause_length[clause]) {
-            case 0: return clause;
-            case 1: 
-            push(clause, UNITCLAUSE_STACK);
-            break;
-            }
+                clause_length[clause]--;
+                push(clause, REDUCEDCLAUSE_STACK);
+                switch (clause_length[clause]) {
+                    case 0:
+                        return clause;
+                    case 1: 
+                        push(clause, UNITCLAUSE_STACK);
+                    break;
+                }
             }
         }
         return NO_CONFLICT;
     }
 
-    void SAT_Solver::print_values(int nb_var) {
+    void SAT_Solver::print_values(int nb_var, my_type *var_current_value) {
         FILE* fp_out;
         int i;
         fp_out = fopen("satx.sol", "w");
@@ -121,7 +128,11 @@ namespace ibex {
         fclose(fp_out);			
     } 
 
-    int SAT_Solver::backtracking() {
+    int SAT_Solver::backtracking(int *saved_reducedclause_stack, int *saved_new_clauses, int *NB_EMPTY, int *NB_CLAUSE, int *CLAUSE_STACK, int *CLAUSE_STACK_fill_pointer,
+                    int *REDUCEDCLAUSE_STACK_fill_pointer, int *REDUCEDCLAUSE_STACK, int *UNITCLAUSE_STACK, int *UNITCLAUSE_STACK_fill_pointer, int *saved_unitclause_stack, int *VARIABLE_STACK,
+                    int *NEW_CLAUSES_fill_pointer, int *saved_clause_stack, int *saved_nb_empty, int *saved_nb_clause, int *saved_saved_clauses, int **SAVED_CLAUSE_POSITIONS,
+                    int *SAVED_CLAUSES, int *SAVED_CLAUSES_fill_pointer, int *VARIABLE_STACK_fill_pointer, long *NB_BACK, int **pos_in, int **neg_in, int *UB,
+                    my_type *var_state, my_type *var_rest_value, my_type *var_current_value, my_type *clause_state, my_type *clause_length) {
         int var, index,clause, *position, saved;
             
         NB_BACK++;
@@ -129,99 +140,110 @@ namespace ibex {
         do {
             var = pop(VARIABLE_STACK);
             if (var_rest_value[var] == NONE) 
-            var_state[var] = ACTIVE;
+                var_state[var] = ACTIVE;
             else {
-            for (index = saved_clause_stack[var]; 
-            index < CLAUSE_STACK_fill_pointer;
-            index++)
-            clause_state[CLAUSE_STACK[index]] = ACTIVE;
-            CLAUSE_STACK_fill_pointer = saved_clause_stack[var];
+                for (index = saved_clause_stack[var]; 
+                            index < (*CLAUSE_STACK_fill_pointer);
+                            index++)
+                    clause_state[CLAUSE_STACK[index]] = ACTIVE;
+                
+                (*CLAUSE_STACK_fill_pointer) = saved_clause_stack[var];
 
-            for (index = saved_reducedclause_stack[var];
-            index < REDUCEDCLAUSE_STACK_fill_pointer;
-            index++) {	
-            clause = REDUCEDCLAUSE_STACK[index];
-            clause_length[REDUCEDCLAUSE_STACK[index]]++;
-            }
-            REDUCEDCLAUSE_STACK_fill_pointer = saved_reducedclause_stack[var];
-            UNITCLAUSE_STACK_fill_pointer=saved_unitclause_stack[var];
-            NB_EMPTY=saved_nb_empty[var];
-            NB_CLAUSE=saved_nb_clause[var];
-            NEW_CLAUSES_fill_pointer=saved_new_clauses[var];
-            
-            saved=saved_saved_clauses[var];
-            for (index = SAVED_CLAUSES_fill_pointer-1 ;
-            index >= saved;
-            index--) 
-            *SAVED_CLAUSE_POSITIONS[index]=SAVED_CLAUSES[index];
-            SAVED_CLAUSES_fill_pointer=saved;
+                for (index = saved_reducedclause_stack[var];
+                            index < (*REDUCEDCLAUSE_STACK_fill_pointer);
+                            index++) {	
+                    clause = REDUCEDCLAUSE_STACK[index];
+                    clause_length[REDUCEDCLAUSE_STACK[index]]++;
+                }
+                (*REDUCEDCLAUSE_STACK_fill_pointer) = saved_reducedclause_stack[var];
+                (*UNITCLAUSE_STACK_fill_pointer) = saved_unitclause_stack[var];
+                (*NB_EMPTY) = saved_nb_empty[var];
+                (*NB_CLAUSE) = saved_nb_clause[var]; //TODO: COMPROBAR CON PROFESOR
+                (*NEW_CLAUSES_fill_pointer) = saved_new_clauses[var];
+                
+                saved = saved_saved_clauses[var];
 
-            if (NB_EMPTY<UB) {
-            var_current_value[var] = var_rest_value[var];
-            var_rest_value[var] = NONE;
-            push(var, VARIABLE_STACK);
-            if (reduce_clauses(var) == NONE)
-                return NONE;
-            remove_clauses(var);
-                return TRUE;
-            }
-            else  var_state[var] = ACTIVE;
+                for (index = (*SAVED_CLAUSES_fill_pointer)-1 ;
+                            index >= saved;
+                            index--)
+                    *SAVED_CLAUSE_POSITIONS[index] = SAVED_CLAUSES[index];
+                
+                (*SAVED_CLAUSES_fill_pointer) = saved;
+
+                if ((*NB_EMPTY) < (*UB)) {
+                    var_current_value[var] = var_rest_value[var];
+                    var_rest_value[var] = NONE;
+                    push(var, VARIABLE_STACK);
+                    if (reduce_clauses(var, NB_EMPTY, UB, neg_in, pos_in, REDUCEDCLAUSE_STACK, UNITCLAUSE_STACK, UNITCLAUSE_STACK_fill_pointer,
+                                REDUCEDCLAUSE_STACK_fill_pointer, var_current_value, clause_state, clause_length) == NONE)
+                        return NONE;
+                    remove_clauses(var, pos_in, neg_in, var_current_value, clause_state, CLAUSE_STACK, CLAUSE_STACK_fill_pointer);
+                        return TRUE;
+                }
+                else  var_state[var] = ACTIVE;
             }
         } while (VARIABLE_STACK_fill_pointer > 0);
         return FALSE;
     }
 
-    int SAT_Solver::verify_solution() {
+    int SAT_Solver::verify_solution(int *REAL_NB_CLAUSE, int **var_sign, my_type *var_current_value) {
         int i, nb=0, var, *vars_signs, clause_truth,cpt;
 
-        for (i=0; i<REAL_NB_CLAUSE; i++) {
+        for (i=0; i < (*REAL_NB_CLAUSE); i++) {
             clause_truth = FALSE;
             vars_signs = var_sign[i];
             for(var=*vars_signs; var != NONE; var=*(vars_signs+=2))
-            if (*(vars_signs+1) == var_current_value[var] ) {
-            clause_truth = TRUE;
-            break;
-            }
+                if (*(vars_signs+1) == var_current_value[var] ) {
+                    clause_truth = TRUE;
+                    break;
+                }
             if (clause_truth == FALSE) nb++;
         }
         return nb;
     }
 
-    void SAT_Solver::reset_context(int saved_clause_stack_fill_pointer, int saved_reducedclause_stack_fill_pointer, int saved_unitclause_stack_fill_pointer, int saved_variable_stack_fill_pointer) {
+    void SAT_Solver::reset_context(int saved_clause_stack_fill_pointer, int saved_reducedclause_stack_fill_pointer, int saved_unitclause_stack_fill_pointer,
+                    int saved_variable_stack_fill_pointer, int *CLAUSE_STACK_fill_pointer, int *REDUCEDCLAUSE_STACK_fill_pointer, int *REDUCEDCLAUSE_STACK,
+                    int *VARIABLE_STACK_fill_pointer, int *VARIABLE_STACK, int *CLAUSE_STACK, int *reason, int *UNITCLAUSE_STACK_fill_pointer,
+                    my_type *clause_length, my_type *clause_state, my_type *var_state) {
         int index, var, clause;
         for (index = saved_clause_stack_fill_pointer; 
-            index < CLAUSE_STACK_fill_pointer;
-            index++)
+                index < (*CLAUSE_STACK_fill_pointer);
+                index++)
             clause_state[CLAUSE_STACK[index]] = ACTIVE;
-        CLAUSE_STACK_fill_pointer = saved_clause_stack_fill_pointer;
+        
+        (*CLAUSE_STACK_fill_pointer) = saved_clause_stack_fill_pointer;
 
         for (index = saved_reducedclause_stack_fill_pointer;
-            index < REDUCEDCLAUSE_STACK_fill_pointer;
-            index++) {	
+                index < (*REDUCEDCLAUSE_STACK_fill_pointer);
+                index++) {	
             clause = REDUCEDCLAUSE_STACK[index];
             clause_length[REDUCEDCLAUSE_STACK[index]]++;
         }
-        REDUCEDCLAUSE_STACK_fill_pointer = saved_reducedclause_stack_fill_pointer;
+        (*REDUCEDCLAUSE_STACK_fill_pointer) = saved_reducedclause_stack_fill_pointer;
 
-        for(index=saved_variable_stack_fill_pointer; index<VARIABLE_STACK_fill_pointer; index++){
-            var=VARIABLE_STACK[index];
+        for(index=saved_variable_stack_fill_pointer;
+                index < (*VARIABLE_STACK_fill_pointer);
+                index++){
+            var = VARIABLE_STACK[index];
             reason[var] = NO_REASON;
             var_state[var] = ACTIVE;
         }
-        VARIABLE_STACK_fill_pointer = saved_variable_stack_fill_pointer;
 
-        UNITCLAUSE_STACK_fill_pointer = saved_unitclause_stack_fill_pointer;
+        (*VARIABLE_STACK_fill_pointer) = saved_variable_stack_fill_pointer;
+
+        (*UNITCLAUSE_STACK_fill_pointer) = saved_unitclause_stack_fill_pointer;
     }
 
-    int SAT_Solver::replace_clause(int newclause, int clause_to_replace, int *clauses) {
+    int SAT_Solver::replace_clause(int newclause, int clause_to_replace, int *clauses, int **SAVED_CLAUSE_POSITIONS, int *SAVED_CLAUSES_fill_pointer, int *SAVED_CLAUSES) {
         int clause, flag = FALSE;
         for(clause = *clauses; clause != NONE; clause = *(++clauses)) {
             if (clause == clause_to_replace) {
-            *clauses = newclause;
-            SAVED_CLAUSE_POSITIONS[SAVED_CLAUSES_fill_pointer] = clauses;
-            push(clause_to_replace, SAVED_CLAUSES);
-            flag = TRUE;
-            break;
+                *clauses = newclause;
+                SAVED_CLAUSE_POSITIONS[(*SAVED_CLAUSES_fill_pointer)] = clauses;
+                push(clause_to_replace, SAVED_CLAUSES);
+                flag = TRUE;
+                break;
             }
         }
         if (flag == FALSE)
@@ -229,27 +251,28 @@ namespace ibex {
         return flag;
     }
 
-    void SAT_Solver::create_binaryclause(int var1, int sign1, int var2, int sign2, int clause1, int clause2) {
+    void SAT_Solver::create_binaryclause(int var1, int sign1, int var2, int sign2, int clause1, int clause2, int **NEW_CLAUSES, int *NB_CLAUSE, int **var_sign,
+                    int **SAVED_CLAUSE_POSITIONS, int *SAVED_CLAUSES_fill_pointer, int *SAVED_CLAUSES,
+                    my_type *clause_state, my_type *clause_length, int *NEW_CLAUSES_fill_pointer, int **pos_in, int **neg_in) {
         int clause, *vars_signs, flag = FALSE, *clauses1, *clauses2;
         if (sign1 == POSITIVE) clauses1 = pos_in[var1]; else clauses1 = neg_in[var1];
         if (sign2 == POSITIVE) clauses2 = pos_in[var2]; else clauses2 = neg_in[var2];
-        vars_signs = NEW_CLAUSES[NEW_CLAUSES_fill_pointer++];
+        vars_signs = NEW_CLAUSES[(*NEW_CLAUSES_fill_pointer)++];
         if (var1 < var2) {
             vars_signs[0] = var1; vars_signs[1] = sign1;
             vars_signs[2] = var2; vars_signs[3] = sign2;
-        }
-        else {
+        } else {
             vars_signs[0] = var2; vars_signs[1] = sign2;
             vars_signs[2] = var1; vars_signs[3] = sign1;
         }
         vars_signs[4] = NONE;
-        var_sign[NB_CLAUSE] = vars_signs;
-        clause_state[NB_CLAUSE] = ACTIVE;
-        clause_length[NB_CLAUSE] = 2;
+        var_sign[(*NB_CLAUSE)] = vars_signs;
+        clause_state[(*NB_CLAUSE)] = ACTIVE;
+        clause_length[(*NB_CLAUSE)] = 2;
         // if (NB_CLAUSE==305)
         // printf("aaa...");
-        replace_clause(NB_CLAUSE, clause1, clauses1);
-        replace_clause(NB_CLAUSE, clause2, clauses2);
+        replace_clause((*NB_CLAUSE), clause1, clauses1, SAVED_CLAUSE_POSITIONS, SAVED_CLAUSES_fill_pointer, SAVED_CLAUSES);
+        replace_clause((*NB_CLAUSE), clause2, clauses2, SAVED_CLAUSE_POSITIONS, SAVED_CLAUSES_fill_pointer, SAVED_CLAUSES);
         NB_CLAUSE++;
     }
 
@@ -270,7 +293,9 @@ namespace ibex {
         return TRUE;
     }
 
-    int SAT_Solver::create_clause_from_conflict_clauses(int clause1, int clause2, int clause3) {
+    int SAT_Solver::create_clause_from_conflict_clauses(int clause1, int clause2, int clause3, int **var_sign, int **NEW_CLAUSES, int *NB_CLAUSE,
+                    int **SAVED_CLAUSE_POSITIONS, int *SAVED_CLAUSES_fill_pointer, int *SAVED_CLAUSES, int *NEW_CLAUSES_fill_pointer, int **pos_in, int **neg_in,
+                    int *CLAUSES_TO_REMOVE, int *CLAUSES_TO_REMOVE_fill_pointer, my_type *clause_state, my_type *clause_length, my_type *var_state) {
         int var3, sign3, var2, sign2,*clauses2, *clauses3, *vars_signs, 
             varssigns[4], i = 0, var;
 
@@ -300,7 +325,9 @@ namespace ibex {
             */
             var2=varssigns[0]; sign2=1-varssigns[1];
             var3=varssigns[2]; sign3=1-varssigns[3];
-            create_binaryclause(var2, sign2, var3, sign3, clause2, clause3);
+            create_binaryclause(var2, sign2, var3, sign3, clause2, clause3, NEW_CLAUSES, NB_CLAUSE, var_sign, SAVED_CLAUSE_POSITIONS, SAVED_CLAUSES_fill_pointer, SAVED_CLAUSES,
+                        clause_state, clause_length, NEW_CLAUSES_fill_pointer, pos_in, neg_in);
+
             push(clause1, CLAUSES_TO_REMOVE);
             push(clause2, CLAUSES_TO_REMOVE);
             push(clause3, CLAUSES_TO_REMOVE);
@@ -310,12 +337,11 @@ namespace ibex {
         }
     }
 
-
-    int SAT_Solver::search_linear_reason1(int var) {
+    int SAT_Solver::search_linear_reason1(int var, int *reason, int **var_sign, int *LINEAR_REASON_STACK1, int *clause_involved) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
         for(fixed_var=var; fixed_var != NONE; fixed_var=new_fixed_var) {
-            clause=reason[fixed_var];
+            clause = reason[fixed_var];
             vars_signs = var_sign[clause]; new_fixed_var = NONE;
             push(clause, LINEAR_REASON_STACK1);
             clause_involved[clause] = TRUE;
@@ -331,26 +357,27 @@ namespace ibex {
     }
 
 
-    int SAT_Solver::search_linear_reason2(int var) {
+    int SAT_Solver::search_linear_reason2(int var, int *reason, int **var_sign, int *LINEAR_REASON_STACK1, int *LINEAR_REASON_STACK2, int *LINEAR_REASON_STACK1_fill_pointer,
+                    int *LINEAR_REASON_STACK2_fill_pointer, int *clause_involved) {
         int *vars_signs, clause, fixed_var, index_var, new_fixed_var;
 
-        for(fixed_var=var; fixed_var != NONE; fixed_var=new_fixed_var) {
+        for(fixed_var=var; fixed_var != NONE; fixed_var = new_fixed_var) {
             clause=reason[fixed_var];
-            if (clause_involved[clause]==TRUE) {
-            if ( LINEAR_REASON_STACK2_fill_pointer == 2 && LINEAR_REASON_STACK1_fill_pointer > 2 && LINEAR_REASON_STACK1[ 2 ] == clause ) 
-                return SIMPLE_NON_LINEAR_CASE;
-            else
-                return FALSE;
+            if (clause_involved[clause] == TRUE) {
+                if ( (*LINEAR_REASON_STACK2_fill_pointer) == 2 && (*LINEAR_REASON_STACK1_fill_pointer) > 2 && LINEAR_REASON_STACK1[ 2 ] == clause ) 
+                    return SIMPLE_NON_LINEAR_CASE;
+                else
+                    return FALSE;
             } else 
-            push(clause, LINEAR_REASON_STACK2);
+                push(clause, LINEAR_REASON_STACK2);
             vars_signs = var_sign[clause]; new_fixed_var = NONE;
             for(index_var=*vars_signs; index_var != NONE; index_var=*(vars_signs+=2)) {
-            if ((index_var!=fixed_var) && (reason[index_var] != NO_REASON)) {
-                if (new_fixed_var == NONE)
-                new_fixed_var=index_var;
-                else
-                return FALSE;
-            }
+                if ((index_var!=fixed_var) && (reason[index_var] != NO_REASON)) {
+                    if (new_fixed_var == NONE)
+                        new_fixed_var=index_var;
+                    else
+                        return FALSE;
+                }
             }
         }
         return TRUE;
@@ -358,7 +385,7 @@ namespace ibex {
 
     // clause1 is l1->l2, clause is l2->l3, clause3 is ((not l3) or (not l4))
     // i.e., the reason of l2 is clause1, the reason of l3 is clause
-    int SAT_Solver::check_reason(int *varssigns, int clause, int clause1, int clause2) {
+    int SAT_Solver::check_reason(int *varssigns, int clause, int clause1, int clause2, int *reason, int **var_sign, my_type *var_current_value) {
         int var, *vars_signs, var1, var2, flag;
 
         if ((reason[varssigns[0]] != clause1) || (reason[varssigns[2]] != clause)) 
@@ -372,7 +399,9 @@ namespace ibex {
         return flag;
     }
 
-    int SAT_Solver::create_complementary_binclause(int clause, int clause1, int clause2) {
+    int SAT_Solver::create_complementary_binclause(int clause, int clause1, int clause2, int **var_sign, int *reason, my_type *var_current_value, int **NEW_CLAUSES,
+                    int *NB_CLAUSE, int **SAVED_CLAUSE_POSITIONS, int *SAVED_CLAUSES_fill_pointer, int *SAVED_CLAUSES, int *NEW_CLAUSES_fill_pointer, int **pos_in,
+                    int **neg_in, my_type *clause_state, my_type *clause_length) {
         int var, *vars_signs, i = 0, varssigns[4], sign, j = 0;
         vars_signs = var_sign[clause];
         for(var = *vars_signs; var != NONE; var = *(vars_signs += 2)) {
@@ -385,9 +414,10 @@ namespace ibex {
             varssigns[2]=varssigns[0]; varssigns[3]=varssigns[1];
             varssigns[0]=var; varssigns[1]=sign;
         }
-        if ((i!=4) || (check_reason(varssigns, clause, clause1, clause2) == FALSE))
+        if ((i!=4) || (check_reason(varssigns, clause, clause1, clause2, reason, var_sign, var_current_value) == FALSE))
             printf("problem...");
-        create_binaryclause(varssigns[0], 1-varssigns[1], varssigns[2], 1-varssigns[3], clause1, clause2);
+        create_binaryclause(varssigns[0], 1-varssigns[1], varssigns[2], 1-varssigns[3], clause1, clause2, NEW_CLAUSES, NB_CLAUSE, var_sign, SAVED_CLAUSE_POSITIONS,
+        SAVED_CLAUSES_fill_pointer, SAVED_CLAUSES, clause_state, clause_length, NEW_CLAUSES_fill_pointer, pos_in, neg_in);
         return TRUE;
     }
 
