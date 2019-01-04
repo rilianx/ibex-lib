@@ -260,4 +260,3 @@ my_type build_simple_sat_instance(char *input_file) {
     return FALSE;
   return TRUE;
 }
-
