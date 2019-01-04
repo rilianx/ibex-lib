@@ -1,0 +1,73 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+######################
+###### options #######
+######################
+def options (opt):
+	opt.add_option ("--with-maxsat", action="store_true",
+			dest="WITH_MAXSAT", help = "Use maxSAT solver")
+
+######################
+##### configure ######
+######################
+def configure (conf):
+	conf.env.WITH_MAXSAT = conf.options.WITH_MAXSAT
+		
+	conf.start_msg ("Parameter Estimation plugin")
+	if not conf.env.WITH_MAXSAT: 
+		conf.end_msg ("not used")
+		return
+	
+	conf.end_msg ("enabled")
+	conf.env.append_unique ("IBEX_PLUGIN_USE_LIST", "MAXSAT")
+	
+	# Add information in ibex_Setting
+	conf.setting_define ("WITH_MAXSAT", 1)
+
+	# add MAXSAT plugin include directory
+
+	for f in conf.path.ant_glob ("src/** src", dir = True, src = False):
+		conf.env.append_unique("INCLUDES_MAXSAT", f.abspath())
+
+	# The build and install steps will be run from the main src/wscript script so
+	# we need to give path relative to the main src directory
+	mainsrc = conf.srcnode.make_node ("src")
+
+	# add MAXSAT headers
+	for f in conf.path.ant_glob ("src/**/ibex_*.h"):
+		conf.env.append_unique ("IBEX_HDR", f.path_from (mainsrc))
+
+	# add MAXSAT source files
+	for f in conf.path.ant_glob ("src/**/ibex_*.cpp src/cliquer/*cpp",
+			excl="src/cliquer/cl.cpp"):
+		conf.env.append_unique ("IBEX_SRC", f.path_from (mainsrc))
+
+	# The utest step will be run from the main tests/wscript script so we need to
+	# give path relative to the main tests directory
+	maintests = conf.srcnode.make_node ("tests")
+
+	# add MAXSAT test files
+	for f in conf.path.ant_glob ("tests/**/*.cpp"):
+		conf.env.append_unique ('TEST_SRC', f.path_from (maintests))
+
+	# Add param_estim/tests directory to list of INCLUDES for TESTS
+	testsnode = conf.path.make_node ("tests")
+	conf.env.append_unique ("INCLUDES_TESTS", testsnode.abspath ())
+
+######################
+####### build ########
+######################
+	#conf.env.append_unique("INCLUDES","../../plugins/param-estim/src/combinatorial")
+	#conf.env.append_unique("INCLUDES","../../plugins/param-estim/src/cliquer")
+	#conf.env.append_unique("INCLUDES","../../plugins/param-estim/src/contractor")
+	#conf.env.append_unique("INCLUDES","../../plugins/param-estim/src/strategy")
+def build (bld):
+	if bld.env.WITH_MAXSAT:
+		# build optim binary
+		bld.program (
+		target = "maxsat",
+		use = [ "ibex", "MAXSAT" ], # add dependency on ibex library
+		source = bld.path.ant_glob ("examples/**/maxsat.cpp"),
+		install_path = bld.env.BINDIR,
+		)
