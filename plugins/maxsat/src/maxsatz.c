@@ -48,7 +48,7 @@ An actual unit clause is an existing clause before look-ahead starts
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <iostream>
+// #include <iostream>
 
 #include <sys/times.h>
 #include <sys/types.h>
@@ -1440,7 +1440,7 @@ main(int argc, char *argv[]) {
     return FALSE;
   }
   for (i=0; i<WORD_LENGTH; i++) saved_input_file[i]=argv[1][i];
-  for (i=0; i<WORD_LENGTH; i++) cout << saved_input_file[i] << endl;
+  // for (i=0; i<WORD_LENGTH; i++) cout << saved_input_file[i] << endl;
 
   a_tms = ( struct tms *) malloc( sizeof (struct tms));
   mess=times(a_tms); begintime = a_tms->tms_utime;

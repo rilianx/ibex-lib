@@ -68,6 +68,6 @@ def build (bld):
 		bld.program (
 		target = "maxsat",
 		use = [ "ibex", "MAXSAT" ], # add dependency on ibex library
-		source = bld.path.ant_glob ("examples/**/maxsat.cpp"),
+		source = bld.path.ant_glob ("src/**/maxsatz.c"),
 		install_path = bld.env.BINDIR,
 		)
