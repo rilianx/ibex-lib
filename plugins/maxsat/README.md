@@ -28,6 +28,6 @@ Must add the maxsat flag to use it and as optional the default optimizer (optim)
 
 ### Execute
 
-`__build__/plugins/maxsat/estim_optim plugins/maxsat/test/test_name`
+`__build__/plugins/maxsat/maxsat plugins/maxsat/example/test`
 
 Replace "test_name" with the filename you want to test.
