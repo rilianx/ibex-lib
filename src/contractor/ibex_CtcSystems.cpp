@@ -38,51 +38,7 @@ namespace ibex {
 				box.set_empty();
 				return;
 			}
-//			vector<IntervalMatrix>  perm_list;
-//			vector <vector <pair <int,int> > > proj_vars;
-//			best_gauss_jordan_coll (A,box,perm_list,proj_vars,1e-8);
-//			/*gauss-seidel*/
-//				IntervalVector last_box = box;
-//				for (int i = 0 ; i < perm_list.size() ; i ++){
-//				P = perm_list[i];
-//				PA=P*A;
-//				Pb= P*b;
-//				IntervalMatrix tmp(PA);
-//				if(!bwd_mul(Pb, tmp, box, 1e8)){
-//					box.set_empty();
-//					return;
-//				}
-			}
-//			while(cambio){
-//			IntervalVector last_box= box;
-//			for (int j = 0 ; j < proj_vars.size() ; j++){
-//				P = perm_list[j];
-//				PA=P*A;
-//				Pb= P*b;
-//				IntervalMatrix tmp(PA);
-//				for (int k = 0 ; k  < proj_vars[j].size() ; k++){
-//					int var = proj_vars[j][k].first;
-//					int eq = proj_vars[j][k].second;
-//					Interval value(Pb[eq]);
-//					for (int l = 0; l < tmp.nb_cols(); l++){
-//						if (l != var){
-//							value = value +(-tmp[eq][l]*box[l]);
-//						}
-//					}
-//					value = value/tmp[eq][var];
-//					box[var] = value&=box[var];
-//					if(box.is_empty()) return;
-//				}
-//
-//			}
-//			if (box == last_box) cambio = false;
-//			}
-
-
-
-
-
-
+		}
 	}
 
 
@@ -146,9 +102,6 @@ namespace ibex {
 //				   cout << PA.mid() << endl;
 			   }
 			   else if(ctc_type == GAUSS_PSEUDOINV ){
-				   //A is the matrix A after performing gauss elimination
-				   //A <-- G*A : A is a diagonal matrix
-				   //A = G*b
 
 				   bool exist;
 				   exist = pseudoinverse(A.mid(), P);
@@ -161,18 +114,8 @@ namespace ibex {
 				   // after this: PA*x = P*b
 			   }else if(ctc_type == GAUSS_JORDAN ){
 				   PA=A;
-//				   cout << PA.nb_cols() << endl;
-//				   cout << PA.nb_rows() << endl;
-//				   getchar();
-//				   if (PA.nb_cols()>PA.nb_rows())
-//					   gauss_jordan_all (PA,1e-8);
-//				   exit (1);
-//				   P = gauss_jordan(PA,1e-8);
 				   P = gauss_jordan (PA, 1e-8);
-//
-
-//				   	   exit(1);
-//				   cout << PA.mid() << endl;
+				   P = best_P(PA, 1e-8);
 			   }
 			   cout.precision(3);
 			}
@@ -256,11 +199,6 @@ namespace ibex {
 				}
 				for (it2=subsets[i].first.begin(); it2!=subsets[i].first.end(); it2++)
 					temp_x.add(x[*it2]);
-					/*test pseudoinverse (falta experimentos)*/
-//					IntervalMatrix PA_aux(temp_A);
-//					gauss_jordan(PA_aux);
-//					new_pseudoinverse(temp_x,temp_b,PA_aux.mid(),temp_A,1e-7);
-					/*end test*/
 					EmbeddedLinearSystemBuilder*  system_A = new EmbeddedLinearSystemBuilder(temp_A,temp_x,temp_b);
 					ls_list.push_back(system_A);
 

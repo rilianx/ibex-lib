@@ -15,6 +15,7 @@
 #include "ibex_Linear.h"
 #include "ibex_Expr.h"
 #include <algorithm>
+#include "ibex_LPSolver.h"
 using namespace std;
 
 namespace ibex {
@@ -44,9 +45,17 @@ namespace ibex {
 
 	void combinatorial(IntervalMatrix A,int cols,int rows,std::vector< std::vector <int> > & comb_piv);
 
-	Matrix best_gauss_jordan (IntervalMatrix& A, IntervalVector box, double prec);
+	Matrix best_gauss_jordan (IntervalMatrix& A, double prec);
 
 	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,double prec);
+
+
+	double impact_heuristic_new(int row, int column,IntervalMatrix PA, IntervalVector x,int heuristic);
+	pair<int,int> find_pivot_new(IntervalMatrix & PA, IntervalVector x,set<int> & ban_rows, set<int> & ban_cols,int heuristic);
+	void best_gauss_jordan_new (IntervalMatrix A, IntervalVector x, vector<IntervalMatrix> & perm_list,
+							vector <vector <pair <int,int> > > & proj_vars, double prec,int heuristic);
+
+	Matrix best_P (IntervalMatrix& A, double prec);
 
 }
 

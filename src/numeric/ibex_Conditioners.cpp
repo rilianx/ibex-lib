@@ -103,7 +103,7 @@ namespace ibex {
 		return perm;
 	}
 
-	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values,IntervalVector box, double prec){
+	bool max_piv(Matrix B, set<int> & ban_rows, set<int> & ban_cols, pair<int,int> & max_values, double prec){
 		bool exist = false;
 		for (int i = 0 ; i < B.nb_rows() ; i++){
 			double max = 0;
@@ -111,7 +111,7 @@ namespace ibex {
 				for (int j = 0 ; j < B.nb_cols() ; j++){
 					if (ban_cols.count(j) != 1){
 						if ((B[i][j] > prec) || (B[i][j] < -prec)){
-							if (std::abs(B[i][j])*box[j].rad() > max){
+							if (std::abs(B[i][j]) > max){
 								exist = true;
 								max = B[i][j];
 								max_values.first = i ;
@@ -128,7 +128,7 @@ namespace ibex {
 		return exist;
 	}
 
-	Matrix best_gauss_jordan (IntervalMatrix& A, IntervalVector box,  double prec){
+	Matrix best_gauss_jordan (IntervalMatrix& A,  double prec){
 		Matrix B(1,1);
 		B.resize(A.nb_rows(),A.nb_cols());
 		Matrix perm(1,1);
@@ -146,7 +146,7 @@ namespace ibex {
 		B = A.mid();
 		bool exist = true;
 		while (exist){
-			exist = max_piv(B,ban_rows,ban_cols,max_values,box, prec);
+			exist = max_piv(B,ban_rows,ban_cols,max_values, prec);
 			if (exist){
 				int temp_piv = max_values.first;
 				int actual_col = max_values.second;
@@ -175,6 +175,20 @@ namespace ibex {
 			}
 		}
 		A=perm*A;
+		IntervalMatrix C = A;
+		Matrix P_aux = perm;
+		int rows_A_aux = A.nb_rows();
+		A.resize(ban_rows.size(),A.nb_cols());
+		perm.resize(ban_rows.size(),perm.nb_cols());
+
+		int flag = 0;
+		for (int i = 0; i < rows_A_aux ; i++){
+			if (ban_rows.count(i) == 1){
+				A[i-flag] = C[i];
+				perm[i-flag] = P_aux[i];
+			}
+			else flag++;
+		}
 		return perm;
 	}
 
@@ -483,7 +497,249 @@ namespace ibex {
 				if(A.nb_cols()==ban_cols.size()) available_cols = false;
 			}
 		}
+	double impact_heuristic_new(int row, int column,IntervalMatrix PA, IntervalVector x,int heuristic){
 
+			if (heuristic == 1){
+				return std::abs(PA[row][column].mag());
+			}
+
+			else if (heuristic == 2) {
+				return std::abs(PA[row][column].mag()*x[column].diam());
+			}
+
+			else if (heuristic == 3) {
+				return std::abs(PA[row][column].mag());
+			}
+			else if (heuristic == 4) {
+				return std::abs(PA[row][column].mag()*x[column].diam());
+			}
+
+
+			else return 0;
+		}
+
+	pair<int,int> find_pivot_new(IntervalMatrix & PA, IntervalVector x,set<int> & ban_rows, set<int> & ban_cols,int heuristic){
+		pair<int,int> position;
+		position.first = -1;
+		position.second = -1;
+		Matrix impact_values(PA.nb_rows(),PA.nb_cols());
+		for (int i = 0 ; i < impact_values.nb_rows(); i++)
+			for (int j = 0 ; j < impact_values.nb_cols() ; j++)
+				impact_values[i][j] = 0;
+		for (int j = 0 ; j < PA.nb_cols() ; j++){
+			if (ban_cols.count(j) != 1){
+				for (int i = 0 ; i < PA.nb_rows() ; i++){
+					if ((ban_rows.count(i) != 1) &&  !(PA[i][j].contains(0))){
+						impact_values[i][j] = impact_heuristic_new(i,j,PA,x,heuristic);
+					}
+				}
+			}
+		}
+		/*search for the maximum value*/
+		double max_value = 1e-8;
+		if ((heuristic == 1) || (heuristic == 2))
+			for (int i = 0 ; i < impact_values.nb_rows(); i++)
+				for (int j = 0 ; j < impact_values.nb_cols() ; j++){
+					if (impact_values[i][j] > max_value){
+						max_value = impact_values[i][j];
+						position.first = j;
+						position.second = i;
+
+					}
+				}
+		if ((heuristic == 3) || (heuristic == 4)){
+			int best_col = -1;
+			for (int i = 0 ; i < impact_values.nb_rows();i++){
+				double sum = 0;
+				for (int j =0 ; j < impact_values.nb_cols();j++)
+					sum = sum + impact_values[i][j];
+				if (sum != 0){
+					for (int j =0 ; j < impact_values.nb_cols();j++)
+						impact_values[i][j] = (double)(impact_values[i][j]/sum);
+				}
+			}
+			Matrix impact_relative(1,PA.nb_cols());
+			for (int j = 0 ; j < PA.nb_cols() ; j++)
+				for (int i = 0 ; i < PA.nb_rows() ; i++)
+					impact_relative[0][j] = impact_relative[0][j]+impact_values[i][j];
+			for (int j = 0 ; j < PA.nb_cols() ; j++){
+				if (impact_relative[0][j] > max_value){
+					max_value = impact_relative[0][j];
+					best_col = j;
+				}
+			}
+
+			if (best_col == -1) return position;
+			else{
+				max_value = 1e-8 ;
+				for (int i = 0 ; i < impact_values.nb_rows() ; i++){
+					if (impact_values[i][best_col] > max_value){
+						max_value = impact_values[i][best_col];
+						position.first = best_col;
+						position.second = i;
+
+					}
+				}
+			}
+		}
+
+
+
+
+		if(position.first != -1){
+			ban_rows.insert(position.second);
+			ban_cols.insert(position.first);
+		}
+		return position;
+	}
+
+
+	void best_gauss_jordan_new (IntervalMatrix A, IntervalVector x, vector<IntervalMatrix> & perm_list,
+						vector <vector <pair <int,int> > > & proj_vars, double prec,int heuristic){
+
+			vector <pair<int,int> > aux_list;
+			IntervalMatrix B(1,1);
+			B.resize(A.nb_rows(),A.nb_cols());
+			IntervalMatrix perm(1,1);
+			set<int> ban_rows;
+			set<int> ban_cols;
+			perm.resize(B.nb_rows(),B.nb_rows());
+			pair<int,int> max_values;
+			bool available_cols = true;
+			B = A;
+			while (available_cols){
+
+				aux_list.clear();
+				ban_rows.clear();
+				/*Initialize B*/
+				B = A;
+				/*Initialize the permutation matrix*/
+				for (int i = 0; i<A.nb_rows() ; i++)
+					for (int j = 0; j<A.nb_rows() ; j++){
+						if (i == j) perm[i][j] = 1;
+						else perm[i][j] = 0;
+					}
+				while (ban_rows.size() != A.nb_rows()){
+					if (ban_cols.size() == A.nb_cols()){
+						ban_cols.clear();
+						available_cols = false;
+					}
+	//				pair<int,int> var_eq = find_next_pivot(B, x, ban_rows, ban_cols,heuristic);
+					pair<int,int> var_eq = find_pivot_new(B, x, ban_rows, ban_cols,heuristic);
+					if (var_eq.first !=-1){
+						/*dddd*/
+						aux_list.push_back(make_pair(var_eq.first,var_eq.second));
+						Interval coef = B[var_eq.second][var_eq.first];
+						IntervalMatrix aux_perm(1,1);
+						aux_perm.resize(A.nb_rows(),A.nb_rows());
+						for (int k = 0; k<A.nb_rows() ; k++)
+							for (int l = 0; l<A.nb_rows() ; l++){
+								if (k == l) aux_perm[k][l] = 1;
+								else aux_perm[k][l] = 0;
+							}
+						for (int k = 0 ; k < B.nb_rows() ; k++){
+							if ((k != var_eq.second) && (  (B[k][var_eq.first].mag() > prec))) {
+								Interval factor = B[k][var_eq.first];
+								aux_perm[k][var_eq.second] = -factor/coef;
+								for (int l = 0 ; l < B.nb_cols() ; l++){
+									if (l == var_eq.first) B[k][l] = 0;
+									else B[k][l] = B[k][l]-(B[var_eq.second][l]*factor/coef);
+
+								}
+							}
+						}
+						/*make the pivot position 1*/
+						for (int i = 0 ; i < B.nb_cols() ; i++){
+							if (i == var_eq.first) B[var_eq.second][i] = 1;
+							else B[var_eq.second][i] = B[var_eq.second][i]/coef;
+						}
+						aux_perm[var_eq.second][var_eq.second] = 1/coef;
+						perm = aux_perm*perm;
+
+					}
+					else{
+						available_cols = false;
+						break;
+					}
+				}
+				if (aux_list.size()>0){
+					proj_vars.push_back(aux_list);
+					perm_list.push_back(perm);
+					 available_cols = false;
+//					cout << perm.nb_cols() << " " << perm.nb_rows() << endl;
+				}
+				if(A.nb_cols()==ban_cols.size()) available_cols = false;
+			}
+		}
+
+
+
+	Matrix best_P (IntervalMatrix& A, double prec){
+		cout << A.nb_rows() << "   " << A.nb_cols() << endl;
+
+		Matrix perm(A.nb_cols(),A.nb_cols());
+		IntervalVector box2(3*A.nb_cols());
+
+		Vector row(box2.size());
+
+		for (int i = 0 ; i < A.nb_cols() ; i++){
+			LPSolver lp_solver(3*A.nb_rows());
+			lp_solver.clean_ctrs();
+			lp_solver.set_bounds(IntervalVector(row.size()));
+			row.zeros(row.size());
+			for (int j = 0 ; j < 3*A.nb_cols() ; j++){
+				if (j < A.nb_cols()){
+					//initialize the variables x_i
+					box2[j] = Interval(-1000,1000);
+					lp_solver.set_obj_var(j,0);
+				}
+				else if (j > A.nb_cols() && j < 2*A.nb_cols()){
+					//initialize variables s_i
+					box2[j]=Interval(-1001, 1001);
+					lp_solver.set_obj_var(j,0);
+				}
+				else{
+					//initialize auxiliary variables u_i
+					box2[j]=Interval(-1002, 1002);
+					lp_solver.set_obj_var(j,1);
+				}
+
+			}
+			lp_solver.set_bounds(box2);
+
+			//s_i = 1
+			row[A.nb_cols()+i] = 1;
+			lp_solver.add_constraint(row,GEQ,1-1e-7);
+			lp_solver.add_constraint(row,LEQ,1+1e-7);
+			// u_i > s_i ; u_i < s_i
+			for (int j = A.nb_cols() ; j < 2*A.nb_cols() ; j++){
+				row.zeros(row.size());
+				row[j] = -1;
+				row[A.nb_cols()+j]=1;
+				lp_solver.add_constraint(row,GEQ,0);
+			}
+			//s_i = sum_{j=1} a[i][j] x_i
+			for (int j = 0 ; j < A.nb_cols() ; j++){
+				row.zeros(row.size());
+				for (int m = 0 ; m < A.nb_rows() ; m++)
+					row[m] = -A[m][j].lb();
+				row[A.nb_cols()+j]=1;
+				lp_solver.add_constraint(row,GEQ,-1e-7);
+				lp_solver.add_constraint(row,LEQ,1e-7);
+			}
+
+			cout << "flag" << endl;
+			exit(1);
+			LPSolver::Status_Sol stat = lp_solver.solve();
+
+			exit(1);
+		}
+//
+
+
+		exit(1);
+		return perm;
+	}
 
 
 } /* namespace ibex */
