@@ -58,8 +58,10 @@ int main(int argc, char** argv){
     LoupFinderDefault* loupfinder;
     std::size_t found = string(argv[1]).find(".nl");
 	if (found!=std::string::npos){
-	       AmplInterface interface (argv[1]);
-	       orig_sys= new System(interface);
+		   cout << "AMPL is not supported" << endl;
+		   exit(0);
+	       //AmplInterface interface (argv[1]);
+	       //orig_sys= new System(interface);
      }else
            orig_sys = new System(argv[1]);
 

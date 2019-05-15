@@ -676,63 +676,76 @@ namespace ibex {
 
 	Matrix best_P (IntervalMatrix& A, double prec){
 		cout << A.nb_rows() << "   " << A.nb_cols() << endl;
-
+		cout << A.mid() << endl;
 		Matrix perm(A.nb_cols(),A.nb_cols());
-		IntervalVector box2(3*A.nb_cols());
+		IntervalVector box2(2*A.nb_cols()+A.nb_rows());
 
-		Vector row(box2.size());
+		//Vector row(box2.size());
 
 		for (int i = 0 ; i < A.nb_cols() ; i++){
-			LPSolver lp_solver(3*A.nb_rows());
+			LPSolver lp_solver(box2.size()); // p, s y w
 			lp_solver.clean_ctrs();
-			lp_solver.set_bounds(IntervalVector(row.size()));
-			row.zeros(row.size());
-			for (int j = 0 ; j < 3*A.nb_cols() ; j++){
-				if (j < A.nb_cols()){
-					//initialize the variables x_i
-					box2[j] = Interval(-1000,1000);
+			//lp_solver.set_bounds(IntervalVector(row.size()));
+
+			//initializing domains and objective function
+			for (int j = 0 ; j < box2.size() ; j++){
+				if (j < A.nb_rows()){
+					//initialize the variables p_i
+					box2[j] = Interval(-1e7,1e7);
 					lp_solver.set_obj_var(j,0);
 				}
-				else if (j > A.nb_cols() && j < 2*A.nb_cols()){
+				else if (j > A.nb_rows() && j < A.nb_rows() + A.nb_cols()){
 					//initialize variables s_i
-					box2[j]=Interval(-1001, 1001);
+					box2[j]=Interval(-1e7, 1e7);
 					lp_solver.set_obj_var(j,0);
 				}
 				else{
-					//initialize auxiliary variables u_i
-					box2[j]=Interval(-1002, 1002);
+					//initialize auxiliary variables w_i
+					box2[j]=Interval(-1e7, 1e7);
 					lp_solver.set_obj_var(j,1);
 				}
-
 			}
+
 			lp_solver.set_bounds(box2);
 
+			Vector row(box2.size());
 			//s_i = 1
-			row[A.nb_cols()+i] = 1;
-			lp_solver.add_constraint(row,GEQ,1-1e-7);
-			lp_solver.add_constraint(row,LEQ,1+1e-7);
-			// u_i > s_i ; u_i < s_i
-			for (int j = A.nb_cols() ; j < 2*A.nb_cols() ; j++){
-				row.zeros(row.size());
-				row[j] = -1;
-				row[A.nb_cols()+j]=1;
-				lp_solver.add_constraint(row,GEQ,0);
-			}
-			//s_i = sum_{j=1} a[i][j] x_i
+			row[A.nb_rows()+i] = 1;
+			lp_solver.add_constraint(row,GEQ,1);
+			lp_solver.add_constraint(row,LEQ,1);
+
+			// w_i - s_i > ; w_i + s_i > 0
 			for (int j = 0 ; j < A.nb_cols() ; j++){
-				row.zeros(row.size());
-				for (int m = 0 ; m < A.nb_rows() ; m++)
-					row[m] = -A[m][j].lb();
-				row[A.nb_cols()+j]=1;
-				lp_solver.add_constraint(row,GEQ,-1e-7);
-				lp_solver.add_constraint(row,LEQ,1e-7);
+				Vector row(box2.size());
+				row[A.nb_rows() + A.nb_cols()+j] = 1;
+				row[A.nb_rows()+j]=-1;
+				lp_solver.add_constraint(row,GEQ,0);
+
+				Vector row2(box2.size());
+				row2[A.nb_rows() + A.nb_cols()+j] = 1;
+				row2[A.nb_rows()+j]=1;
+				lp_solver.add_constraint(row2,GEQ,0);
+			}
+			//s_j - sum_{j=1} A[i][j] p_i = 0
+			for (int j = 0 ; j < A.nb_cols() ; j++){
+				Vector row(box2.size());
+				for (int ii = 0 ; ii < A.nb_rows() ; ii++)
+					row[ii] = -A[ii][j].mid();
+				row[A.nb_rows()+j]=1;
+				lp_solver.add_constraint(row,GEQ,0);
+				lp_solver.add_constraint(row,LEQ,0);
 			}
 
-			cout << "flag" << endl;
-			exit(1);
+			//cout << "flag" << endl;
 			LPSolver::Status_Sol stat = lp_solver.solve();
+			Vector v(box2.size());
+			lp_solver.get_primal_sol(v);
+			v.resize(A.nb_rows());
 
-			exit(1);
+			cout <<  v ;
+			cout << "=" << lp_solver.get_obj_value().mid() << endl;
+			//cout << stat << endl;
+			//exit(1);
 		}
 //
 
