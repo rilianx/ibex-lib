@@ -15,6 +15,10 @@ namespace ibex {
 		return i.first > j.first;
 	}
 
+	bool compare2(const std::pair<double, Vector >&i, const std::pair<double, Vector >&j){
+		return i.first < j.first;
+	}
+
 
 	void combinatorial(IntervalMatrix A, int cols,int rows,std::vector< std::vector <int> > & comb_piv){
 		vector<int> pivots;
@@ -673,13 +677,13 @@ namespace ibex {
 		}
 
 
-
-	Matrix best_P (IntervalMatrix& A, double prec){
-		cout << A.nb_rows() << "   " << A.nb_cols() << endl;
-		cout << A.mid() << endl;
-		Matrix perm(A.nb_cols(),A.nb_cols());
+	Matrix best_P (IntervalMatrix& A, IntervalVector b, double prec){
+		Matrix perm(A.nb_cols(),A.nb_rows());
+		IntervalVector aux = b;
+		double max =0;
+		for (int i = 0 ; i < aux.size() ; i++) if (max < aux[i].diam()) max=aux[i].diam();
 		IntervalVector box2(2*A.nb_cols()+A.nb_rows());
-
+		vector <pair<double,Vector > > P_rows;
 		//Vector row(box2.size());
 
 		for (int i = 0 ; i < A.nb_cols() ; i++){
@@ -703,6 +707,7 @@ namespace ibex {
 					//initialize auxiliary variables w_i
 					box2[j]=Interval(-1e7, 1e7);
 					lp_solver.set_obj_var(j,1);
+//					lp_solver.set_obj_var(j,1/(b[j- A.nb_rows() -A.nb_cols()].diam()/max));
 				}
 			}
 
@@ -736,21 +741,13 @@ namespace ibex {
 				lp_solver.add_constraint(row,LEQ,0);
 			}
 
-			//cout << "flag" << endl;
 			LPSolver::Status_Sol stat = lp_solver.solve();
 			Vector v(box2.size());
 			lp_solver.get_primal_sol(v);
 			v.resize(A.nb_rows());
-
-			cout <<  v ;
-			cout << "=" << lp_solver.get_obj_value().mid() << endl;
-			//cout << stat << endl;
-			//exit(1);
+			perm[i] = v;
 		}
-//
-
-
-		exit(1);
+		A = perm*A;
 		return perm;
 	}
 

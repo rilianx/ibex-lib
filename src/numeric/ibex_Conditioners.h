@@ -55,7 +55,7 @@ namespace ibex {
 	void best_gauss_jordan_new (IntervalMatrix A, IntervalVector x, vector<IntervalMatrix> & perm_list,
 							vector <vector <pair <int,int> > > & proj_vars, double prec,int heuristic);
 
-	Matrix best_P (IntervalMatrix& A, double prec);
+	Matrix best_P (IntervalMatrix& A, IntervalVector b, double prec);
 
 }
 

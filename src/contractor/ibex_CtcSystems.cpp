@@ -33,6 +33,13 @@ namespace ibex {
 
 		if(ctc_type==GAUSS_JORDAN){
 
+			if(iter==0){
+				IntervalMatrix PA_aux = A;
+				P = best_P(PA_aux,box,1e-8);
+				PA=PA_aux;
+				Pb=P*b;
+			}
+			iter++;
 			IntervalMatrix tmp(PA);
 			if(!bwd_mul(Pb, tmp, box, 1e8)){
 				box.set_empty();
@@ -115,7 +122,7 @@ namespace ibex {
 			   }else if(ctc_type == GAUSS_JORDAN ){
 				   PA=A;
 				   P = gauss_jordan (PA, 1e-8);
-				   P = best_P(PA, 1e-8);
+
 			   }
 			   cout.precision(3);
 			}
