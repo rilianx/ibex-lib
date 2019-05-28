@@ -680,7 +680,7 @@ namespace ibex {
 	Matrix best_P (IntervalMatrix& A, IntervalVector x, double prec){
 		Matrix perm(A.nb_cols(),A.nb_rows());
 		double max =0;
-
+		cout << A.nb_rows() << "  " << A.nb_cols() << endl;
 		bool found;
 		IntervalVector box2(2*A.nb_cols()+A.nb_rows());
 		vector <pair<double,Vector > > P_rows;
@@ -694,6 +694,10 @@ namespace ibex {
 				max = A[j][i].mag();
 				}
 		}
+
+//		for (int i = 0 ; i < x.size() ; i++)
+//			if (x[i].diam()>max)
+//				max = x[i].diam();
 		int nb_eq=0;
 		for (int i = 0 ; i < A.nb_cols() ; i++){
 			LPSolver lp_solver(box2.size()); // p, s y w
@@ -715,8 +719,8 @@ namespace ibex {
 				else{
 					//initialize auxiliary variables w_i
 					box2[j]=Interval(-1e7, 1e7);
-//					lp_solver.set_obj_var(j,1);
-					lp_solver.set_obj_var(j,(x[j- A.nb_rows() -A.nb_cols()].diam()));
+					lp_solver.set_obj_var(j,1);
+//					lp_solver.set_obj_var(j,(x[j- A.nb_rows() -A.nb_cols()].diam()));
 //					lp_solver.set_obj_var(j,(suma[j- A.nb_rows() -A.nb_cols()])*(x[j- A.nb_rows() -A.nb_cols()].diam()));
 				}
 			}
@@ -754,11 +758,10 @@ namespace ibex {
 			Vector v(box2.size());
 			lp_solver.get_primal_sol(v);
 			v.resize(A.nb_rows());
-
+			cout << v << "  " << lp_solver.get_obj_value().mid() << endl;
 			found = false;
 			for (int j = 0 ; j < nb_eq ; j++)
 				if (v==perm[j]) {found = true; break;}
-
 
 			if (found == false){
 				perm.put(nb_eq,0,v,true);
