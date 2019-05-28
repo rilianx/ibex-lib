@@ -677,15 +677,24 @@ namespace ibex {
 		}
 
 
-	Matrix best_P (IntervalMatrix& A, IntervalVector b, double prec){
+	Matrix best_P (IntervalMatrix& A, IntervalVector x, double prec){
 		Matrix perm(A.nb_cols(),A.nb_rows());
-		IntervalVector aux = b;
 		double max =0;
-		for (int i = 0 ; i < aux.size() ; i++) if (max < aux[i].diam()) max=aux[i].diam();
+
+		bool found;
 		IntervalVector box2(2*A.nb_cols()+A.nb_rows());
 		vector <pair<double,Vector > > P_rows;
 		//Vector row(box2.size());
-
+		double suma[A.nb_cols()];
+		for (int i = 0 ; i < A.nb_cols() ; i++){
+			max=0;
+			for (int j = 0 ; j < A.nb_rows(); j++)
+				if (A[j][i].mag()>max){
+				suma[i] = max;
+				max = A[j][i].mag();
+				}
+		}
+		int nb_eq=0;
 		for (int i = 0 ; i < A.nb_cols() ; i++){
 			LPSolver lp_solver(box2.size()); // p, s y w
 			lp_solver.clean_ctrs();
@@ -698,7 +707,7 @@ namespace ibex {
 					box2[j] = Interval(-1e7,1e7);
 					lp_solver.set_obj_var(j,0);
 				}
-				else if (j > A.nb_rows() && j < A.nb_rows() + A.nb_cols()){
+				else if (j >= A.nb_rows() && j < A.nb_rows() + A.nb_cols()){
 					//initialize variables s_i
 					box2[j]=Interval(-1e7, 1e7);
 					lp_solver.set_obj_var(j,0);
@@ -706,11 +715,11 @@ namespace ibex {
 				else{
 					//initialize auxiliary variables w_i
 					box2[j]=Interval(-1e7, 1e7);
-					lp_solver.set_obj_var(j,1);
-//					lp_solver.set_obj_var(j,1/(b[j- A.nb_rows() -A.nb_cols()].diam()/max));
+//					lp_solver.set_obj_var(j,1);
+					lp_solver.set_obj_var(j,(x[j- A.nb_rows() -A.nb_cols()].diam()));
+//					lp_solver.set_obj_var(j,(suma[j- A.nb_rows() -A.nb_cols()])*(x[j- A.nb_rows() -A.nb_cols()].diam()));
 				}
 			}
-
 			lp_solver.set_bounds(box2);
 
 			Vector row(box2.size());
@@ -745,8 +754,19 @@ namespace ibex {
 			Vector v(box2.size());
 			lp_solver.get_primal_sol(v);
 			v.resize(A.nb_rows());
-			perm[i] = v;
+
+			found = false;
+			for (int j = 0 ; j < nb_eq ; j++)
+				if (v==perm[j]) {found = true; break;}
+
+
+			if (found == false){
+				perm.put(nb_eq,0,v,true);
+				nb_eq++;
+			}
+
 		}
+		perm.resize(nb_eq,A.nb_rows());
 		A = perm*A;
 		return perm;
 	}
