@@ -700,7 +700,8 @@ namespace ibex {
 //				max = x[i].diam();
 		int nb_eq=0;
 		for (int i = 0 ; i < A.nb_cols() ; i++){
-			LPSolver lp_solver(box2.size()); // p, s y w
+			LPSolver lp_solver(box2.size(), 1000); // p, s y w
+
 			lp_solver.clean_ctrs();
 			//lp_solver.set_bounds(IntervalVector(row.size()));
 
@@ -719,8 +720,8 @@ namespace ibex {
 				else{
 					//initialize auxiliary variables w_i
 					box2[j]=Interval(-1e7, 1e7);
-					lp_solver.set_obj_var(j,1);
-//					lp_solver.set_obj_var(j,(x[j- A.nb_rows() -A.nb_cols()].diam()));
+					//lp_solver.set_obj_var(j,1);
+					lp_solver.set_obj_var(j,(x[j- A.nb_rows() -A.nb_cols()].diam()));
 //					lp_solver.set_obj_var(j,(suma[j- A.nb_rows() -A.nb_cols()])*(x[j- A.nb_rows() -A.nb_cols()].diam()));
 				}
 			}
@@ -755,6 +756,7 @@ namespace ibex {
 			}
 
 			LPSolver::Status_Sol stat = lp_solver.solve();
+			cout << stat << endl;
 			Vector v(box2.size());
 			lp_solver.get_primal_sol(v);
 			v.resize(A.nb_rows());
@@ -771,6 +773,7 @@ namespace ibex {
 		}
 		perm.resize(nb_eq,A.nb_rows());
 		A = perm*A;
+		cout << A.mid() << endl;
 		return perm;
 	}
 
