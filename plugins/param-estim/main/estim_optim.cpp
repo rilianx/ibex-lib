@@ -148,10 +148,10 @@ int main(int argc, char** argv) {
 			if(trace) cout << "oct: " << oct << endl;
 			int diry= pow(-1,oct%2);
 			int dirz= pow(-1,oct/2);
-			m_f0= new Function(v, (diry*v[0]+dirz*v[1]-1));
-			ctc0=new CtcFwdBwd(*m_f0,LEQ);
+			m_f0 = new Function(v, (diry*v[0]+dirz*v[1]-1));
+			ctc0 = new CtcFwdBwd(*m_f0,LEQ);
 			for (int i=0; i<p; i++){
-				m_func[i] = new Function(v,(x->at(i) +v[0]*(y->at(i)- diry*x->at(i))+v[1]*(z->at(i)-dirz*x->at(i))-v[2]-Interval(-epseq,epseq)));
+				m_func[i] = new Function(v, (x->at(i) +v[0]*(y->at(i)- diry*x->at(i))+v[1]*(z->at(i)-dirz*x->at(i))-v[2]-Interval(-epseq,epseq)));
 				m_ctc.set_ref(i,(*new CtcFwdBwd(*m_func[i])));
 			}
 

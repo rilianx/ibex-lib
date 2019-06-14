@@ -51,7 +51,7 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 
 ### Execute
 
-`__build__/plugins/param-estim/estim_optim plugins/param-estim/examples/data/house40 -q 21 -b rr2 -s 1`
+`__build__/plugins/param-estim/estim_optim examples/estimparam/house40 -q 21 -b rr2 -s 1`
 
 Replace "house40" with the filename you want to test.
 
