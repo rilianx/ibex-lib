@@ -48,22 +48,21 @@ public:
 	/**
 	 * \brief Create the linear inequalities Ax<=b.
 	 */
-	LinearSystem(int nb_var, int ctc_type = SIMPLEX) :
+	LinearSystem(int nb_var,bool extended, int ctc_type = SIMPLEX) :
 		Linearizer(nb_var),
 		ctc(*this, LPSolver::default_max_iter,
 		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
-		ctc_type(ctc_type), Ctc(nb_var), A(1,1), b(1), P(1,1), PA(1,1), Pb(1) {iter = 0;
-
+		ctc_type(ctc_type), Ctc(nb_var), A(1,1), b(1), P(1,1), PA(1,1), Pb(1),extended(extended) {iter = 0;
 
 	}
 
 	/**
 	 * \brief Create the linear inequalities Ax<=b.
 	 */
-	LinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,  int ctc_type = GAUSS_JORDAN) :
+	LinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,  bool extended,int ctc_type = GAUSS_JORDAN) :
 		Linearizer(A.nb_cols()), ctc(*this, LPSolver::default_max_iter,
 		LPSolver::default_max_time_out, LPSolver::default_eps, Interval (1e-14, 1e10)),
-		ctc_type(ctc_type), Ctc(A.nb_cols()), A(A), b(1), P(P), PA(PA), Pb(1) { iter= 0;
+		ctc_type(ctc_type), Ctc(A.nb_cols()), A(A), b(1), P(P), PA(PA), Pb(1),extended(extended){ iter= 0;
 
 
 	}
@@ -81,6 +80,7 @@ public:
 	int linearization(const IntervalVector& x, LPSolver& lp_solver);
 
 	int iter;
+	bool extended;
 
 	IntervalMatrix A;
 	IntervalVector b;

@@ -677,16 +677,19 @@ namespace ibex {
 		}
 
 
-	Matrix best_P (IntervalMatrix& A, IntervalVector x, double prec){
-		Matrix perm(A.nb_cols(),A.nb_rows());
+	Matrix best_P (IntervalMatrix& A, IntervalVector x, int size_b, double prec, int extended){
+
+		if (extended) extended = size_b;
+
+		Matrix perm(A.nb_cols()-extended,A.nb_rows());
+
 		double max =0;
-		cout << A.nb_rows() << "  " << A.nb_cols() << endl;
 		bool found;
 		IntervalVector box2(2*A.nb_cols()+A.nb_rows());
 		vector <pair<double,Vector > > P_rows;
 		//Vector row(box2.size());
 		double suma[A.nb_cols()];
-		for (int i = 0 ; i < A.nb_cols() ; i++){
+		for (int i = 0 ; i < A.nb_cols()-extended ; i++){
 			max=0;
 			for (int j = 0 ; j < A.nb_rows(); j++)
 				if (A[j][i].mag()>max){
@@ -699,7 +702,8 @@ namespace ibex {
 //			if (x[i].diam()>max)
 //				max = x[i].diam();
 		int nb_eq=0;
-		for (int i = 0 ; i < A.nb_cols() ; i++){
+
+		for (int i = 0 ; i < A.nb_cols()-extended ; i++){
 			LPSolver lp_solver(box2.size(), 1000); // p, s y w
 
 			lp_solver.clean_ctrs();
@@ -756,11 +760,11 @@ namespace ibex {
 			}
 
 			LPSolver::Status_Sol stat = lp_solver.solve();
-			cout << stat << endl;
+
 			Vector v(box2.size());
 			lp_solver.get_primal_sol(v);
 			v.resize(A.nb_rows());
-			cout << v << "  " << lp_solver.get_obj_value().mid() << endl;
+
 			found = false;
 			for (int j = 0 ; j < nb_eq ; j++)
 				if (v==perm[j]) {found = true; break;}
@@ -771,9 +775,16 @@ namespace ibex {
 			}
 
 		}
+
+		for (int i = 0 ; i < perm.nb_rows() ; i++)
+				for (int j = 0 ; j < perm.nb_cols() ; j++)
+					if (std::abs(perm[i][j])<1e-7)  perm[i][j]=0;
 		perm.resize(nb_eq,A.nb_rows());
 		A = perm*A;
-		cout << A.mid() << endl;
+
+		for (int i = 0 ; i < A.nb_rows() ; i++)
+			for (int j = 0 ; j < A.nb_cols() ; j++)
+				if (std::abs(A[i][j].mid())<1e-7)  A[i][j]=0;
 		return perm;
 	}
 

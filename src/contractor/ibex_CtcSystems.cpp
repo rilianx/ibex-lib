@@ -35,7 +35,7 @@ namespace ibex {
 
 			if(iter==0){
 				IntervalMatrix PA_aux = A;
-				P = best_P(PA_aux,box,1e-8);
+				P = best_P(PA_aux,box,b.size(),1e-8,extended);
 				PA=PA_aux;
 				Pb=P*b;
 			}
@@ -79,7 +79,7 @@ namespace ibex {
 	EmbeddedLinearSystem::EmbeddedLinearSystem(const IntervalMatrix& A, const IntervalMatrix& P, const IntervalMatrix& PA,
 						Array<const ExprNode>& xn, Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
 						ExprDomain& d, bool is_mult=false, bool extended=false) :
-							LinearSystem(A, P, PA), xn(xn), bn(bn), node2i(node2i), d(d),
+							LinearSystem(A, P, PA,extended), xn(xn), bn(bn), node2i(node2i), d(d),
 								is_mult(is_mult), x(xn.size()), extended(extended)  {
 
 				b.resize(A.nb_rows());
@@ -92,7 +92,7 @@ namespace ibex {
 						Array<const ExprNode>& bn, map<const ExprNode*, int>& node2i,
 						ExprDomain& d, bool is_mult=false, int ctc_type = SIMPLEX, bool extended=false) :
 
-				LinearSystem(AA.nb_cols()+((extended)? bn.size():0), ctc_type), xn(xn), bn(bn), node2i(node2i), d(d),
+				LinearSystem(AA.nb_cols()+((extended)? bn.size():0),extended,ctc_type), xn(xn), bn(bn), node2i(node2i), d(d),
 				is_mult(is_mult), x(xn.size()), extended(extended) {
 
 				A=AA;
