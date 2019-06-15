@@ -76,13 +76,13 @@ int main(int argc, char** argv) {
 			double in;
 			input >> in;
 			x->push_back(in);
-			// cout << in << " " ;
+			cout << in << " " ;
 			input >> in;
 			y->push_back(in);
-			// cout << in << " " ;
+			cout << in << " " ;
 			input >> in;
 			z->push_back(in);
-			// cout << in << " " << endl;
+			cout << in << " " << endl;
 		}
 		x->pop_back();y->pop_back();z->pop_back();
 		srand(seed);
@@ -138,16 +138,19 @@ int main(int argc, char** argv) {
 
 		if(trace) cout << np << " " << Q0 << " " << Qvalid << " " << epseq << endl;
 
-		int bestsolpointnumber=0;
-		int Qoct=Q;
-		Vector bestsol (3);
+		int bestsolpointnumber = 0;
+		int Qoct = Q;
+		Vector bestsol(3);
 		/**
 		 * Main optimization loop
 		 **/
-		for (int oct=0; oct <4; oct++){
+		for (int oct = 0; oct < 4; oct++){
+			/** NOTE:
+			 * diry / dirz: projection's direction change
+			 **/
 			if(trace) cout << "oct: " << oct << endl;
-			int diry= pow(-1,oct%2);
-			int dirz= pow(-1,oct/2);
+			int diry = pow(-1,oct%2);
+			int dirz = pow(-1,oct/2);
 			m_f0 = new Function(v, (diry*v[0]+dirz*v[1]-1));
 			ctc0 = new CtcFwdBwd(*m_f0,LEQ);
 			for (int i=0; i<p; i++){
@@ -158,9 +161,9 @@ int main(int argc, char** argv) {
 			for (int i=0; i<p; i++){
 				/* We must be on the plane defined by v */
 				m_ctc1.set_ref(i,m_ctc[i]);
-				linfun[i][0]=x->at(i);
-				linfun[i][1]=y->at(i)-diry*x->at(i);
-				linfun[i][2]=z->at(i)-dirz*x->at(i);
+				linfun[i][0]=x->at(i);					// x
+				linfun[i][1]=y->at(i)-diry*x->at(i);    // y
+				linfun[i][2]=z->at(i)-dirz*x->at(i);    // z
 			}
 
 			double _box[3][2];
@@ -198,8 +201,8 @@ int main(int argc, char** argv) {
 
 			CellHeapQInter buff;
 			BeamSearch str(buff);
-
 			Bsc * bs;
+
 			if (bisect == "rr")
 				bs = new RoundRobin(prec,0.5);
 			else if (bisect == "rr2")
@@ -223,9 +226,10 @@ int main(int argc, char** argv) {
 			s.feasible_tries = nbrand;
 
 			s.bestsolpointnumber = bestsolpointnumber;
-			s.bestsolpoint=bestsol;
+			s.bestsolpoint = bestsol;
 			if(trace) cout << "\tavant resolution q:" << ctcq.q << endl;
-			IntervalVector res=s.solve(box);
+			//FIXME: REVISION DE SOLVER 
+			IntervalVector res = s.solve(box);
 
 			if(trace) cout << "\tNumber of branches : " << s.nb_cells << endl;
 			nb_cells += s.nb_cells;
@@ -239,7 +243,6 @@ int main(int argc, char** argv) {
 				s.report_possible_inliers();
 				s.report_solution();
 			}
-
 			end = clock();
 			totaltime += ((double)(end)-(double)(start))/CLOCKS_PER_SEC;
 			start= clock();

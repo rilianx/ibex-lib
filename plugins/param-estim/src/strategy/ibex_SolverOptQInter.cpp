@@ -8,20 +8,12 @@
 // Last Update : Jun 05, 2018
 //============================================================================
 
-
 /* Solver for a parameter estimation problem optimizing the number of inliers */
-
 #include "ibex_SolverOptQInter.h"
-
-
 #include <algorithm>
-
-
 using namespace std;
 
-namespace ibex {
-
-  
+namespace ibex{  
   SolverOptQInter::SolverOptQInter(Ctc& ctc, Bsc& bsc, SearchStrategy& str, CtcQInter& ctcq): SolverOpt (ctc,bsc,str), ctcq(ctcq), initbox(ctcq.nb_var){init();}
   
   /* utilitaires sur les matrices : non utilisé dans version courante
@@ -51,10 +43,6 @@ namespace ibex {
 	    return false;}
     return true;}
   */
- 
- 
-
-
 
   void  SolverOptQInter::init() {
     feasible_tries=10;
@@ -73,7 +61,6 @@ namespace ibex {
   }
  
   /* the list of active points is a pointer to points1 for the first cell and to points2 for the second cell */
-
   void SolverOptQInter::manage_cell_info(Cell& c) {
     if (second_cell)   
       ctcq.points=&(str.points2);
@@ -89,22 +76,17 @@ namespace ibex {
     c.get<QInterPoints>().depth=0;
   }
 
-
-
   void SolverOptQInter::update_cell_info(Cell& c){
-    //    c.var_biss= ctcq.var_biss;
-
+    // c.var_biss= ctcq.var_biss;
     c.get<QInterPoints>().qmax=ctcq.qmax;
   }
 
-  void SolverOptQInter::update_buffer_info (Cell& c) {
+  void SolverOptQInter::update_buffer_info (Cell& c){
     str.increment_valstack(c.get<QInterPoints>().qmax, 2);
-   
-
   }
 
   void SolverOptQInter::precontract(Cell& c) {
-    //    cout << "qmax before contract " << c.get<QInterPoints>().qmax  << "  " << ctcq.qmax <<  endl;
+    // cout << "qmax before contract " << c.get<QInterPoints>().qmax  << "  " << ctcq.qmax <<  endl;
     if (c.get<QInterPoints>().qmax < ctcq.q) {c.box.set_empty();}
     manage_cell_info(c);
     ctc.enable_side_effects();
@@ -118,7 +100,8 @@ namespace ibex {
     //int qmax = maxsat (s);
     //actualizar ctcq.qmax si mejora (esperemos que si)
 
-   /* for(auto i: *ctcq.points){
+
+    /* for(auto i: *ctcq.points){
     		//ctcq.points){
     	cout << i << ", " ;
     }
@@ -131,28 +114,24 @@ namespace ibex {
     ctc.disable_side_effects();
   }
 
-
-   
-
-
-
   /* if there is no gap between the number possible inliers and the q-inter threshold, all possible inliers must be inliers */
   void SolverOptQInter::other_checks(Cell& c){
     int psize = ctcq.points->size();
     int gap = psize - ctcq.q;     
-    //    cout << " gap " << gap << endl;
-    //if no gap all measures must be valid
-    if (gap==0 && gaplimit>=0)
-       {ctcq.ctc_contract_all(c.box);
-	 //cout << " contract_all " <<  " qposs " << qposs << " qvalid " << qvalid << endl;
-	 if (c.box.is_empty()) {
-	   return;
-	 }
-       }
-    else if ( gaplimit >0 &&   gap <= gaplimit)
-      {if (ctcq.contract_with_outliers(c.box, gap))
-	  {c.box.set_empty(); return ;}
-      } 
+    // cout << " gap " << gap << endl;
+    // if no gap all measures must be valid
+    if (gap==0 && gaplimit>=0){
+      ctcq.ctc_contract_all(c.box);
+	    //cout << " contract_all " <<  " qposs " << qposs << " qvalid " << qvalid << endl;
+	    if(c.box.is_empty()){
+	      return;
+	    }
+    }else if( gaplimit >0 &&   gap <= gaplimit){
+      if(ctcq.contract_with_outliers(c.box, gap)){
+        c.box.set_empty();
+        return;
+      }
+    } 
   }
 
 
@@ -195,116 +174,108 @@ namespace ibex {
 	 */
 
 
-/* qvalid is computed by this procedure */
-  Vector SolverOptQInter::newvalidpoint(Cell& c)  {
+/** NOTE: CORE
+ * qvalid is computed by this procedure
+ * */
+  Vector SolverOptQInter::newvalidpoint(Cell& c){
     IntervalVector newvalidpoint(ctcq.nb_var);
-    if (feasible_tries==0)
-	{ newvalidpoint= ctcq.validpoint(c.box);
-	  qvalid = ctcq.midactivepoints_count(newvalidpoint.mid()); 
-	}
-    else { // feasible_tries random points in the current box, found by a mini RANSAC like procedure
-      for (int i=0; i < feasible_tries; i++) {
-
-       IntervalVector randompoint = ctcq.randomvalidpoint(initbox);
-
-       int qres=0;
-       
-       //variant 1 :  intersection with current box before validpoint;
-       
-       randompoint &= c.box;
-
-       if (! (randompoint.is_empty())) {
-	 
-	 IntervalVector randomvalidpoint= ctcq.validpoint(randompoint);
-	 if (!(randomvalidpoint.is_empty())){
-	   qres= ctcq.midactivepoints_count(randomvalidpoint.mid()); 
-	 
-	   //qres= ctcq.midactivepoints_count(randompoint.mid()); 
-	 //	 cout << " qres " << qres << endl;
-	 }
-	 // else cout << " randomvalidpoint not found " << endl;
-	 if (qres > qvalid) {qvalid=qres;  newvalidpoint=randomvalidpoint;}
-	 //	 if (qres > qvalid) {qvalid=qres;  newvalidpoint=randompoint;}
-	 
-       }
-      
-       
-       
-       /*
-       
-       
-       // variant 2 : intersection with current box after validpoint;
-       IntervalVector randomvalidpoint= ctcq.validpoint(randompoint);
-       cout << "randomvalidpoint " << randomvalidpoint << endl;
-       randomvalidpoint &=c.box;
-       if (!(randomvalidpoint.is_empty())){
-	 qres= ctcq.activepoints_count(randomvalidpoint); 
-	 //	 cout << " qres " << qres << endl;
-       }
-       cout << " qposs " << qposs <<  " qmax " << ctcq.qmax2 <<  " qvalid " << qvalid << endl;
-       if (qres > qvalid) {qvalid=qres;  newvalidpoint=randomvalidpoint;}
-       */
-       //       cout << " qposs " << qposs <<  " qmax " << ctcq.qmax <<  " qvalid " << qvalid << endl;
-       if (qposs==qvalid) break;
-
+    if(feasible_tries == 0){
+      newvalidpoint = ctcq.validpoint(c.box);
+	    qvalid = ctcq.midactivepoints_count(newvalidpoint.mid()); 
+	  }else{ // feasible_tries random points in the current box, found by a mini RANSAC like procedure
+      for (int i = 0; i < feasible_tries; i++){
+        IntervalVector randompoint = ctcq.randomvalidpoint(initbox);
+        int qres = 0;
+        //variant 1 :  intersection with current box before validpoint;
+        randompoint& = c.box;
+        if(!(randompoint.is_empty())){
+          IntervalVector randomvalidpoint = ctcq.validpoint(randompoint);
+          if(!(randomvalidpoint.is_empty())){
+            qres = ctcq.midactivepoints_count(randomvalidpoint.mid()); 
+            // qres= ctcq.midactivepoints_count(randompoint.mid()); 
+            // cout << " qres " << qres << endl;
+          }
+          // else cout << " randomvalidpoint not found " << endl;
+          if(qres > qvalid){
+            qvalid = qres;
+            newvalidpoint = randomvalidpoint;
+          }
+          // if (qres > qvalid) {qvalid=qres;  newvalidpoint=randompoint;}
+          
+        }
+        /*
+        // variant 2 : intersection with current box after validpoint;
+        IntervalVector randomvalidpoint= ctcq.validpoint(randompoint);
+        cout << "randomvalidpoint " << randomvalidpoint << endl;
+        randomvalidpoint &=c.box;
+        if (!(randomvalidpoint.is_empty())){
+        qres= ctcq.activepoints_count(randomvalidpoint); 
+        //	 cout << " qres " << qres << endl;
+        }
+        cout << " qposs " << qposs <<  " qmax " << ctcq.qmax2 <<  " qvalid " << qvalid << endl;
+        if (qres > qvalid) {qvalid=qres;  newvalidpoint=randomvalidpoint;}
+        */
+        //       cout << " qposs " << qposs <<  " qmax " << ctcq.qmax <<  " qvalid " << qvalid << endl;
+        if (qposs == qvalid)
+          break;
       }
-       
-      }
+    }
     return newvalidpoint.mid();
   }
        
 //search for a better feasible point 
-  void SolverOptQInter::validate(Cell& c)
-  { 
+  void SolverOptQInter::validate(Cell& c){ 
     int psize = ctcq.points->size();
-    qposs= psize;
+    qposs = psize;
     // cout << " max_val_freq " <<str.max_val_freq << endl;
-    if (trace && ( nb_cells % str.max_val_freq ==0))
-      {str.print_max_val();}
+    if (trace && ( nb_cells % str.max_val_freq ==0)){
+      str.print_max_val();
+    }
     // cout << " max_val_freq  after " <<str.max_val_freq << endl;
-    //    cout << " validate : qposs " <<  qposs << "box " <<  c.box << endl;
-       //in optimization ctcq.qmax can be used as qposs for the stopping criterion
-    if (ctcq.qmax < qposs) {
+    // cout << " validate : qposs " <<  qposs << "box " <<  c.box << endl;
+    /*
+     * in optimization ctcq.qmax can be used as qposs for the stopping criterion
+     * */
+    if (ctcq.qmax < qposs){
       //      cout << " qposs reduction " << qposs  << " " << ctcq.qmax << endl ; 
-      qposs=ctcq.qmax;
+      qposs = ctcq.qmax;
     }
     
     qvalid= 0;
-
-
     Vector newvalidpoint1 (ctcq.nb_var);
-    newvalidpoint1= newvalidpoint(c);  // qvalid is computed by this procedure that returns the corresponding point
-    if  (bestsolpointnumber > 0 && qvalid > bestsolpointnumber  // a better solution has been found.
-	 ||
-	 bestsolpointnumber==0 && qvalid >= ctcq.q) // first solution - at least ctcq.q
-      {
-	if (ctcq.q < qvalid+epsobj)
-	  ctcq.q = qvalid+epsobj;
-	//	cout << " updating bestsolpointnumber " << endl;
-	bestsolpoint=newvalidpoint1;
-	bestsolpointnumber=qvalid;
-	postsolution();
-	if (trace) {
-
-	 
-	  cout << "solution" << c.box << " psize " << psize << " qmax " << qposs << " qvalid " << qvalid << endl;
-	  cout << " time " << time << endl; 
-	  cout << " nb boxes " << nb_cells << endl;
-	  cout << " depth " << c.get<QInterPoints>().depth << endl;
-	  str.print_max_val();
-	 
-	  //	  cout << " valid point " << newvalidpoint1 << endl;
-	  cout << " best sol point " << bestsolpoint << endl;
-	  cout <<" qmax epsboxes " << str.qmax_epsboxes << endl;
-	}
-	if (qposs < qvalid+epsobj)  // stop condition  :  the
-       // no better solution possible with the given precision on the objective : no need of further bisections.
-       // the box is set empty (need to store it anywhere ?) and will not be stored in the cell buffer.
-	  { if (qposs > qvalid) 
-	      {str.epsboxes_possiblesols++; 
-		if (qposs > str.qmax_epsboxes )    str.qmax_epsboxes=qposs;}
-	    c.box.set_empty(); return;}
+    newvalidpoint1 = newvalidpoint(c);  // qvalid is computed by this procedure that returns the corresponding point
+    if( bestsolpointnumber > 0 && qvalid > bestsolpointnumber  // a better solution has been found. 
+        || bestsolpointnumber == 0 && qvalid >= ctcq.q){ // first solution - at least ctcq.q
+	    if (ctcq.q < qvalid+epsobj)
+	      ctcq.q = qvalid+epsobj;
+	    // cout << " updating bestsolpointnumber " << endl;
+	    bestsolpoint=newvalidpoint1;
+	    bestsolpointnumber=qvalid;
+	    postsolution();
+	    if(trace){
+  	    cout << "solution" << c.box << " psize " << psize << " qmax " << qposs << " qvalid " << qvalid << endl;
+	      cout << " time " << time << endl; 
+	      cout << " nb boxes " << nb_cells << endl;
+	      cout << " depth " << c.get<QInterPoints>().depth << endl;
+	      str.print_max_val();
+        // cout << " valid point " << newvalidpoint1 << endl;
+        cout << " best sol point " << bestsolpoint << endl;
+        cout <<" qmax epsboxes " << str.qmax_epsboxes << endl;
+	    }
+	    if(qposs < qvalid+epsobj){
+        /** stop condition  :  the
+         * no better solution possible with the given precision on the objective : no need of further bisections.
+         * the box is set empty (need to store it anywhere ?) and will not be stored in the cell buffer.
+         * */
+	      if (qposs > qvalid){
+          str.epsboxes_possiblesols++; 
+		      if (qposs > str.qmax_epsboxes )
+            str.qmax_epsboxes = qposs;
+        }
+        c.box.set_empty();
+        return;
       }
+    }
   }
 
 
