@@ -19,39 +19,39 @@ SolverOpt::SolverOpt(Ctc& ctc, Bsc& bsc, SearchStrategy& str) :
 	}
   Cell* SolverOpt::root_cell(const IntervalVector& init_box) {return (new Cell(init_box));}
 
-  void SolverOpt::start(const IntervalVector& init_box) {
-	str.buffer.flush();
-	Cell* root= root_cell(init_box); 
-	cout << "init box " << root->box << endl;
-	// add data required by this solver
-	// root->add<BisectedVar>();
+	void SolverOpt::start(const IntervalVector& init_box) {
+		str.buffer.flush();
+		Cell* root= root_cell(init_box); 
+		cout << "init box " << root->box << endl;
+		// add data required by this solver
+		// root->add<BisectedVar>();
 
-	// add data required by the bisector
-	bsc.add_backtrackable(*root);
-	second_cell=0;
+		// add data required by the bisector
+		bsc.add_backtrackable(*root);
+		second_cell=0;
 
-	handle_cell(*root);
-	str.push_cell(*root);
-	init_buffer_info(*root);
-}
+		handle_cell(*root);
+		str.push_cell(*root);
+		init_buffer_info(*root);
+	}
 
-  void SolverOpt::handle_cell (Cell & c){
-    precontract(c); // QINTEROPT
-    if(!(c.box.is_empty())){
+	void SolverOpt::handle_cell(Cell & c){
+		precontract(c); // QINTEROPT
+		if(!(c.box.is_empty())){
 			ctc.contract(c.box);
-	    postcontract(c);
+			postcontract(c);
 		}
-    if(!(c.box.is_empty()))
+		if(!(c.box.is_empty()))
 			other_checks(c);
-    if(!(c.box.is_empty()))
+		if(!(c.box.is_empty()))
 			validate(c);
-  }
+	}
 
-  int SolverOpt::validate_value(Cell & c) {return 0;}
+	int SolverOpt::validate_value(Cell & c) {return 0;}
   
-  bool SolverOpt::optimize() {
-    Timer timer;
-    timer.start();
+	bool SolverOpt::optimize() {
+		Timer timer;
+		timer.start();
 		try{
 			while (! (str.empty_buffer())) {
 				if (trace==2 && nb_cells > 0) {
@@ -67,11 +67,11 @@ SolverOpt::SolverOpt(Ctc& ctc, Bsc& bsc, SearchStrategy& str) :
 					str.pop_cell();
 					// first cell
 					Cell * c1= new_cells.first;
-					second_cell=0; // no veo qué hace
+					second_cell = 0; // no veo qué hace
 					handle_cell(*c1);
 					// second cell
 					Cell* c2= new_cells.second;
-					second_cell=1;
+					second_cell = 1;
 					handle_cell(*c2);
 	
 					str.push_cells(*c1,*c2);
@@ -104,9 +104,7 @@ SolverOpt::SolverOpt(Ctc& ctc, Bsc& bsc, SearchStrategy& str) :
 		timer.stop();
 		time = timer.get_time();
 		return true;
-  }
-
-
+  	}
 
 	IntervalVector SolverOpt::solve(const IntervalVector& init_box) {
 		start(init_box);

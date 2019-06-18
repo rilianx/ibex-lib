@@ -25,7 +25,7 @@ Choices for source are:
 
 ### ibex configuration
 
-Must add the param-estim flag to use it and as optional the default optimizer (optim).
+For param estim: Must add the param-estim flag to use it and as optional the default optimizer (optim).
 
 `./waf configure --with-optim --with-param-estim --prefix=. --gaol-dir= --lp-lib=soplex --with-affine`
 
@@ -51,6 +51,7 @@ Must add the param-estim flag to use it and as optional the default optimizer (o
 
 ### Execute
 
+param estim:
 `__build__/plugins/param-estim/estim_optim examples/estimparam/house40 -q 21 -b rr2 -s 1`
 
 Replace "house40" with the filename you want to test.

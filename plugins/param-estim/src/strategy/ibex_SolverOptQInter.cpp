@@ -187,7 +187,7 @@ namespace ibex{
         IntervalVector randompoint = ctcq.randomvalidpoint(initbox);
         int qres = 0;
         //variant 1 :  intersection with current box before validpoint;
-        randompoint& = c.box;
+        randompoint &= c.box;
         if(!(randompoint.is_empty())){
           IntervalVector randomvalidpoint = ctcq.validpoint(randompoint);
           if(!(randomvalidpoint.is_empty())){

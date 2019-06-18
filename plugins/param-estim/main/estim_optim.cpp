@@ -144,11 +144,14 @@ int main(int argc, char** argv) {
 		/**
 		 * Main optimization loop
 		 **/
+		cout << "press a key to continue..." << endl;
+		getchar();
 		for (int oct = 0; oct < 4; oct++){
 			/** NOTE:
 			 * diry / dirz: projection's direction change
 			 **/
-			if(trace) cout << "oct: " << oct << endl;
+			// if(trace) cout << "oct: " << oct << endl;
+			cout << "oct: " << oct << endl;
 			int diry = pow(-1,oct%2);
 			int dirz = pow(-1,oct/2);
 			m_f0 = new Function(v, (diry*v[0]+dirz*v[1]-1));
@@ -230,6 +233,7 @@ int main(int argc, char** argv) {
 			if(trace) cout << "\tavant resolution q:" << ctcq.q << endl;
 			//FIXME: REVISION DE SOLVER 
 			IntervalVector res = s.solve(box);
+			cout << "res:" << res << endl;
 
 			if(trace) cout << "\tNumber of branches : " << s.nb_cells << endl;
 			nb_cells += s.nb_cells;
