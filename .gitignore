@@ -54,3 +54,23 @@ doc/_build
 
 # results ibex files
 *.cov
+
+/CMakeCache.txt
+CMakeFiles/
+Makefile
+/DartConfiguration.tcl
+*.cmake
+/ibex.pc
+/interval_lib_wrapper/
+/lp_lib_wrapper/
+/src/
+/tests/
+
+src/ibex.h
+src/ibex_Setting.h
+src/parser/lexer.lex.cc
+src/parser/parser.output
+src/parser/parser.tab.cc
+src/parser/parser.tab.hh
+src/symbolic/ibex_ExprOperators.cpp
+src/symbolic/ibex_ExprOperators.h
