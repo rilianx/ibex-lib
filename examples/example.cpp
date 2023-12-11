@@ -43,12 +43,17 @@ int main() {
     IntervalVector x2(1, Interval(1,2));
     Affine af(x2,0);
 
-    Affine af2 = 5.*pow(af,2) - af;
+    Affine af2 = 5*sqr(af);
     cout << af2 << endl;
     cout << af2.ev << endl;
 
-    Function f3("x", "5*x^2-x");
-    AffineEval af_eval(f, x2.size());
-    cout <<"The resulting box:" << af_eval.eval(x2) << endl;
+    cout << "Affine EVAL" << endl;
+    Function f3("x", "5*x^2");
+    AffineEval af_eval(f3, x2.size());
+    Eval eval(f3);
+
+    cout << x2 << endl;
+    cout <<"AF Eval:" << af_eval.eval(x2) << endl;
+    cout <<"Natural Eval:" << eval.eval(x2) << endl;
     
 }

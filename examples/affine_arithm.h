@@ -30,17 +30,20 @@ namespace ibex {
         IntervalVector a;
         Interval err;
         Interval ev;
+        bool is_constant;
         const IntervalVector* box;
 
 
-        Affine(int n) : a(n,Interval(0,0)), err(0), ev(0), box(NULL) {
+        Affine(int n) : a(n,Interval(0,0)), err(0), ev(0), box(NULL), is_constant(true) {
         }
 
         Affine(const IntervalVector& box, int i=-1) : a(box.size(),Interval(0,0)), err(0), ev(0), box(&box) {
             if (i!=-1){
                 a[i] = Interval(1.0);
                 ev = box[i];
-            }
+                is_constant = false;
+            }else 
+                is_constant = true;
         }
 
 
@@ -50,6 +53,7 @@ namespace ibex {
             err = af.err;
             ev = af.ev;
             box = af.box;
+            is_constant = af.is_constant;
             return *this;
         }
 
@@ -74,6 +78,7 @@ namespace ibex {
             c.a += b.a;
             c.err += b.err;
             c.ev += c.err;
+            c.is_constant = a.is_constant && b.is_constant;
             return c;
         }
 
@@ -95,35 +100,18 @@ namespace ibex {
             return a + Interval(b);
         }
 
-        //aff*aff
-        /*
-                new_a0 = self.a[0] * other.a[0]
-        new_a = [self.a[0] * bi + ai * other.a[0] for ai, bi in zip(self.a[1:], other.a[1:])]
-        new_error = self.error * other.to_interval() + other.error * self.to_interval()
-        y = self.x - self.x.mid()
-        other_y = other.x - other.x.mid()
-
-
-        new_error += sum(self.a[i] * other.a[j] * y[i-1] * other_y[j-1] for i in range(1, len(self.a)) for j in range(1, len(other.a)))
-        return AF([new_a0] + new_a, self.x, new_error)*/
         friend Affine operator*(const Affine& a, const Affine& b) {
             if (a.box != b.box) {
                 throw std::invalid_argument("Boxes must be the same");
             }
-            Affine c(a);
-            c.a[0] = a.err.mid() * b.err.mid();
 
-            for (int i=0; i<a.a.size(); i++) 
-                c.a[i] = a.a[0] * b.a[i] + a.a[i] * b.a[0];
-            
-            c.err = a.err * b.ev + b.err * a.ev;
-            for (int i=1; i<a.a.size(); i++) {
-                for (int j=0; j<a.a.size(); j++) {
-                    c.err += a.a[i] * b.a[j] * (*a.box - a.box->mid()) * (*b.box - b.box->mid());
-                }
-            }
-            c.ev = c.a*(*c.box) + c.err;
-            return c;
+            if (a.is_constant) 
+                return b*a.ev;
+            else if (b.is_constant) 
+                return a*b.ev;
+            else
+                //not implemented
+                throw std::invalid_argument("Not implemented yet multiplication of affine functions");
         }
 
         friend Affine operator*(const Affine& a, const Interval& b) {
@@ -145,8 +133,8 @@ namespace ibex {
         }
 
         friend Affine operator-(const Affine& a) {
-            Affine c(*a.box, -1);
-            c.a = -a.a; c.err = -a.err; c.ev = -a.ev;
+            Affine c(a);
+            c.a = -c.a; c.err = -c.err; c.ev = -c.ev;
             return c;
         }
         
@@ -154,14 +142,13 @@ namespace ibex {
             return a + (-b);
         }
 
-        Affine cheby_convex(const Affine& af, const std::function<Interval(Interval)> f, 
-                            const std::function<Interval(Interval)> df_proj) const {
+        friend Affine cheby_convex(const Affine& af, const std::function<Interval(Interval)> f, 
+                            const std::function<Interval(Interval)> df_proj) {
             Interval x = af.ev;
             Interval m = (f(x.ub())-f(x.lb()))/x.diam();
             Interval xp = df_proj(m);
             Interval A = f(x.lb())-m*x.lb();
             Interval B = f(xp)-m*xp;
-
             return m*af + (A+B)/2 + Interval((-abs(A-B)/2).lb(),(abs(A-B)/2).ub());
         }
 
@@ -183,12 +170,12 @@ namespace ibex {
                 std::function<Interval(Interval)> f = [](Interval x){ return sqr(x); };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return m/2; };
 
-                return a.cheby_convex(a, f, df_proj);
+                return cheby_convex(a, f, df_proj);
             } else if (b==-1) {
                 std::function<Interval(Interval)> f = [](Interval x){ return 1/x; };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return sqrt(-1/m); };
 
-                return a.cheby_convex(a, f, df_proj);
+                return cheby_convex(a, f, df_proj);
             } else {
                 throw std::invalid_argument("exponent is not implemented");
             }

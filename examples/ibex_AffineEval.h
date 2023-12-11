@@ -140,9 +140,10 @@ inline void AffineEval::idx_fwd(int, int) { /* nothing to do */ }
 inline void AffineEval::symbol_fwd(int y) { 
 
 	for (int i=0; i<d.args.size(); i++){
-		if(d[y] == d.args[i])
+		if(d[y] == d.args[i]){
 			af[y].a[i] = 1.0;
-		else 
+			af[y].ev = af[y].box->operator[](i);
+		}else 
 			af[y].a[i] = 0.0;
 	}
 	af[y].err = Interval(0,0);
@@ -152,7 +153,9 @@ inline void AffineEval::symbol_fwd(int y) {
 inline void AffineEval::cst_fwd(int y) {
 	const ExprConstant& c = (const ExprConstant&) f.node(y);
 	switch (c.type()) {
-	case Dim::SCALAR:       d[y].i() = c.get_value();         break;
+	case Dim::SCALAR:       d[y].i() = c.get_value(); 
+							af[y].err =  c.get_value();        
+							break;
 	case Dim::ROW_VECTOR:
 	case Dim::COL_VECTOR:   d[y].v() = c.get_vector_value();  break;
 	case Dim::MATRIX:       d[y].m() = c.get_matrix_value();  break;
@@ -192,7 +195,7 @@ inline void AffineEval::sign_fwd(int x, int y)           { d[y].i()=sign(d[x].i(
 inline void AffineEval::abs_fwd(int x, int y)            { d[y].i()=abs(d[x].i()); }
 inline void AffineEval::power_fwd(int x, int y, int p)   { d[y].i()=pow(d[x].i(),p); }
 inline void AffineEval::sqr_fwd(int x, int y)            { 
-	d[y].i()=sqr(d[x].i()); 
+	d[y].i()=sqr(d[x].i()); 	
 	af[y] = sqr(af[x]);
 }
 inline void AffineEval::sqrt_fwd(int x, int y)           { if ((d[y].i()=sqrt(d[x].i())).is_empty()) throw EmptyBoxException(); }
@@ -229,7 +232,7 @@ inline void AffineEval::sub_M_fwd(int x1, int x2, int y) { d[y].m()=d[x1].m()-d[
 
 
 AffineEval::AffineEval(Function& f, int n) : f(f), d(f) {
-	
+	af.clear();
 	for (int i=0; i<d.data.size(); i++)
 		af.push_back(Affine(n));
 	
@@ -272,15 +275,16 @@ Domain& AffineEval::eval(const IntervalVector& box) {
 
 	d.write_arg_domains(box);
 
-	for (int i=0; i<d.data.size(); i++)
-		af[i].box = &box;
+	for (int i=0; i<d.data.size(); i++)	af[i].box = &box;
 	
-
 	try {
 		f.forward<AffineEval>(*this);
 	} catch(EmptyBoxException&) {
 		d.top->set_empty();
 	}
+
+	cout << af[0] << endl;
+	d[0].i() &= af[0].ev;
 	return *d.top;
 }
 
@@ -311,52 +315,8 @@ void AffineEval::apply_fwd(int* x, int y) {
 }
 
 void AffineEval::vector_fwd(int* x, int y) {
-	assert(dynamic_cast<const ExprVector*>(&(f.node(y))));
-
-	const ExprVector& v = (const ExprVector&) f.node(y);
-
-	assert(v.type()!=Dim::SCALAR);
-
-	int j=0;
-
-	if (v.dim.is_vector()) {
-		for (int i=0; i<v.length(); i++) {
-			if (v.arg(i).dim.is_vector()) {
-				d[y].v().put(j,d[x[i]].v());
-				j+=v.arg(i).dim.vec_size();
-			} else {
-				d[y].v()[j]=d[x[i]].i();
-				j++;
-			}
-		}
-
-		assert(j==v.dim.vec_size());
-	}
-	else {
-		if (v.row_vector()) {
-			for (int i=0; i<v.length(); i++) {
-				if (v.arg(i).dim.is_matrix()) {
-					d[y].m().put(0,j,d[x[i]].m());
-					j+=v.arg(i).dim.nb_cols();
-				} else if (v.arg(i).dim.is_vector()) {
-					d[y].m().set_col(j,d[x[i]].v());
-					j++;
-				}
-			}
-		} else {
-			for (int i=0; i<v.length(); i++) {
-				if (v.arg(i).dim.is_matrix()) {
-					d[y].m().put(j,0,d[x[i]].m());
-					j+=v.arg(i).dim.nb_rows();
-				} else if (v.arg(i).dim.is_vector()) {
-					d[y].m().set_row(j,d[x[i]].v());
-					j++;
-				}
-			}
-		}
-
-		assert((v.row_vector() && j==v.dim.nb_cols()) || (!v.row_vector() && j==v.dim.nb_rows()));
-	}
+	//not implemented
+	throw std::invalid_argument("vector_fwd not implemented");
 
 }
 
