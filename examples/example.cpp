@@ -2,8 +2,6 @@
 #include "affine_arithm.h"
 #include "ibex_AffineEval.h"
 
-
-
 using namespace std;
 using namespace ibex;
 
