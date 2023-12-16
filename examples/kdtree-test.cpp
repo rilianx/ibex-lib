@@ -190,115 +190,153 @@ int main(int argc, char** argv){
         srand(_seed.Get());
     }
 
+    IKDTree kdtree;
+
     int n;
     cout << "Ingrese número de dimensiones: "; 
     cin >> n;
-    if(_collision_detection) n *= 2;
-    
 
-    Function* f = NULL;
-    if(_generic_search || _collision_detection){
-        f = input_function(n);
-    }else if(_knn){
-        f = knn_function(n);
-    }
+    if(_generic_search || _knn || _collision_detection){
+        if(_collision_detection) n *= 2;
+        
 
-    IntervalVector bounds = input_bounds(n);
-    IntervalVector y(n/2, 0.0); //para colisiones
-
-    list<Function> ctrs;
-    if(_generic_search || _knn)
-        ctrs = input_constraints(n);
-    else if(_collision_detection){
-        cout << "Ingrese caja de referencia: (ejemplo: 0 1 0 1 0 1): ";
-        for (int i=0;i<n/2;i++){
-            double lb,ub;
-            cin >> lb >> ub;
-            y[i] = Interval(lb,ub);
+        Function* f = NULL;
+        if(_generic_search || _collision_detection){
+            f = input_function(n);
+        }else if(_knn){
+            f = knn_function(n);
         }
 
-        ctrs = collision_contraints(y); 
-    }
+        IntervalVector bounds = input_bounds(n);
+        IntervalVector y(n/2, 0.0); //para colisiones
 
-    if (f != NULL)
-        cout << "Objective function (minimization): " << *f << endl;  
+        list<Function> ctrs;
+        if(_generic_search || _knn)
+            ctrs = input_constraints(n);
+        else if(_collision_detection){
+            cout << "Ingrese caja de referencia: (ejemplo: 0 1 0 1 0 1): ";
+            for (int i=0;i<n/2;i++){
+                double lb,ub;
+                cin >> lb >> ub;
+                y[i] = Interval(lb,ub);
+            }
 
-    for (auto it = ctrs.begin(); it != ctrs.end(); ++it){
-        cout << "Constraint: " << *it << " <= 0" << endl;
-    }
+            ctrs = collision_contraints(y); 
+        }
 
-    //input the number of points
-    cout << "Ingrese la cantidad de elementos a generar (hypershpere): ";
-    int cantidadPts; cin >> cantidadPts;
+        if (f != NULL)
+            cout << "Objective function (minimization): " << *f << endl;  
 
-    vector<Vector> points;
-    if (_collision_detection){
-        points = boxes_in_hypersphere(n/2,1.0,0.05,cantidadPts);
-    }else 
-        points = points_in_hypersphere(n,1.0,cantidadPts);
+        for (auto it = ctrs.begin(); it != ctrs.end(); ++it){
+            cout << "Constraint: " << *it << " <= 0" << endl;
+        }
 
-    if(f!=NULL){
-        double min_eval = POS_INFINITY;
-        double min_i = -1;
+        //input the number of points
+        cout << "Ingrese la cantidad de elementos a generar (hypershpere): ";
+        int cantidadPts; cin >> cantidadPts;
 
-        for (int i=0;i<cantidadPts;i++){
-            if (IKDTree::satisfiesConstraints(points[i], ctrs) && bounds.contains(points[i])){
-                double eval = f->eval(points[i]).mid();
-                if (eval < min_eval){
-                    min_eval = eval;
-                    min_i = i;
+        vector<Vector> points;
+        if (_collision_detection){
+            points = boxes_in_hypersphere(n/2,1.0,0.05,cantidadPts);
+        }else 
+            points = points_in_hypersphere(n,1.0,cantidadPts);
+
+        if(f!=NULL){
+            double min_eval = POS_INFINITY;
+            double min_i = -1;
+
+            for (int i=0;i<cantidadPts;i++){
+                if (IKDTree::satisfiesConstraints(points[i], ctrs) && bounds.contains(points[i])){
+                    double eval = f->eval(points[i]).mid();
+                    if (eval < min_eval){
+                        min_eval = eval;
+                        min_i = i;
+                    }
                 }
+            }
+
+            if(min_i != -1){
+                cout << "Punto mínimo: " << points[min_i] << endl;
+                cout << "Valor mínimo (f): " << min_eval << endl;
+            }else{
+                cout << "No se encontró un punto que satisfaga las restricciones" << endl;
             }
         }
 
-        if(min_i != -1){
-            cout << "Punto mínimo: " << points[min_i] << endl;
-            cout << "Valor mínimo (f): " << min_eval << endl;
-        }else{
+        
+        for (int i=0;i<cantidadPts;i++)
+            kdtree.insert(points[i]);
+        
+        cout << "\nUsando Interval KD-Tree" << endl;
+        cout << "Ingrese la máxima cantidad de puntos a buscar (default: inf): ";
+        int k=100000; string input;
+        std::getline(std::cin, input);
+        std::getline(std::cin, input);
+        if (input != "") {
+            std::istringstream iss(input);
+            iss >> k;
+        }
+
+        int altura = kdtree.height();
+        cout << "Altura: " << altura/log2(cantidadPts) << "*log(n)" << endl;
+
+        set<pair <double, const Vector*>> points_ = kdtree.get_kmin(f, ctrs, k, bounds);
+        if (points_.size() == 0){
             cout << "No se encontró un punto que satisfaga las restricciones" << endl;
+            return 0;
+        }else{
+            for (auto it = points_.begin(); it != points_.end(); ++it){
+                if (_collision_detection){
+                    //transform to box
+                    IntervalVector box(n/2);
+                    for (int i=0;i<n/2;i++){
+                        box[i] = Interval((*it->second)[2*i], (*it->second)[2*i+1]);
+                    }
+                    cout << "Box: " << box << " .. " << box.intersects(y) ;
+                }else 
+                    cout << "Punto: " << *it->second << " .. ";
+
+                if (f != NULL)
+                    cout << "Eval (f): " << it->first << endl;
+                else 
+                    cout << endl;
+            }
         }
     }
 
-    IKDTree kdtree;
-    for (int i=0;i<cantidadPts;i++)
-        kdtree.insert(points[i]);
-    
-    cout << "\nUsando Interval KD-Tree" << endl;
-    cout << "Ingrese la máxima cantidad de puntos a buscar (default: inf): ";
-    int k=100000; string input;
-    std::getline(std::cin, input);
-    std::getline(std::cin, input);
-    if (input != "") {
-        std::istringstream iss(input);
-        iss >> k;
+
+    cout << "Ingrese número de puntos a insertar: ";
+    int cantidadPts; cin >> cantidadPts;
+
+    for (int i=0;i<cantidadPts;i++){
+        Vector punto(n);
+        //random points
+        for (int j=0;j<n;j++)
+            punto[j] = (double) std::rand() / (double) RAND_MAX;
+        
+        kdtree.insert(punto);
     }
 
-    int altura = kdtree.height();
-    cout << "Altura: " << altura/log2(cantidadPts) << "*log(n)" << endl;
 
-    set<pair <double, const Vector*>> points_ = kdtree.get_kmin(f, ctrs, k, bounds);
-    if (points_.size() == 0){
-        cout << "No se encontró un punto que satisfaga las restricciones" << endl;
-        return 0;
-    }else{
-        for (auto it = points_.begin(); it != points_.end(); ++it){
-            if (_collision_detection){
-                //transform to box
-                IntervalVector box(n/2);
-                for (int i=0;i<n/2;i++){
-                    box[i] = Interval((*it->second)[2*i], (*it->second)[2*i+1]);
-                }
-                cout << "Box: " << box << " .. " << box.intersects(y) ;
-            }else 
-                cout << "Punto: " << *it->second << " .. ";
+    for (int k=0; k<1; k++){
+        Vector y(n);
+        //random points
+        for (int j=0;j<n;j++)
+            y[j] = (double) std::rand() / (double) RAND_MAX;
 
-            if (f != NULL)
-                cout << "Eval (f): " << it->first << endl;
-            else 
-                cout << endl;
+        //distance function
+        string dist_funct="";
+        for (int i=0;i<n;i++){
+            dist_funct += "(x["+std::to_string(i)+"]-"+std::to_string(y[i])+")^2";
+            if (i<n-1) dist_funct += "+";
         }
-    }
+        Function* f= new Function(string("x[" + std::to_string(n) + "]").c_str(), dist_funct.c_str());
+        
+        //kmin
+        int kmin; cout << "kmin: " ; cin >> kmin;
 
+        set<pair <double, const Vector*>> points=kdtree.get_kmin(f, list<Function>(), kmin, IntervalVector(n, Interval()));  
+    }
     
 
     
