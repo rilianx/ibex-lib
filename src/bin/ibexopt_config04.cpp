@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     args::ValueFlag<std::string> _filtering(parser, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {'f', "filtering"});
     args::ValueFlag<std::string> _linearRelaxation(parser, "linear relaxation", "Linear relaxation option (xn*)", {"lr"});
     args::ValueFlag<std::string> _bisection(parser, "bisection", "Bisection option (roundrobin|largestfirst|largestfirstnoobj|smearsum|smearmax|smearsumrel|smearmaxrel|lsmear|lsmearmg*)", {'b'});
-    args::ValueFlag<std::string> _strategy(parser, "strategy", "Strategy option (bfs|dh|bs*)", {'s'});
+    args::ValueFlag<std::string> _strategy(parser, "strategy", "Search Strategy (bfs|dh|bs*)", {'s'});
     args::ValueFlag<int> _beamsize(parser, "beamsize", "Beamsize (default=1)", {'B'});
     args::ValueFlag<double> _prec(parser, "prec", "Precision (default=1e-7)", {"eps_x"});
     args::ValueFlag<double> _goalPrec(parser, "goal precision (default=1e-6)", "Goal precision", {"eps"});

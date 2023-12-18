@@ -28,7 +28,7 @@ int main() {
     // display ([-0.832293673094285, 1.08060461173628] ; <3, 3>)
 
     //Contractor
-    CtcFwdBwd ctc(f, LEQ);
+    CtcFwdBwd ctc(f, LEQ); // f(x) <= 0
 
     IntervalVector x1(2);
     x1[0] = Interval(-1,1);

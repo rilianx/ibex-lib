@@ -77,7 +77,7 @@ namespace ibex {
             Affine c(a);
             c.a += b.a;
             c.err += b.err;
-            c.ev += c.err;
+            c.ev += b.err;
             c.is_constant = a.is_constant && b.is_constant;
             return c;
         }
@@ -153,7 +153,10 @@ namespace ibex {
         }
 
         friend Affine operator/(const Interval& a, const Affine& b) {
-            return a * pow(b,-1);
+            if(b.ev.lb()>0 || b.ev.ub()<0)
+                return a * pow(b,-1);
+            else
+                throw std::invalid_argument("Division by zero");
         }
 
         friend Affine operator/(const double& a, const Affine& b) {
@@ -169,12 +172,10 @@ namespace ibex {
             if (b==2) {
                 std::function<Interval(Interval)> f = [](Interval x){ return sqr(x); };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return m/2; };
-
                 return cheby_convex(a, f, df_proj);
             } else if (b==-1) {
                 std::function<Interval(Interval)> f = [](Interval x){ return 1/x; };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return sqrt(-1/m); };
-
                 return cheby_convex(a, f, df_proj);
             } else {
                 throw std::invalid_argument("exponent is not implemented");
