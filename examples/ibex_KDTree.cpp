@@ -221,24 +221,19 @@ void IKDTree::updateMinSet(set<pair<double, const Vector*>>& min_set, int k, dou
                 return actual;     
             }
 
-            /* Si el nodo actual tiene ambos hijos*/
-            if(actual->left && actual->right) 
-                if(actual->left->range[actual->dimension].intersects(actual->right->range[actual->dimension])){
-                    cout << actual->left->range[actual->dimension] << " -- " << actual->right->range[actual->dimension] << endl;
-                    exit(0);
-                }
-
             /* Si tiene un hijo derecho 
                 y el punto buscado esta contenido en la caja de ese hijo*/
-            if(actual->right && (actual->dimension==-1 ||
-                         (actual->right && punto[actual->dimension] >= actual->right->range[actual->dimension].lb()))){
+            Node *left=actual->left, *right=actual->right;
+            if(left && (actual->dimension==-1 ||
+                         (left && left->range[actual->dimension].contains(punto[actual->dimension])))){
 
-                actual = actual->right;
+                actual = left;
                 visitados++;
                 continue;
 
-            } else {
-                actual = actual->left;
+            } else if(right && (actual->dimension==-1 ||
+                         (right && right->range[actual->dimension].contains(punto[actual->dimension])))){
+                actual = right;
                 visitados++;
                 continue;
             }

@@ -304,39 +304,6 @@ int main(int argc, char** argv){
         }
     }
 
-
-    cout << "Ingrese número de puntos a insertar: ";
-    int cantidadPts; cin >> cantidadPts;
-
-    for (int i=0;i<cantidadPts;i++){
-        Vector punto(n);
-        //random points
-        for (int j=0;j<n;j++)
-            punto[j] = (double) std::rand() / (double) RAND_MAX;
-        
-        kdtree.insert(punto);
-    }
-
-
-    for (int k=0; k<1; k++){
-        Vector y(n);
-        //random points
-        for (int j=0;j<n;j++)
-            y[j] = (double) std::rand() / (double) RAND_MAX;
-
-        //distance function
-        string dist_funct="";
-        for (int i=0;i<n;i++){
-            dist_funct += "(x["+std::to_string(i)+"]-"+std::to_string(y[i])+")^2";
-            if (i<n-1) dist_funct += "+";
-        }
-        Function* f= new Function(string("x[" + std::to_string(n) + "]").c_str(), dist_funct.c_str());
-        
-        //kmin
-        int kmin; cout << "kmin: " ; cin >> kmin;
-
-        set<pair <double, const Vector*>> points=kdtree.get_kmin(f, list<Function>(), kmin, IntervalVector(n, Interval()));  
-    }
     
 
     
