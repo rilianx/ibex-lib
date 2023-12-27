@@ -167,11 +167,11 @@ namespace ibex {
         friend Affine sqr(const Affine& a) {
             return pow(a,2);
         }
-
+        
         friend Affine pow(const Affine& a, const int& b) {
-            if (b==2) {
-                std::function<Interval(Interval)> f = [](Interval x){ return sqr(x); };
-                std::function<Interval(Interval)> df_proj = [](Interval m){ return m/2; };
+            if (b % 2 == 0 && b > 0) {
+                std::function<Interval(Interval)> f = [b](Interval x){ return pow(x, b); };
+                std::function<Interval(Interval)> df_proj = [b](Interval m){ return m/b; };
                 return cheby_convex(a, f, df_proj);
             } else if (b==-1) {
                 std::function<Interval(Interval)> f = [](Interval x){ return 1/x; };

@@ -53,5 +53,16 @@ int main() {
     cout << x2 << endl;
     cout <<"AF Eval:" << af_eval.eval(x2) << endl;
     cout <<"Natural Eval:" << eval.eval(x2) << endl;
-    
+
+    // Test sqr and pow    
+    IntervalVector box2(2, Interval(1, 2));
+    Affine a(box2, 0);
+
+    cout << a << endl;  
+
+    Affine resultsqr = sqr(a);
+    Affine result = pow(a, 2);
+
+    cout << resultsqr << endl;
+    cout << result << endl;
 }
