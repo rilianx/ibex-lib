@@ -140,11 +140,12 @@ inline void AffineEval::idx_fwd(int, int) { /* nothing to do */ }
 inline void AffineEval::symbol_fwd(int y) { 
 
 	for (int i=0; i<d.args.size(); i++){
-		if(d[y] == d.args[i]){
+		if(&d[y] == &d.args[i]){
 			af[y].a[i] = 1.0;
 			af[y].ev = af[y].box->operator[](i);
+			af[y].is_constant = false; 
 		}else 
-			af[y].a[i] = 0.0;
+			af[y].a[i] = 0.0; 
 	}
 	af[y].err = Interval(0,0);
 
@@ -154,7 +155,8 @@ inline void AffineEval::cst_fwd(int y) {
 	const ExprConstant& c = (const ExprConstant&) f.node(y);
 	switch (c.type()) {
 	case Dim::SCALAR:       d[y].i() = c.get_value(); 
-							af[y].err =  c.get_value();        
+							af[y].err =  c.get_value(); 
+							af[y].is_constant = true;       
 							break;
 	case Dim::ROW_VECTOR:
 	case Dim::COL_VECTOR:   d[y].v() = c.get_vector_value();  break;
@@ -185,7 +187,8 @@ inline void AffineEval::min_fwd(int x1, int x2, int y)   { d[y].i()=min(d[x1].i(
 inline void AffineEval::atan2_fwd(int x1, int x2, int y) { d[y].i()=atan2(d[x1].i(),d[x2].i()); }
 
 inline void AffineEval::minus_fwd(int x, int y)          { 
-	d[y].i()=-d[x].i(); 
+	d[y].i()=-d[x].i();
+	 
 	af[y] = -af[x];
 	
 }

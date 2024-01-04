@@ -29,8 +29,8 @@ namespace ibex {
 
         IntervalVector a;
         Interval err;
-        Interval ev;
-        bool is_constant;
+        Interval ev; //auxiliar
+        bool is_constant; //err=ev 
         const IntervalVector* box;
 
 
@@ -150,6 +150,7 @@ namespace ibex {
             Interval A = f(x.lb())-m*x.lb();
             Interval B = f(xp)-m*xp;
             return m*af + (A+B)/2 + Interval((-abs(A-B)/2).lb(),(abs(A-B)/2).ub());
+            //return m*af + Interval(A,B)
         }
 
         friend Affine operator/(const Interval& a, const Affine& b) {
@@ -177,6 +178,13 @@ namespace ibex {
                 std::function<Interval(Interval)> f = [](Interval x){ return 1/x; };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return sqrt(-1/m); };
                 return cheby_convex(a, f, df_proj);
+            } else if (b>0 && b%2 != 0){
+                if(a.ev.lb()>=0 || a.ev.ub()<=0){
+                    //la función es convexa, aplicar chebychev
+                    throw std::invalid_argument("odd exponent is not implemented");
+                }else{
+                    return Affine(*a.box, -1) + pow(a.ev,b);
+                }
             } else {
                 throw std::invalid_argument("exponent is not implemented");
             }

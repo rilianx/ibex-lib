@@ -42,7 +42,9 @@ int main() {
     Affine af(x2,0);
 
     Affine af2 = 5*sqr(af);
-    cout << af2 << endl;
+    cout << "af2:" << af2 << endl;
+    cout << "af2:" << af2.ev << endl;
+    cout << "af2:" << pow(af2,3) << endl;
     cout << af2.ev << endl;
 
     cout << "Affine EVAL" << endl;
