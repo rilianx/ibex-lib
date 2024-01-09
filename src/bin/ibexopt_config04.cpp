@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
     double defaultTimeLimit = 1000;
     int defaultRandomSeed = 42;
 
+
     // Construir los argumentos para el constructor de Optimizer04Config
     std::vector<std::string> args = {
         "optimizer04", filename.Get(),
