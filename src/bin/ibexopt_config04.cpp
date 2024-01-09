@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
 
     // Continuando con la configuración de tus argumentos existentes...
     args::Group filteringGroup(parser, "Filtering Options", args::Group::Validators::DontCare);
-    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {"filt"});
+    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {"filtering"});
 
     args::Group hc4Group(filteringGroup, "HC4 Options", args::Group::Validators::DontCare);
     args::ValueFlag<double> _precHc4(hc4Group, "prec_hc4", "Precision for hc4 (default=1e-7)", {"hc4_p"});
