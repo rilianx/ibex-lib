@@ -178,18 +178,66 @@ namespace ibex {
                 std::function<Interval(Interval)> f = [](Interval x){ return 1/x; };
                 std::function<Interval(Interval)> df_proj = [](Interval m){ return sqrt(-1/m); };
                 return cheby_convex(a, f, df_proj);
-            } else if (b>0 && b%2 != 0){
-                if(a.ev.lb()>=0 || a.ev.ub()<=0){
-                    //la función es convexa, aplicar chebychev
-                    throw std::invalid_argument("odd exponent is not implemented");
-                }else{
+            } else if (b > 0 && b % 2 != 0) {
+                if (a.ev.lb() >= 0 || a.ev.ub() <= 0 ){
+                    std::function<Interval(Interval)> f = [b](Interval x){ return pow(x, b); };
+                    std::function<Interval(Interval)> df_proj = [b](Interval m){ return m/b; };
+                    return cheby_convex(a, f, df_proj);
+                } else {
                     return Affine(*a.box, -1) + pow(a.ev,b);
                 }
             } else {
+                // Exponente negativo distinto a -1.
                 throw std::invalid_argument("exponent is not implemented");
             }
         }
 
+        friend Affine exp(const Affine& a) {
+            // std::function<Interval(Interval)> f = [](Interval x){ return exp(e, a); };
+            // std::function<Interval(Interval)> df_proj = [b](Interval m){ return exp(e, a); };
+            // return cheby_convex(a, f, df_proj);
+            return 1;
+        }
+
+        friend Affine log(const Affine& a) {
+            if (a.ev.lb() < 0 || a.ev.ub() < 0) {
+                throw std::invalid_argument("invalid argument");
+            } else {
+                std::function<Interval(Interval)> f = [](Interval x){ return log(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return 1/m; };
+                return cheby_convex(a, f, df_proj);
+            }
+        }
+
+        friend Affine cos(const Affine& a) {
+            // Es convexa cuando su segunda derivada (-cos(x)) es no negativa.
+            // [pi/2, 3pi/2], [5pi/2, 7pi/2], [9pi/2, 11pi/2]...
+            if (a.ev.ub() - a.ev.lb() <= 3.1415) {
+                // if (cos(a.ev.ub()) <= 0 && cos(a.ev.lb()) <= 0) {
+                //     std::function<Interval(Interval)> f = [](Interval x){ return cos(x); };
+                //     std::function<Interval(Interval)> df_proj = [](Interval m){ return arcsin(m); };
+                //     return cheby_convex(a, f, df_proj);
+            } else {
+                // La función no es convexa en el intervalo.    
+            }
+
+            return 1;
+        }
+
+        friend Affine sin(const Affine& a) {
+            // Es convexa cuando su segunda derivada (-sin(x)) es no negativa.
+            // [pi, 2pi], [3pi, 4pi], [5pi, 6pi]...
+            if (a.ev.ub() - a.ev.lb() <= 3.1415) {
+                // if (sin(a.ev.ub()) <= 0 && sin(a.ev.lb()) <= 0) {
+                //     std::function<Interval(Interval)> f = [](Interval x){ return sin(x); };
+                //     std::function<Interval(Interval)> df_proj = [](Interval m){ return arccos(m); };
+                //     return cheby_convex(a, f, df_proj);
+            } else {
+                // La función no es convexa en el intervalo.
+            }
+
+            return 1;
+        }
     };
 }
 
