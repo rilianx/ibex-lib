@@ -164,6 +164,10 @@ inline void AffineEval::cst_fwd(int y) {
 	}
 }
 
+inline void AffineEval::minus_V_fwd(int x, int y)        { d[y].v()=-d[x].v(); }
+inline void AffineEval::minus_M_fwd(int x, int y)        { d[y].m()=-d[x].m(); }
+
+/*** IMPLEMENTAR ****/
 inline void AffineEval::chi_fwd(int x1, int x2, int x3, int y) { d[y].i() = chi(d[x1].i(),d[x2].i(),d[x3].i()); }
 inline void AffineEval::add_fwd(int x1, int x2, int y)   { 
 	// interval arithmetic
@@ -192,8 +196,7 @@ inline void AffineEval::minus_fwd(int x, int y)          {
 	af[y] = -af[x];
 	
 }
-inline void AffineEval::minus_V_fwd(int x, int y)        { d[y].v()=-d[x].v(); }
-inline void AffineEval::minus_M_fwd(int x, int y)        { d[y].m()=-d[x].m(); }
+
 inline void AffineEval::sign_fwd(int x, int y)           { d[y].i()=sign(d[x].i()); }
 inline void AffineEval::abs_fwd(int x, int y)            { d[y].i()=abs(d[x].i()); }
 inline void AffineEval::power_fwd(int x, int y, int p)   { d[y].i()=pow(d[x].i(),p); }
@@ -216,9 +219,12 @@ inline void AffineEval::atan_fwd(int x, int y)           { d[y].i()=atan(d[x].i(
 inline void AffineEval::acosh_fwd(int x, int y)          { if ((d[y].i()=acosh(d[x].i())).is_empty()) throw EmptyBoxException(); }
 inline void AffineEval::asinh_fwd(int x, int y)          { d[y].i()=asinh(d[x].i()); }
 inline void AffineEval::atanh_fwd(int x, int y)          { if ((d[y].i()=atanh(d[x].i())).is_empty()) throw EmptyBoxException(); }
+
+//**
 inline void AffineEval::floor_fwd(int x, int y)          { if ((d[y].i()=floor(d[x].i())).is_empty()) throw EmptyBoxException(); }
 inline void AffineEval::ceil_fwd(int x, int y)           { if ((d[y].i()=ceil(d[x].i())).is_empty()) throw EmptyBoxException(); }
 inline void AffineEval::saw_fwd(int x, int y)            { if ((d[y].i()=saw(d[x].i())).is_empty()) throw EmptyBoxException(); }
+//*** Hasta aquí ****/
 
 inline void AffineEval::trans_V_fwd(int x, int y)        { d[y].v()=d[x].v(); }
 inline void AffineEval::trans_M_fwd(int x, int y)        { d[y].m()=d[x].m().transpose(); }

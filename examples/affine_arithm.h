@@ -212,11 +212,12 @@ namespace ibex {
         friend Affine cos(const Affine& a) {
             // Es convexa cuando su segunda derivada (-cos(x)) es no negativa.
             // [pi/2, 3pi/2], [5pi/2, 7pi/2], [9pi/2, 11pi/2]...
-            if (a.ev.ub() - a.ev.lb() <= 3.1415) {
-                // if (cos(a.ev.ub()) <= 0 && cos(a.ev.lb()) <= 0) {
+            if (a.ev.diam() <= Interval::PI.lb()) {
+                if (ibex::cos(Interval(a.ev.ub())).ub() <= 0 && std::cos(a.ev.lb()) <= 0) {
                 //     std::function<Interval(Interval)> f = [](Interval x){ return cos(x); };
-                //     std::function<Interval(Interval)> df_proj = [](Interval m){ return arcsin(m); };
+                       std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::asin(m); };
                 //     return cheby_convex(a, f, df_proj);
+                }
             } else {
                 // La función no es convexa en el intervalo.    
             }
