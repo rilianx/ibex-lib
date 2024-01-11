@@ -43,7 +43,20 @@ int main(int argc, char** argv) {
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
 
-    args::ValueFlag<std::string> _filtering(parser, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {'f', "filtering"});
+
+    // Continuando con la configuración de tus argumentos existentes...
+    args::Group filteringGroup(parser, "Filtering Options", args::Group::Validators::DontCare);
+    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {"filtering"});
+
+    args::Group hc4Group(filteringGroup, "HC4 Options", args::Group::Validators::DontCare);
+    args::ValueFlag<double> _precHc4(hc4Group, "prec_hc4", "Precision for hc4 (default=1e-7)", {"hc4_p"});
+
+    args::Group bcidhc4Group(filteringGroup, "3BCIDHC4 Options", args::Group::Validators::DontCare);
+    args::ValueFlag<double> _prec3Bcidhc4(bcidhc4Group, "prec_3bcidhc4", "Precision for 3bcidhc4 (default=1e-7)", {"prec_3bcidhc4"});
+    args::ValueFlag<int> _slices3Bcidhc4(bcidhc4Group, "slices_3bcidhc4", "Number of slices for 3bcidhc4", {"slices"});
+
+
+    //args::ValueFlag<std::string> _filtering(parser, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {'f', "filtering"});
     args::ValueFlag<std::string> _linearRelaxation(parser, "linear relaxation", "Linear relaxation option (xn*)", {"lr"});
     args::ValueFlag<std::string> _bisection(parser, "bisection", "Bisection option (roundrobin|largestfirst|largestfirstnoobj|smearsum|smearmax|smearsumrel|smearmaxrel|lsmear|lsmearmg*)", {'b'});
     args::ValueFlag<std::string> _strategy(parser, "strategy", "Search Strategy (bfs|dh|bs*)", {'s'});
@@ -88,6 +101,7 @@ int main(int argc, char** argv) {
     double defaultGoalPrec = 1.e-6;
     double defaultTimeLimit = 1000;
     int defaultRandomSeed = 42;
+
 
     // Construir los argumentos para el constructor de Optimizer04Config
     std::vector<std::string> args = {
