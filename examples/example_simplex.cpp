@@ -14,7 +14,7 @@ using namespace ibex;
 int main(int argc, char *argv[]) {
     // Verificar que se han proporcionado suficientes argumentos
     if (argc < 5) {
-        std::cerr << "Usage: " << argv[0] << " nb_vars nb_ctrs timeout matrix_elements..." << std::endl;
+        std::cerr << "Usage: " << argv[0] << " n m timeout matrix_elements... b1 b2 ... bm" << std::endl;
         return 1;
     }
 
@@ -25,12 +25,6 @@ int main(int argc, char *argv[]) {
     double timeout = std::atof(argv[5]);
 
     int matrix_size = nb_vars * nb_ctrs;
-
-    // Verificar que se han proporcionado suficientes elementos para la matriz
-    if (argc != 6 + matrix_size) {
-        std::cerr << "Error: Expected " << matrix_size << " matrix elements, got " << argc - 6 << "." << std::endl;
-        return 1;
-    }
 
     // Leer los elementos de la matriz
     std::vector<double> matrix(matrix_size);
@@ -47,7 +41,11 @@ int main(int argc, char *argv[]) {
 
     Matrix rows(nb_ctrs, nb_vars, matrix.data());
     cout << "A:" << rows << endl;
-    Vector rhs(nb_ctrs, 0.0);
+    Vector rhs(nb_ctrs);
+    for (int i = 0; i < nb_ctrs; ++i) {
+        rhs[i] = std::atof(argv[6 + matrix_size + i]);
+    }
+
     lp_solver.add_constraints(rows, CmpOp::LEQ, rhs);
 
     Vector obj(nb_vars, 0.0);
