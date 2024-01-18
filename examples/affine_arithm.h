@@ -193,19 +193,17 @@ namespace ibex {
         }
 
         friend Affine exp(const Affine& a) {
-            // std::function<Interval(Interval)> f = [](Interval x){ return exp(e, a); };
-            // std::function<Interval(Interval)> df_proj = [b](Interval m){ return exp(e, a); };
-            // return cheby_convex(a, f, df_proj);
             return 1;
+            // std::function<Interval(Interval)> f = [](Interval x){ return ibex::exp(Interval::E.lb(), x); };
+            // std::function<Interval(Interval)> df_proj = [](Interval m){ return exp(e, m); };
+            // return cheby_convex(a, f, df_proj);
         }
 
         friend Affine log(const Affine& a) {
             if (a.ev.lb() < 0 || a.ev.ub() < 0) {
-                throw std::invalid_argument("invalid argument");
+                throw std::invalid_argument("the function is not defined in the interval");
             } else {
-                std::function<Interval(Interval)> f = [](Interval x){ return log(x); };
-                std::function<Interval(Interval)> df_proj = [](Interval m){ return 1/m; };
-                return cheby_convex(a, f, df_proj);
+                throw std::invalid_argument("the function is not convex on the interval");
             }
         }
 
@@ -213,30 +211,129 @@ namespace ibex {
             // Es convexa cuando su segunda derivada (-cos(x)) es no negativa.
             // [pi/2, 3pi/2], [5pi/2, 7pi/2], [9pi/2, 11pi/2]...
             if (a.ev.diam() <= Interval::PI.lb()) {
-                if (ibex::cos(Interval(a.ev.ub())).ub() <= 0 && std::cos(a.ev.lb()) <= 0) {
-                //     std::function<Interval(Interval)> f = [](Interval x){ return cos(x); };
-                       std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::asin(m); };
-                //     return cheby_convex(a, f, df_proj);
+                if (std::cos(a.ev.ub()) <= 0 && std::cos(a.ev.lb()) <= 0) {
+                    std::function<Interval(Interval)> f = [](Interval x){ return ibex::cos(x); };
+                    std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::sin(m); };
+                    return cheby_convex(a, f, df_proj);
                 }
             } else {
-                // La función no es convexa en el intervalo.    
+                throw std::invalid_argument("the function is not convex on the interval");  
             }
-
-            return 1;
         }
 
         friend Affine sin(const Affine& a) {
             // Es convexa cuando su segunda derivada (-sin(x)) es no negativa.
             // [pi, 2pi], [3pi, 4pi], [5pi, 6pi]...
-            if (a.ev.ub() - a.ev.lb() <= 3.1415) {
-                // if (sin(a.ev.ub()) <= 0 && sin(a.ev.lb()) <= 0) {
-                //     std::function<Interval(Interval)> f = [](Interval x){ return sin(x); };
-                //     std::function<Interval(Interval)> df_proj = [](Interval m){ return arccos(m); };
-                //     return cheby_convex(a, f, df_proj);
+            if (a.ev.diam() <= Interval::PI.lb()) {
+                if (std::sin(a.ev.ub()) <= 0 && std::sin(a.ev.lb()) <= 0) {
+                    std::function<Interval(Interval)> f = [](Interval x){ return ibex::sin(x); };
+                    std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::cos(m); };
+                    return cheby_convex(a, f, df_proj);
             } else {
-                // La función no es convexa en el intervalo.
-            }
+                throw std::invalid_argument("the function is not convex on the interval");
+            }}
+        }
 
+        friend Affine tan(const Affine& a) {
+            if (a.ev.diam() < Interval::PI.lb() / 2) {
+                if (std::tan(a.ev.ub()) >= 0 && std::tan(a.ev.lb()) >= 0) {
+                    std::function<Interval(Interval)> f = [](Interval x){ return ibex::tan(x); };
+                    // std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::acos(m); };  // 1/m = cos^2(x) -> despejar x
+                    // return cheby_convex(a, f, df_proj);
+                    return 1;
+                }}
+
+            return 1;
+        }
+
+        friend Affine cosh(const Affine& a) {
+            std::function<Interval(Interval)> f = [](Interval x){ return ibex::cosh(x); };
+            std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::sinh(m); };
+            return cheby_convex(a, f, df_proj);
+        }
+
+        friend Affine sinh(const Affine& a) {
+            if (a.ev.lb() >= 0) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::sinh(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::cosh(m); };
+                return cheby_convex(a, f, df_proj);
+            }
+        }
+
+        friend Affine tanh(const Affine& a) {
+            if (a.ev.ub() <= 0) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::tanh(x); };
+                // std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::sinh(m); };  // 1/m = cosh^2(x) -> despejar x
+                // return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine acos(const Affine& a) {
+            if (a.ev.ub() <= 0 && a.ev.lb() >= -1) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::acos(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return -(1/sqrt(1-pow(m, 2))); };
+                return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine asin(const Affine& a) {
+            if (a.ev.lb() >= 0 && a.ev.ub() <= 1) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::asin(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return 1/sqrt(1-sqr(m)); };
+                return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine atan(const Affine& a) {
+            if (a.ev.ub() <= 0) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::atan(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return 1/(sqr(m)+1); };  
+                return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine acosh(const Affine& a) {
+            // Es siempre concava?
+            throw std::invalid_argument("the function is not convex on the interval");
+        }
+
+        friend Affine asinh(const Affine& a) {
+            if (a.ev.ub() <= 0) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::asinh(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return ibex::acosh(m); };  
+                return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine atanh(const Affine& a) {
+            if (a.ev.lb() >= 0) {
+                std::function<Interval(Interval)> f = [](Interval x){ return ibex::atanh(x); };
+                std::function<Interval(Interval)> df_proj = [](Interval m){ return 1/(1-sqr(m)); };  
+                return cheby_convex(a, f, df_proj);
+            } else {
+                throw std::invalid_argument("the function is not convex on the interval");
+            }
+        }
+
+        friend Affine floor(const Affine& a) {
+            // TODO
+            // Como determinar si es convexa o concava?
+            return 1;
+        }
+
+        friend Affine ceil(const Affine& a) {
+            // TODO
+            // Como determinar si es convexa o concava?
             return 1;
         }
     };
