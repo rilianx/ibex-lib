@@ -8,6 +8,6 @@ c in [-1e8, 1e8];
 minimize -c ;
 
 constraints
-7.5*v  + 5*w + c <= v*w;
+w*v - (7.5*v  + 5*w) = c;
 
 end
