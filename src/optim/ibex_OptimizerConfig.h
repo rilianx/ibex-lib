@@ -159,7 +159,7 @@ public:
 	/** Default anticipated upper bounding : true (enabled). */
 	static constexpr bool default_anticipated_UB = true;
 
-protected:
+//protected:
 
 	friend class Optimizer;
 

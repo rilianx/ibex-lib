@@ -148,7 +148,7 @@ public:
 	 */
 	unsigned long nb_cells() const;
 
-protected:
+//protected:
 	friend class Optimizer;
 
 	/**

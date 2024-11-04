@@ -1,0 +1,191 @@
+//============================================================================
+//                                  I B E X
+//
+//                               ************
+//                                  IbexOpt
+//                               ************
+//
+// Author      : Ignacio Araya, Gilles Chabert
+// Copyright   : IMT Atlantique (France)
+// License     : See the LICENSE file
+// Last Update : Jul 09, 2017
+//============================================================================
+
+#include "ibex.h"
+#include "../src/bin/parse_args.h"
+#include "ibex_Optimizer_sampling.h"
+
+#include <sstream>
+#include <regex>
+
+
+using namespace std;
+using namespace ibex;
+
+void printArgsSummary(const std::vector<std::string>& args) {
+    if (args.size() < 11) {
+        std::cerr << "Número insuficiente de argumentos." << std::endl;
+        return;
+    }
+
+    std::cout << "Resumen de Argumentos:" << std::endl;
+    std::cout << "Filename: " << args[1] << std::endl;
+    std::cout << "Filtering: " << args[2] << std::endl;
+    std::cout << "Linear Relaxation: " << args[3] << std::endl;
+    std::cout << "Bisection: " << args[4] << std::endl;
+    std::cout << "Strategy: " << args[5] << std::endl;
+    std::cout << "Beamsize: " << args[6] << std::endl;
+    std::cout << "Precision (eps_x): " << args[7] << std::endl;
+    std::cout << "Goal Precision (eps): " << args[8] << std::endl;
+    std::cout << "Time Limit: " << args[9] << std::endl;
+    std::cout << "Random Seed: " << args[10] << std::endl;
+}
+
+// Función para parsear el string a IntervalVector
+IntervalVector parseIntervalVector(const std::string& box_str) {
+    std::regex interval_regex(R"(\[\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*,\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*\])");
+    std::sregex_iterator next(box_str.begin(), box_str.end(), interval_regex);
+    std::sregex_iterator end;
+
+    std::vector<std::pair<double, double>> intervals;
+    while (next != end) {
+        std::smatch match = *next;
+        double lower = std::stod(match[1].str());
+        double upper = std::stod(match[2].str());
+        intervals.emplace_back(lower, upper);
+        ++next;
+    }
+
+    int n = intervals.size();
+    double bounds[n][2];
+    for (int i = 0; i < n; ++i) {
+        bounds[i][0] = intervals[i].first;
+        bounds[i][1] = intervals[i].second;
+    }
+
+    return IntervalVector(n, bounds);
+}
+
+int main(int argc, char** argv) {
+    // Menú interactivo para configurar las opciones
+    args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
+    args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
+
+
+    // Continuando con la configuración de tus argumentos existentes...
+    args::Group filteringGroup(parser, "Filtering Options", args::Group::Validators::DontCare);
+    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {"filtering"});
+
+    args::Group hc4Group(filteringGroup, "HC4 Options", args::Group::Validators::DontCare);
+    args::ValueFlag<double> _precHc4(hc4Group, "prec_hc4", "Precision for hc4 (default=1e-7)", {"hc4_p"});
+
+    args::Group bcidhc4Group(filteringGroup, "3BCIDHC4 Options", args::Group::Validators::DontCare);
+    args::ValueFlag<double> _prec3Bcidhc4(bcidhc4Group, "prec_3bcidhc4", "Precision for 3bcidhc4 (default=1e-7)", {"prec_3bcidhc4"});
+    args::ValueFlag<int> _slices3Bcidhc4(bcidhc4Group, "slices_3bcidhc4", "Number of slices for 3bcidhc4", {"slices"});
+
+
+    //args::ValueFlag<std::string> _filtering(parser, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {'f', "filtering"});
+    args::ValueFlag<std::string> _linearRelaxation(parser, "linear relaxation", "Linear relaxation option (xn*)", {"lr"});
+    args::ValueFlag<std::string> _bisection(parser, "bisection", "Bisection option (roundrobin|largestfirst|largestfirstnoobj|smearsum|smearmax|smearsumrel|smearmaxrel|lsmear|lsmearmg*)", {'b'});
+    args::ValueFlag<std::string> _strategy(parser, "strategy", "Search Strategy (bfs|dh|bs*)", {'s'});
+    args::ValueFlag<int> _beamsize(parser, "beamsize", "Beamsize (default=1)", {'B'});
+    args::ValueFlag<double> _prec(parser, "prec", "Precision (default=1e-7)", {"eps_x"});
+    args::ValueFlag<double> _goalPrec(parser, "goal precision (default=1e-6)", "Goal precision", {"eps"});
+    args::ValueFlag<double> _initial_loup(parser, "initial loup", "Initial loup", {"loup"});
+    args::ValueFlag<std::string> _initial_box(parser, "initial box", "Initial Box", {"box"});
+
+    args::ValueFlag<double> _timeLimit(parser, "time limit", "Time limit (default=1000)", {'t'});
+    args::ValueFlag<int> _randomSeed(parser, "random seed", "Random seed (default=42)", {"seed"});
+
+	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
+
+
+    try {
+        parser.ParseCLI(argc, argv);
+    } catch (const args::Help&) {
+        std::cout << parser;
+        return 0;
+    } catch (const args::ParseError& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    } catch (const args::ValidationError& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+
+    // Aquí se recogen los valores de las opciones del menú
+    // Si alguna opción es obligatoria, se debe verificar que haya sido proporcionada
+    // Por ejemplo:
+    if(!filename) {
+        std::cerr << "Filename is required." << std::endl;
+        return 1;
+    }
+
+    // Valores por defecto
+    std::string defaultFiltering = "acidhc4";
+    std::string defaultLinearRelaxation = "xn";
+    std::string defaultBisection = "lsmearmg";
+    std::string defaultStrategy = "bs";
+    int defaultBeamsize = 1;
+    double defaultPrec = 1.e-7;
+    double defaultGoalPrec = 1.e-6;
+    double defaultTimeLimit = 1000;
+    int defaultRandomSeed = 42;
+
+
+    // Construir los argumentos para el constructor de Optimizer04Config
+    std::vector<std::string> args = {
+        "optimizer04", filename.Get(),
+        _filtering ? _filtering.Get() : defaultFiltering,
+        _linearRelaxation ? _linearRelaxation.Get() : defaultLinearRelaxation,
+        _bisection ? _bisection.Get() : defaultBisection,
+        _strategy ? _strategy.Get() : defaultStrategy,
+        _beamsize ? std::to_string(_beamsize.Get()) : std::to_string(defaultBeamsize),
+        _prec ? std::to_string(_prec.Get()) : std::to_string(defaultPrec),
+        _goalPrec ? std::to_string(_goalPrec.Get()) : std::to_string(defaultGoalPrec),
+        _timeLimit ? std::to_string(_timeLimit.Get()) : std::to_string(defaultTimeLimit),
+        _randomSeed ? std::to_string(_randomSeed.Get()) : std::to_string(defaultRandomSeed)
+    };
+
+    //printArgsSummary(args);
+
+    // Convertir std::vector<std::string> a char*[]
+    std::vector<char*> argv_new;
+    for (auto& arg : args) {
+        argv_new.push_back(&arg[0]);
+    }
+
+    // Crear el objeto Optimizer04Config
+    Optimizer04Config config(argv_new.size(), argv_new.data());
+
+    // Build the default optimizer
+    Optimizer_sampling o(config);
+
+    // display solutions with up to 12 decimals
+    cout.precision(12);
+
+
+    // Search for the optimum
+    Optimizer_sampling::diving=true;
+    double initial_loup = _initial_loup ? _initial_loup.Get() : POS_INFINITY;
+    if (_initial_box) {
+        IntervalVector initial_box = parseIntervalVector(_initial_box.Get());
+        //cout << initial_box << endl;
+        o.optimize(initial_box, initial_loup);
+    } else
+        o.optimize(config.sys->box, initial_loup);
+
+    cout << "loup:" << o.get_loup() << endl;
+    cout << "box_loup:" << o.get_loup_point().mid() << endl;
+    cout << "buffer_size:" << o.buffer.size() << endl;
+
+    while ( !o.buffer.empty() ) {
+        Cell *c = o.buffer.top();
+        cout << c->box << endl;
+        o.buffer.pop();
+    }
+
+
+
+    return 0;
+}
