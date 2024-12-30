@@ -6,25 +6,31 @@ using namespace std;
 using namespace ibex;
 
 int DualFeasibleBounding::contract(IntervalVector& x_new, int maxIters, bool improveUpper) {
+    IntervalMatrix A = getMatrix();
+    Interval alpha;
+    int i;
+    int j;
+    Interval delta, direction;
+    int k = getKIndex();
+
+
     if (improveUpper) {
         changeSigns(A, x_new);
     }
 
+
     int iters = 0;
     while (maxIters == -1 || iters < maxIters) {
-        int j;
-        Interval delta, direction;
-        tie(j, delta, direction) = largestImpact(A, x_new, A[0], k);
+        tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
         if (j == -1) {
             if (improveUpper) {
                 changeSigns(A, x_new);
             }
+            setMatrix(A);
             return iters;
-        }
+        } 
 
-        Interval alpha;
-        int i;
         tie(alpha, i) = calculateAlpha(A[j], A[0], direction);
 
         if (i == -1) {
@@ -34,25 +40,27 @@ int DualFeasibleBounding::contract(IntervalVector& x_new, int maxIters, bool imp
 
         A[0] = A[0] + alpha * A[j];
         
-        A[0][i] = Interval(0.0);
+        A[0][i] = Interval(0);
 
-        identity_rows.insert(j);
+
         makeColumnIdentity(A, i, false, j);
-        A[0][k] = Interval(1.0);
-        gaussSeidel(k, x_new, A[0]);
+        A[0][k] = Interval(1);
+        gaussSeidel(x_new, k, A[0]);
 
+
+        identity_rows[j] = i;
         if (contract_all) {
             for (const auto& r : identity_rows) {
-                x_new[r] = gaussSeidel(-1, x_new, A[r]);
-            }
+            gaussSeidel(x_new, r.second, A[r.first]);
         }
-
+}
         ++iters;
     }
 
     if (improveUpper) {
         changeSigns(A, x_new);
     }
+    setMatrix(A);
 
     return iters;
 }
@@ -69,7 +77,7 @@ int DualFeasibleBounding::totalContraction(IntervalVector& x_new) {
 }
 
 std::pair<IntervalVector, IntervalVector> DualFeasibleBounding::calculateImpacts(
-    const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma, int k) {
+    const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
     int m = A.nb_rows();
     int n = A.nb_cols();
 
@@ -110,30 +118,31 @@ std::pair<IntervalVector, IntervalVector> DualFeasibleBounding::calculateImpacts
 }
 
 std::tuple<int, Interval, Interval> DualFeasibleBounding::largestImpact(
-    const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma, int k) {
+    const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
     IntervalVector grad_incr, grad_decr;
-    tie(grad_incr, grad_decr) = calculateImpacts(A, x_new, gamma, k);
+    tie(grad_incr, grad_decr) = calculateImpacts(A, x_new, gamma);
 
     Interval delta_incr, delta_decr;
     int j_incr, j_decr;
     tie(delta_incr, j_incr) = getMaxValue(grad_incr);
     tie(delta_decr, j_decr) = getMaxValue(grad_decr);
 
-    Interval delta = Interval(0.0);
+    Interval delta = Interval(0);
     int j;
     Interval direction;
 
     if (delta_incr.lb() > delta_decr.lb()) {
         delta = delta_incr;
         j = j_incr;
-        direction = Interval(1.0);
+        direction = Interval(1);
     } else {
         delta = delta_decr;
         j = j_decr;
-        direction = Interval(-1.0);
+        direction = Interval(-1);
     }
 
-    if (delta.lb() <= 0.0) {
+    Interval signOfDelta = sign(delta);
+    if (signOfDelta != Interval(1)) {
         j = -1;
     }
 
@@ -143,50 +152,46 @@ std::tuple<int, Interval, Interval> DualFeasibleBounding::largestImpact(
 std::pair<Interval, int> DualFeasibleBounding::calculateAlpha(
     const IntervalVector& Aj, const IntervalVector& gamma, const Interval& direction) {
     Interval min_alpha(1e20);
-    int min_idx = -1;
+    int min_index = -1;
     int n = Aj.size();
 
     for (int i = 0; i < n; ++i) {
         if (Aj[i].lb() != 0 && Aj[i].ub() != 0) {
-            Interval possible_alpha = (gamma[i] / Aj[i]) * direction;
-            if (possible_alpha.ub() < 0) {
-                if (abs(possible_alpha.lb()) < abs(min_alpha.lb())) {
-                    min_alpha = possible_alpha;
-                    min_idx = i;
+            Interval alpha = (gamma[i] / Aj[i]) * direction;
+            Interval signOfAlpha = sign(alpha);
+            if (signOfAlpha == Interval(-1)) {
+                if (abs(alpha.lb()) < abs(min_alpha.lb())) {
+                    min_alpha = alpha;
+                    min_index = i;
                 }
             }
         }
     }
 
     min_alpha = min_alpha * direction * Interval(-1.0);
-    return {min_alpha, min_idx};
+    return {min_alpha, min_index};
 }
 
 void DualFeasibleBounding::changeSigns(IntervalMatrix& A, IntervalVector& x_new) {
+    int k = getKIndex();
     A[0] = -A[0];
     A[0][k] = -A[0][k];
     x_new[k] = -x_new[k];
 }
 
-
-
-
-
-
                                 // AUX FUNCTIONS
-
-int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, int k, bool interchange, int j, 
-                                                const set<int> identity_rows){
+int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, const int k, bool interchange, int j, 
+                                             map<int, int> identity_rows){
     int m = A.nb_rows();
     int n = A.nb_cols();
 
     // Paso 1: Encontrar la fila adecuada para el pivoteo
-    if (!identity_rows.empty()) {
-        for (int jAux = 0; jAux < m; ++jAux) {
-            if (identity_rows.count(jAux) > 0){
-                j = jAux;
+    if (interchange){
+        if (!identity_rows.empty()) {
+            for (int jAux = 0; jAux < m; ++jAux) {
+                if (identity_rows.count(jAux) > 0){
+                    j = jAux;
 
-                if (interchange){
                     for (int i = 0; i < n; ++j) {
                         std::swap(A[j][i], A[jAux][i]);
                     }
@@ -196,6 +201,8 @@ int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, int k, bool inte
         }
     }
 
+    
+
     // Paso 2: Normalizar la fila j respecto del valor en posición k
     if (A[j][k].lb() == 0 || A[j][k].ub() == 0) {
         throw std::invalid_argument("El divisor tiene un borde igual a 0, lo que no es permitido.");
@@ -203,7 +210,7 @@ int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, int k, bool inte
     
     A[j] = (Interval(1) / A[j][k]) * A[j];
 
-    A[j][k] = Interval(1.0);
+    A[j][k] = Interval(1);
 
     // Paso 3: Hacer ceros los demás elementos en la columna k
     for (int jj = 0; jj < m; ++jj) {
@@ -212,37 +219,38 @@ int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, int k, bool inte
         for (int i = 0; i < n; ++i) {
             A[jj][i] -= factor * A[j][i];
         }
-        A[jj][k] = Interval(0.0);
+        A[jj][k] = Interval(0);
     }
 
     return j;
 }
 
-
 // Aplica la fórmula de Gauss-Seidel sobre el vector x
-Interval DualFeasibleBounding::gaussSeidel(int k, IntervalVector& x, IntervalVector& gamma){
-    double epsilon = 1e-3;
-    int n = x.size();
+Interval DualFeasibleBounding::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
+    double epsilon = 1e-6;
+    int n = gamma.size();
+    
 
-    if (gamma[k].lb() < 1 - epsilon || gamma[k].ub() > 1 + epsilon) {
-        throw std::invalid_argument("gamma[k] debía ser 1");
+    if (k == -1 || k >= n){
+        throw std::invalid_argument("Invalid k.");
     }
 
-    if (k == -1) return Interval(0);
+    gamma[k] = Interval(0);
+
+    Interval xContract = -(gamma * x);
 
     gamma[k] = Interval(1);
-
-    Interval xContract = Interval(0);
-    for (int i = 0; i < n; ++i) {
-        if (i != k) {
-            xContract = xContract - gamma[i] * x[i];
-        }
-    }
-    
     
     if (x[k].intersects(xContract))
     {
+        if (contract_all){
+            std::cout << "x[k] = " << x[k] << std::endl;
+            std::cout << "xContract = " << xContract << std::endl;
+        }
         x[k] = x[k] & xContract;
+        if (contract_all){
+            std::cout << "x[k] = " << x[k] << std::endl;
+        }
     }
 
     return x[k];
@@ -252,11 +260,14 @@ Interval DualFeasibleBounding::gaussSeidel(int k, IntervalVector& x, IntervalVec
 std::pair<Interval, int> DualFeasibleBounding::getMaxValue(const IntervalVector& vector) {
     Interval max_value = vector[0];
     int max_index = 0;
-    for (int i = 1; i < vector.size(); ++i) {
+    int n = vector.size();
+
+    for (int i = 1; i < n; ++i) {
         if (vector[i].lb() > max_value.lb()) {
             max_value = vector[i];
             max_index = i;
         }
     }
+
     return {max_value, max_index};
 }
