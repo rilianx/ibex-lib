@@ -17,7 +17,7 @@
 #include <vector>
 #include <fstream>
 #include <stack>
-
+#include <cstdint>
 namespace ibex {
 
 /**

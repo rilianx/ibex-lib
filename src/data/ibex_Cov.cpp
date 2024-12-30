@@ -13,7 +13,7 @@
 #include <sstream>
 #include <cassert>
 #include <string.h>
-
+ #include <cstdint>
 using namespace std;
 
 namespace ibex {
