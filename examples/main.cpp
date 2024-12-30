@@ -15,6 +15,7 @@ int main() {
 
     ill_conditioned_matrix_test();
 
-    //dimensions_15x20_test();
+    dimensions_15x20_test();
+    
     return 0;
 }
