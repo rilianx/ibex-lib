@@ -93,5 +93,6 @@
     "typeinfo": "cpp",
     "variant": "cpp",
     "*.tbl": "cpp"
-  }
+  },
+  "C_Cpp.errorSquiggles": "disabled"
 }

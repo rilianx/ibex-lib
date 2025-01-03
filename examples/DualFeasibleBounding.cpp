@@ -20,6 +20,8 @@ int DualFeasibleBounding::contract(IntervalVector& x_new, int maxIters, bool imp
 
 
     int iters = 0;
+    
+    gaussSeidel(x_new, k, A[0]);
     while (maxIters == -1 || iters < maxIters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
@@ -205,7 +207,7 @@ int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, const int k, boo
 
     // Paso 2: Normalizar la fila j respecto del valor en posición k
     if (A[j][k].lb() == 0 || A[j][k].ub() == 0) {
-        throw std::invalid_argument("El divisor tiene un borde igual a 0, lo que no es permitido.");
+        throw std::invalid_argument("The divider has a bound equal to 0. Which is not allowed.");
     }
     
     A[j] = (Interval(1) / A[j][k]) * A[j];
@@ -229,10 +231,13 @@ int DualFeasibleBounding::makeColumnIdentity(IntervalMatrix& A, const int k, boo
 Interval DualFeasibleBounding::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
     double epsilon = 1e-6;
     int n = gamma.size();
-    
 
     if (k == -1 || k >= n){
         throw std::invalid_argument("Invalid k.");
+    }
+
+    if (gamma[k] != Interval(1)){
+        throw std::invalid_argument("Gamma in k is not 1.");
     }
 
     gamma[k] = Interval(0);

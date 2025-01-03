@@ -1,3 +1,6 @@
+#include <random>
+#include <cstdlib>
+#include <vector> 
 #include "ibex.h"
 #include "DualFeasibleBounding.h"
 #include "TestingDualFeasibleBounding.h"
@@ -22,8 +25,10 @@ void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
 
     if (visualize_iters) {
         std::cout << "ITERACIONES: ";
+        int k = 0;
         for (const auto& iter : iters) {
-            std::cout << iter << " ";
+            std::cout << "Para k = " << k << " ~ Iteraciones: " << iter << endl;
+            k++;
         }
         std::cout << std::endl;
     }
@@ -621,4 +626,198 @@ void dimensions_15x20_test() {
 
     // Ejecutar el caso de prueba
     test_case(A, x, true);
+}
+
+pair<IntervalMatrix, IntervalVector> generate_test_case(int m, int n){
+    IntervalMatrix A = IntervalMatrix(m, n, Interval(0));
+    IntervalVector x = IntervalVector(n, Interval(0));
+
+    // Crear el generador y la distribución con valores por defecto
+    mt19937 gen(random_device{}()); // Generador con semilla automática
+    uniform_real_distribution<> dis(0.5, 10.0); // Distribución [0.5, 10.0]
+    mt19937 gen2(random_device{}()); // Generador con semilla automática
+    uniform_real_distribution<> dis2(-10.0, 10.0); // Distribución [0.5, 10.0]
+    // Llenar la matriz A con intervalos aleatorios
+    for (int j = 0; j < m; ++j) {
+        for (int i = 0; i < n; ++i) {
+            double value = dis2(gen2);
+            A[j][i] = Interval(value);
+        }
+    }
+
+    // Llenar el vector x con intervalos aleatorios
+    for (int i = 0; i < n; ++i) {
+        double lower = dis(gen);
+        double upper = dis(gen);
+        x[i] = Interval(-lower, upper);
+    }
+
+    return {A, x};
+}
+
+void random_test(int m, int n, int quant_cases){
+    if (m >= n){
+        throw invalid_argument("Number of restrictions are greater or equal than the number of variables. Which is not allowed..");
+    }
+
+    cout << "Random Tests " << endl;
+    cout << "Dimensions: " << "m = " << m << " n = " << n << endl;
+
+    for (int i = 0; i < quant_cases; ++i){
+        IntervalMatrix A = IntervalMatrix(m, n, Interval(0));
+        IntervalVector x = IntervalVector(n, Interval(0));
+        cout << "Caso de Prueba " << (i + 1) << endl;
+        tie(A, x) = generate_test_case(m, n);
+        cout << "A = " << A  << "\n" << endl;
+
+        test_case(A, x, true);
+    }
+}
+
+
+
+void special_test_contraction_box(){
+    int n = 0;
+    int m = 0;
+    int percentage;
+    int k;
+    IntervalMatrix A = IntervalMatrix(m, n);
+    IntervalVector x = IntervalVector(n);    
+
+    cout << "Ingrese el valor de n: ";
+    std::cin >> n;
+
+    cout << "Ingrese el valor de m: ";
+    std::cin >> m;
+
+    tie(A, x) = generate_test_case(m, n);
+    cout << "A = " << A  << "\n" << endl;
+
+    IntervalMatrix AOG = IntervalMatrix(A);
+    IntervalVector xOG = IntervalVector(x);
+
+    vector<pair<DualFeasibleBounding, int>> DFBsOG;
+    for (int i = 0; i < n; ++i){
+        // Llamar a la función y almacenar el resultado directamente en un pair
+        pair<DualFeasibleBounding, int> result = incremental_test_case(A, x, i);
+        
+        // Acceder a los elementos del pair
+        DualFeasibleBounding DFB = result.first;  // Objeto DFB
+        int iter = result.second;  // Valor de iteraciones
+        DFBsOG.push_back({DFB, iter});
+    }
+
+    // Mostrar los objetos almacenados en el vector
+    for (const auto& pair : DFBsOG) {
+        DualFeasibleBounding DFBOGAux = pair.first;
+        cout << "Para k = : " << DFBOGAux.getKIndex();
+        cout << "~ Iteraciones: " << pair.second << endl;
+    }
+
+
+      
+    cout << "AProcessed = " << A  << "\n" << endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "xOG: " << xOG << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "xDFB: " << x << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+
+    cout << "Ingrese el número de variables a modificar de la caja:";
+    std::cin >> k;
+    if (k > n){
+        k = n; 
+    }
+
+    cout << "Ingrese el valor numerico del porcentaje a tomar de las variables: ";
+    std::cin >> percentage;
+    if (percentage > 100){
+        percentage = 100;
+    }
+
+    if (k <= 0){
+        k = 1 + rand() % n;
+    }
+
+    if (percentage <= 0){
+        k = 1 + rand() % 100;
+    }
+    double weight =  static_cast<double>(percentage) / 100;
+
+    cout << "Número de variables a modificar de la caja: " << k <<" de un total de " << n << " variables." << endl;
+    cout << "Porcentaje a modificar de las " << k << " variables: " <<  percentage << "%" << endl;
+    cout << "Peso a obtener de las " << k << " variables: "<<  weight << endl;
+
+    for (int i = 0; i < k; ++i) {
+        int index = rand() % n;
+        x[index] = weight * x[index];
+    }
+
+
+    xOG = IntervalVector(x);
+    IntervalVector xModified = IntervalVector(x);
+    
+    cout << "Special Test Case ~ A modified contracted vector x and ORIGINAL matrix A: \n" << endl;
+    test_case(AOG, xModified, true);
+
+
+
+
+    cout << "Special Test Case ~ A modified contracted vector x and PROCESSED matrix A: \n" << endl;
+
+    vector<pair<DualFeasibleBounding, int>> DFBsFinal;
+    for (int i = 0; i < n; ++i){
+        DualFeasibleBounding DFBTemp = DFBsOG[i].first;
+        pair<DualFeasibleBounding, int> result = incremental_test_case(A, x, i, &DFBTemp);
+        
+        // Acceder a los elementos del pair
+        DualFeasibleBounding DFB = result.first;  // Objeto DFB
+        int iter = result.second;  // Valor de iteraciones
+        DFBsFinal.push_back({DFB, iter});
+    }
+
+    // Mostrar los objetos almacenados en el vector
+    for (const auto& pair : DFBsFinal) {
+        DualFeasibleBounding DFBAux = pair.first;
+        cout << "Para k = : " << DFBAux.getKIndex();
+        cout << " ~ Iteraciones: " << pair.second << endl;
+    }
+
+
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "xOG: " << xOG << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "xDFB: " << x << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    std::cout << "-------------------------------------------------------" << std::endl;
+    vector<double> errores;
+    for (int i = 0; i < n; ++i){
+        double error = abs(xModified[i].lb() - x[i].lb()) + abs(xModified[i].ub() - x[i].ub());
+        errores.push_back(error);
+    }
+    
+    cout << "Vector de errores: " << endl;
+    for (int i = 0; i < n; ++i){
+        cout << errores[i] << " ";
+    }
+    cout << "\n" << endl;
+
+}
+
+
+pair<DualFeasibleBounding, int> incremental_test_case(IntervalMatrix& A, IntervalVector& x, int k, DualFeasibleBounding* DFB){
+    int m = A.nb_rows();
+    int n = x.size();
+    IntervalVector xOG = IntervalVector(x);
+    std::vector<int> iters;
+    if (DFB == nullptr){
+        DFB = new DualFeasibleBounding(A, k);
+    }
+    int iter = DFB->totalContraction(x);
+
+    return {*DFB, iter};
 }
