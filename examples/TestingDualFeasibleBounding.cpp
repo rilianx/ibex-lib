@@ -24,7 +24,7 @@ void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
 
 
     if (visualize_iters) {
-        std::cout << "ITERACIONES: ";
+        std::cout << "ITERACIONES: " << endl;
         int k = 0;
         for (const auto& iter : iters) {
             std::cout << "Para k = " << k << " ~ Iteraciones: " << iter << endl;
@@ -707,7 +707,7 @@ void special_test_contraction_box(){
         DFBsOG.push_back({DFB, iter});
     }
 
-    // Mostrar los objetos almacenados en el vector
+    cout << "ITERACIONES: " << endl;
     for (const auto& pair : DFBsOG) {
         DualFeasibleBounding DFBOGAux = pair.first;
         cout << "Para k = : " << DFBOGAux.getKIndex();
@@ -777,7 +777,7 @@ void special_test_contraction_box(){
         DFBsFinal.push_back({DFB, iter});
     }
 
-    // Mostrar los objetos almacenados en el vector
+    cout << "ITERACIONES: " << endl;
     for (const auto& pair : DFBsFinal) {
         DualFeasibleBounding DFBAux = pair.first;
         cout << "Para k = : " << DFBAux.getKIndex();
