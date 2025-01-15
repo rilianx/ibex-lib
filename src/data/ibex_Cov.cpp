@@ -10,6 +10,7 @@
 
 #include "ibex_Cov.h"
 
+#include <cstdint>
 #include <sstream>
 #include <cassert>
 #include <string.h>
