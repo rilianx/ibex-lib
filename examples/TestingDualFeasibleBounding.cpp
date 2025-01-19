@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <vector> 
 #include "ibex.h"
-#include "DualFeasibleBounding.h"
+#include "ibex_CtcDualFeasibleBounding.h"
 #include "TestingDualFeasibleBounding.h"
 
 void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
@@ -12,10 +12,17 @@ void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
     std::vector<int> iters;
 
     for (int k = 0; k < n; ++k) {
-        DualFeasibleBounding DFB(A, k);
-        int iter = DFB.totalContraction(x);
-        iters.push_back(iter);
+        CtcDFB DFB(n, k);
+        CtcDFB DFB_upper(n, k, true);
+
+        DFB.init(IntervalMatrix(A));
+        DFB.contract(x);
+
+        DFB_upper.init(IntervalMatrix(A));
+        DFB_upper.contract(x);
     }
+    
+    
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "xOG: " << xOG << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
@@ -23,18 +30,6 @@ void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
     std::cout << "-------------------------------------------------------" << std::endl;
 
 
-    if (visualize_iters) {
-        std::cout << "ITERACIONES: " << endl;
-        int k = 0;
-        for (const auto& iter : iters) {
-            std::cout << "Para k = " << k << " ~ Iteraciones: " << iter << endl;
-            k++;
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "-------------------------------------------------------" << std::endl;
-    std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "-------------------------------------------------------" << std::endl;
     std::cout << "\n\n";
 }
@@ -674,21 +669,24 @@ void random_test(int m, int n, int quant_cases){
     }
 }
 
+/*
+pair<CtcDFB, int> incremental_test_case(IntervalMatrix& A, IntervalVector& x, int k, CtcDFB* DFB){
+    int m = A.nb_rows();
+    int n = x.size();
+    IntervalVector xOG = IntervalVector(x);
+    std::vector<int> iters;
+    if (DFB == nullptr){
+        DFB = new CtcDFB(A, k);
+    }
+    int iter = DFB->totalContraction(x);
+
+    return {*DFB, iter};
+}
 
 
-void special_test_contraction_box(){
-    int n = 0;
-    int m = 0;
-    int percentage;
-    int k;
+tuple<vector<int>, vector<int>, vector<double>> special_test_contraction_box(int m, int n, int k,  int percentage){
     IntervalMatrix A = IntervalMatrix(m, n);
     IntervalVector x = IntervalVector(n);    
-
-    cout << "Ingrese el valor de n: ";
-    std::cin >> n;
-
-    cout << "Ingrese el valor de m: ";
-    std::cin >> m;
 
     tie(A, x) = generate_test_case(m, n);
     cout << "A = " << A  << "\n" << endl;
@@ -696,20 +694,20 @@ void special_test_contraction_box(){
     IntervalMatrix AOG = IntervalMatrix(A);
     IntervalVector xOG = IntervalVector(x);
 
-    vector<pair<DualFeasibleBounding, int>> DFBsOG;
+    vector<pair<CtcDFB, int>> DFBsOG;
     for (int i = 0; i < n; ++i){
         // Llamar a la función y almacenar el resultado directamente en un pair
-        pair<DualFeasibleBounding, int> result = incremental_test_case(A, x, i);
+        pair<CtcDFB, int> result = incremental_test_case(A, x, i);
         
         // Acceder a los elementos del pair
-        DualFeasibleBounding DFB = result.first;  // Objeto DFB
+        CtcDFB DFB = result.first;  // Objeto DFB
         int iter = result.second;  // Valor de iteraciones
         DFBsOG.push_back({DFB, iter});
     }
 
     cout << "ITERACIONES: " << endl;
     for (const auto& pair : DFBsOG) {
-        DualFeasibleBounding DFBOGAux = pair.first;
+        CtcDFB DFBOGAux = pair.first;
         cout << "Para k = : " << DFBOGAux.getKIndex();
         cout << "~ Iteraciones: " << pair.second << endl;
     }
@@ -724,14 +722,10 @@ void special_test_contraction_box(){
     std::cout << "-------------------------------------------------------" << std::endl;
 
 
-    cout << "Ingrese el número de variables a modificar de la caja:";
-    std::cin >> k;
     if (k > n){
         k = n; 
     }
 
-    cout << "Ingrese el valor numerico del porcentaje a tomar de las variables: ";
-    std::cin >> percentage;
     if (percentage > 100){
         percentage = 100;
     }
@@ -766,22 +760,51 @@ void special_test_contraction_box(){
 
     cout << "Special Test Case ~ A modified contracted vector x and PROCESSED matrix A: \n" << endl;
 
-    vector<pair<DualFeasibleBounding, int>> DFBsFinal;
+    vector<pair<CtcDFB, int>> DFBsFinal;
     for (int i = 0; i < n; ++i){
-        DualFeasibleBounding DFBTemp = DFBsOG[i].first;
-        pair<DualFeasibleBounding, int> result = incremental_test_case(A, x, i, &DFBTemp);
+        CtcDFB DFBTemp = DFBsOG[i].first;
+        pair<CtcDFB, int> result = incremental_test_case(A, x, i, &DFBTemp);
         
         // Acceder a los elementos del pair
-        DualFeasibleBounding DFB = result.first;  // Objeto DFB
+        CtcDFB DFB = result.first;  // Objeto DFB
         int iter = result.second;  // Valor de iteraciones
         DFBsFinal.push_back({DFB, iter});
     }
 
     cout << "ITERACIONES: " << endl;
     for (const auto& pair : DFBsFinal) {
-        DualFeasibleBounding DFBAux = pair.first;
+        CtcDFB DFBAux = pair.first;
         cout << "Para k = : " << DFBAux.getKIndex();
         cout << " ~ Iteraciones: " << pair.second << endl;
+    }
+
+    vector<int> itersAOG;
+    vector<int> itersAProcessed;
+
+    cout << "ITERS DIFF: " << endl;
+    for (const auto& finalPair : DFBsFinal) {
+        CtcDFB DFBAuxFinal = finalPair.first;
+        int finalValue = finalPair.second;
+        int kIndexFinal = DFBAuxFinal.getKIndex();
+
+        // Buscar el kIndex correspondiente en DFBsOG
+        for (const auto& ogPair : DFBsOG) {
+            CtcDFB DFBAuxOG = ogPair.first;
+            int ogValue = ogPair.second;
+            int kIndexOG = DFBAuxOG.getKIndex();
+
+            if (kIndexFinal == kIndexOG) {
+                // Resta de los valores
+                int iterAOG = ogValue;
+                int iterAProcessed = finalValue;
+                // Mostrar resultados
+                cout << "Para k = " << kIndexFinal << " ~ Iters AOG: " << iterAOG << endl;
+                cout << "Para k = " << kIndexFinal << " ~ Iters AProcessed: " << iterAProcessed << endl;
+                itersAOG.push_back(iterAOG);
+                itersAProcessed.push_back(iterAProcessed);
+                break;
+            }
+        }
     }
 
 
@@ -806,18 +829,58 @@ void special_test_contraction_box(){
     }
     cout << "\n" << endl;
 
+    return {itersAOG, itersAProcessed, errores};
 }
 
 
-pair<DualFeasibleBounding, int> incremental_test_case(IntervalMatrix& A, IntervalVector& x, int k, DualFeasibleBounding* DFB){
-    int m = A.nb_rows();
-    int n = x.size();
-    IntervalVector xOG = IntervalVector(x);
-    std::vector<int> iters;
-    if (DFB == nullptr){
-        DFB = new DualFeasibleBounding(A, k);
+
+void special_test(){
+    int n = 0;
+    int m = 0;
+    int quant_cases = 0;
+    
+    cout << "Ingrese la cantidad de casos de prueba: ";
+    std::cin >> quant_cases;
+
+
+    while (n <= 0 || m <= 0){
+        cout << "Ingrese el valor de m: ";
+        std::cin >> m;
+
+        cout << "Ingrese el valor de n: ";
+        std::cin >> n;
     }
-    int iter = DFB->totalContraction(x);
 
-    return {*DFB, iter};
-}
+    vector<int> itersAOG;
+    vector<int> itersAProcessed;
+    vector<double> errors;
+
+    vector<tuple<vector<int>, vector<int>, vector<double>>> testInfo;
+    for (int i = 0; i < quant_cases; ++i){
+        tie(itersAOG, itersAProcessed, errors) = special_test_contraction_box(m, n);
+
+        testInfo.push_back({itersAOG, itersAProcessed, errors});
+    }
+
+    int avgItersAOG = 0;
+    int avgItersAProcessed = 0;
+    double avgError = 0.0;
+    for (int i = 0; i < quant_cases; ++i){
+        itersAOG = get<0>(testInfo[i]);
+        itersAProcessed = get<1>(testInfo[i]);
+        errors = get<2>(testInfo[i]);
+        for (int k = 0; k < n; ++k){
+            avgItersAOG += itersAOG[k];
+            avgItersAProcessed += itersAProcessed[k];
+            avgError += errors[k];
+        }
+    }
+
+    avgItersAOG /= (quant_cases);
+    avgItersAProcessed /= (quant_cases);
+    avgError /= (quant_cases);
+
+    cout << "Average Iters A OG " << avgItersAOG << endl;
+    cout << "Average Iters A PROCESSED " << avgItersAProcessed << endl;
+    cout << "Average Total Error " << avgError << endl;
+}*/
