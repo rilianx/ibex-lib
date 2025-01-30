@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
     // System (argv)
     if (argc!=2) {
-        cerr << "Usage: " << argv[0] << "standar_system_dfb" << endl;
+        cerr << "Usage: " << argv[0] << "example_standar_dfb_1" << endl;
         return 1;
     }
 
@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     CtcAllPropag ctc(sys2, lr);
     cout << "ctc created" << endl;
 //    cout << sys2.box << endl;
-    ctc.contract(x);
+    ctc.contract(sys2.box);
  //   cout << sys2.box << endl;
 
     cout << "xFinal = " << sys2.box << endl;
