@@ -7,31 +7,28 @@ using namespace ibex;
 
 
 void CtcDFB::contract(IntervalVector& x_new) {
+    cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
     IntervalMatrix A = this->A;
-    int n = this->n;
-    int m = this->m;
+    //int n = this->n;
+    //int m = this->m;
     int i;
     int j;
     Interval alpha;
     Interval delta, direction;
 
-
     if (this->upper_contract) {
-        changeSigns(A, x_new);
+        changeSigns(A, x_new);        
     }
 
 
     int iters = 0;
-    
     double x_lb = gaussSeidel(x_new, k, A[0]).lb();
 
     while (max_iters == -1 || iters < max_iters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
         if (j == -1) {
-            if (this->upper_contract) {
-                changeSigns(A, x_new);
-            }
+            if (this->upper_contract) changeSigns(A, x_new);
             init(A);
             std::cout << "ITERS FOR K = " << k << ": " << iters << endl;
             return;
@@ -40,18 +37,21 @@ void CtcDFB::contract(IntervalVector& x_new) {
         tie(alpha, i) = calculateAlpha(A[j], A[0], direction);
 
         if (i == -1) {
+            if (this->upper_contract) changeSigns(A, x_new);
+            init(A);
+            
             x_new.set_empty();
-            continue;
+            return;
+            //continue;
         }
 
         A[0] = A[0] + alpha * A[j];
         
         A[0][i] = Interval(0);
 
-
         makeColumnIdentity(A, i, false, j);
         A[0][k] = Interval(1);
-        //gaussSeidel(x_new, k, A[0]);
+        gaussSeidel(x_new, k, A[0]);
 
 
         identity_rows[j] = i;
@@ -60,22 +60,30 @@ void CtcDFB::contract(IntervalVector& x_new) {
                 gaussSeidel(x_new, r.second, A[r.first]);
             }
         }
-        x_lb += std::abs(alpha.mid() * delta.mid());
-     //   cout << "x_lb = " << x_lb << endl;
-        x_new[k] = x_new[k] & Interval(x_lb, x_new[k].ub());
+        //x_lb += std::abs(alpha.mid() * delta.mid());
+
+        //x_new[k] = x_new[k] & Interval(x_lb, x_new[k].ub());
         ++iters;
     }
 
-    if (this->upper_contract) {
+    if (this->upper_contract) 
         changeSigns(A, x_new);
-    }
+    
+    
     init(A);
-
+    cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
     return;
 }
 
 std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
     const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
+   
+            cout << "[CtcDFB] Calculating impacts. A dimensions: " << A.nb_rows() << "x" << A.nb_cols()
+                 << ", x_new size: " << x_new.size() << ", gamma size: " << gamma.size() << endl;
+    
+            assert(A.nb_rows() == gamma.size() && "Matrix row count must match gamma size");
+            assert(A.nb_cols() == x_new.size() && "Matrix column count must match x_new size");
+            
     int m = A.nb_rows();
     int n = A.nb_cols();
 
@@ -171,32 +179,44 @@ std::pair<Interval, int> CtcDFB::calculateAlpha(
 }
 
 void CtcDFB::changeSigns(IntervalMatrix& A, IntervalVector& x_new) {
-    A[0] = -A[0];
-    A[0][this->k] = -A[0][this->k];
-    x_new[this->k] = -x_new[this->k];
+    
+    //A[0] = -A[0];
+    //A[0][this->k] = -A[0][this->k];
+
+    for (int i = 0; i < A.nb_rows(); ++i) {
+        A[i][k] = -A[i][k];
+    }
+
+    x_new[k] = -x_new[k];
 }
 
                                 // AUX FUNCTIONS
 int CtcDFB::makeColumnIdentity(IntervalMatrix& A, const int k, bool interchange, 
-                               int j, map<int, int> identity_rows){
+                               int j){
     int m = A.nb_rows();
     int n = A.nb_cols();
 
     // Paso 1: Encontrar la fila adecuada para el pivoteo
-    if (interchange){
-        if (!identity_rows.empty()) {
-            for (int jAux = 0; jAux < m; ++jAux) {
-                if (identity_rows.count(jAux) > 0){
-                    j = jAux;
-
-                    for (int i = 0; i < n; ++j) {
-                        std::swap(A[j][i], A[jAux][i]);
-                    }
-                    break;
+    if (interchange && (A[j][k].lb() == 0 || A[j][k].ub() == 0)) {
+        bool found = false;
+        for (int jAux = 0; jAux < m; ++jAux) {
+            if (jAux == j) continue; // Ya la estamos evaluando
+            if (!(A[jAux][k].lb() == 0 || A[jAux][k].ub() == 0)) {
+                // Intercambiar las filas j y jAux
+                for (int i = 0; i < n; ++i) {
+                    std::swap(A[j][i], A[jAux][i]);
                 }
+                //j = jAux; // Actualizar j con la fila válida
+                found = true;
+                break;
             }
         }
+        if (!found) {
+            throw std::runtime_error("No hay ninguna fila con valor no nulo en la columna k");
+        }
     }
+    
+    
 
     
 
@@ -226,21 +246,27 @@ int CtcDFB::makeColumnIdentity(IntervalMatrix& A, const int k, bool interchange,
 Interval CtcDFB::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
     double epsilon = 1e-6;
     int n = gamma.size();
+    
 
     if (k == -1 || k >= n){
         throw std::invalid_argument("Invalid k.");
     }
 
-    if (gamma[k] != Interval(1)){
-        throw std::invalid_argument("Gamma[k] is not 1.");
-    }
+//    if (gamma[k] != Interval(1)){
+//        cout << "gamma[k] = " << gamma[k] << endl;
+//        throw std::invalid_argument("Gamma[k] is not 1.");
+//    }
 
+    Interval tmp = gamma[k];
     gamma[k] = Interval(0);
 
     Interval xContract = -(gamma * x);
+    gamma[k] = tmp;
+    if (gamma[k] != Interval(1))
+        xContract = xContract / gamma[k];
 
-    gamma[k] = Interval(1);
-    
+
+
     if (x[k].intersects(xContract))
     {
         if (contract_all){

@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
     int defaultRandomSeed = 42;
 
 
-    // Construir los argumentos para el constructor de Optimizer04Config
+    // Construir los argumentos para el constructor de Optimizer05Config
     std::vector<std::string> args = {
         "optimizer04", filename.Get(),
         _filtering ? _filtering.Get() : defaultFiltering,
@@ -155,8 +155,8 @@ int main(int argc, char** argv) {
         argv_new.push_back(&arg[0]);
     }
 
-    // Crear el objeto Optimizer04Config
-    Optimizer04Config config(argv_new.size(), argv_new.data());
+    // Crear el objeto Optimizer05Config
+    Optimizer05Config config(argv_new.size(), argv_new.data());
 
     // Build the default optimizer
     Optimizer_sampling o(config);

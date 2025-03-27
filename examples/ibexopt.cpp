@@ -13,9 +13,11 @@
 
 #include "ibex.h"
 #include "../src/bin/parse_args.h"
-#include "ibex_Optimizer_sampling.h"
 
 #include <sstream>
+#include <regex>
+#include "ibex_Optimizer05Config.h"
+
 
 using namespace std;
 using namespace ibex;
@@ -39,6 +41,31 @@ void printArgsSummary(const std::vector<std::string>& args) {
     std::cout << "Random Seed: " << args[10] << std::endl;
 }
 
+// Función para parsear el string a IntervalVector
+IntervalVector parseIntervalVector(const std::string& box_str) {
+    std::regex interval_regex(R"(\[\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*,\s*([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?)\s*\])");
+    std::sregex_iterator next(box_str.begin(), box_str.end(), interval_regex);
+    std::sregex_iterator end;
+
+    std::vector<std::pair<double, double>> intervals;
+    while (next != end) {
+        std::smatch match = *next;
+        double lower = std::stod(match[1].str());
+        double upper = std::stod(match[2].str());
+        intervals.emplace_back(lower, upper);
+        ++next;
+    }
+
+    int n = intervals.size();
+    double bounds[n][2];
+    for (int i = 0; i < n; ++i) {
+        bounds[i][0] = intervals[i].first;
+        bounds[i][1] = intervals[i].second;
+    }
+
+    return IntervalVector(n, bounds);
+}
+
 int main(int argc, char** argv) {
     // Menú interactivo para configurar las opciones
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
@@ -47,7 +74,7 @@ int main(int argc, char** argv) {
 
     // Continuando con la configuración de tus argumentos existentes...
     args::Group filteringGroup(parser, "Filtering Options", args::Group::Validators::DontCare);
-    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4)", {"filtering"});
+    args::ValueFlag<std::string> _filtering(filteringGroup, "filtering", "Filtering option (hc4|acidhc4*|3bcidhc4|dfb)", {"filtering"});
 
     args::Group hc4Group(filteringGroup, "HC4 Options", args::Group::Validators::DontCare);
     args::ValueFlag<double> _precHc4(hc4Group, "prec_hc4", "Precision for hc4 (default=1e-7)", {"hc4_p"});
@@ -64,9 +91,11 @@ int main(int argc, char** argv) {
     args::ValueFlag<int> _beamsize(parser, "beamsize", "Beamsize (default=1)", {'B'});
     args::ValueFlag<double> _prec(parser, "prec", "Precision (default=1e-7)", {"eps_x"});
     args::ValueFlag<double> _goalPrec(parser, "goal precision (default=1e-6)", "Goal precision", {"eps"});
+    args::ValueFlag<double> _initial_loup(parser, "initial loup", "Initial loup", {"loup"});
+    args::ValueFlag<std::string> _initial_box(parser, "initial box", "Initial Box", {"box"});
+
     args::ValueFlag<double> _timeLimit(parser, "time limit", "Time limit (default=1000)", {'t'});
     args::ValueFlag<int> _randomSeed(parser, "random seed", "Random seed (default=42)", {"seed"});
-	args::Flag quiet(parser, "quiet", "Print no report on the standard output.",{'q',"quiet"});
 
 	args::Positional<std::string> filename(parser, "filename", "The name of the MINIBEX file.");
 
@@ -104,7 +133,7 @@ int main(int argc, char** argv) {
     int defaultRandomSeed = 42;
 
 
-    // Construir los argumentos para el constructor de Optimizer05Config
+    // Construir los argumentos para el constructor de Optimizer04Config
     std::vector<std::string> args = {
         "optimizer04", filename.Get(),
         _filtering ? _filtering.Get() : defaultFiltering,
@@ -118,7 +147,7 @@ int main(int argc, char** argv) {
         _randomSeed ? std::to_string(_randomSeed.Get()) : std::to_string(defaultRandomSeed)
     };
 
-    printArgsSummary(args);
+    //printArgsSummary(args);
 
     // Convertir std::vector<std::string> a char*[]
     std::vector<char*> argv_new;
@@ -126,24 +155,27 @@ int main(int argc, char** argv) {
         argv_new.push_back(&arg[0]);
     }
 
-    // Crear el objeto Optimizer05Config
+    // Crear el objeto Optimizer04Config
     Optimizer05Config config(argv_new.size(), argv_new.data());
 
     // Build the default optimizer
-    Optimizer_sampling o(config);
+    Optimizer o(config);
 
     // display solutions with up to 12 decimals
     cout.precision(12);
 
-    if (!quiet)
-        cout << "\n\nrunning............" << endl << endl;
 
     // Search for the optimum
-    o.optimize(config.sys->box);
+    double initial_loup = _initial_loup ? _initial_loup.Get() : POS_INFINITY;
+    if (_initial_box) {
+        IntervalVector initial_box = parseIntervalVector(_initial_box.Get());
+        //cout << initial_box << endl;
+        o.optimize(initial_box, initial_loup);
+    } else
+        o.optimize(config.sys->box, initial_loup);
 
-    // Report some information (computation time, etc.)
-    if (!quiet)
-        o.report();
+    o.report();
+    cout << o.get_nb_cells() << " " << o.get_time() << " " << o.get_loup() << " " << o.get_loup() << endl;
 
 
     return 0;

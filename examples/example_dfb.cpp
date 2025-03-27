@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 
     // System (argv)
     if (argc!=2) {
-        cerr << "Usage: " << argv[0] << "example_standar_dfb_1" << endl;
+        cerr << "Usage: " << argv[0] << " example_standar_dfb_1" << endl;
         return 1;
     }
 
