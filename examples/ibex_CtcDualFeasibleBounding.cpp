@@ -8,39 +8,56 @@ using namespace ibex;
 
 void CtcDFB::contract(IntervalVector& x_new) {
     cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
-    IntervalMatrix A = this->A;
-    //int n = this->n;
-    //int m = this->m;
+    if(upper_contract) cout << "[CtcDFB] Contracting upper bound" << endl;
+    else cout << "[CtcDFB] Contracting lower bound" << endl;
+
+    x_new.resize(x_ref.size()); //extended dimension for including vector b
+    for (int i = nb_var; i < x_ref.size(); ++i) 
+        x_new[i] = x_ref[i]; 
+    
+
     int i;
     int j;
     Interval alpha;
     Interval delta, direction;
+    state = CONTRACTING;
 
-    if (this->upper_contract) {
-        changeSigns(A, x_new);        
-    }
-
+    if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);        
 
     int iters = 0;
-    double x_lb = gaussSeidel(x_new, k, A[0]).lb();
+    //Interval x_lb = gaussSeidel(x_new, k, A[0]);
+
+    //cout << A[0] << endl;
+    //cout << "x_lb[" << k << "] = " << x_lb << endl;
 
     while (max_iters == -1 || iters < max_iters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
         if (j == -1) {
-            if (this->upper_contract) changeSigns(A, x_new);
-            init(A);
+            if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);  
             std::cout << "ITERS FOR K = " << k << ": " << iters << endl;
+            //print position of zeros in A[0]
+            cout << "Zeros in A[0]: ";
+            for (int i = 0; i < A[0].size(); ++i) {
+                if (A[0][i]==Interval(0)) {
+                    cout << i << " ";
+                }
+            }
+            cout << endl;
+
+            state= FINAL;
+
+            x_new.resize(nb_var); //original dimension
             return;
         } 
 
         tie(alpha, i) = calculateAlpha(A[j], A[0], direction);
 
         if (i == -1) {
-            if (this->upper_contract) changeSigns(A, x_new);
-            init(A);
+            if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);  
             
-            x_new.set_empty();
+            x_new.resize(nb_var); //original dimension
+            x_new.set_empty(); 
             return;
             //continue;
         }
@@ -51,13 +68,14 @@ void CtcDFB::contract(IntervalVector& x_new) {
 
         makeColumnIdentity(A, i, false, j);
         A[0][k] = Interval(1);
-        gaussSeidel(x_new, k, A[0]);
-
+        Interval x_lb = gaussSeidel(x_new, k, A[0]);
+        cout << "x_lb[" << k << "] = " << x_lb << endl;
 
         identity_rows[j] = i;
         if (contract_all) {
             for (const auto& r : identity_rows) {
                 gaussSeidel(x_new, r.second, A[r.first]);
+                
             }
         }
         //x_lb += std::abs(alpha.mid() * delta.mid());
@@ -66,13 +84,10 @@ void CtcDFB::contract(IntervalVector& x_new) {
         ++iters;
     }
 
-    if (this->upper_contract) 
-        changeSigns(A, x_new);
+    if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new); 
     
+    x_new.resize(nb_var); //original dimension
     
-    init(A);
-    cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
-    return;
 }
 
 std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
@@ -81,7 +96,6 @@ std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
             cout << "[CtcDFB] Calculating impacts. A dimensions: " << A.nb_rows() << "x" << A.nb_cols()
                  << ", x_new size: " << x_new.size() << ", gamma size: " << gamma.size() << endl;
     
-            assert(A.nb_rows() == gamma.size() && "Matrix row count must match gamma size");
             assert(A.nb_cols() == x_new.size() && "Matrix column count must match x_new size");
             
     int m = A.nb_rows();
@@ -127,6 +141,8 @@ std::tuple<int, Interval, Interval> CtcDFB::largestImpact(
     const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
     IntervalVector grad_incr, grad_decr;
     tie(grad_incr, grad_decr) = calculateImpacts(A, x_new, gamma);
+    cout << "grad_incr: " << grad_incr << endl;
+    cout << "grad_decr: " << grad_decr << endl;
 
     Interval delta_incr, delta_decr;
     int j_incr, j_decr;
@@ -183,9 +199,9 @@ void CtcDFB::changeSigns(IntervalMatrix& A, IntervalVector& x_new) {
     //A[0] = -A[0];
     //A[0][this->k] = -A[0][this->k];
 
-    for (int i = 0; i < A.nb_rows(); ++i) {
+    for (int i = 0; i < A.nb_rows(); ++i) 
         A[i][k] = -A[i][k];
-    }
+    
 
     x_new[k] = -x_new[k];
 }
@@ -215,9 +231,6 @@ int CtcDFB::makeColumnIdentity(IntervalMatrix& A, const int k, bool interchange,
             throw std::runtime_error("No hay ninguna fila con valor no nulo en la columna k");
         }
     }
-    
-    
-
     
 
     // Paso 2: Normalizar la fila j respecto del valor en posición k
@@ -262,10 +275,9 @@ Interval CtcDFB::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
 
     Interval xContract = -(gamma * x);
     gamma[k] = tmp;
+    //cout << -gamma << "*" << x << " = " << xContract << endl;
     if (gamma[k] != Interval(1))
         xContract = xContract / gamma[k];
-
-
 
     if (x[k].intersects(xContract))
     {

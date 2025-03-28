@@ -107,6 +107,11 @@ public:
 	 */
 	const Vector& arg_min(int i, bool left);
 
+	/**
+	 * TODO: add comment.
+	 */
+	void optimizer(IntervalVector &box);
+
 protected:
 
 	/**
@@ -114,10 +119,7 @@ protected:
 	 */
 	bool choose_next_variable(IntervalVector &box,  int & nexti, int & infnexti, int* inf_bound, int* sup_bound);
 
-	/**
-	 * TODO: add comment.
-	 */
-	void optimizer(IntervalVector &box);
+
 
 	/**
 	 * \brief The linearization technique

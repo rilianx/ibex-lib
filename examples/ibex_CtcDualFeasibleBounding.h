@@ -28,8 +28,9 @@ public:
 	/**
 	 * \brief Create a DFB contractor for contracting bound(x) in A.x=0
 	 */
-	CtcDFB(int nb_var, int k, bool upper_contract=false, bool contract_all=false, int max_iters=5): A(1,1),
-    upper_contract(upper_contract), contract_all(contract_all), k(k), Ctc(nb_var), max_iters(max_iters) {  };   
+	CtcDFB(int nb_var, int k, bool upper_contract=false, bool contract_all=false, int max_iters=1): A(1,1),
+    x_ref(1), upper_contract(upper_contract), contract_all(contract_all), k(k), 
+    Ctc(nb_var), max_iters(max_iters) {  };   
 
 	/**
 	 * \brief Contract a box.
@@ -47,12 +48,18 @@ public:
     }
     
     
-    void init(IntervalMatrix& A){
+    void init(IntervalMatrix& A, IntervalVector& x_ref){
         cout << "[CtcDFB] Initializing with k=" << k << ", A dimensions: " 
              << A.nb_rows() << "x" << A.nb_cols() << endl;
-        this->A.clear(); // Clear the matrix before resizing
         this->A.resize(A.nb_rows(), A.nb_cols());
         this->A = A;
+        this->x_ref.resize(x_ref.size());
+        this->x_ref = x_ref;
+        state = INITIAL;
+
+        if (upper_contract) 
+            for (int i = 0; i < A.nb_rows(); ++i) this->A[i][k] = -this->A[i][k];
+
         makeColumnIdentity(this->A, k, true, 0);
         identity_rows.clear();
         cout << "[CtcDFB] Initialization complete for k=" << k << endl;
@@ -76,9 +83,18 @@ public:
     std::pair<Interval, int> getMaxValue(const IntervalVector& vector);
 
     IntervalMatrix A;
+    IntervalVector x_ref;
     bool upper_contract;
     bool contract_all;
     int k;
+
+    //enum State
+    enum State {
+        INITIAL,
+        CONTRACTING,
+        FINAL
+    };
+    State state;
 
 };
 

@@ -6,19 +6,8 @@ using namespace ibex;
 
 
 int main(int argc, char** argv) {
-    // Intervals
-    Interval x_0 = Interval(-1.565, 2.880);
-    Interval x_1 = Interval(-0.478, 4.463);
-    Interval x_2 = Interval(-1.038, 6.032);
-    Interval x_3 = Interval(-0.048, 3.615);
-    Interval x_4 = Interval(-1.076, 2.647);
-//	cout << "x_0 + x_1 + x_2 + x_3 + x_4 = " << x_0 + x_1 + x_2 + x_3 + x_4 << endl;
-
-    IntervalVector x = IntervalVector({x_0, x_1, x_2, x_3, x_4});
-	cout << "xOG = " << x << endl;
-
     // System (argv)
-    if (argc!=2) {
+    if (argc<2) {
         cerr << "Usage: " << argv[0] << " example_standar_dfb_1" << endl;
         return 1;
     }
@@ -34,11 +23,26 @@ int main(int argc, char** argv) {
     LinearizerXTaylor lr(sys2, LinearizerXTaylor::RELAX, LinearizerXTaylor::RANDOM, LinearizerXTaylor::HANSEN);
     cout << sys2 << endl;
 
-    CtcAllPropag ctc(sys2, lr);
-    cout << "ctc created" << endl;
-//    cout << sys2.box << endl;
-    ctc.contract(sys2.box);
- //   cout << sys2.box << endl;
+    CtcHC4 hc4(sys2.ctrs,0.01,true);
+    hc4.contract(sys2.box); 
+
+    if(argc>2){ //dfb or ph
+        if (strcmp(argv[2], "dfb") == 0) {
+            CtcAllPropag ctc(sys2, lr);
+            cout << "Using DFB" << endl;
+            ctc.contract(sys2.box);
+        } else if (strcmp(argv[2], "ph") == 0) {
+            CtcPolytopeHull ctc_ph(lr);
+            cout << "Using PolyHull" << endl; 
+            hc4.contract(sys2.box); 
+            ctc_ph.contract(sys2.box); //linearize and contract
+
+            //ctc_ph.optimizer(sys2.box); //only contract
+        } else {
+            cout << "Unknown option. Use 'dfb' or 'ph'." << endl;
+            return 1;   
+        }
+    }
 
     cout << "xFinal = " << sys2.box << endl;
 }

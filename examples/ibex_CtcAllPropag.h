@@ -88,28 +88,37 @@ public:
         //IntervalMatrix A: m*n (n=box.size()+m)
         A.resize(m, nb_var+m);
         //initialize A to 0
-        for (int i=0; i<m; i++)
-            for (int j=0; j<nb_var+m; j++)
-                A[i][j] = Interval(0.0);
+        A.clear();
 
         x.resize(nb_var+m); // x U b
+        for (int i=0; i<nb_var; i++) x[i]=box[i];
 
-        for (int i=0; i<nb_var; i++) x=box[i];
+        unordered_set<Vector> row_set;
 
         //b
         for (int i=0; i<m; i++){
+            if (row_set.find(rows[i]) != row_set.end()){
+                cout << "[CtcAllPropag] Row " << i << " already exists, skipping." << endl;
+                continue;
+            }
+
+            row_set.insert (rows[nb_var+i]);
+
             x[nb_var+i] = lhs_rhs[nb_var+i];
-            if (x[nb_var+i].lb() < -1e20)
-                x[nb_var+i] = Interval(NEG_INFINITY, x[nb_var+i].ub());
-            if (x[nb_var+i].ub() > 1e20)
-                x[nb_var+i] = Interval(x[nb_var+i].lb(), POS_INFINITY);
+            if (x[nb_var+i].lb() < -1e50)
+                x[nb_var+i] = Interval(-1e50, x[nb_var+i].ub());
+            if (x[nb_var+i].ub() > 1e50)
+                x[nb_var+i] = Interval(x[nb_var+i].lb(), 1e50);
         }
+
 
         for (int i=0; i<m; i++){
             for (int j=0; j<nb_var; j++)
                 A[i][j] = rows[nb_var+i][j];
             A[i][nb_var+i] = Interval(-1.0);
         }
+
+        exit(0);
 
         cout << "[CtcAllPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
     }
@@ -127,45 +136,48 @@ public:
         cout << "[CtcAllPropag] Contracting box: " << box << endl;
         
         //matrix initialization (dfb contractors)
-        if(refbox.size()!=box.size() || !refbox.is_superset(box)) {
-            cout << "[CtcAllPropag] Updating reference box" << endl;
-            update_ref(box);
-            if (refA.nb_rows() > 0){
-                cout << "[CtcAllPropag] Initializing DFB contractors with refA" << endl;
-                for (auto* dfb : dfb_ctc) {
-                    dfb->init(refA);
-                }
+        update_ref(box);
+
+        if (refA.nb_rows() > 0){
+            cout << "[CtcAllPropag] Initializing DFB contractors with refA" << endl;
+            for (auto* dfb : dfb_ctc) {
+                dfb->init(refA, refbox);
             }
         }
-
+        //refbox contains variables x and b
 
         // Comparador para ordenar por el primer valor del par
-        auto cmp = [](const std::pair<double, Ctc*>& left, const std::pair<double, Ctc*>& right) {
-            return left.first < right.first;  // Orden ascendente (mayor a menor)
+        auto cmp = [](const std::tuple<double, size_t, Ctc*>& a, 
+                        const std::tuple<double, size_t, Ctc*>& b) {
+            // Min-heap: el que tenga menor prioridad sale primero
+            if (std::get<0>(a) != std::get<0>(b)) return std::get<0>(a) > std::get<0>(b);
+            return std::get<1>(a) > std::get<1>(b); // desempate por orden de llegada
         };
 
-        std::priority_queue<std::pair<double, Ctc*>, std::vector<std::pair<double, Ctc*>>, decltype(cmp)> pq(cmp);
+        std::priority_queue<std::tuple<double, size_t, Ctc*>, 
+                            std::vector<std::tuple<double, size_t, Ctc*>>, decltype(cmp)> pq(cmp);
         set<int> pq_ctrs;
 
+        size_t pq_order = 0;
+
         //initialize the priority queue
-        cout << 1 << endl;
         if (refA.nb_rows() > 0){
             for (auto* dfb : dfb_ctc) {
-                pq.push(std::make_pair(1.1, dfb));
+                cout << "[CtcAllPropag] Adding DFB contractor to priority queue " << dfb->k << endl;
+                pq.push({1.0, pq_order++, dfb});
             }
         }
 
         for (size_t i = 0; i < hc4_ctc.size(); i++) {
-            pq.push(std::make_pair(1.0, hc4_ctc[i]));
+            pq.push({0.0, pq_order++, hc4_ctc[i]});
             pq_ctrs.insert(i);
         }
 
-        cout << 2 << ","<< box << endl;
         IntervalVector old_box(box);
 
         while (!pq.empty()) {            
 
-            if(CtcDFB* ctc=dynamic_cast<CtcDFB*>(pq.top().second)){
+            if(CtcDFB* ctc=dynamic_cast<CtcDFB*>(std::get<2>(pq.top()))){
                 pq.pop();
                 cout << "ctc->k=" << ctc->k << endl;
                 ctc->contract(box);
@@ -178,15 +190,19 @@ public:
                     for (set<int>::iterator c=ctrs.begin(); c!=ctrs.end(); c++) {
                         //si c no está en pq
                         if(pq_ctrs.find(*c)==pq_ctrs.end()){
-                            pq.push(std::make_pair(1.0, hc4_ctc[*c]));
+                            pq.push({1.0, pq_order++, hc4_ctc[*c]});
                             pq_ctrs.insert(*c);
                         }
                     }
                     old_box[ctc->k] = box[ctc->k];
                  }
 
+                 if (ctc->state == CtcDFB::CONTRACTING)
+                        pq.push({0.0, pq_order++, ctc});
+                 
+
             }else{
-                Ctc* ctc_ = pq.top().second;  pq.pop();
+                Ctc* ctc_ = std::get<2>(pq.top());  pq.pop();
                 ctc_->contract(box, context);
                 if (box.is_empty()) return;
                 
@@ -200,7 +216,7 @@ public:
                             //si c no está en pq
                             //cout << "c=" << *c << endl;
                             if(pq_ctrs.find(*c)==pq_ctrs.end()){
-                                pq.push(std::make_pair(1.0, hc4_ctc[*c]));
+                                pq.push({1.0, pq_order++, hc4_ctc[*c]});
                                 pq_ctrs.insert(*c);
                             }
                         
