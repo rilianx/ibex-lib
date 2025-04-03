@@ -9,7 +9,7 @@
 //============================================================================
 
 #include "ibex_Optimizer05Config.h"
-#include "ibex_CtcAllPropag.h"
+#include "ibex_CtcDFBPropag.h"
 #include "ibex_CtcHC4.h"
 #include "ibex_CtcAcid.h"
 #include "ibex_Ctc3BCid.h"
@@ -152,7 +152,7 @@ Ctc& Optimizer05Config::get_ctc() {
 
     Linearizer* lr = get_linear_relax();
 
-    CtcAllPropag* propag_dfb = &rec(new CtcAllPropag(*ext_sys, *lr));
+    CtcDFBPropag* propag_dfb = &rec(new CtcDFBPropag(*ext_sys, *lr));
 
 	Ctc* ctc;
 	if (filtering == "hc4")

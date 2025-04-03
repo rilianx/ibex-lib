@@ -7,9 +7,9 @@ using namespace ibex;
 
 
 void CtcDFB::contract(IntervalVector& x_new) {
-    cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
-    if(upper_contract) cout << "[CtcDFB] Contracting upper bound" << endl;
-    else cout << "[CtcDFB] Contracting lower bound" << endl;
+    //cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
+    //if(upper_contract) cout << "[CtcDFB] Contracting upper bound" << endl;
+    //else cout << "[CtcDFB] Contracting lower bound" << endl;
 
     x_new.resize(x_ref.size()); //extended dimension for including vector b
     for (int i = nb_var; i < x_ref.size(); ++i) 
@@ -35,15 +35,15 @@ void CtcDFB::contract(IntervalVector& x_new) {
        
         if (j == -1) {
             if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);  
-            std::cout << "ITERS FOR K = " << k << ": " << iters << endl;
+            //std::cout << "ITERS FOR K = " << k << ": " << iters << endl;
             //print position of zeros in A[0]
-            cout << "Zeros in A[0]: ";
+            /*cout << "Zeros in A[0]: ";
             for (int i = 0; i < A[0].size(); ++i) {
                 if (A[0][i]==Interval(0)) {
                     cout << i << " ";
                 }
             }
-            cout << endl;
+            cout << endl;*/
 
             state= FINAL;
 
@@ -69,7 +69,7 @@ void CtcDFB::contract(IntervalVector& x_new) {
         makeColumnIdentity(A, i, false, j);
         A[0][k] = Interval(1);
         Interval x_lb = gaussSeidel(x_new, k, A[0]);
-        cout << "x_lb[" << k << "] = " << x_lb << endl;
+        //cout << "x_lb[" << k << "] = " << x_lb << endl;
 
         identity_rows[j] = i;
         if (contract_all) {
@@ -93,8 +93,8 @@ void CtcDFB::contract(IntervalVector& x_new) {
 std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
     const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
    
-            cout << "[CtcDFB] Calculating impacts. A dimensions: " << A.nb_rows() << "x" << A.nb_cols()
-                 << ", x_new size: " << x_new.size() << ", gamma size: " << gamma.size() << endl;
+            //cout << "[CtcDFB] Calculating impacts. A dimensions: " << A.nb_rows() << "x" << A.nb_cols()
+            //     << ", x_new size: " << x_new.size() << ", gamma size: " << gamma.size() << endl;
     
             assert(A.nb_cols() == x_new.size() && "Matrix column count must match x_new size");
             
@@ -141,8 +141,8 @@ std::tuple<int, Interval, Interval> CtcDFB::largestImpact(
     const IntervalMatrix& A, const IntervalVector& x_new, const IntervalVector& gamma) {
     IntervalVector grad_incr, grad_decr;
     tie(grad_incr, grad_decr) = calculateImpacts(A, x_new, gamma);
-    cout << "grad_incr: " << grad_incr << endl;
-    cout << "grad_decr: " << grad_decr << endl;
+    //cout << "grad_incr: " << grad_incr << endl;
+    //cout << "grad_decr: " << grad_decr << endl;
 
     Interval delta_incr, delta_decr;
     int j_incr, j_decr;

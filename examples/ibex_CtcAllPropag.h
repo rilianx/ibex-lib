@@ -24,16 +24,16 @@ namespace ibex {
  * algorithm.
  *
  */
-class CtcAllPropag : public Ctc {
+class CtcDFBPropag : public Ctc {
 public:
 
     /**
      * \brief 
      */
-    CtcAllPropag(ExtendedSystem& sys, Linearizer& lr, double ratio=0.1): Ctc(lr.nb_var()), lr(lr), 
-    mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1), ratio(0.01),  g(sys.nb_ctr, sys.nb_var) { 
+    CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio=0.01): Ctc(lr.nb_var()), lr(lr), 
+    mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1), ratio(ratio),  g(sys.nb_ctr, sys.nb_var) { 
 
-        cout << "[CtcAllPropag] Initializing with LPSolver in Certified mode" << endl;
+        cout << "[CtcDFBPropag] Initializing with LPSolver in Certified mode" << endl;
 
         cout << sys << endl;
         for (int i=0; i<lr.nb_var(); i++){
@@ -53,21 +53,21 @@ public:
             }
         }
 
-        cout << "[CtcAllPropag] Initialization complete. dfb_ctc.size()=" << dfb_ctc.size()
+        cout << "[CtcDFBPropag] Initialization complete. dfb_ctc.size()=" << dfb_ctc.size()
              << ", hc4_ctc.size()=" << hc4_ctc.size() << endl;
     }
 
-    virtual ~CtcAllPropag() {
-        cout << "[CtcAllPropag] Destroying instance" << endl;
+    virtual ~CtcDFBPropag() {
+        cout << "[CtcDFBPropag] Destroying instance" << endl;
         for (auto* obj : dfb_ctc) {
-            cout << "[CtcAllPropag] Deleting CtcDFB instance" << endl;
+            cout << "[CtcDFBPropag] Deleting CtcDFB instance" << endl;
             delete obj;
         }
         for (auto* obj : hc4_ctc) {
-            cout << "[CtcAllPropag] Deleting Ctc instance" << endl;
+            cout << "[CtcDFBPropag] Deleting Ctc instance" << endl;
             delete obj;
         }
-        cout << "[CtcAllPropag] Instance destroyed successfully." << endl;
+        cout << "[CtcDFBPropag] Instance destroyed successfully." << endl;
     }
 
     void update_ref(const IntervalVector& box){
@@ -75,12 +75,12 @@ public:
     }
 
     void linearize(const IntervalVector& box, IntervalMatrix& A, IntervalVector& x){
-        cout << "[CtcAllPropag] Linearizing box: " << box << endl;
+        cout << "[CtcDFBPropag] Linearizing box: " << box << endl;
 
         ContractContext context(box);
         int m = lr.linearize(box, mylineardummysolver, context.prop);
 
-        cout << "[CtcAllPropag] Linearizer returned m=" << m << endl;
+        cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
 
         Matrix rows = mylineardummysolver.rows();
         IntervalVector lhs_rhs = mylineardummysolver.lhs_rhs();
@@ -93,17 +93,8 @@ public:
         x.resize(nb_var+m); // x U b
         for (int i=0; i<nb_var; i++) x[i]=box[i];
 
-        unordered_set<Vector> row_set;
-
         //b
         for (int i=0; i<m; i++){
-            if (row_set.find(rows[i]) != row_set.end()){
-                cout << "[CtcAllPropag] Row " << i << " already exists, skipping." << endl;
-                continue;
-            }
-
-            row_set.insert (rows[nb_var+i]);
-
             x[nb_var+i] = lhs_rhs[nb_var+i];
             if (x[nb_var+i].lb() < -1e50)
                 x[nb_var+i] = Interval(-1e50, x[nb_var+i].ub());
@@ -118,9 +109,8 @@ public:
             A[i][nb_var+i] = Interval(-1.0);
         }
 
-        exit(0);
 
-        cout << "[CtcAllPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
+        cout << "[CtcDFBPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
     }
 
     virtual void contract(IntervalVector& box) {
@@ -133,13 +123,13 @@ public:
      * \brief Contract a box.
      */
     virtual void contract(IntervalVector& box, ContractContext& context){
-        cout << "[CtcAllPropag] Contracting box: " << box << endl;
+        cout << "[CtcDFBPropag] Contracting box: " << box << endl;
         
         //matrix initialization (dfb contractors)
         update_ref(box);
 
         if (refA.nb_rows() > 0){
-            cout << "[CtcAllPropag] Initializing DFB contractors with refA" << endl;
+            cout << "[CtcDFBPropag] Initializing DFB contractors with refA" << endl;
             for (auto* dfb : dfb_ctc) {
                 dfb->init(refA, refbox);
             }
@@ -163,7 +153,7 @@ public:
         //initialize the priority queue
         if (refA.nb_rows() > 0){
             for (auto* dfb : dfb_ctc) {
-                cout << "[CtcAllPropag] Adding DFB contractor to priority queue " << dfb->k << endl;
+                cout << "[CtcDFBPropag] Adding DFB contractor to priority queue " << dfb->k << endl;
                 pq.push({1.0, pq_order++, dfb});
             }
         }
@@ -231,7 +221,7 @@ public:
            
 
         }
-        cout << "[CtcAllPropag] Contracting complete, final box: " << box << endl;
+        cout << "[CtcDFBPropag] Contracting complete, final box: " << box << endl;
         
 
 

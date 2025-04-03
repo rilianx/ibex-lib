@@ -31,8 +31,8 @@ LDFLAGS = \
 LDLIBS = -libex -lsoplex -lgaol -lgdtoa -lultim
 
 # Fuentes por ejecutable
-ibexopt_SRCS = ibexopt.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp
-example_dfb_SRCS = example_dfb.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp
+ibexopt_SRCS = ibexopt.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp
+example_dfb_SRCS = example_dfb.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp
 
 # Todos los .cpp en un set único
 SRCS = $(ibexopt_SRCS) $(example_dfb_SRCS)
