@@ -42,17 +42,36 @@ int main(int argc, char** argv) {
 
     //disableCout();
     if(argc>2){ //dfb or ph
-        if (strcmp(argv[2], "dfb") == 0) {
-            CtcDFBPropag ctc(sys2, lr);
-            cout << "Using DFB" << endl;
+
+        if (strcmp(argv[2], "hc4") == 0) {
+            cout << "Using HC4" << endl;
+            hc4.contract(sys2.box); 
+        } else if (strcmp(argv[2], "dfb_hc4") == 0) {
+            CtcDFBPropag ctc(sys2, lr, 0.01, true ,true);
+            cout << "Using DFB (HC4)" << endl;
             ctc.contract(sys2.box);
+        } else if (strcmp(argv[2], "dfb") == 0) {
+            CtcDFBPropag ctc(sys2, lr);
+            cout << "Using DFB(HC4 only)" << endl;
+            ctc.contract(sys2.box);
+        } else if (strcmp(argv[2], "dfb_only") == 0) {
+            CtcDFBPropag ctc(sys2, lr, 0.01, true ,false, true);
+            CtcDFBPropag hc4(sys2, lr, 0.001, true ,true);
+            cout << "Using DFB(no HC4)" << endl;
+            ctc.contract(sys2.box);
+            hc4.contract(sys2.box);
+
         } else if (strcmp(argv[2], "ph") == 0) {
             CtcPolytopeHull ctc_ph(lr);
+            CtcDFBPropag hc4(sys2, lr, 0.001, true ,true);
             cout << "Using PolyHull" << endl; 
-            hc4.contract(sys2.box); 
+            //ctc_ph.contract(sys2.box); //linearize and contract
             ctc_ph.contract(sys2.box); //linearize and contract
-            cout << "xInter = " << sys2.box << endl;
+            //cout << "xInter = " << sys2.box << endl;
+            cout << "xFinal per = " << sys2.box.perimeter() << endl;
             hc4.contract(sys2.box); 
+                cout << "xFinal per = " << sys2.box.perimeter() << endl;
+            ctc_ph.primal_sol_found.clear();
             ctc_ph.optimizer(sys2.box); //only contract
         } else if (strcmp(argv[2], "acid_dfb") == 0) {
 
@@ -77,4 +96,5 @@ int main(int argc, char** argv) {
     //enableCout();
 
     cout << "xFinal = " << sys2.box << endl;
+    cout << "xFinal per = " << sys2.box.perimeter() << endl;
 }

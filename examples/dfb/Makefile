@@ -7,26 +7,26 @@ CXXFLAGS = -O3 -msse3 -frounding-math -std=gnu++11 -g -MMD -MP
 
 # Includes
 INCLUDES = \
-  -I../interval_lib_wrapper/gaol \
-  -I../lp_lib_wrapper/soplex \
-  -I../src \
-  -I../src/arithmetic -I../src/bisector -I../src/cell -I../src/combinatorial \
-  -I../src/contractor -I../src/data -I../src/function -I../src/loup \
-  -I../src/numeric -I../src/optim -I../src/parser -I../src/predicate -I../src/set \
-  -I../src/solver -I../src/strategy -I../src/symbolic -I../src/symbolic/../operators \
-  -I../src/system -I../src/tools \
-  -I../interval_lib_wrapper/gaol/gaol-4.2.0 \
-  -I../interval_lib_wrapper/gaol/gaol-4.2.0-build \
-  -I../interval_lib_wrapper/gaol/gaol-4.2.0-build/gaol \
-  -I../interval_lib_wrapper/gaol/mathlib-2.1.0/src \
-  -I../interval_lib_wrapper/gaol/mathlib-2.1.0-build/src \
-  -I../lp_lib_wrapper/soplex/soplex-4.0.2/src
+  -I../../interval_lib_wrapper/gaol \
+  -I../../lp_lib_wrapper/soplex \
+  -I../../src \
+  -I../../src/arithmetic -I../../src/bisector -I../../src/cell -I../../src/combinatorial \
+  -I../../src/contractor -I../../src/data -I../../src/function -I../../src/loup \
+  -I../../src/numeric -I../../src/optim -I../../src/parser -I../../src/predicate -I../../src/set \
+  -I../../src/solver -I../../src/strategy -I../../src/symbolic -I../../src/symbolic/../operators \
+  -I../../src/system -I../../src/tools \
+  -I../../interval_lib_wrapper/gaol/gaol-4.2.0 \
+  -I../../interval_lib_wrapper/gaol/gaol-4.2.0-build \
+  -I../../interval_lib_wrapper/gaol/gaol-4.2.0-build/gaol \
+  -I../../interval_lib_wrapper/gaol/mathlib-2.1.0/src \
+  -I../../interval_lib_wrapper/gaol/mathlib-2.1.0-build/src \
+  -I../../lp_lib_wrapper/soplex/soplex-4.0.2/src
 
 LDFLAGS = \
-  -L../src \
-  -L../interval_lib_wrapper/gaol/gaol-4.2.0-build \
-  -L../interval_lib_wrapper/gaol/mathlib-2.1.0-build \
-  -L../lib
+  -L../../src \
+  -L../../interval_lib_wrapper/gaol/gaol-4.2.0-build \
+  -L../../interval_lib_wrapper/gaol/mathlib-2.1.0-build \
+  -L../../lib
 
 LDLIBS = -libex -lsoplex -lgaol -lgdtoa -lultim
 

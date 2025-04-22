@@ -53,6 +53,7 @@ void CtcPolytopeHull::contract(IntervalVector& box) {
 
 void CtcPolytopeHull::contract(IntervalVector& box, ContractContext& context) {
 	primal_sol_found.clear();
+	mylinearsolver.clear_constraints();
 
 	if (box.is_unbounded()) return;
 
@@ -71,7 +72,6 @@ void CtcPolytopeHull::contract(IntervalVector& box, ContractContext& context) {
 		//mylinearsolver.writeFile("LP.lp");
 		//system ("cat LP.lp");
 		//cout << "[polytope-hull] box after LR: " << box << endl;
-		mylinearsolver.clear_constraints();
 	}
 	catch(PolytopeHullEmptyBoxException& e) {
 		box.set_empty(); // empty the box before exiting
@@ -121,6 +121,8 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			inf_bound[i]=1;
 			mylinearsolver.set_cost(i, 1.0);
 			stat = mylinearsolver.minimize();
+			std::cout << "soplex iterations(min x_"<<i<<"):" << mylinearsolver.mysoplex->numIterations() << std::endl;
+
 			mylinearsolver.set_cost(i, 0.0);
 			//cout << "[polytope-hull]->[optimize] simplex for left bound returns stat:" << stat << endl;
 			if (stat == LPSolver::Status::OptimalProved) {
@@ -175,6 +177,8 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			sup_bound[i]=1;
 			mylinearsolver.set_cost(i, -1.0);
 			stat= mylinearsolver.minimize();
+			std::cout << "soplex iterations(max  x_"<<i<<"):" << mylinearsolver.mysoplex->numIterations() << std::endl; 
+
 			mylinearsolver.set_cost(i, 0.0);
 			//cout << "[polytope-hull]->[optimize] simplex for right bound returns stat=" << stat << endl;
 			if( stat == LPSolver::Status::OptimalProved) {

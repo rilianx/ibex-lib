@@ -29,7 +29,7 @@ namespace ibex {
 class CtcDFBPropag : public Ctc {
 public:
 
-    CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio=0.01, bool stand_alone=true);
+    CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio=0.1, bool stand_alone=true, bool only_hc4=false, bool only_dfb=false);
 
     virtual ~CtcDFBPropag();
 

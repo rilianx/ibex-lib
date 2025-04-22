@@ -10,6 +10,7 @@
 
 #include "ibex_Optimizer05Config.h"
 #include "ibex_CtcDFBPropag.h"
+#include "ibex_CtcDFBManager.h"
 #include "ibex_CtcHC4.h"
 #include "ibex_CtcAcid.h"
 #include "ibex_Ctc3BCid.h"
@@ -151,14 +152,22 @@ Ctc& Optimizer05Config::get_ctc() {
 	CtcCompo* hc4acidhc4 = &rec(new CtcCompo(*hc4, *acidhc4));
 
     Linearizer* lr = get_linear_relax();
+	CtcDFBPropag* dfb = &rec(new CtcDFBPropag(*ext_sys, *lr, 0.1, true));
+	CtcDFBPropag* dfb_hc4 = &rec(new CtcDFBPropag(*ext_sys, *lr, 0.1, true, true)); //hc4
 
-    CtcDFBPropag* propag_dfb = &rec(new CtcDFBPropag(*ext_sys, *lr));
+    CtcDFBPropag* propag_dfb = &rec(new CtcDFBPropag(*ext_sys, *lr, 0.01, false));
+	CtcAcid* acid_dfb = &rec(new CtcAcid(*ext_sys, *propag_dfb, true));
+	CtcDFBManager* dfb_manager = &rec(new CtcDFBManager(*propag_dfb, *acid_dfb, *lr));
 
 	Ctc* ctc;
 	if (filtering == "hc4")
 		ctc = hc4;
-    else if (filtering == "dfb")
-        ctc = propag_dfb;
+	else if (filtering == "dfb")
+	    ctc = dfb;
+	else if (filtering == "dfb_hc4")
+	    ctc = dfb_hc4;
+    else if (filtering == "acid_dfb")
+        ctc = dfb_manager;
 	else if (filtering =="acidhc4")
 		ctc = hc4acidhc4;
 	else if (filtering =="3bcidhc4")

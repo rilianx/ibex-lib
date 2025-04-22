@@ -112,6 +112,12 @@ public:
 	 */
 	void optimizer(IntervalVector &box);
 
+	/*
+	 *  A bit is present if the corresponding primal
+	 *  solution has been found.
+	 */
+	BitSet primal_sol_found;
+
 protected:
 
 	/**
@@ -136,6 +142,7 @@ protected:
 	 */
 	BitSet contracted_vars;
 
+
 private:
 	bool own_lr; // for memory cleanup
 
@@ -146,11 +153,7 @@ private:
 	 */
 	Matrix primal_sols;
 
-	/*
-	 *  A bit is present if the corresponding primal
-	 *  solution has been found.
-	 */
-	BitSet primal_sol_found;
+
 };
 
 /*================================== inline implementations ========================================*/

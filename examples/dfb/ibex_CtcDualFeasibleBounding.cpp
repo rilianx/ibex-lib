@@ -1,10 +1,120 @@
 #include "ibex_CtcDualFeasibleBounding.h"
 #include <cmath>
 #include <tuple>
+#include <set>
 
 using namespace std;
 using namespace ibex;
 
+void CtcDFB::init(IntervalMatrix& A, IntervalVector& x_ref){
+    //cout << "[CtcDFB] Initializing with k=" << k << ", A dimensions: " 
+    //     << A.nb_rows() << "x" << A.nb_cols() << endl;
+    this->A.resize(A.nb_rows(), A.nb_cols());
+    this->A = A;
+    this->x_ref.resize(x_ref.size());
+    this->x_ref = x_ref;
+    state = INITIAL;
+
+    if (upper_contract) 
+        for (int i = 0; i < A.nb_rows(); ++i) this->A[i][k] = -this->A[i][k];
+
+    makeColumnIdentity(this->A, k, true, 0);
+    identity_rows.clear();
+ 
+
+    //cout << "[CtcDFB] Initialization complete for k=" << k << endl;
+}
+
+double CtcDFB::get_virtual_bound(){
+    return (upper_contract)? -virtual_x.lb():virtual_x.lb();
+}
+
+// impacto de var en la contracción de k (solo si bound de var k es activo)
+double CtcDFB::real_impact(Interval& x_k, int var, double eps){
+    if (var==k) return 0.0;
+    if ((upper_contract && (virtual_x.lb()+eps >= -x_k.ub())) || (!upper_contract && (virtual_x.lb()+eps >= x_k.lb()))){
+        return std::abs(A[0][var].mid());
+    }
+
+    return 0.0;
+}
+
+double CtcDFB::get_Aerror(){
+    double error = 0;
+    //A[0][0] + A[0][1] + A[0][2] + A[0][3]...
+    for (int i=0; i<A[0].size(); i++)
+        error += A[0][i].diam();
+    
+    return error;
+}
+
+void CtcDFB::regenerateA(IntervalMatrix& Aref){
+    //cout << "[CtcDFB] Regenerating A" << endl;
+
+    list<int> columns;
+    for (int i = 0; i < A[0].size(); ++i)
+        if (A[0][i]==Interval(0)) 
+            columns.push_back(i);
+
+    A=Aref;
+    if (upper_contract) 
+        for (int i = 0; i < A.nb_rows(); ++i) A[i][k] = -A[i][k];
+
+    makeColumnIdentity(A, k, true, 0);
+    identity_rows.clear();
+
+    makeColumnsIdentity(columns);
+
+}
+
+void CtcDFB::makeColumnsIdentity(std::list<int> columns) {
+    std::set<int> identity_rows_local;
+
+    columns.push_front(k);
+    for (int col : columns) {
+        // Buscar la mejor fila para hacer la columna col identidad
+        int best_row = -1;
+        double max_abs_val = 0.0;
+
+        for (int i = 0; i < A.nb_rows(); ++i) {
+            if (identity_rows_local.count(i)) continue;
+            double val = A[i][col].mid();  // Puedes usar diam() si prefieres
+            if (std::abs(val) > max_abs_val) {
+                max_abs_val = std::abs(val);
+                best_row = i;
+            }
+        }
+
+        if (best_row == -1) {
+            cout << "[CtcDFB::makeColumnsIdentity] No available row to pivot column " << col << endl;
+            continue;
+        }
+
+        // Hacer la columna col una identidad en la fila best_row
+        makeColumnIdentity(A, col, false, best_row);
+
+        // Guardar fila usada
+        identity_rows_local.insert(best_row);
+        identity_rows[best_row] = col;
+        
+        //cout << "[CtcDFB::makeColumnsIdentity] Made column " << col << " identity at row " << best_row << endl;
+    }
+}
+
+
+//get delta_impr
+double CtcDFB::get_perc_impr(int k){
+    //sum last k perc_imprs
+    double sum = 0;
+    int count = 0;
+    for (auto it = perc_imprs.rbegin(); it != perc_imprs.rend() && count < k; ++it, ++count) {
+        sum += *it;
+    }
+    if (count < k) 
+        return 1;
+    else 
+        return sum;
+}
 
 void CtcDFB::contract(IntervalVector& x_new) {
     //cout << "[CtcDFB] Contracting box with k=" << k << ", box: " << x_new << endl;
@@ -14,8 +124,16 @@ void CtcDFB::contract(IntervalVector& x_new) {
     x_new.resize(x_ref.size()); //extended dimension for including vector b
     for (int i = nb_var; i < x_ref.size(); ++i) 
         x_new[i] = x_ref[i]; 
-    
 
+    if(state==INITIAL){
+        perc_imprs.clear();
+        if (upper_contract)  x_ref[k] = -x_ref[k]; // changeSigns(A, x_new);
+        virtual_x = gaussSeidel(x_ref, k, A[0]);
+        virtual_x = Interval(virtual_x.lb(), x_ref[k].ub());
+        if (upper_contract) x_ref[k] = -x_ref[k]; // changeSigns(A, x_new);
+        if (x_ref.is_empty()) return;
+    }
+    
     int i;
     int j;
     Interval alpha;
@@ -25,26 +143,12 @@ void CtcDFB::contract(IntervalVector& x_new) {
     if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);        
 
     int iters = 0;
-    //Interval x_lb = gaussSeidel(x_new, k, A[0]);
-
-    //cout << A[0] << endl;
-    //cout << "x_lb[" << k << "] = " << x_lb << endl;
 
     while (max_iters == -1 || iters < max_iters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
         if (j == -1) {
             if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);  
-            //std::cout << "ITERS FOR K = " << k << ": " << iters << endl;
-            //print position of zeros in A[0]
-            /*cout << "Zeros in A[0]: ";
-            for (int i = 0; i < A[0].size(); ++i) {
-                if (A[0][i]==Interval(0)) {
-                    cout << i << " ";
-                }
-            }
-            cout << endl;*/
-
             state= FINAL;
 
             x_new.resize(nb_var); //original dimension
@@ -68,7 +172,14 @@ void CtcDFB::contract(IntervalVector& x_new) {
 
         makeColumnIdentity(A, i, false, j);
         A[0][k] = Interval(1);
-        Interval x_lb = gaussSeidel(x_new, k, A[0]);
+
+        double x_lb = virtual_x.lb();
+
+        double old_size = virtual_x.diam();
+        virtual_x = gaussSeidel(x_new, k, A[0]);
+        virtual_x = Interval(virtual_x.lb(), x_new[k].ub());
+        perc_imprs.push_back((virtual_x.lb() - x_lb)/old_size);
+
         //cout << "x_lb[" << k << "] = " << x_lb << endl;
 
         identity_rows[j] = i;
@@ -84,7 +195,7 @@ void CtcDFB::contract(IntervalVector& x_new) {
         ++iters;
     }
 
-    if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new); 
+    if (upper_contract && !x_new.is_empty()) x_new[k] = -x_new[k]; // changeSigns(A, x_new); 
     
     x_new.resize(nb_var); //original dimension
     
@@ -238,14 +349,16 @@ int CtcDFB::makeColumnIdentity(IntervalMatrix& A, const int k, bool interchange,
         throw std::invalid_argument("The divider has a bound equal to 0. Which is not allowed.");
     }
     
-    A[j] = (Interval(1) / A[j][k]) * A[j];
+    //if (interchange){
+        A[j] = (Interval(1) / A[j][k]) * A[j];
 
-    A[j][k] = Interval(1);
+        A[j][k] = Interval(1);
+    //}
 
     // Paso 3: Hacer ceros los demás elementos en la columna k
     for (int jj = 0; jj < m; ++jj) {
         if (jj == j) continue;
-        Interval factor = A[jj][k];
+        Interval factor = A[jj][k];///A[j][k];
         for (int i = 0; i < n; ++i) {
             A[jj][i] -= factor * A[j][i];
         }
@@ -290,6 +403,7 @@ Interval CtcDFB::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
     //        std::cout << "x[k] = " << x[k] << std::endl;
         }
     }
+    if (x[k].is_empty()) x.set_empty();
 
     return xContract;
 }

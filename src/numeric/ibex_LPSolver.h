@@ -351,6 +351,9 @@ public:
      */
     void reset(int nb_vars);
 
+    /* This is a macro that should be defined in ibex_LPLibWrapper.h */
+	IBEX_LPSOLVER_WRAPPER_ATTRIBUTES;
+
 private:
     LPSolver::Status status_{LPSolver::Status::Unknown};
     LPSolver::Mode mode_;
@@ -375,8 +378,7 @@ private:
 
     void invalidate();
 
-    /* This is a macro that should be defined in ibex_LPLibWrapper.h */
-	IBEX_LPSOLVER_WRAPPER_ATTRIBUTES;
+
 };
 
 /** \brief Stream out \a x. */

@@ -48,12 +48,12 @@ public:
     }
     
     void linearize(const IntervalVector& box, IntervalMatrix& A, IntervalVector& x){
-        cout << "[CtcDFBPropag] Linearizing box: " << box << endl;
+        cout << "[CtcDFBManager] Linearizing box: " << box << endl;
     
         ContractContext context(box);
         int m = lr.linearize(box, mylineardummysolver, context.prop);
     
-        cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
+        cout << "[CtcDFBManager] Linearizer returned m=" << m << endl;
     
         Matrix rows = mylineardummysolver.rows();
         IntervalVector lhs_rhs = mylineardummysolver.lhs_rhs();
@@ -82,7 +82,7 @@ public:
         }
     
     
-        cout << "[CtcDFBPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
+        cout << "[CtcDFBManager] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
     }
 
     void contract(IntervalVector& box ) {
@@ -97,7 +97,7 @@ public:
 
         dfb_propag.init_dfb_contractors(A, x);
 
-        cout << "dimension of A: " << dfb_propag.refA.nb_rows() << "x" << dfb_propag.refA.nb_cols() << endl;
+        cout << "[CtcDFBManager] dimension of A: " << dfb_propag.refA.nb_rows() << "x" << dfb_propag.refA.nb_cols() << endl;
 
         cout << "[CtcDFBManager] Contracting box with CID: " << box << endl;
         // Call the contract method of cid
