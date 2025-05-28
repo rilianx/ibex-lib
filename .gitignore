@@ -41,7 +41,7 @@ __build__
 lib
 include
 share
-bin
+/bin
 doc/_build
 
 *~
