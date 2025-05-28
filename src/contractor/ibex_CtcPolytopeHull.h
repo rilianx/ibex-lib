@@ -15,6 +15,7 @@
 #include "ibex_Ctc.h"
 #include "ibex_LPSolver.h"
 #include "ibex_BitSet.h"
+#include <list>
 
 namespace ibex {
 
@@ -117,6 +118,9 @@ public:
 	 *  solution has been found.
 	 */
 	BitSet primal_sol_found;
+
+	int n_soplex_iterations;
+	std::list< std::pair<int,double> > history; // simplex iteration, box perimeter
 
 protected:
 

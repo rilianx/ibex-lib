@@ -11,6 +11,7 @@
 #include "ibex_DirectedHyperGraph.h"
 #include "ibex_CtcFwdBwd.h"
 #include "ibex_ExtendedSystem.h"
+#include "ibex_LinearizerXTaylor.h"
 
 
 using namespace std;
@@ -40,6 +41,8 @@ public:
     virtual void contract(IntervalVector& box);
 
     void init_dfb_contractors(IntervalMatrix& A, IntervalVector& x_ref);
+
+    double compute_rhs_ub(b_constraint& b_ctr, const IntervalVector& box);
 
     
 
@@ -73,6 +76,18 @@ public:
     std::map<Ctc*, int> ctc2id;
 
     bool stand_alone;
+
+    int count_dfb;
+    int count_hc4;
+
+    list< pair<int, double> > history; //dfb contractors
+
+    ExtendedSystem& sys;
+
+    map<int, list <pair<int, b_constraint*> > > adj_b; // x -> list(b_id,b_constraint)
+
+    static bool b_contraction;
+
 
 };
 

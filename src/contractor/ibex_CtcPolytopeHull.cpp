@@ -121,7 +121,8 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			inf_bound[i]=1;
 			mylinearsolver.set_cost(i, 1.0);
 			stat = mylinearsolver.minimize();
-			std::cout << "soplex iterations(min x_"<<i<<"):" << mylinearsolver.mysoplex->numIterations() << std::endl;
+			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
+			
 
 			mylinearsolver.set_cost(i, 0.0);
 			//cout << "[polytope-hull]->[optimize] simplex for left bound returns stat:" << stat << endl;
@@ -139,6 +140,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				if(opt.lb() > box[i].lb()) {
 					box[i]=Interval(opt.lb(),box[i].ub());
 					mylinearsolver.set_bounds(i,box[i]);
+					history.push_back(make_pair(n_soplex_iterations, box.perimeter()));
 				}
 
 				if (!choose_next_variable(box,nexti,infnexti, inf_bound, sup_bound)) {
@@ -177,7 +179,8 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			sup_bound[i]=1;
 			mylinearsolver.set_cost(i, -1.0);
 			stat= mylinearsolver.minimize();
-			std::cout << "soplex iterations(max  x_"<<i<<"):" << mylinearsolver.mysoplex->numIterations() << std::endl; 
+			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
+
 
 			mylinearsolver.set_cost(i, 0.0);
 			//cout << "[polytope-hull]->[optimize] simplex for right bound returns stat=" << stat << endl;
@@ -196,6 +199,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 				if (opt.ub() < box[i].ub()) {
 					box[i] =Interval( box[i].lb(), opt.ub());
 					mylinearsolver.set_bounds(i,box[i]);
+					history.push_back(make_pair(n_soplex_iterations, box.perimeter()));
 				}
 
 				if (!choose_next_variable(box,nexti,infnexti, inf_bound, sup_bound)) {

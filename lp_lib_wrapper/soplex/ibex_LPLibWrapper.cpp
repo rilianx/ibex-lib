@@ -116,6 +116,11 @@ void LPSolver::init(LPSolver::Mode mode, double tolerance, double timeout, int m
 	mysoplex->setIntParam(SoPlex::SOLVEMODE, SoPlex::SOLVEMODE_REAL);
     mysoplex->setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MINIMIZE);
     mysoplex->setBoolParam(SoPlex::ENSURERAY, true);
+
+    // forzar simplex primal en modo tablaeu
+    mysoplex->setIntParam(SoPlex::ALGORITHM,    SoPlex::ALGORITHM_PRIMAL);
+    mysoplex->setIntParam(SoPlex::REPRESENTATION, SoPlex::REPRESENTATION_COLUMN);
+
 }
 
 /*void LPSolver::add_variable(const Interval& bounds, double obj) {

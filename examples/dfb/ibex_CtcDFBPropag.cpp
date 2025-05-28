@@ -1,4 +1,5 @@
 #include "ibex_CtcDFBPropag.h"
+#include "ibex_LinearizerXTaylor.h"
 #include <cmath>
 #include <tuple>
 
@@ -8,7 +9,7 @@ using namespace ibex;
 
 CtcDFBPropag::CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio, bool stand_alone, bool only_hc4, bool only_dfb): Ctc(lr.nb_var()), lr(lr), 
 mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1),
- ratio(ratio),  g(sys.nb_ctr, sys.nb_var), stand_alone(stand_alone) { 
+ ratio(ratio),  g(sys.nb_ctr, sys.nb_var), stand_alone(stand_alone), sys(sys) { 
 
     cout << "[CtcDFBPropag] Initializing with LPSolver in Certified mode" << endl;
 
@@ -16,8 +17,8 @@ mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1),
     if(!only_hc4){
         for (int i=0; i<lr.nb_var(); i++){
             // Crear punteros dinámicos y almacenarlos en el vector
-            dfb_ctc.push_back(new CtcDFB(nb_var, i, false, false));
-            dfb_ctc.push_back(new CtcDFB(nb_var, i, true, false));
+            dfb_ctc.push_back(new CtcDFB(nb_var, i, false, false, 1));
+            dfb_ctc.push_back(new CtcDFB(nb_var, i, true, false, 1));
         }
     }
 
@@ -55,11 +56,43 @@ void CtcDFBPropag::update_ref(const IntervalVector& box){
     linearize(box, refA, refbox);
 }
 
+double CtcDFBPropag::compute_rhs_ub(b_constraint& b_ctr, const IntervalVector& box){
+    //cout << "[CtcDFBPropag] Evaluating corner" << endl;
+    IntervalVector corner = box;
+    for (int i=0; i<nb_var; i++){   
+        if (b_ctr.inf[i]==true)
+            corner[i] = box[i].lb();
+        else
+            corner[i] = box[i].ub();
+    }
+    
+    if(b_ctr.c<0){
+        Interval g_corner = -sys.f_ctrs[-b_ctr.c-1].eval(corner);
+        return (-g_corner + b_ctr.a*corner).ub();
+    }else{
+        Interval g_corner = sys.f_ctrs[b_ctr.c-1].eval(corner);
+        return (-g_corner + b_ctr.a*corner).ub();
+    }
+    
+}
+
 void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, IntervalVector& x){
     cout << "[CtcDFBPropag] Linearizing box: " << box << endl;
 
     ContractContext context(box);
     int m = lr.linearize(box, mylineardummysolver, context.prop);
+
+
+    //show list <dynamic_cast>(LinearizerXTaylor) lr.b_ctrs;
+    int k=0;
+    for (b_constraint& b_ctr : dynamic_cast<LinearizerXTaylor*> (&lr)->b_ctrs) {
+        int c = b_ctr.c;
+        if (c<0) c = -b_ctr.c;
+        c--;
+
+        adj_b[c].push_back(make_pair(nb_var+k, &b_ctr));
+        k++;
+    }
 
     cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
 
@@ -81,9 +114,10 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
             x[nb_var+i] = Interval(-1e50, x[nb_var+i].ub());
         if (x[nb_var+i].ub() > 1e50)
             x[nb_var+i] = Interval(x[nb_var+i].lb(), 1e50);
+        cout << "b[" << i << "]=" << x[nb_var+i] << endl;
     }
 
-
+    //coefficients
     for (int i=0; i<m; i++){
         for (int j=0; j<nb_var; j++)
             A[i][j] = rows[nb_var+i][j];
@@ -118,7 +152,9 @@ void CtcDFBPropag::init_dfb_contractors(IntervalMatrix& A, IntervalVector& x_ref
 /**
  * \brief Contract a box.
  */
+bool CtcDFBPropag::b_contraction = false;
 void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){    
+    adj_b.clear();
     if(stand_alone){ //when the contractor is applied stand_alone
         //matrix initialization (dfb contractors)
         update_ref(box);
@@ -152,6 +188,7 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
     set<int> pq_ctrs;
     set< pair<int,bool> > dfb_ctrs;
     
+    
 
     size_t pq_order = 0;
 
@@ -171,8 +208,8 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
 
     IntervalVector old_box(box);
 
-    int count_dfb = 0;
-    int count_hc4 = 0;
+    count_dfb = 0;
+    count_hc4 = 0;
     while (!pq.empty()) {            
 
         if(CtcDFB* ctc=dynamic_cast<CtcDFB*>(std::get<2>(pq.top()))){
@@ -186,8 +223,12 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
                 cout << "A error after regeneration: " << ctc->get_Aerror() << endl;
             }
             old_box = box;
+            for (int i = nb_var; i < refbox.size(); ++i){
+                ctc->x_ref[i]=refbox[i]; //restore b
+            }
+
             ctc->contract(box);
-            count_dfb++;
+            count_dfb+=ctc->iters;
             cout << ctc->get_virtual_bound() << endl;
             
            // cout << ctc->get_perc_impr(3) << endl;
@@ -196,6 +237,7 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
 
             cout << "new box=" << box << endl;
             if (old_box[ctc->k].ratiodelta(box[ctc->k])>=ratio){
+                history.push_back(make_pair(count_dfb, box.perimeter()));
                 set<int> ctrs=g.output_ctrs(ctc->k);
                 for (set<int>::iterator c=ctrs.begin(); c!=ctrs.end(); c++) {
                     //si c no está en pq
@@ -211,7 +253,7 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
                     dfb_ctrs.insert({ctc->k, ctc->upper_contract});
                 }
             }else{
-                if (ctc->state == CtcDFB::CONTRACTING && ctc->get_perc_impr(2) > 0.05){
+                if (ctc->state == CtcDFB::CONTRACTING){// && ctc->get_perc_impr(10) > 0.01){
                     pq.push({1.0, pq_order++, ctc});
                     dfb_ctrs.insert({ctc->k, ctc->upper_contract});
                 }
@@ -226,6 +268,12 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
             if (box.is_empty()) break;
             
             pq_ctrs.erase(ctc2id[ctc_]);
+            
+            //b contraction
+            if(b_contraction)
+                for(auto p : adj_b[ctc2id[ctc_]])
+                    refbox[p.first] = Interval(-1e50, compute_rhs_ub(*p.second, box));  
+                
 
             for (int v=0; v<nb_var; v++){
                 if (old_box[v].ratiodelta(box[v])>=ratio) {
@@ -236,15 +284,14 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
                         //cout << "c=" << *c << endl;
                         if(pq_ctrs.find(*c)==pq_ctrs.end()){
                             pq.push({1.0, pq_order++, hc4_ctc[*c]});
-                            pq_ctrs.insert(*c);
+                            pq_ctrs.insert(*c); 
                         }
-                    
                         old_box[v] = box[v];
                     }
 
                     for(int j=0; j<dfb_ctc.size(); j++){
                         double impact = dfb_ctc[j]->real_impact(box[dfb_ctc[j]->k], v, 0.01);
-                        if (impact > 0.1 && dfb_ctrs.find({dfb_ctc[j]->k, dfb_ctc[j]->upper_contract})==dfb_ctrs.end()){
+                        if (impact > 0.01 && dfb_ctrs.find({dfb_ctc[j]->k, dfb_ctc[j]->upper_contract})==dfb_ctrs.end()){
                             cout << "impact:"<< impact << ", k=" << dfb_ctc[j]->k << endl;
                             pq.push({1.0, pq_order++, dfb_ctc[j]});
                             dfb_ctrs.insert({dfb_ctc[j]->k, dfb_ctc[j]->upper_contract});

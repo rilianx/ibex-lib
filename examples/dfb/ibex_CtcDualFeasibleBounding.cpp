@@ -142,7 +142,7 @@ void CtcDFB::contract(IntervalVector& x_new) {
 
     if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);        
 
-    int iters = 0;
+    iters = 0;
 
     while (max_iters == -1 || iters < max_iters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);

@@ -107,6 +107,7 @@ int LinearizerXTaylor::linearize(const IntervalVector& box, LPSolver& _lp_solver
 int LinearizerXTaylor::linear_relax(const IntervalVector& box, const BitSet& active)  {
 
 	int count=0; // total number of added constraint
+	b_ctrs.clear(); // clear the list of constraints
 
 	if (active.empty()) return 0;
 
@@ -124,6 +125,12 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box, const BitSet& act
 
 		// ============ get the corner point =================
 		get_corner(corners[k]);
+
+		//bool* inf contains the corner information
+		//with this info we can obtain g_corner = eval_vector(corner(inf), ctr)
+		//then rhs_ub = -g_corner[j] + a*corner(inf)
+		//the tuple related to a rhs should be (inf, ctr, a)
+		//un cambio en el corner implica un cambio en el rhs_ub -> b
 
 		try {
 			IntervalVector corner=get_corner_point(box);
@@ -156,12 +163,12 @@ int LinearizerXTaylor::linear_relax(const IntervalVector& box, const BitSet& act
 
 				try {
 					if (sys.ops[c]==LEQ || sys.ops[c]==LT || sys.ops[c]==EQ)
-						count += linearize_leq_corner(box,corner,Df[i],g_corner[i]);
-
+						count += linearize_leq_corner(box,corner,Df[i],g_corner[i], c+1);
+					
 					// note: in case of equality g(x)=0, we also add a linear relaxation for
 					// g(x)>=0, except if this is the "goal constraint" y=f(x).
 					if (sys.ops[c]==GEQ || sys.ops[c]==GT || sys.ops[c]==EQ) // && c!=goal_ctr))
-						count += linearize_leq_corner(box,corner,-Df[i],-g_corner[i]);
+						count += linearize_leq_corner(box,corner,-Df[i],-g_corner[i], -(c+1));
 
 				} catch (BadConstraint&) {
 					continue; // just skip this constraint
@@ -279,7 +286,8 @@ IntervalVector LinearizerXTaylor::get_corner_point(const IntervalVector& box) {
 	return pt;
 }
 
-int LinearizerXTaylor::linearize_leq_corner(const IntervalVector& box, IntervalVector& corner, const IntervalVector& dg_box, const Interval& g_corner) {
+int LinearizerXTaylor::linearize_leq_corner(const IntervalVector& box, IntervalVector& corner, 
+	const IntervalVector& dg_box, const Interval& g_corner, int c) {
 	Vector a(n); // vector of coefficients
 
 	if (dg_box.is_unbounded()) {
@@ -304,7 +312,10 @@ int LinearizerXTaylor::linearize_leq_corner(const IntervalVector& box, IntervalV
 	double b = mode==RESTRICT? rhs.lb() - lp_solver->tolerance() : rhs.ub();
 
 	// may throw Unsatisfiability
-	return check_and_add_constraint(box,a,b);
+	int check= check_and_add_constraint(box,a,b);
+	
+	if (check==1) b_ctrs.push_back(b_constraint(inf,a,c));
+	return check;
 }
 
 int LinearizerXTaylor::check_and_add_constraint(const IntervalVector& box, const Vector& a, double b) {

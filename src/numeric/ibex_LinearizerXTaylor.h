@@ -16,8 +16,25 @@
 #include "ibex_Linearizer.h"
 #include "ibex_System.h"
 #include "ibex_BxpSystemCache.h"
+#include <list>
 
 namespace ibex {
+
+
+class b_constraint {
+	public:
+		// The constraint is a linear constraint
+		bool* inf;
+		Vector a;
+		int c; // constraint number
+		
+		b_constraint(bool* _inf, Vector _a, int _c) : a(_a), c(_c) { 
+			inf = new bool[a.size()];
+			for (int i=0; i<a.size(); i++){
+				inf[i] = _inf[i];
+			}
+		}
+};
 
 /**
  * \ingroup numeric
@@ -98,6 +115,8 @@ public:
 	 */
 	virtual void add_property(const IntervalVector& init_box, BoxProperties& prop);
 
+	std::list <b_constraint> b_ctrs; // list of linear constraints
+
 private:
 
 	/**
@@ -133,7 +152,7 @@ private:
 	 * \param dg_box:   dg([box])
 	 * \param g_corner: g(corner)
 	 */
-	int linearize_leq_corner(const IntervalVector& box, IntervalVector& corner, const IntervalVector& dg_box, const Interval& g_corner);
+	int linearize_leq_corner(const IntervalVector& box, IntervalVector& corner, const IntervalVector& dg_box, const Interval& g_corner, int c=-1);
 
 	/**
 	 * \brief Add the constraint ax<=b in the LP solver.

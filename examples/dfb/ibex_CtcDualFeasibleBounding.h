@@ -85,6 +85,7 @@ public:
     bool upper_contract;
     bool contract_all;
     int k;
+    int iters;
 
     Interval virtual_x;
     list<double> perc_imprs; //porcentajes de mejora
