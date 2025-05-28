@@ -130,24 +130,51 @@ Linearizer* Optimizer04Config::get_linear_relax() {
 	return lr;
 }
 
+double Optimizer04Config::hc4_ratio_propag=0.01;
+double Optimizer04Config::hc44cid_propag=0.1;
+double Optimizer04Config::hc44xn_propag=0.01;
+double Optimizer04Config::hc43bcidhc4_propag=0.1;
+double Optimizer04Config::poly_hc4_propag=0.1;
+double Optimizer04Config::all_propag=0.1;
+
+double Optimizer04Config::ratio_bisect=0.5;
+
+//3bcid & acid
+double Optimizer04Config::s3b=10;
+double Optimizer04Config::scid=1;
+double Optimizer04Config::var_min_width=1e-11;
+//only acid
+bool Optimizer04Config::optim=true;
+double Optimizer04Config::ct_ratio=0.002;
+
+//lr=xn
+int  Optimizer04Config::poly_maxiter=100;
+double  Optimizer04Config::poly_eps=1e-9;
+double Optimizer04Config::relax_ratio=0.2;
+
+//loupfinder
+bool Optimizer04Config::in_hc4=true;
+
+
+
 Ctc& Optimizer04Config::get_ctc() {
 
 	// the first contractor called
-	CtcHC4* hc4 = &rec(new CtcHC4(ext_sys->ctrs,0.01,true));
+	CtcHC4* hc4 = &rec(new CtcHC4(ext_sys->ctrs,Optimizer04Config::hc4_ratio_propag,true));
 	// hc4 inside acid and 3bcid : incremental propagation beginning with the shaved variable
-	CtcHC4* hc44cid = &rec(new CtcHC4(ext_sys->ctrs,0.1,true));
+	CtcHC4* hc44cid = &rec(new CtcHC4(ext_sys->ctrs,Optimizer04Config::hc44cid_propag,true));
 	// hc4 inside xnewton loop
-	CtcHC4* hc44xn = &rec(new CtcHC4(ext_sys->ctrs,0.01,false));
+	CtcHC4* hc44xn = &rec(new CtcHC4(ext_sys->ctrs,Optimizer04Config::hc44xn_propag,false));
 
 	// The 3BCID contractor on all variables (component of the contractor when filtering == "3bcidhc4")
-	Ctc3BCid* c3bcidhc4 = &rec(new Ctc3BCid(*hc44cid));
+	Ctc3BCid* c3bcidhc4 = &rec(new Ctc3BCid(*hc44cid, Optimizer04Config::s3b, Optimizer04Config::scid, -1, Optimizer04Config::var_min_width));
 	// hc4 followed by 3bcidhc4 : the actual contractor used when filtering == "3bcidhc4"
-	CtcCompo* hc43bcidhc4 = &rec(new CtcCompo(*hc4, *c3bcidhc4));
+	CtcCompo* hc43bcidhc4 = &rec(new CtcCompo(*hc4, *c3bcidhc4, false, Optimizer04Config::hc43bcidhc4_propag));
 
 	// The ACID contractor (component of the contractor  when filtering == "acidhc4")
-	CtcAcid* acidhc4 = &rec(new CtcAcid(*ext_sys, *hc44cid, true));
+	CtcAcid* acidhc4 = &rec(new CtcAcid(*ext_sys, *hc44cid, Optimizer04Config::optim, Optimizer04Config::s3b, Optimizer04Config::scid, Optimizer04Config::var_min_width, Optimizer04Config::ct_ratio));
 	// hc4 followed by acidhc4 : the actual contractor used when filtering == "acidhc4"
-	CtcCompo* hc4acidhc4 = &rec(new CtcCompo(*hc4, *acidhc4));
+	CtcCompo* hc4acidhc4 = &rec(new CtcCompo(*hc4, *acidhc4, false, Optimizer04Config::hc43bcidhc4_propag));
 
 	Ctc* ctc;
 	if (filtering == "hc4")
@@ -167,9 +194,9 @@ Ctc& Optimizer04Config::get_ctc() {
 	CtcPolytopeHull* cxn_poly;
 	CtcCompo* cxn_compo;
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn") {
-		cxn_poly = &rec(new CtcPolytopeHull(*lr));
-		cxn_compo = &rec(new CtcCompo(*cxn_poly, *hc44xn));
-	        if (sys->nb_ctr==0)
+		cxn_poly = &rec(new CtcPolytopeHull(*lr, Optimizer04Config::poly_maxiter, 100, Optimizer04Config::poly_eps));
+		cxn_compo = &rec(new CtcCompo(*cxn_poly, *hc44xn, false, Optimizer04Config::poly_hc4_propag));
+	    if (sys->nb_ctr==0)
 		  cxn = cxn_poly;
 		else
 		  cxn = &rec(new CtcFixPoint (*cxn_compo, relax_ratio));
@@ -177,7 +204,7 @@ Ctc& Optimizer04Config::get_ctc() {
 	//  the actual contractor  ctc + linear relaxation
 	Ctc* ctcxn;
 	if (linearrelaxation=="compo" || linearrelaxation=="art"|| linearrelaxation=="xn")
-		ctcxn = &rec(new CtcCompo  (*ctc, *cxn));
+		ctcxn = &rec(new CtcCompo  (*ctc, *cxn, false, Optimizer04Config::all_propag));
 	else
 		ctcxn = ctc;
 	Ctc* ctckkt;
@@ -207,30 +234,30 @@ Bsc& Optimizer04Config::get_bsc() {
 
 
 	if (bisection=="roundrobin")
-		bs = &rec(new RoundRobin (prec,0.5));
+		bs = &rec(new RoundRobin (prec,Optimizer04Config::ratio_bisect));
 	else if (bisection== "largestfirst")
-                bs = &rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5));
+                bs = &rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect));
 	else if (bisection== "largestfirstnoobj")
-                bs = &rec(new OptimLargestFirst(ext_sys->goal_var(),false,prec,0.5));
+                bs = &rec(new OptimLargestFirst(ext_sys->goal_var(),false,prec,Optimizer04Config::ratio_bisect));
 	else if (bisection=="smearsum")
 		bs = &rec(new SmearSum(*ext_sys,prec,
-				       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+				       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect))));
 	else if (bisection=="smearmax")
 		bs = &rec(new SmearMax(*ext_sys,prec,
-				       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+				       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect))));
 	else if (bisection=="smearsumrel")
                 bs = &rec(new SmearSumRelative(*ext_sys,prec,
-					       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+					       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect))));
 	else if (bisection=="smearmaxrel")
 		bs = &rec(new SmearMaxRelative(*ext_sys,prec,
-					       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+					       rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect))));
 	else if  (bisection=="lsmear")
                 bs = &rec (new LSmear(*ext_sys,prec,
-				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5)),
+				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect)),
 				      LSMEAR));
 	else if (bisection=="lsmearmg")
 	        bs = &rec (new LSmear(*ext_sys,prec,
-				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,Optimizer04Config::ratio_bisect))));
 	else {
 		stringstream ss;
 		ss << "[optimizer04] " << bisection << " is not an implemented  bisection mode ";
@@ -242,7 +269,7 @@ Bsc& Optimizer04Config::get_bsc() {
 
 
 LoupFinder& Optimizer04Config::get_loup_finder() {
-	return rec(new LoupFinderDefault(*norm_sys, true));
+	return rec(new LoupFinderDefault(*norm_sys, Optimizer04Config::in_hc4));
 	//LoupFinderDefault loupfinder (norm_sys,false);
 }
 

@@ -22,10 +22,33 @@ namespace ibex {
 class Optimizer04Config : public OptimizerConfig, protected Memory {
 public:
 
+	//propags
+	static double hc4_ratio_propag;
+	static double hc44cid_propag;
+	static double hc44xn_propag;
+	static double hc43bcidhc4_propag;
+	static double poly_hc4_propag;
+	static double all_propag;
+
+	static double ratio_bisect;
+
+	//3bcid
+	static double s3b;
+	static double scid;
+	static double var_min_width;
+	//only acid
+	static bool optim;
+	static double ct_ratio;
+
 	Optimizer04Config(int argc, char** argv);
 
-	/** Fix-point ratio for contraction based on linear relaxation. */
-	static constexpr double relax_ratio = 0.2;
+	//lr=xn
+	static double relax_ratio;
+	static int poly_maxiter;
+	static double poly_eps;
+
+	//finder
+	static bool in_hc4;
 
 	/** The system */
 	System *sys;
