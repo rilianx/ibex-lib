@@ -63,7 +63,7 @@ Makefile
 /ibex.pc
 /interval_lib_wrapper/
 /lp_lib_wrapper/
-/src/
+# /src/
 /tests/
 
 src/ibex.h
