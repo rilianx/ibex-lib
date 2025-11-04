@@ -11,9 +11,9 @@ CtcDFBPropag::CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio, bo
 mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1),
  ratio(ratio),  g(sys.nb_ctr, sys.nb_var), stand_alone(stand_alone), sys(sys) { 
 
-    cout << "[CtcDFBPropag] Initializing with LPSolver in Certified mode" << endl;
+   // cout << "[CtcDFBPropag] Initializing with LPSolver in Certified mode" << endl;
 
-    cout << sys << endl;
+    //cout << sys << endl;
     if(!only_hc4){
         for (int i=0; i<lr.nb_var(); i++){
             // Crear punteros dinámicos y almacenarlos en el vector
@@ -35,8 +35,8 @@ mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1),
         }
     }
 
-    cout << "[CtcDFBPropag] Initialization complete. dfb_ctc.size()=" << dfb_ctc.size()
-            << ", hc4_ctc.size()=" << hc4_ctc.size() << endl;
+  //  cout << "[CtcDFBPropag] Initialization complete. dfb_ctc.size()=" << dfb_ctc.size()
+   //         << ", hc4_ctc.size()=" << hc4_ctc.size() << endl;
 }
 
 CtcDFBPropag::~CtcDFBPropag() {
@@ -77,9 +77,9 @@ double CtcDFBPropag::compute_rhs_ub(b_constraint& b_ctr, const IntervalVector& b
 }
 
 void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, IntervalVector& x){
-    cout << "[CtcDFBPropag] Linearizing box: " << box << endl;
+//    cout << "[CtcDFBPropag] Linearizing box: " << box << endl;
 
-    ContractContext context(box);
+    ContractContext context(box);   
     int m = lr.linearize(box, mylineardummysolver, context.prop);
 
 
@@ -93,8 +93,9 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
         adj_b[c].push_back(make_pair(nb_var+k, &b_ctr));
         k++;
     }
+    
 
-    cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
+  //  cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
 
     Matrix rows = mylineardummysolver.rows();
     IntervalVector lhs_rhs = mylineardummysolver.lhs_rhs();
@@ -114,7 +115,7 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
             x[nb_var+i] = Interval(-1e50, x[nb_var+i].ub());
         if (x[nb_var+i].ub() > 1e50)
             x[nb_var+i] = Interval(x[nb_var+i].lb(), 1e50);
-        cout << "b[" << i << "]=" << x[nb_var+i] << endl;
+  //      cout << "b[" << i << "]=" << x[nb_var+i] << endl;
     }
 
     //coefficients
@@ -126,6 +127,7 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
 
 
     cout << "[CtcDFBPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
+    cout << "[CtcDFBPropag] A[0][0] Linearized =" << A[0][0] << endl;
 }
 
 
@@ -142,7 +144,7 @@ void CtcDFBPropag::init_dfb_contractors(IntervalMatrix& A, IntervalVector& x_ref
         refbox.resize(x_ref.size());
         refbox=x_ref;
 
-        cout << "[CtcDFBPropag] Initializing DFB contractors with refA" << endl;
+    //    cout << "[CtcDFBPropag] Initializing DFB contractors with refA" << endl;
         for (auto* dfb : dfb_ctc) dfb->init(A, x_ref);
     }else
         refA.resize(1,1);
@@ -153,21 +155,22 @@ void CtcDFBPropag::init_dfb_contractors(IntervalMatrix& A, IntervalVector& x_ref
  * \brief Contract a box.
  */
 bool CtcDFBPropag::b_contraction = false;
-void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){    
+
+void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
     adj_b.clear();
     if(stand_alone){ //when the contractor is applied stand_alone
         //matrix initialization (dfb contractors)
         update_ref(box);
 
         if (refA.nb_rows() > 1){
-            cout << "[CtcDFBPropag] Initializing DFB contractors with refA" << endl;
+    //        cout << "[CtcDFBPropag] Initializing DFB contractors with refA" << endl;
             for (auto* dfb : dfb_ctc) dfb->init(refA, refbox);
             
         }
     }
 
     if (refA.nb_rows() <=1 ) return;
-    cout << "[CtcDFBPropag] Contracting box: " << box << endl;
+  //  cout << "[CtcDFBPropag] Contracting box: " << box << endl;
 
     //refbox contains variables x and b
 
@@ -215,12 +218,12 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
         if(CtcDFB* ctc=dynamic_cast<CtcDFB*>(std::get<2>(pq.top()))){
             pq.pop();
             dfb_ctrs.erase({ctc->k, ctc->upper_contract});
-            cout << "ctc->k=" << ctc->k << endl;
+    //        cout << "ctc->k=" << ctc->k << endl;
             double error = ctc->get_Aerror();
             if (error > 1e-4) {
-                cout << "Aerror > 1e-4, regenerating A" << endl;
+     //           cout << "Aerror > 1e-4, regenerating A" << endl;
                 ctc->regenerateA(refA);
-                cout << "A error after regeneration: " << ctc->get_Aerror() << endl;
+    //            cout << "A error after regeneration: " << ctc->get_Aerror() << endl;
             }
             old_box = box;
             for (int i = nb_var; i < refbox.size(); ++i){
@@ -229,13 +232,13 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
 
             ctc->contract(box);
             count_dfb+=ctc->iters;
-            cout << ctc->get_virtual_bound() << endl;
+        //    cout << ctc->get_virtual_bound() << endl;
             
            // cout << ctc->get_perc_impr(3) << endl;
 
             if (box.is_empty()) break;
 
-            cout << "new box=" << box << endl;
+            //cout << "new box=" << box << endl;
             if (old_box[ctc->k].ratiodelta(box[ctc->k])>=ratio){
                 history.push_back(make_pair(count_dfb, box.perimeter()));
                 set<int> ctrs=g.output_ctrs(ctc->k);
@@ -292,7 +295,7 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
                     for(int j=0; j<dfb_ctc.size(); j++){
                         double impact = dfb_ctc[j]->real_impact(box[dfb_ctc[j]->k], v, 0.01);
                         if (impact > 0.01 && dfb_ctrs.find({dfb_ctc[j]->k, dfb_ctc[j]->upper_contract})==dfb_ctrs.end()){
-                            cout << "impact:"<< impact << ", k=" << dfb_ctc[j]->k << endl;
+                        //    cout << "impact:"<< impact << ", k=" << dfb_ctc[j]->k << endl;
                             pq.push({1.0, pq_order++, dfb_ctc[j]});
                             dfb_ctrs.insert({dfb_ctc[j]->k, dfb_ctc[j]->upper_contract});
                             //dfb_ctc[k]->state = CtcDFB::CONTRACTING;
@@ -305,7 +308,7 @@ void CtcDFBPropag::contract(IntervalVector& box, ContractContext& context){
         }
 
     }
-    cout << "count_dfb=" << count_dfb << " count_hc4=" << count_hc4 << endl;
+   // cout << "count_dfb=" << count_dfb << " count_hc4=" << count_hc4 << endl;
 
 
     //cout << "[CtcDFBPropag] Contracting complete, final box: " << box << endl;

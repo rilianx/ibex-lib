@@ -12,7 +12,7 @@ void CtcDFB::init(IntervalMatrix& A, IntervalVector& x_ref){
     this->A.resize(A.nb_rows(), A.nb_cols());
     this->A = A;
     this->x_ref.resize(x_ref.size());
-    this->x_ref = x_ref;
+    this->x_ref = IntervalVector(x_ref);
     state = INITIAL;
 
     if (upper_contract) 
@@ -143,15 +143,17 @@ void CtcDFB::contract(IntervalVector& x_new) {
     if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);        
 
     iters = 0;
+   // cout << "x_new before DFB: " << x_new << endl;
 
     while (max_iters == -1 || iters < max_iters) {
         tie(j, delta, direction) = largestImpact(A, x_new, A[0]);
        
-        if (j == -1) {
+        if (j == -1 || delta == Interval(0)) {
             if (upper_contract) x_new[k] = -x_new[k]; // changeSigns(A, x_new);  
-            state= FINAL;
+            state = FINAL;
 
             x_new.resize(nb_var); //original dimension
+            cout << iters << endl;
             return;
         } 
 
@@ -207,7 +209,8 @@ std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
             //cout << "[CtcDFB] Calculating impacts. A dimensions: " << A.nb_rows() << "x" << A.nb_cols()
             //     << ", x_new size: " << x_new.size() << ", gamma size: " << gamma.size() << endl;
     
-            assert(A.nb_cols() == x_new.size() && "Matrix column count must match x_new size");
+  //  cout << "x_new" << x_new << endl;
+    assert(A.nb_cols() == x_new.size() && "Matrix column count must match x_new size");
             
     int m = A.nb_rows();
     int n = A.nb_cols();
@@ -220,23 +223,29 @@ std::pair<IntervalVector, IntervalVector> CtcDFB::calculateImpacts(
         IntervalVector x_prime_decr = IntervalVector(n, Interval(0));
 
         for (int i = 0; i < n; ++i) {
-            Interval signOfGammai = sign(gamma[i]);
-            if (signOfGammai == Interval(1)) {
+            //Interval signOfGammai = sign(gamma[i]);
+       //     cout << "gamma[" << i << "] = " << gamma[i] << endl;
+            if (gamma[i].lb() >= 0.00001) {
                 x_prime_incr[i] = Interval(x_new[i].ub());
                 x_prime_decr[i] = Interval(x_new[i].ub());
-            } else if (signOfGammai == Interval(-1)) {
+            } else if (gamma[i].ub() <= -0.00001) {
                 x_prime_incr[i] = Interval(x_new[i].lb());
                 x_prime_decr[i] = Interval(x_new[i].lb());
             }
             else{
-                Interval signOfAji = sign(A[j][i]);
-                if (signOfAji == Interval(1)){
+                //Interval signOfAji = sign(A[j][i]);
+       //         cout << "A[" << j << "][" << i << "] = " << A[j][i] << endl;
+                if (A[j][i].lb() >= 0.00001) {
                     x_prime_incr[i] = Interval(x_new[i].ub());
                     x_prime_decr[i] = Interval(x_new[i].lb());
-                } else if (signOfAji == Interval(-1)) {
+     //               cout << "case 1" << endl;
+                } else if (A[j][i].ub() <= -0.00001) {
                     x_prime_incr[i] = Interval(x_new[i].lb());
                     x_prime_decr[i] = Interval(x_new[i].ub());
+       //             cout << "case 2" << endl;
                 }
+         //       cout << "x_prime_incr[" << i << "] = " << x_prime_incr[i] << endl;
+           //     cout << "x_prime_decr[" << i << "] = " << x_prime_decr[i] << endl;
             }
         }
 
@@ -264,6 +273,7 @@ std::tuple<int, Interval, Interval> CtcDFB::largestImpact(
     int j;
     Interval direction;
 
+  //  cout << "delta_incr: " << delta_incr << " (j=" << j_incr << "), delta_decr: " 
     if (delta_incr.lb() > delta_decr.lb()) {
         delta = delta_incr;
         j = j_incr;
@@ -274,8 +284,10 @@ std::tuple<int, Interval, Interval> CtcDFB::largestImpact(
         direction = Interval(-1);
     }
 
-    Interval signOfDelta = sign(delta);
-    if (signOfDelta != Interval(1)) {
+    //Interval signOfDelta = sign(delta);
+    
+    
+    if (delta.ub() <= 0.000001) {
         j = -1;
     }
 
@@ -291,8 +303,9 @@ std::pair<Interval, int> CtcDFB::calculateAlpha(
     for (int i = 0; i < n; ++i) {
         if (Aj[i].lb() != 0 && Aj[i].ub() != 0) {
             Interval alpha = (gamma[i] / Aj[i]) * direction;
-            Interval signOfAlpha = sign(alpha);
-            if (signOfAlpha == Interval(-1)) {
+    //        cout << "Alpha candidate for i=" << i << ": " << alpha << endl;
+            //Interval signOfAlpha = sign(alpha);
+            if (alpha.ub() <= -0.00001) {
                 if (std::abs(alpha.lb()) < std::abs(min_alpha.lb())) {
                     min_alpha = alpha;
                     min_index = i;
@@ -300,7 +313,7 @@ std::pair<Interval, int> CtcDFB::calculateAlpha(
             }
         }
     }
-
+  
     min_alpha = min_alpha * direction * Interval(-1.0);
     return {min_alpha, min_index};
 }
@@ -383,11 +396,11 @@ Interval CtcDFB::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
 //        throw std::invalid_argument("Gamma[k] is not 1.");
 //    }
 
-    Interval tmp = gamma[k];
+    Interval tmp = Interval(gamma[k]);
     gamma[k] = Interval(0);
 
-    Interval xContract = -(gamma * x);
-    gamma[k] = tmp;
+    Interval xContract = -(IntervalVector(gamma) * IntervalVector(x));
+    gamma[k] = Interval(tmp);
     //cout << -gamma << "*" << x << " = " << xContract << endl;
     if (gamma[k] != Interval(1))
         xContract = xContract / gamma[k];
@@ -410,13 +423,13 @@ Interval CtcDFB::gaussSeidel(IntervalVector& x, int k, IntervalVector& gamma){
 
 // Encuentra el índice del valor máximo en un vector
 std::pair<Interval, int> CtcDFB::getMaxValue(const IntervalVector& vector) {
-    Interval max_value = vector[0];
+    Interval max_value = Interval(vector[0]);
     int max_index = 0;
     int n = vector.size();
 
     for (int i = 1; i < n; ++i) {
         if (vector[i].lb() > max_value.lb()) {
-            max_value = vector[i];
+            max_value = Interval(vector[i]);
             max_index = i;
         }
     }

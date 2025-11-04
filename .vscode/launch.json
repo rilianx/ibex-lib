@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch example_dfb (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+    "program": "${workspaceFolder}/examples/dfb/example_dfb",
+  "args": ["${input:cmdLine}"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/examples/dfb",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "build-example-dfb",
+      "setupCommands": [
+        {
+          "description": "Enable pretty-printing for gdb",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        }
+      ]
+    },
+    {
+      "name": "Launch ibexopt (gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+    "program": "${workspaceFolder}/examples/dfb/ibexopt",
+  "args": ["${input:cmdLine}"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/examples/dfb",
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "miDebuggerPath": "/usr/bin/gdb",
+      "preLaunchTask": "build-example-dfb"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "cmdLine",
+      "type": "promptString",
+      "description": "Cadena única a pasar (ej: 'examples/dfb/ex_oct25_paper.bch')",
+      "default": "examples/dfb/ex_oct25_paper.bch"
+    }
+  ]
+}
