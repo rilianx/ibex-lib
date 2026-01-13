@@ -8,7 +8,7 @@ using namespace ibex;
 
 
 CtcDFBPropag::CtcDFBPropag(ExtendedSystem& sys, Linearizer& lr, double ratio, bool stand_alone, bool only_hc4, bool only_dfb): Ctc(lr.nb_var()), lr(lr), 
-mylineardummysolver(nb_var, LPSolver::Mode::Certified), refbox(1), refA(1,1),
+mylineardummysolver(nb_var, LPSolver::Mode::Certified, LPSolver::default_tolerance, LPSolver::default_timeout, LPSolver::default_max_iter), refbox(1), refA(1,1),
  ratio(ratio),  g(sys.nb_ctr, sys.nb_var), stand_alone(stand_alone), sys(sys) { 
 
    // cout << "[CtcDFBPropag] Initializing with LPSolver in Certified mode" << endl;
@@ -98,7 +98,9 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
   //  cout << "[CtcDFBPropag] Linearizer returned m=" << m << endl;
 
     Matrix rows = mylineardummysolver.rows();
+    cout << rows << endl;
     IntervalVector lhs_rhs = mylineardummysolver.lhs_rhs();
+    cout << lhs_rhs << endl;
 
     //IntervalMatrix A: m*n (n=box.size()+m)
     A.resize(m, nb_var+m);
@@ -127,7 +129,7 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
 
 
     cout << "[CtcDFBPropag] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
-    cout << "[CtcDFBPropag] A[0][0] Linearized =" << A[0][0] << endl;
+   // cout << "[CtcDFBPropag] A Linearized =" << A << endl;
 }
 
 

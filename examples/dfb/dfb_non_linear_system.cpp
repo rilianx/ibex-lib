@@ -109,8 +109,7 @@ int main(int argc, char** argv) {
     CtcDFBPropag dfb2(sys2_dfb2, lr_dfb2, 0.01); //DFB2 standalone
 
 
-    CtcPolytopeHull ctc_ph(lr_ph);
-    ctc_ph.n_soplex_iterations = 0;
+
 
     CtcPolytopeHull ctc_it_ph(lr_it_ph);
 
@@ -146,7 +145,7 @@ int main(int argc, char** argv) {
 
 
 
-    ctc_it_ph.n_soplex_iterations = 0;
+  /*  ctc_it_ph.n_soplex_iterations = 0;
     //cout << "Using Iterated PolyHull (fixpoint)" << endl; 
     double old_per = sys2_it_ph.box.perimeter();
     ctc_it_ph.contract(sys2_it_ph.box); //linearize and contract
@@ -186,13 +185,17 @@ int main(int argc, char** argv) {
 
     acid_ph_dfb.contract(sys2_acid_ph.box); 
     ctc_acid_ph.optimizer(sys2_acid_ph.box); 
+*/
+    CtcDFBPropag dfb_only(sys2_dfb_only, lr_dfb_only, 0.01, true ,false, true);
 
-   CtcDFBPropag dfb_only(sys2_dfb_only, lr_dfb_only, 0.01); //DFB_only standalone
-   dfb_only.contract(sys2_dfb_only.box);
 
    enableCout();
+   dfb_only.contract(sys2_dfb_only.box);
 
-   ctc_ph.contract(sys2_ph.box); //linearize and contract
+    CtcPolytopeHull ctc_ph(lr_ph);
+    ctc_ph.n_soplex_iterations = 0;
+    ctc_ph.contract(sys2_ph.box); //linearize and contract
+
 
    // std::cout << "\n xFinal HC4 = \n" << sys2_hc4.box << std::endl;
    // std::cout << "\n xFinal DFB + HC4= \n" << sys2_dfb_hc4.box << std::endl;
@@ -201,8 +204,10 @@ int main(int argc, char** argv) {
     //std::cout << "\n xFinal DFB2 = \n" << sys2_dfb2.box << std::endl;
 
     std::cout << "\n xFinal DFB_ONLY = \n" << sys2_dfb_only.box << std::endl;
+   cout << "ITERS DFB ONLY: " << dfb_only.count_dfb << endl;
 
     std::cout << "\nxFinal PH = \n" << sys2_ph.box << std::endl;
+   cout << "ITERS PH ONLY: " << ctc_ph.n_soplex_iterations << endl;
 
     // std::cout << "\nxFinal IT_PH = \n" << sys2_it_ph.box << std::endl;
     // std::cout << "\nxFinal IT_PH2 = \n" << sys2_it_ph2.box << std::endl;
