@@ -1,9 +1,16 @@
 #include <random>
 #include <cstdlib>
 #include <vector> 
-#include "ibex.h"
 #include "ibex_CtcDualFeasibleBounding.h"
-#include "TestingDualFeasibleBounding.h"
+#include "ibex.h"
+#include "ibex_CtcDFBPropag.h"
+
+using namespace std;
+using namespace ibex;
+
+std::streambuf* cout_backup = nullptr;
+std::ofstream null_stream;
+
 
 void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
     int m = A.nb_rows();
@@ -12,14 +19,14 @@ void test_case(IntervalMatrix& A, IntervalVector& x, bool visualize_iters){
     std::vector<int> iters;
 
     for (int k = 0; k < n; ++k) {
-        CtcDFB DFB(n, k);
-        CtcDFB DFB_upper(n, k, true);
-
-        DFB.init(IntervalMatrix(A));
-        DFB.contract(x);
-
-        DFB_upper.init(IntervalMatrix(A));
-        DFB_upper.contract(x);
+        CtcDFB dfbContractor = CtcDFB(n, k, false, false, 1);
+        CtcDFB dfbContractorUB = CtcDFB(n, k, true, false, 1);
+        dfbContractor.init(A, x);
+        dfbContractorUB.init(A, x);
+        while (dfbContractor.state != CtcDFB::FINAL || dfbContractorUB.state != CtcDFB::FINAL) {
+            dfbContractor.contract(x);
+            dfbContractorUB.contract(x);
+        }
     }
     
     
@@ -43,7 +50,7 @@ void standar_test(){
     A[0][1] = Interval(6.95);
     A[0][2] = Interval(5.28);
     A[0][3] = Interval(-4.90);
-    A[0][4] = Interval(-0.08);
+    A[0][4] = Interval(-0.09);
 
     A[1][0] = Interval(-1.01);
     A[1][1] = Interval(3.03);
@@ -60,9 +67,9 @@ void standar_test(){
     // Inicializar el vector x con intervalos
     IntervalVector x = IntervalVector(5, Interval(0));
     x[0] = Interval(-1.565, 2.880);
-    x[1] = Interval(-0.478, 4.463);
+    x[1] = Interval(0.478, 4.463);
     x[2] = Interval(-1.038, 6.032);
-    x[3] = Interval(-0.048, 3.615);
+    x[3] = Interval(0.048, 3.615);
     x[4] = Interval(-1.076, 2.647);
 
     test_case(A, x, true);
@@ -884,3 +891,31 @@ void special_test(){
     cout << "Average Iters A PROCESSED " << avgItersAProcessed << endl;
     cout << "Average Total Error " << avgError << endl;
 }*/
+
+
+
+
+int main(int argc, char** argv) {
+    // Caso de prueba: STANDAR TEST 1
+    standar_test();
+
+    // Caso de prueba: STANDAR TEST 2
+    //standar_test2();
+
+    // Caso de prueba: NO SOLUTION TEST 1
+  //  no_solution_test();
+
+    // Caso de prueba: NO SOLUTION TEST 2
+    //no_solution_test2();
+
+    // Caso de prueba: UNBOUNDED TEST
+    //unbounded_test();
+
+    // Caso de prueba: ILL-CONDITIONED-MATRIX-TEST
+    //ill_conditioned_matrix_test();
+
+    // Caso de prueba: 15X20 DIMENSIONS TEST
+    //dimensions_15x20_test();
+
+    return 0;
+}

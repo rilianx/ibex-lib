@@ -20,7 +20,8 @@ INCLUDES = \
   -I../../interval_lib_wrapper/gaol/gaol-4.2.0-build/gaol \
   -I../../interval_lib_wrapper/gaol/mathlib-2.1.0/src \
   -I../../interval_lib_wrapper/gaol/mathlib-2.1.0-build/src \
-  -I../../lp_lib_wrapper/soplex/soplex-4.0.2/src
+  -I../../lp_lib_wrapper/soplex/soplex-4.0.2/src 
+
 
 LDFLAGS = \
   -L../../src \
@@ -32,8 +33,7 @@ LDLIBS = -libex -lsoplex -lgaol -lgdtoa -lultim
 
 # Fuentes por ejecutable
 ibexopt_SRCS = ibexopt.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp
-example_dfb_SRCS = example_dfb.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp
-
+example_dfb_SRCS = dfb_non_linear_system.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp ../../src/contractor/ibex_CtcPolytopeHull.cpp
 # Todos los .cpp en un set único
 SRCS = $(ibexopt_SRCS) $(example_dfb_SRCS)
 OBJS = $(SRCS:.cpp=.o)
