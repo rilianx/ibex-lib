@@ -65,6 +65,7 @@ Makefile
 /lp_lib_wrapper/
 # /src/
 /tests/
+.vscode/settings.json
 
 src/ibex.h
 src/ibex_Setting.h
