@@ -1,0 +1,15 @@
+variables
+
+x1 in [-oo, oo];
+x2 in [-oo, oo];
+x3 in [-oo, oo];
+
+minimize x3;
+
+constraints
+
+(((50*((x1-x2^4)+-1)^2)+(3*x1^2))-x3)<=0;
+
+(((50*((x1-x2^4)+1)^2)+(3*x1^2))-x3)<=0;
+
+end

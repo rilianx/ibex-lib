@@ -1,0 +1,17 @@
+instance,set,rule,relax,status,nodes,time,loup,uplo,timeout
+3pk-borne.bch,coconutbenchmark-library2,lsmear,affine,timeout,186602,600.0034110000003,4815.14011242407,-98477.00339661831,600.0
+3pk-borne.bch,coconutbenchmark-library2,lsmear-box,affine,timeout,185658,600.0035980000002,4815.14011242407,-98607.8462474523,600.0
+3pk-borne.bch,coconutbenchmark-library2,smearsumrel,affine,timeout,192038,600.0064810000002,4815.14011242407,-97798.62985621962,600.0
+3pk-borne.bch,coconutbenchmark-library2,smearsum,affine,timeout,192720,600.0001450000002,4815.14011242407,-97716.51018308348,600.0
+3pk-borne.bch,coconutbenchmark-library2,smearmax,affine,timeout,192838,600.0013900000002,2602.5509329398355,-97701.2543791695,600.0
+3pk-borne.bch,coconutbenchmark-library2,smearmaxrel,affine,timeout,191368,600.0063140000002,4815.14011242407,-97857.19780654626,600.0
+3pk-borne.bch,coconutbenchmark-library2,largestfirst,affine,timeout,271288,600.0007650000002,12042.901982205569,-2221143.036823218,600.0
+3pk-borne.bch,coconutbenchmark-library2,roundrobin,affine,timeout,250822,600.0023230000002,29062.89673028221,-1071279.650029461,600.0
+3pk.bch,coconutbenchmark-library2,lsmear,affine,unbounded,62,0.017703999999999998,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,lsmear-box,affine,unbounded,62,0.017673999999999912,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,smearsumrel,affine,unbounded,62,0.017741000000000007,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,smearsum,affine,unbounded,62,0.017676000000000025,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,smearmax,affine,unbounded,62,0.01762400000000003,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,smearmaxrel,affine,unbounded,62,0.017681000000000002,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,largestfirst,affine,unbounded,62,0.016324000000000005,5.270870301420892e+23,-inf,600.0
+3pk.bch,coconutbenchmark-library2,roundrobin,affine,unbounded,62,0.01623800000000003,5.270870301420892e+23,-inf,600.0
