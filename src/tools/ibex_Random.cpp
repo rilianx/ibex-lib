@@ -64,6 +64,18 @@ uint32_t RNG::y = 362436069;
 uint32_t RNG::z = 521288629;
 uint32_t RNG::seed = 0;
 
+RNG::State RNG::get_state()
+{
+	RNG::State s;
+	s.x = x; s.y = y; s.z = z; s.seed = seed;
+	return s;
+}
+
+void RNG::set_state(const RNG::State& s)
+{
+	x = s.x; y = s.y; z = s.z; seed = s.seed;
+}
+
 void RNG::srand()
 {
 	/** This function sets the seed for random number generation \c

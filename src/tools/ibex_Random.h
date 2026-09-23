@@ -88,6 +88,23 @@ namespace ibex {
 		 */
         static double normal_rand( double mean=0 , double var=1 ) ;
 
+		/** \brief The internal state of the generator.
+		 *
+		 * srand(s) repositions the stream by drawing s numbers, so it costs
+		 * O(s) and cannot be used to resume an arbitrary position. These two
+		 * functions save and restore the state directly, in constant time.
+		 * They are what an operator that needs its own private stream (e.g. a
+		 * speculative exploration that must not disturb the caller) should
+		 * use.
+		 */
+		struct State { uint32_t x,y,z,seed; };
+
+		/** \brief Get the current state of the generator. */
+		static State get_state();
+
+		/** \brief Restore a state returned by #get_state(). */
+		static void set_state(const State& s);
+
 	private:
 		static const uint32_t x0,y0,z0;
 		static uint32_t x,y,z,seed;

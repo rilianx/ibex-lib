@@ -84,6 +84,29 @@ public :
 
 	double nbvar_stat();
 
+	/**
+	 * \brief The adaptive state of the tuning phase.
+	 *
+	 * ACID tunes the number of variables it shaves from one call to the next,
+	 * so two identical calls do not do identical work unless this state is put
+	 * back in between. An operator that explores speculatively and must leave
+	 * the search exactly as it found it (e.g. a look-ahead used to collect
+	 * training data) saves it before and restores it after.
+	 */
+	struct TuningState {
+		int nbcalls;
+		double nbctvar;
+		int nbcidvar;
+		int nbtuning;
+		double nbvarstat;
+	};
+
+	/** \brief Get the tuning state. \see #TuningState. */
+	TuningState get_tuning() const;
+
+	/** \brief Restore a tuning state returned by #get_tuning(). */
+	void set_tuning(const TuningState& s);
+
 	/** the handled constraint system */
 	const System& system;
 
@@ -109,6 +132,26 @@ protected :
 	int nbtuning;
 	bool optim;
 };
+
+/*============================ inline implementation ============================*/
+
+inline CtcAcid::TuningState CtcAcid::get_tuning() const {
+	TuningState s;
+	s.nbcalls   = nbcalls;
+	s.nbctvar   = nbctvar;
+	s.nbcidvar  = nbcidvar;
+	s.nbtuning  = nbtuning;
+	s.nbvarstat = nbvarstat;
+	return s;
+}
+
+inline void CtcAcid::set_tuning(const TuningState& s) {
+	nbcalls   = s.nbcalls;
+	nbctvar   = s.nbctvar;
+	nbcidvar  = s.nbcidvar;
+	nbtuning  = s.nbtuning;
+	nbvarstat = s.nbvarstat;
+}
 
 } // end namespace ibex
 

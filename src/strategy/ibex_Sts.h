@@ -47,6 +47,14 @@ public:
 	 * \brief Report statistics.
 	 */
 	virtual std::string report() const = 0;	
+
+	/**
+	 * \brief Number of times the operator has been called.
+	 *
+	 * Allows a caller to read the counter programmatically instead of parsing
+	 * #report(), e.g. to measure the work done between two instants.
+	 */
+	long int calls() const;
 	
 protected:
 	/* Name of the operator */
@@ -61,6 +69,8 @@ inline Sts::~Sts() { }
 inline Sts::Sts(const std::string& op_name) : op_name(op_name), nb_calls(0) { }
 
 inline void Sts::add_call() { nb_calls++; }
+
+inline long int Sts::calls() const { return nb_calls; }
 
 } /* namespace ibex */
 

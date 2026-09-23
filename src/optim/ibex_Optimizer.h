@@ -410,7 +410,13 @@ protected:
 	 */
 	void read_ext_box(const IntervalVector& ext_box, IntervalVector& box);
 
-private:
+	/*
+	 * Note: the search state below used to be private. It is "protected" so that
+	 * subclasses driving the search by themselves (e.g. for machine-learning data
+	 * collection, see MLNodeServer) can save/restore it around speculative
+	 * explorations. No public API is affected.
+	 */
+protected:
 
 	Optimizer(const Optimizer&); // forbidden
 
