@@ -1,0 +1,19 @@
+Vendored from the Ibex affine-arithmetic plugin.
+
+    repository  https://github.com/ibex-team/ibex-affine
+    commit      e11099be57bf960747571366adf215e59b0b79bd
+    date        2021-06-14
+
+Why vendored rather than built as an external plugin: the plugin's own
+CMakeLists expects an *installed* Ibex and produces a separate libibex-affine.
+We need affine arithmetic inside libibex itself, because ibexopt-ml selects the
+linear relaxation at run time and has to carry both. The sources are used
+verbatim -- they compile unchanged against this tree -- and only the build
+glue (src/affine/CMakeLists.txt) is ours.
+
+To re-sync with upstream:
+
+    python3 src/affine/resync.py            # reports the diff against upstream
+    python3 src/affine/resync.py --apply    # overwrites the vendored sources
+
+Upstream license: see LICENSE in this directory.
