@@ -37,14 +37,21 @@
 .lock-waf*
 __build__
 
-# ibex generated obj
-build
-lib
-include
-share
-bin
+# ibex generated obj -- anchored to the repository root, otherwise "bin" also
+# matches src/bin/ and silently hides sources placed there
+/build
+/lib
+/include
+/share
+/bin
 doc/images/*.png
 doc/_build
+
+# local artifacts, not part of the source
+__pycache__/
+*.zip
+*.pdf
+benchs/optim/*.tar.gz
 
 *~
 
