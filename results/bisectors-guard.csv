@@ -1,0 +1,5 @@
+instance,set,rule,relax,status,nodes,time,loup,uplo,timeout
+3pk-borne.bch,coconutbenchmark-library2,lsmear-guard,xtaylor,timeout,150080,600.0035390000003,4487.346893625451,-103683.3612218104,600.0
+3pk.bch,coconutbenchmark-library2,lsmear-guard,xtaylor,unbounded,62,0.012268999999999974,5.270870301420892e+23,-inf,600.0
+abel.bch,unsolved,lsmear-guard,xtaylor,timeout,116862,600.0119080000002,232160.73958775087,-1075106.2062818292,600.0
+abelbis-1.bch,unsolved,lsmear-guard,xtaylor,timeout,45240,600.0190320000002,273.3858266708776,-177.03439380676554,600.0
