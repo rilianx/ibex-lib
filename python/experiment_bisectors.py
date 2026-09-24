@@ -99,19 +99,30 @@ def read_manifest(d):
 
 
 def parse_rules(specs):
-    """Each spec is a bisector name, or ``label=model.file``."""
+    """Each spec is a bisector name, ``label=model.file``, or
+    ``lsmear-guard:H`` -- the guard with a horizon of H decisions.
+
+    Returns ``(label, bisector, model, extra_args)`` tuples; the label is what
+    the results file records as the rule."""
     rules = []
     for s in specs:
         label, _, model = s.partition("=")
         if model:
             if not os.path.exists(model):
                 raise SystemExit("no model file %r" % model)
-            rules.append((label, None, model))
+            rules.append((label, None, model, ()))
+            continue
+        name, _, horizon = label.partition(":")
+        if name not in BISECTORS:
+            raise SystemExit("unknown bisector %r (one of: %s)"
+                             % (name, ", ".join(BISECTORS)))
+        if horizon:
+            if name != "lsmear-guard" or not horizon.isdigit():
+                raise SystemExit("%r: only lsmear-guard takes a horizon, "
+                                 "as lsmear-guard:N" % label)
+            rules.append((label, name, None, ("--guard-horizon", horizon)))
         else:
-            if label not in BISECTORS:
-                raise SystemExit("unknown bisector %r (one of: %s)"
-                                 % (label, ", ".join(BISECTORS)))
-            rules.append((label, label, None))
+            rules.append((label, name, None, ()))
     return rules
 
 
@@ -266,12 +277,12 @@ def run(args):
     t0 = time.time()
 
     def one(job):
-        fname, (label, bisector, model) = job
+        fname, (label, bisector, model, extra) = job
         path = os.path.join(args.dir, fname)
         try:
             r = solve(path, model=model, bisector=bisector, relax=args.relax,
                       binary=args.binary, timeout=args.timeout,
-                      random_seed=args.random_seed,
+                      random_seed=args.random_seed, extra_args=extra,
                       wall_timeout=args.timeout * args.wall_factor + 60.0)
         except Exception as e:
             # keep why it failed: "error:IbexError" alone cannot be diagnosed

@@ -172,3 +172,10 @@ mismo que ella (PAR2 102.551, 207 resueltas, 75,2 %).
 ```bash
 python3 python/compare_guard.py results/bisectors-guard.csv results/guard-switch.txt
 ```
+
+El horizonte está en el binario: `--bisector lsmear-guard --guard-horizon 10`, o
+`--rules lsmear-guard:10` en `experiment_bisectors.py`. Verificado en 7
+instancias contra la evaluación exacta: las que cambian lo hacen en la decisión
+10 con los mismos nodos que `lsmear-guard` (`ship-1` 256, `ex8_2_4` 808), y las
+falsas alarmas tardías (`ex6_2_8`, `ex6_2_9`, `ex14_1_7`, `bearing`) dan
+exactamente los nodos de `lsmear`.
