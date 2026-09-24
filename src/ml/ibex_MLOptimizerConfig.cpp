@@ -8,6 +8,7 @@
 
 #include "ibex_MLOptimizerConfig.h"
 
+#include "ibex_BscHijackGuard.h"
 #include "ibex_CtcAcid.h"
 #include "ibex_CtcCompo.h"
 #include "ibex_CtcFixPoint.h"
@@ -43,6 +44,7 @@ const Entry TABLE[] = {
 	{ "smearmaxrel",   MLOptimizerConfig::BSC_SMEARMAXREL },
 	{ "largestfirst",  MLOptimizerConfig::BSC_LARGESTFIRST},
 	{ "roundrobin",    MLOptimizerConfig::BSC_ROUNDROBIN  },
+	{ "lsmear-guard",  MLOptimizerConfig::BSC_LSMEAR_GUARD},
 };
 
 const int NB_ENTRIES = sizeof(TABLE)/sizeof(TABLE[0]);
@@ -206,6 +208,12 @@ Bsc& MLOptimizerConfig::get_bsc() {
 		break;
 	case BSC_ROUNDROBIN:
 		bsc_cache = &rec(new RoundRobin(eps_x_extended, default_bisect_ratio));
+		break;
+	case BSC_LSMEAR_GUARD:
+		// the primary is exactly what "lsmear" runs, tag included
+		bsc_cache = &rec(new BscHijackGuard(DefaultOptimizerConfig::get_bsc(),
+				rec(new RoundRobin(eps_x_extended, default_bisect_ratio)),
+				eps_x_extended));
 		break;
 	case BSC_LARGESTFIRST:
 	default:

@@ -56,6 +56,7 @@ costs, internals and known limitations.
 | | |
 |---|---|
 | `src/ml/ibex_MLNodeServer.{h,cpp}` | the instrumentation, on top of `Optimizer` |
+| `src/ml/ibex_BscHijackGuard.{h,cpp}` | `--bisector lsmear-guard`: LSmear until one variable hijacks it, then RoundRobin |
 | `src/ml/ibex_MLModel.{h,cpp}` | plain-text linear / GBDT models, scored inside the solver |
 | `src/ml/ibex_Json.{h,cpp}` | dependency-free JSON reader / streaming writer |
 | `src/bin/ibexopt-ml.cpp` | CLI, the four modes, command dispatch |

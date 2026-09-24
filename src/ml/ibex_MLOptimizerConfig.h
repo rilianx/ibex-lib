@@ -39,7 +39,9 @@ public:
 	 *
 	 * All of them work on the extended system and all but #BSC_ROUNDROBIN
 	 * delegate to OptimLargestFirst when their own criterion does not apply --
-	 * the same fallback chain IbexOpt uses.
+	 * the same fallback chain IbexOpt uses. #BSC_LSMEAR_GUARD runs IbexOpt's
+	 * own LSmear and hands over to RoundRobin, for good, once LSmear keeps
+	 * bisecting its parent's variable (see BscHijackGuard).
 	 */
 	typedef enum {
 		BSC_LSMEAR_MG,     //!< LSmear, variant LSMEAR_MG: IbexOpt's default
@@ -49,7 +51,8 @@ public:
 		BSC_SMEARMAX,      //!< SmearMax (Kearfott)
 		BSC_SMEARMAXREL,   //!< SmearMaxRelative
 		BSC_LARGESTFIRST,  //!< OptimLargestFirst: widest domain, objective aware
-		BSC_ROUNDROBIN     //!< RoundRobin: the naive baseline
+		BSC_ROUNDROBIN,    //!< RoundRobin: the naive baseline
+		BSC_LSMEAR_GUARD   //!< LSmear until hijacked, then RoundRobin (BscHijackGuard)
 	} Bisector;
 
 	/**

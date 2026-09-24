@@ -1,6 +1,8 @@
 # see arithmetic/CMakeLists.txt for comments
 
 target_sources (ibex PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/ibex_BscHijackGuard.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ibex_BscHijackGuard.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ibex_Json.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ibex_Json.h
   ${CMAKE_CURRENT_SOURCE_DIR}/ibex_MLModel.cpp

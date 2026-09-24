@@ -9,6 +9,7 @@
 #ifndef __IBEX_ML_NODE_SERVER_H__
 #define __IBEX_ML_NODE_SERVER_H__
 
+#include "ibex_BscHijackGuard.h"
 #include "ibex_CtcAcid.h"
 #include "ibex_Json.h"
 #include "ibex_LSmear.h"
@@ -513,8 +514,14 @@ protected:
 	 */
 	NodeStatus process(Cell& c, double* eps_lb=NULL);
 
-	/** \brief The bisector, when it is an LSmear (it is, with this config). */
+	/**
+	 * \brief The bisector's LSmear: the bisector itself, or the primary rule
+	 *        of a BscHijackGuard. NULL for the other bisectors.
+	 */
 	LSmear* lsmear();
+
+	/** \brief The bisector, when it is a BscHijackGuard (else NULL). */
+	BscHijackGuard* guard();
 
 	/** \brief Number of LP solves recorded so far by the bisector. */
 	long lp_calls() const;
@@ -533,6 +540,8 @@ protected:
 		size_t nb_cells;
 		RNG::State rng;
 		std::vector<CtcAcid::TuningState> acid;
+		bool has_guard;
+		BscHijackGuard::State guard;
 	};
 
 	State save() const;
@@ -583,6 +592,11 @@ public:
 	const char* status() const;
 	/** \brief CPU seconds of the last whole-search run. */
 	double elapsed() const;
+	/**
+	 * \brief With "lsmear-guard": the decision at which RoundRobin took over
+	 *        (-1: never). -2 with any other bisector.
+	 */
+	long guard_switched_at();
 };
 
 /*========================== inline implementation ==========================*/

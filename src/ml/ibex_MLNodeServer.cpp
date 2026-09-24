@@ -80,7 +80,8 @@ MLNodeServer::RunParams::RunParams() :
 
 MLNodeServer::State::State(int n) :
 		loup(POS_INFINITY), uplo(NEG_INFINITY), uplo_of_epsboxes(POS_INFINITY),
-		loup_point(IntervalVector::empty(n)), loup_changed(false), nb_cells(0) {
+		loup_point(IntervalVector::empty(n)), loup_changed(false), nb_cells(0),
+		has_guard(false) {
 	rng = RNG::get_state();
 }
 
@@ -146,7 +147,19 @@ int MLNodeServer::ext_goal_var() { return get_ext_sys().goal_var(); }
 
 int MLNodeServer::ext_goal_ctr() { return get_ext_sys().goal_ctr(); }
 
-LSmear* MLNodeServer::lsmear() { return dynamic_cast<LSmear*>(&bsc); }
+LSmear* MLNodeServer::lsmear() {
+	// "lsmear-guard" wraps IbexOpt's own LSmear: its quantities are still the
+	// ones the features report, whichever rule is deciding.
+	BscHijackGuard* g = guard();
+	return dynamic_cast<LSmear*>(g!=NULL ? &g->primary : &bsc);
+}
+
+BscHijackGuard* MLNodeServer::guard() { return dynamic_cast<BscHijackGuard*>(&bsc); }
+
+long MLNodeServer::guard_switched_at() {
+	BscHijackGuard* g = guard();
+	return g!=NULL ? g->switched_at() : -2;
+}
 
 long MLNodeServer::lp_calls() const {
 	long n = 0;
@@ -172,6 +185,11 @@ MLNodeServer::State MLNodeServer::save() const {
 	s.nb_cells = nb_cells;
 	s.rng = RNG::get_state();
 	for (size_t k=0; k<acid.size(); k++) s.acid.push_back(acid[k]->get_tuning());
+	// the guard's window and switch are search state too: a dive must not
+	// trip, or reset, the switch of the enclosing search
+	const BscHijackGuard* g = dynamic_cast<const BscHijackGuard*>(&bsc);
+	s.has_guard = g!=NULL;
+	if (g!=NULL) s.guard = g->get_state();
 	return s;
 }
 
@@ -184,6 +202,7 @@ void MLNodeServer::restore(const State& s) {
 	nb_cells = s.nb_cells;
 	RNG::set_state(s.rng);
 	for (size_t k=0; k<acid.size() && k<s.acid.size(); k++) acid[k]->set_tuning(s.acid[k]);
+	if (s.has_guard) guard()->set_state(s.guard);
 }
 
 void MLNodeServer::reset(const IntervalVector& init_box, double obj_init_bound) {
@@ -557,13 +576,19 @@ MLNodeServer::ContractResult MLNodeServer::contract(const IntervalVector& ext_bo
 }
 
 BisectionPoint MLNodeServer::choose_var(const IntervalVector& ext_box) {
+	// A query, not a decision: the guard must not count it.
+	BscHijackGuard* g = guard();
+	BscHijackGuard::State gs;
+	if (g!=NULL) gs = g->get_state();
 	Cell* c = new_cell(ext_box);
 	try {
 		BisectionPoint bp = bsc.choose_var(*c);
 		delete c;
+		if (g!=NULL) g->set_state(gs);
 		return bp;
 	} catch (...) {
 		delete c;
+		if (g!=NULL) g->set_state(gs);
 		throw;
 	}
 }
@@ -1100,6 +1125,8 @@ void MLNodeServer::write_outcome(JsonOut& out, const char* status, double time,
 	out.kv("nodes", get_nb_cells());
 	out.kv("decisions", decisions);
 	out.kv("time", time);
+	// lsmear-guard: at which of its decisions RoundRobin took over (-1: never)
+	if (guard()!=NULL) out.kv("guard_switched_at", guard_switched_at());
 	out.end_obj();
 }
 

@@ -423,6 +423,8 @@ int main(int argc, char** argv) {
 			out.kv("relax", MLOptimizerConfig::relaxation_name(relaxation));
 			out.kv("rule", model!=NULL ? model->description()
 					: string(MLOptimizerConfig::bisector_name(bisector)));
+			if (server->guard_switched_at()>=-1)
+				out.kv("guard_switched_at", server->guard_switched_at());
 			out.end_obj();
 			cout << endl;
 

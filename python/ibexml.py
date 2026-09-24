@@ -745,7 +745,7 @@ RELAXATIONS = ["xtaylor", "affine", "both"]
 
 #: The hand-written bisectors `solve()` and `--bisector` accept.
 BISECTORS = ["lsmear", "lsmear-box", "smearsumrel", "smearsum", "smearmax",
-             "smearmaxrel", "largestfirst", "roundrobin"]
+             "smearmaxrel", "largestfirst", "roundrobin", "lsmear-guard"]
 
 MODEL_FEATURES = _BASE_FEATURES + DERIVED_FEATURES
 

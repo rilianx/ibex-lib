@@ -1172,6 +1172,16 @@ precision.
 | `smearmaxrel` | `SmearMaxRelative` |
 | `largestfirst` | `OptimLargestFirst`: widest domain, objective-variable aware |
 | `roundrobin` | the naive baseline |
+| `lsmear-guard` | `lsmear` until it is hijacked, then `roundrobin` for the rest of the search (see below) |
+
+`lsmear-guard` watches LSmear's last 20 decisions; once at least 10 are
+recorded and half of them bisect the variable the cell came from, it hands over
+to RoundRobin and never goes back. Until then its trajectory is `lsmear`'s,
+node for node. The switch is one-way because a reversible one does not work:
+once RoundRobin decides, the parent's variable is RoundRobin's, "LSmear wants
+to repeat it" stops measuring the hijack, and the two rules end up alternating,
+which is worse than either. `--solve` reports `guard_switched_at`, the decision
+at which the switch happened (-1: never).
 
 A learned rule joins the comparison as `label=path/to.model`.
 
