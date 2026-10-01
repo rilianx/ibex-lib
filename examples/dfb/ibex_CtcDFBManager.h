@@ -37,23 +37,30 @@ public:
 
     CtcDFBManager(CtcDFBPropag& dfb_propag, Ctc& cid, Linearizer& lr) :
         Ctc(lr.nb_var()), dfb_propag(dfb_propag), cid(cid), lr(lr), mylineardummysolver(nb_var, LPSolver::Mode::Certified) {
-        cout << "[CtcDFBManager] Initializing with LPSolver in Certified mode" << endl;
+//        cout << "[CtcDFBManager] Initializing with LPSolver in Certified mode" << endl;
 
 
     }
 
     virtual ~CtcDFBManager() {
-        cout << "[CtcDFBManager] Destroying instance" << endl;
-        cout << "[CtcDFBManager] Instance destroyed successfully." << endl;
+//        cout << "[CtcDFBManager] Destroying instance" << endl;
+//        cout << "[CtcDFBManager] Instance destroyed successfully." << endl;
     }
     
     void linearize(const IntervalVector& box, IntervalMatrix& A, IntervalVector& x){
-        cout << "[CtcDFBManager] Linearizing box: " << box << endl;
+//        cout << "[CtcDFBManager] Linearizing box: " << box << endl;
     
+        mylineardummysolver.clear_constraints();
+        if (box.is_unbounded()) { A.resize(1,1); return; }
+
         ContractContext context(box);
         int m = lr.linearize(box, mylineardummysolver, context.prop);
     
-        cout << "[CtcDFBManager] Linearizer returned m=" << m << endl;
+//        cout << "[CtcDFBManager] Linearizer returned m=" << m << endl;
+
+        /* -1 = relajacion infactible, 0 = sin restricciones. Usar ese valor
+         * como numero de filas reservaba new Interval[-1] y abortaba. */
+        if (m <= 0) { A.resize(1,1); return; }
     
         Matrix rows = mylineardummysolver.rows();
         IntervalVector lhs_rhs = mylineardummysolver.lhs_rhs();
@@ -67,11 +74,16 @@ public:
     
         //b
         for (int i=0; i<m; i++){
-            x[nb_var+i] = lhs_rhs[nb_var+i];
-            if (x[nb_var+i].lb() < -1e50)
-                x[nb_var+i] = Interval(-1e50, x[nb_var+i].ub());
-            if (x[nb_var+i].ub() > 1e50)
-                x[nb_var+i] = Interval(x[nb_var+i].lb(), 1e50);
+            /* Igual que en CtcDFBPropag::linearize: el rango valido de b_i es
+             * la evaluacion por intervalos de la fila sobre la caja
+             * intersectada con la cota del solver. El recorte anterior a
+             * +-1e50 apretaba cotas infinitas y podia excluir soluciones. */
+            Interval enclosure(0.0);
+            for (int j=0; j<nb_var; j++)
+                enclosure += Interval(rows[nb_var+i][j]) * box[j];
+
+            Interval bi = lhs_rhs[nb_var+i] & enclosure;
+            x[nb_var+i] = bi.is_empty() ? enclosure : bi;
         }
     
     
@@ -82,7 +94,7 @@ public:
         }
     
     
-        cout << "[CtcDFBManager] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
+//        cout << "[CtcDFBManager] Linearization complete. A dimensions: " << A.nb_rows() << "x" << A.nb_cols() << endl;
     }
 
     void contract(IntervalVector& box ) {
@@ -97,13 +109,13 @@ public:
 
         dfb_propag.init_dfb_contractors(A, x);
 
-        cout << "[CtcDFBManager] dimension of A: " << dfb_propag.refA.nb_rows() << "x" << dfb_propag.refA.nb_cols() << endl;
+//        cout << "[CtcDFBManager] dimension of A: " << dfb_propag.refA.nb_rows() << "x" << dfb_propag.refA.nb_cols() << endl;
 
-        cout << "[CtcDFBManager] Contracting box with CID: " << box << endl;
+//        cout << "[CtcDFBManager] Contracting box with CID: " << box << endl;
         // Call the contract method of cid
         cid.contract(box, context);
 
-        cout << "[CtcDFBManager] Contracting complete, final box: " << box << endl;
+//        cout << "[CtcDFBManager] Contracting complete, final box: " << box << endl;
     }
     
 

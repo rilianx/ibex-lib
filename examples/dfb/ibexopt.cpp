@@ -1,3 +1,4 @@
+#include <cstdio>
 //============================================================================
 //                                  I B E X
 //
@@ -17,6 +18,8 @@
 #include <sstream>
 #include <regex>
 #include "ibex_Optimizer05Config.h"
+#include "ibex_CtcDualFeasibleBounding.h"
+#include "ibex_CtcDFBPropag.h"
 
 
 using namespace std;
@@ -133,6 +136,12 @@ int main(int argc, char** argv) {
     int defaultRandomSeed = 42;
 
 
+    /* Los double se pasan con precision completa. `std::to_string` usa `%f`
+     * (6 decimales), y como gaol deja el redondeo hacia arriba desde el
+     * arranque, 1e-7 salia como "0.000001": eps_x valia 1e-6, igual que eps,
+     * en vez de ser menor. Cualquier valor por debajo de 1e-6 se perdia. */
+    auto num = [](double v) { char b[64]; snprintf(b, sizeof b, "%.17g", v); return std::string(b); };
+
     // Construir los argumentos para el constructor de Optimizer04Config
     std::vector<std::string> args = {
         "optimizer04", filename.Get(),
@@ -141,9 +150,9 @@ int main(int argc, char** argv) {
         _bisection ? _bisection.Get() : defaultBisection,
         _strategy ? _strategy.Get() : defaultStrategy,
         _beamsize ? std::to_string(_beamsize.Get()) : std::to_string(defaultBeamsize),
-        _prec ? std::to_string(_prec.Get()) : std::to_string(defaultPrec),
-        _goalPrec ? std::to_string(_goalPrec.Get()) : std::to_string(defaultGoalPrec),
-        _timeLimit ? std::to_string(_timeLimit.Get()) : std::to_string(defaultTimeLimit),
+        num(_prec ? _prec.Get() : defaultPrec),
+        num(_goalPrec ? _goalPrec.Get() : defaultGoalPrec),
+        num(_timeLimit ? _timeLimit.Get() : defaultTimeLimit),
         _randomSeed ? std::to_string(_randomSeed.Get()) : std::to_string(defaultRandomSeed)
     };
 
@@ -176,6 +185,24 @@ int main(int argc, char** argv) {
 
     o.report();
     cout << o.get_nb_cells() << " " << o.get_time() << " " << o.get_loup() << " " << o.get_loup() << endl;
+
+    /* DFB_PHASES=1: desglose del tiempo que se fue en el contractor DFB, para
+     * saber el techo de cualquier optimizacion suya frente al tiempo total. */
+    if (getenv("DFB_PHASES")) {
+        const double T = o.get_time();
+        const double c = CtcDFB::t_pricing + CtcDFB::t_ratio_test + CtcDFB::t_pivot
+                       + CtcDFB::t_bound + CtcDFB::t_regen + CtcDFB::t_init
+                       + CtcDFB::t_certify;
+        printf("PHASES,%s,%g,%g,%g,%g,%g,%g,%g,%g,%ld,%ld,%ld,%ld\n",
+               filename.Get().c_str(), T, c,
+               CtcDFB::t_init, CtcDFB::t_pricing, CtcDFB::t_pivot,
+               CtcDFB::t_certify, CtcDFB::t_bound, CtcDFB::t_ratio_test,
+               CtcDFB::n_inits, CtcDFB::n_applied, CtcDFB::n_certifications,
+               (long)CtcDFBPropag::n_relin);
+        printf("REVIVE,%s,%ld,%ld,%ld,%ld\n", filename.Get().c_str(),
+               CtcDFBPropag::n_revive, CtcDFBPropag::n_impact_calls,
+               CtcDFB::n_applied, CtcDFB::n_inits);
+    }
 
 
     return 0;

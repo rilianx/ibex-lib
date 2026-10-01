@@ -8,6 +8,8 @@
 //============================================================================
 
 #include "ibex_Optimizer.h"
+#include <cstdio>
+#include <cstdlib>
 #include "ibex_Timer.h"
 #include "ibex_Function.h"
 #include "ibex_NoBisectableVariableException.h"
@@ -104,13 +106,30 @@ bool Optimizer::update_loup(const IntervalVector& box, BoxProperties& prop) {
 
 	try {
 
+		/* Intentos y exitos del buscador por ancho de caja (IBEX_LOUPSTATS=1). */
+		struct LoupStats {
+			long n[7], ok[7];
+			LoupStats() { for (int i=0;i<7;i++) n[i]=ok[i]=0; }
+			static int cubeta(double w) { return w<1e-7?0: w<1e-6?1: w<1e-5?2: w<1e-4?3: w<1e-3?4: w<1e-2?5:6; }
+			~LoupStats() {
+				if (!getenv("IBEX_LOUPSTATS")) return;
+				const char* et[7]={"<1e-7","<1e-6","<1e-5","<1e-4","<1e-3","<1e-2",">=1e-2"};
+				fprintf(stderr, "[loupstats] intentos/exitos por ancho:");
+				for (int i=0;i<7;i++) fprintf(stderr, "  %s %ld/%ld", et[i], n[i], ok[i]);
+				fprintf(stderr, "\n");
+			}
+		};
+		static LoupStats ls;
+		const int cb = LoupStats::cubeta(box.max_diam());
+		++ls.n[cb];
 		pair<IntervalVector,double> p=loup_finder.find(box,loup_point,loup,prop);
+		++ls.ok[cb];
 		loup_point = p.first;
 		loup = p.second;
 
 		if (trace) {
 			cout << "                    ";
-			cout << "\033[32m loup= " << loup << "\033[0m" << endl;
+			cout << "\033[32m loup= " << loup << "\033[0m" << "  celda=" << nb_cells << "  t=" << get_time() << "  ancho=" << box.max_diam() << endl;
 //			cout << " loup point=";
 //			if (loup_finder.rigorous())
 //				cout << loup_point << endl;
@@ -246,6 +265,9 @@ void Optimizer::contract_and_bound(Cell& c) {
 
 	IntervalVector tmp_box(n);
 	read_ext_box(c.box,tmp_box);
+	/* IBEX_CELLTRACE=1: una linea por celda contraida, a stderr. */
+	static const bool celltrace = (getenv("IBEX_CELLTRACE") != NULL);
+	if (celltrace) fprintf(stderr, "[cell] %zu %.3g %.12g %.12g\n", nb_cells, tmp_box.max_diam(), y.lb(), loup);
 
 	c.prop.update(BoxEvent(c.box,BoxEvent::CHANGE));
 
@@ -274,6 +296,12 @@ void Optimizer::contract_and_bound(Cell& c) {
 	//   the original variables and "abs_eps_f" for the goal variable)
 	// - the extended box has no bisectable domains (if eps_x=0 or <1 ulp)
 	if (((tmp_box.diam()-eps_x).max()<=0 && y.diam() <=abs_eps_f) || !c.box.is_bisectable()) {
+		if (trace) cout << " [tiny] loup encontrado aca=" << loup_ch << "  ancho=" << tmp_box.max_diam()
+		                << "  y=" << y << "  loup=" << loup << endl;
+		if (getenv("IBEX_TINYDUMP") && y.lb() < loup - 1e-6) {
+			cout.precision(17);
+			cout << " [tinybox] " << tmp_box << endl;
+		}
 		update_uplo_of_epsboxes(y.lb());
 		c.box.set_empty();
 		return;

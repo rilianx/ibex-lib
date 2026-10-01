@@ -9,6 +9,9 @@
 //============================================================================
 
 #include "ibex_CtcPolytopeHull.h"
+#include <cstdio>
+#include <ctime>
+#include <cstdlib>
 
 #include "ibex_LinearizerFixed.h"
 
@@ -27,6 +30,8 @@ CtcPolytopeHull::CtcPolytopeHull(Linearizer& lr, int max_iter, int time_out, dou
 		mylinearsolver(nb_var, LPSolver::Mode::Certified, eps, time_out, max_iter),
 		contracted_vars(BitSet::all(nb_var)), own_lr(false), primal_sols(2*nb_var, nb_var),
 		primal_sol_found(2*nb_var) {
+	/* NO estaban inicializados: se acumulaba sobre basura. */
+	n_soplex_iterations = 0; n_soplex_calls = 0;
 
 }
 
@@ -35,8 +40,16 @@ CtcPolytopeHull::CtcPolytopeHull(const Matrix& A, const Vector& b, int max_iter,
 		mylinearsolver(nb_var, LPSolver::Mode::Certified, eps, time_out, max_iter),
 		contracted_vars(BitSet::all(nb_var)), own_lr(true), primal_sols(2*nb_var, nb_var),
 		primal_sol_found(2*nb_var) {
+	n_soplex_iterations = 0; n_soplex_calls = 0;
 
 }
+
+namespace { double ph_t_lin = 0.0, ph_t_total = 0.0;
+bool ph_on() { static const bool v = (getenv("IBEX_PH_STATS") != NULL); return v; }
+double ph_reloj() { if (!ph_on()) return 0.0;
+                    struct timespec ts; clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+                    return ts.tv_sec + 1e-9*ts.tv_nsec; } }
+extern double ph_t_solve, ph_t_extrae, ph_t_cert;
 
 CtcPolytopeHull::~CtcPolytopeHull() {
 	if (own_lr) delete &lr;
@@ -59,8 +72,13 @@ void CtcPolytopeHull::contract(IntervalVector& box, ContractContext& context) {
 
 	try {
 		//returns the number of constraints in the linearized system
+		const double ph_a = ph_reloj();
 		int cont = lr.linearize(box, mylinearsolver, context.prop);
-		cout << context.prop << endl;
+		ph_t_lin += ph_reloj() - ph_a;
+		/* OJO: esta traza estaba SIN guardar, en el camino caliente: imprimia
+		 * la propagacion en cada nodo del arbol. Ademas de ensuciar la salida,
+		 * invalida cualquier comparacion de tiempos contra produccion. */
+		//cout << context.prop << endl;
 
 		//cout << "[polytope-hull] end of LR" << endl;
 
@@ -68,7 +86,9 @@ void CtcPolytopeHull::contract(IntervalVector& box, ContractContext& context) {
 
 		if (cont==0) return;
 
+		const double ph_b = ph_reloj();
 		optimizer(box);
+		ph_t_total += ph_reloj() - ph_b;
 
 		//mylinearsolver.writeFile("LP.lp");
 		//system ("cat LP.lp");
@@ -103,6 +123,22 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 		}
 	}
 
+	/* Iteraciones de SoPlex por LP en PRODUCCION, o sea con el arranque tibio
+	 * secuencial del unico LPSolver. Es el termino que faltaba para comparar
+	 * contra los pivotes de DFB: las sondas resolvian SoPlex en frio, que no es
+	 * lo que corre aca. `IBEX_PH_STATS=1` lo imprime cada 2000 LPs. */
+	if (getenv("IBEX_PH_STATS") && n_soplex_calls > 0 && (n_soplex_calls % 2000) < 2*nb_var)
+	{
+		const double T = ph_t_lin + ph_t_total;
+		fprintf(stderr, "[phull] LPs=%d  iter/LP=%.2f | armado %.0f%%  simplex %.0f%%  "
+		        "extrae %.0f%%  certif %.0f%%  otro %.0f%% | us/LP=%.1f  us/iter=%.1f "
+		        "(total %.2fs)\n",
+		        n_soplex_calls, (double)n_soplex_iterations/n_soplex_calls,
+		        100*ph_t_lin/T, 100*ph_t_solve/T, 100*ph_t_extrae/T, 100*ph_t_cert/T,
+		        100*(T-ph_t_lin-ph_t_solve-ph_t_extrae-ph_t_cert)/T,
+		        1e6*T/n_soplex_calls, 1e6*T/n_soplex_iterations, T);
+	}
+
 	int nexti=-1;   // the next variable to be contracted
 	int infnexti=0; // the bound to be contracted contract  infnexti=0 for the lower bound, infnexti=1 for the upper bound
 	LPSolver::Status stat=LPSolver::Status::Unknown;
@@ -122,6 +158,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			mylinearsolver.set_cost(i, 1.0);
 			stat = mylinearsolver.minimize();
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
+			n_soplex_calls++;
 			
 
 			mylinearsolver.set_cost(i, 0.0);
@@ -180,6 +217,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			mylinearsolver.set_cost(i, -1.0);
 			stat= mylinearsolver.minimize();
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
+			n_soplex_calls++;
 
 
 			mylinearsolver.set_cost(i, 0.0);

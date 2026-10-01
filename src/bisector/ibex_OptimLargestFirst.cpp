@@ -11,6 +11,8 @@
 #include "ibex_OptimLargestFirst.h"
 #include "ibex_NoBisectableVariableException.h"
 
+#include <cstdlib>
+#include <cstdio>
 using namespace std;
 
 namespace ibex {
@@ -25,10 +27,22 @@ namespace ibex {
 }
 
 
+/* Como en LargestFirst: primero las variables con precision 0, por diametro;
+ * si ninguna es bisecable, las demas por diam/prec. En el primer caso `l` es
+ * un diametro y la comparacion con el diametro del objetivo es homogenea. */
 BisectionPoint OptimLargestFirst::choose_var(const Cell& cell) {
 const IntervalVector& box=cell.box;
 	int var =-1;
 	double l=0.0;
+	static const bool viejo = (getenv("IBEX_LF_VIEJO") != NULL);  /* restaura el criterio anterior */
+	if (!viejo && !uniform_prec()) {
+		for (int i=0; i< box.size(); i++)
+			if (i!=goal_var && prec(i)==0 && !nobisectable(box,i) && (var==-1 || box[i].diam()>l)) {
+				var=i;
+				l=box[i].diam();
+			}
+	}
+	if (var==-1)
 	for (int i=0; i< box.size(); i++){
 	  if (i!= goal_var){
 	    if ( ! nobisectable (box,i)){
@@ -52,7 +66,6 @@ const IntervalVector& box=cell.box;
       && (l < box[goal_var].diam())
       && box[goal_var].diam()/l < objectivebisect_ratiolimit)
     var=goal_var;
-  //  cout << " bisected var " << var  << " l " << l << endl ;
   if (var !=-1){
     return BisectionPoint(var,ratio,true);
   }

@@ -1,4 +1,5 @@
 #include "ibex_LPSolver.h"
+#include <cstdlib>
 
 namespace ibex {
 
@@ -43,13 +44,72 @@ std::ostream& operator<<(std::ostream& os, const LPSolver::Status x){
 }
 
 bool LPSolver::neumaier_shcherbina_postprocessing() {
-    Matrix A_trans = rows_transposed();
-    IntervalVector b = lhs_rhs();
-    IntervalVector rest = A_trans*uncertified_dual_;
+	/* Camino original, conservado para comparar: construye rows() (m x n) y su
+	 * transpuesta (n x m) en cada resolucion del LP. Con IBEX_NS_LEGACY=1 se
+	 * vuelve a el. */
+	static const bool legacy = (getenv("IBEX_NS_LEGACY") != NULL);
+	if (legacy) {
+		Matrix A_trans = rows_transposed();
+		IntervalVector b = lhs_rhs();
+		IntervalVector rest = A_trans*uncertified_dual_;
+		rest -= cost();
+		obj_ = uncertified_dual_*b - rest*ivec_bounds_;
+		return true;
+	}
+
+	/* Misma formula, acumulada por filas y salteando los duales nulos.
+	 *
+	 *     obj_ = lambda'*b - (A'*lambda - c)'*[x]
+	 *
+	 * Una fila con lambda_i == 0 no aporta ni a lambda'*b ni a A'*lambda, asi
+	 * que se puede omitir: el dual del simplex es disperso (solo las filas
+	 * activas en la base son no nulas), de modo que el trabajo pasa de m*n a
+	 * nnz(lambda)*n. Y sobre todo desaparecen las dos matrices densas, que se
+	 * asignaban y llenaban una vez por cota, o sea 2n veces por caja.
+	 *
+	 * La acumulacion de A'*lambda queda en punto flotante, igual que en el
+	 * camino original (alli Matrix*Vector es un producto de dobles); solo
+	 * cambia el orden de asociacion. */
+	const int n = nb_vars();
+	const int m = nb_rows();
+
+	/* OJO: con IBEX_NS_RIGOROUS=1 el residuo A'*lambda - c se acumula en
+	 * aritmetica de intervalos. El camino por omision lo acumula en dobles,
+	 * igual que el original, y por eso NO es riguroso: el error de redondeo del
+	 * residuo entra multiplicado por el ancho de la caja. El interruptor esta
+	 * para medir cuanto costaria cerrar ese agujero. */
+	static const bool rigorous = (getenv("IBEX_NS_RIGOROUS") != NULL);
+
+	Interval dual_b(0.0);
+	if (rigorous) {
+		IntervalVector rest(n, Interval::zero());
+		for (int i = 0; i < m; ++i) {
+			const double di = uncertified_dual_[i];
+			if (di == 0.0) continue;
+			dual_b += di*lhs_rhs(i);
+			const Vector r = row(i);
+			for (int j = 0; j < n; ++j) {
+				if (r[j] != 0.0) rest[j] += di*r[j];
+			}
+		}
+		for (int j = 0; j < n; ++j) rest[j] -= cost(j);
+		obj_ = dual_b - rest*ivec_bounds_;
+		return true;
+	}
+
+	Vector rest(n, 0.0);
+	for (int i = 0; i < m; ++i) {
+		const double di = uncertified_dual_[i];
+		if (di == 0.0) continue;
+		dual_b += di*lhs_rhs(i);
+		const Vector r = row(i);
+		for (int j = 0; j < n; ++j) {
+			if (r[j] != 0.0) rest[j] += di*r[j];
+		}
+	}
 	rest -= cost();
-	//Interval certified_obj_raw = uncertified_dual_*b - rest*ivec_bounds_;
-	//certified_obj_ = Interval(certified_obj_raw.lb(), uncertified_obj_.ub());
-    obj_ = uncertified_dual_*b - rest*ivec_bounds_;
+
+	obj_ = dual_b - rest*ivec_bounds_;
 	return true;
 }
 

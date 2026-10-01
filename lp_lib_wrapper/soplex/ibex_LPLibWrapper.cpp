@@ -198,17 +198,35 @@ void LPSolver::add_constraints(const Matrix& rows, CmpOp op, const Vector& rhs) 
     }
 }
 
+/* Reparto del costo por LP en produccion. `mysoplex->solve()` es el simplex;
+ * el resto es extraccion de la solucion (dos DVectorReal + dos dvec2ivec, que
+ * alojan y densifican) y la certificacion de Neumaier-Shcherbina. Se acumula
+ * siempre; lo imprime CtcPolytopeHull con IBEX_PH_STATS=1. */
+double ph_t_solve = 0.0, ph_t_extrae = 0.0, ph_t_cert = 0.0;
+/* El cronometraje se COMPILA siempre pero solo se ejecuta con IBEX_PH_STATS:
+ * `minimize()` es camino caliente y un `clock_gettime` por LP penalizaria
+ * todas las mediciones de produccion. */
+bool ph_stats() { static const bool v = (getenv("IBEX_PH_STATS") != NULL); return v; }
+static double ph_ahora() {
+    if (!ph_stats()) return 0.0;
+    struct timespec ts; clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
+    return ts.tv_sec + 1e-9*ts.tv_nsec;
+}
+
 LPSolver::Status LPSolver::minimize() {
     invalidate();
     assert(!ivec_bounds_.is_unbounded());
 
+    const double ph_t0 = ph_ahora();
     mysoplex->solve();
     mysoplex->ignoreUnscaledViolations();
+    ph_t_solve += ph_ahora() - ph_t0;
     SPxSolver::Status soplex_status = mysoplex->status();
     status_ = LPSolver::Status::Unknown;
     switch(soplex_status) {
     case SPxSolver::OPTIMAL:
         {
+            const double ph_t1 = ph_ahora();
             DVectorReal dvec_primal(nb_vars());
             DVectorReal dvec_dual(nb_rows());
             mysoplex->getPrimalReal(dvec_primal);
@@ -218,9 +236,12 @@ LPSolver::Status LPSolver::minimize() {
             uncertified_dual_ = dvec2ivec(dvec_dual);
             uncertified_primal_ = dvec2ivec(dvec_primal);
             has_solution_ = true;
+            ph_t_extrae += ph_ahora() - ph_t1;
             if(mode_ == LPSolver::Mode::Certified) {
+                const double ph_t2 = ph_ahora();
                 // Neumaier Shcherbina cannot fail
                 neumaier_shcherbina_postprocessing();
+                ph_t_cert += ph_ahora() - ph_t2;
                 status_ = LPSolver::Status::OptimalProved;
             } else {
                 status_ = LPSolver::Status::Optimal;

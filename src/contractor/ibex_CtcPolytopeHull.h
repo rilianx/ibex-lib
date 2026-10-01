@@ -120,6 +120,10 @@ public:
 	BitSet primal_sol_found;
 
 	int n_soplex_iterations;
+	/** \brief Llamadas efectivas a minimize(). El bucle es "at most 2n": las
+	 *  banderas inf_bound/sup_bound saltean las cotas ya contraidas, asi que
+	 *  dividir las iteraciones por 2n subestima el costo por LP. */
+	int n_soplex_calls;
 	std::list< std::pair<int,double> > history; // simplex iteration, box perimeter
 
 protected:

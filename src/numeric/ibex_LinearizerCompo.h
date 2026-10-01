@@ -68,6 +68,12 @@ protected:
 	 * Linearizer n°2
 	 */
 	Linearizer& l2;
+
+public:
+	/** \brief Filas aportadas por `l1` en la ultima llamada a linearize.
+	 *  Las de `l2` son las que siguen. Sirve para saber, en el optimo, cuantas
+	 *  restricciones de cada linearizador estan realmente activas. */
+	mutable int nb_l1;
 };
 
 } /* namespace ibex */

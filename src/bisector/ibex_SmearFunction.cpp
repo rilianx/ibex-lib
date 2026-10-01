@@ -10,6 +10,8 @@
 
 #include "ibex_SmearFunction.h"
 #include "ibex_ExtendedSystem.h"
+#include <cstdio>
+#include <cstdlib>
 
 using namespace std;
 
@@ -60,8 +62,25 @@ bool SmearFunction::goal_to_consider(const IntervalMatrix& J, int i) const{
 }
 
 
+/* Contadores de diagnostico (IBEX_SMEAR_STATS=1): cuantas veces el bisector
+ * cae al LargestFirst de respaldo, y por que. */
+namespace {
+struct SmearStats {
+	long llamadas, jac_inf, var_nula, no_bisectable;
+	SmearStats() : llamadas(0), jac_inf(0), var_nula(0), no_bisectable(0) {}
+	~SmearStats() {
+		if (getenv("IBEX_SMEAR_STATS") && llamadas)
+			fprintf(stderr, "[smear] llamadas=%ld | respaldo LargestFirst: jacobiana infinita=%ld  "
+			        "sin variable=%ld  variable no bisecable=%ld  (%.2f%% del total)\n",
+			        llamadas, jac_inf, var_nula, no_bisectable,
+			        100.0*(jac_inf+var_nula+no_bisectable)/llamadas);
+	}
+} smear_stats;
+}
+
 BisectionPoint SmearFunction::choose_var(const Cell& cell) {
 	const IntervalVector& box=cell.box;
+	++smear_stats.llamadas;
 
 	IntervalMatrix J(sys.f_ctrs.image_dim(), sys.nb_var);
 
@@ -70,8 +89,10 @@ BisectionPoint SmearFunction::choose_var(const Cell& cell) {
 
 	for (int i=0; i<sys.f_ctrs.image_dim(); i++){
 		for (int j=0; j<sys.nb_var; j++)
-			if (J[i][j].mag() == POS_INFINITY ||((J[i][j].mag() ==0) && box[j].diam()== POS_INFINITY ))
+			if (J[i][j].mag() == POS_INFINITY ||((J[i][j].mag() ==0) && box[j].diam()== POS_INFINITY )) {
+				++smear_stats.jac_inf;
 				return lf->choose_var(cell);
+			}
 		// check if the goal is to be considered
 		if (i==goal_ctr()){
 			_goal_to_consider=goal_to_consider(J,i);
@@ -81,8 +102,10 @@ BisectionPoint SmearFunction::choose_var(const Cell& cell) {
 	int var = var_to_bisect (J,box);
 
 	// in case of selected var with infinite domain, change to largest first bisection
-	if (var == -1 || !(box[var].is_bisectable()))
+	if (var == -1 || !(box[var].is_bisectable())) {
+		if (var == -1) ++smear_stats.var_nula; else ++smear_stats.no_bisectable;
 		return lf->choose_var(cell);
+	}
 	else
 		return BisectionPoint(var,lf->ratio,true);
 }

@@ -13,7 +13,7 @@
 namespace ibex {
 
 LinearizerCompo::LinearizerCompo(Linearizer& l1, Linearizer& l2) :
-		Linearizer(l1.nb_var()), l1(l1), l2(l2) {
+		Linearizer(l1.nb_var()), l1(l1), l2(l2), nb_l1(0) {
 
 	if (l1.nb_var()!=l2.nb_var())
 		ibex_error("[LinearizerCompo] cannot compose linearizers with different number of variables");
@@ -35,6 +35,7 @@ int LinearizerCompo::linearize(const IntervalVector& box, LPSolver& lp_solver) {
 
 int LinearizerCompo::linearize(const IntervalVector& box, LPSolver& lp_solver, BoxProperties& prop) {
 	int cont = l1.linearize(box,lp_solver,prop);
+	nb_l1 = cont;
 	if (cont!=-1) {
 		int cont2 = l2.linearize(box,lp_solver,prop);
 		if (cont2==-1) cont=-1;
