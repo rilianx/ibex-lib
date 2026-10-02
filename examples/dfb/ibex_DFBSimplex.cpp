@@ -332,6 +332,7 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
          * del conjunto de columnas basicas que ya era optimo para una caja muy
          * parecida. Es lo contrario del §39, que reusaba la relajacion vieja. */
         basic = basic_prev; rowof = rowof_prev; atupper = atup_prev;
+        if (!getenv("DFB_SX_DEVEXVIEJO")) dw.assign(m+1, 1.0);   /* marco de referencia devex nuevo para el nodo */
         for (int r = 1; r <= m; ++r) cols_buf[r-1] = basic[r];
         fact_ok = fact.set_basis(cols_buf);
         base_lista = fact_ok;
@@ -650,7 +651,21 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
      * da una violacion absoluta de 1e-7, o sea diez veces la tolerancia: el
      * simplex pivotea sobre ruido hasta quedarse sin candidatas y declara
      * infactible un LP factible. Pasaba en 35 de 71 resoluciones de Brown-20. */
-    int r_out = -1; double worst = 0.0; bool below = false;
+    /* `worst` arranca en -1 y no en 0: con pesos de devex enormes,
+     * `viol^2/peso` da 0 y una fila violada no se elegia nunca; si pasaba con
+     * todas, el paso concluia «factible primal» y el LP se declaraba optimo
+     * siendo infactible. Pasaba al heredar la base entre nodos, donde los pesos
+     * se acumulaban sin reiniciarse (71.7 % de optimos falsos en `ex5_3_2`,
+     * 2026-10-01). La decision de factibilidad no puede depender de los pesos. */
+    /* `DFB_SX_DEVEXVIEJO=1` restaura el defecto (worst=0, sin reinicio), para medir. */
+    static const bool devex_viejo = (getenv("DFB_SX_DEVEXVIEJO") != NULL);
+    int r_out = -1; double worst = devex_viejo ? 0.0 : -1.0; bool below = false;
+    /* Reinicio del marco de referencia devex cuando un peso se dispara. */
+    if (!devex_viejo && devex && (int)dw.size() == m+1) {
+        double wmax = 0.0;
+        for (int r = 1; r <= m; ++r) if (dw[r] > wmax) wmax = dw[r];
+        if (!(wmax <= 1e8)) std::fill(dw.begin(), dw.end(), 1.0);
+    }
     for (int r = 1; r <= m; ++r) {
         const int c = basic[r];
         const double lo = z[c].lb(), hi = z[c].ub();

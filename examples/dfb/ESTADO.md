@@ -153,19 +153,21 @@ celdas pagando LPs por nodo (×1.03–1.05).
 
 Producción = `--filtering=acidhc4` + `CtcPolytopeHull` + linearizador afín.
 
-**Línea de base vigente (2026-09-30)**, con `eps_x` = 1e-7 de verdad (§8) y la
-omisión actual de DFB. 138 instancias, 4 semillas, 8 cores, los dos brazos en el
-mismo barrido (`results/linea_base_epsx1e-7_4semillas.csv`):
+**Línea de base vigente (2026-10-02)**, con `eps_x` = 1e-7 de verdad (§8) y la
+omisión actual de DFB, incluido el arreglo de devex (§9). 138 instancias, 4
+semillas, 8 cores, los brazos en el mismo barrido
+(`results/devex_arreglo_4semillas.csv`):
 
 | corte | celdas | cpu | +rápido / −lento |
 |---|---|---|---|
-| > 0.1 s (n=245) | ×1.018 | **×0.617** | **217 / 10** |
-| > 1 s (n=91) | ×0.973 | **×0.591** | 83 / 5 |
-| > 5 s (n=45) | ×0.969 | **×0.575** | **45 / 0** |
+| > 0.1 s (n=245) | ×0.985 | **×0.601** | **221 / 10** |
+| > 1 s (n=91) | ×0.977 | **×0.591** | 83 / 7 |
+| > 5 s (n=45) | ×0.982 | **×0.584** | **44 / 1** |
 
-cpu por celda ×0.584 (> 1 s), ×0.516 en las 22 que llegan al tope en los dos.
+cpu por celda ×0.583 (> 1 s), ×0.511 en las 21 que llegan al tope en los dos.
 0 óptimos incompatibles. Resueltas en 4/4: 131 y 131; DFB resuelve además
-`ex8_4_4bis` y `ship-1`, producción `bearing`. Bajar `eps_x` de 1e-6 a 1e-7, por
+`ex8_4_4bis`, producción `bearing`, y `ship-1` se decide por semilla. La línea
+anterior (2026-09-30, sin el arreglo) daba cpu ×0.617 / ×0.591 / ×0.575. Bajar `eps_x` de 1e-6 a 1e-7, por
 sí solo, ayuda a los dos: producción celdas ×0.99 / ×0.96 / ×0.93, DFB ×0.995 /
 ×0.978 / ×0.960.
 
@@ -244,7 +246,7 @@ Todas medidas con el banco completo.
 | Devex en la fila que sale | mixto con la estrategia que en los hechos era primal; **con el dual puro, cpu ×0.98–0.99 y por omisión** (§9) |
 | Presupuestos / truncamiento anytime, 11 variantes sobre el camino primal | ninguna paga |
 | Corte anytime por brecha sobre el pivoteo dual (`DFBH_ANYTAU=τ`) | ahorra pivotes (×0.84) pero celdas ×1.39–1.60 y cpu ×1.36–1.49 |
-| Herencia de base entre nodos (`DFB_SX_NODOS=1`) | peor que arrancar en frío sobre la relajación nueva |
+| Herencia de base entre nodos (`DFB_SX_BASENODOS=1`) | con el dual destapó el defecto de devex (§9); arreglado, baja pivotes ×0.78–0.96 pero reconstruir el tableau cuesta lo que ahorra: tiempo ×1.00–1.10 |
 | Test de `γ` en las rodajas de ACID (`DFBH_ENACID=1`), re-medido tras el filtro de estabilidad | con `γ` propios acierta ≈ 0 %; con los de un ancestro mata rodajas que el lineal del nodo mata igual (§9) |
 | Cota lagrangiana con monotonía (`DFBH_LAGRC=1\|2`, §9) | mejora la cota del LP en el 70–97 % de las aplicaciones y mata nodos que el LP no mata; en el objetivo solo, celdas iguales y cpu ×1.08–1.24; en las `2n` cotas, celdas ×0.81–0.96 y cpu ×1.6–3.5 |
 
@@ -329,6 +331,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_TRACE=1`, `IBEX_LOUPSTATS=1`, `IBEX_SMEAR_STATS=1`, `IBEX_ARGS=1` | traza de `loup`/`uplo` con celda, tiempo y ancho; intentos y éxitos del buscador de `loup` por ancho; respaldos del bisector; parámetros recibidos (§4, §8) |
 | `DFB_SX_VERIF=1`, `DFB_SX_FEASTOL=t`, `DFB_SX_TOLANCHO=τ` | verifica cada `OPTIMAL` desde la factorización; tolerancia primal, omisión `1e-9`; tope de la tolerancia en `τ·ancho` de la básica, **omisión 1e-3** (§9) |
 | `DFBH_SINCOTA`, `DFBH_PREDICE`, `DFBH_GOALPROBE`, `DFBH_CHKC=k`, `DFB_SX_DERIVA=1`, `DFBH_LAGR=1` | sondas (las dos últimas: deriva del tableau contra la LU; cota lagrangiana contra la del LP, §9) |
+| `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
 | `DFB_SX_BFRT=0`, `DFB_SX_BFRTINF=1` | ratio test de paso largo, **encendido por omisión** (`=0` lo apaga); la segunda restaura el defecto de la infactibilidad espuria (§9) |
 | `DFBH_LAGRC=1\|2`, `DFBH_LAGRR=r` | cota lagrangiana con monotonía como contracción, en el objetivo o en las `2n`; rondas de monotonía (omisión 2). Apagada (§9) |
 | `DFBH_ABDUAL=τ`, `DFBH_ABNODO=n`, `DFBH_ABPRIM=R`, `DFBH_ABCONG=1`, `DFBH_ABPURO=1` | comparan dos configuraciones sobre el mismo nodo (la última: primal contra dual puro) |
@@ -394,6 +397,32 @@ pesos `‖e_rᵀB⁻¹‖²` desde la parte λ del tableau; mixto y ×1.03 por c
 momentáneamente la factibilidad dual —y con ella la monotonía en ese LP— pero no
 la validez del certificado. La causa principal es la banda de Harris relativa al
 cociente; queda otra fuente menor sin identificar en `bearing`.
+
+**Defecto de devex, arreglado (2026-10-01).** El paso dual elegía la fila que
+sale con `if (v > worst)` partiendo de `worst = 0`, con `v = viol²/peso`. Los
+pesos de devex sólo crecen; cuando uno se disparaba, `v` daba 0, la fila violada
+no se elegía nunca, y si pasaba con todas el paso concluía «factible primal» y
+el LP se declaraba óptimo siendo infactible. Apareció al heredar la base entre
+nodos (`DFB_SX_BASENODOS=1`), donde los pesos ya no se reinician en el arranque
+en frío: **71.7 % de óptimos falsos** en `ex5_3_2` (`DFB_SX_VERIF=1`), 168 → 568
+celdas; con el primal la herencia funcionaba (1.7 %), y sin devex también
+(0.1 %). Arreglo: `worst = −1`, para que la decisión de factibilidad no dependa
+de los pesos, y reinicio del marco de referencia al heredar la base o cuando un
+peso pasa de 1e8 (`DFB_SX_DEVEXVIEJO=1` restaura el defecto). En la omisión
+(banco, 138 instancias, 4 semillas, `results/devex_arreglo_4semillas.csv`): cpu
+×0.960 / ×0.906 / ×0.982, celdas idénticas en 380 de 552 pares, cpu por celda
+×1.007, 0 óptimos incompatibles. Buena parte del ×0.906 en > 1 s es
+`ex7_2_2` (= `ex8_1_8bis`), cuya semilla 4 pasa de 2348 a 54 celdas: el caso
+que antes se atribuyó a caos del `loup` pudo ser este defecto, pero con
+`DFB_SX_VERIF` encendido las dos versiones dan 50 celdas y no se puede aislar.
+
+**La herencia de base entre nodos, ya correcta, no paga** (8 instancias, 2
+semillas): pivotes por LP ×0.78–0.96 (`ex7_2_3` 1.6 → 1.23, `ex6_1_3` 4.35 →
+3.84) pero tiempo ×1.00–1.10 en las estables y peor en `launch` y `himmel16`.
+Heredar exige refactorizar con la linealización nueva y reconstruir el tableau
+completo (una BTRAN por fila y un producto por `Ā`), del orden de `m` pivotes,
+que es lo que costaba la cota 0 en frío. Con un simplex sin tableau explícito
+(opción 3) heredar costaría una factorización, y ahí sí podría pagar.
 
 **La brecha que queda** está en las relajaciones grandes: `launch` y `ex5_3_2`
 (×1.18–1.20) y `ex14_2_7` (×1.16). El dual reubica y reparte la infactibilidad
