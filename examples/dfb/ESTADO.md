@@ -331,6 +331,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_TRACE=1`, `IBEX_LOUPSTATS=1`, `IBEX_SMEAR_STATS=1`, `IBEX_ARGS=1` | traza de `loup`/`uplo` con celda, tiempo y ancho; intentos y éxitos del buscador de `loup` por ancho; respaldos del bisector; parámetros recibidos (§4, §8) |
 | `DFB_SX_VERIF=1`, `DFB_SX_FEASTOL=t`, `DFB_SX_TOLANCHO=τ` | verifica cada `OPTIMAL` desde la factorización; tolerancia primal, omisión `1e-9`; tope de la tolerancia en `τ·ancho` de la básica, **omisión 1e-3** (§9) |
 | `DFBH_SINCOTA`, `DFBH_PREDICE`, `DFBH_GOALPROBE`, `DFBH_CHKC=k`, `DFB_SX_DERIVA=1`, `DFBH_LAGR=1` | sondas (las dos últimas: deriva del tableau contra la LU; cota lagrangiana contra la del LP, §9) |
+| `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
+| `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
 | `DFB_SX_BFRT=0`, `DFB_SX_BFRTINF=1` | ratio test de paso largo, **encendido por omisión** (`=0` lo apaga); la segunda restaura el defecto de la infactibilidad espuria (§9) |
 | `DFBH_LAGRC=1\|2`, `DFBH_LAGRR=r` | cota lagrangiana con monotonía como contracción, en el objetivo o en las `2n`; rondas de monotonía (omisión 2). Apagada (§9) |
@@ -429,25 +431,96 @@ que es lo que costaba la cota 0 en frío. Con un simplex sin tableau explícito
 por muchas de las ~50 filas; el orden de cotas no es el problema (el predictor
 por columnas acierta el costo del dual).
 
+### Los duales de DFB en la bisección: no sirven como están (2026-10-02)
+
+La idea: `LSmear` resuelve en cada nodo un LP con SoPlex sólo para obtener los
+multiplicadores del objetivo, y DFB ya los tiene. Se construyó `LSmearDFB`
+(`-b lsmeardfb`): la regla de `LSmear` con sensibilidades de DFB, guardadas
+**en la celda** (`BxpDFBSens`), porque el optimizador biseca la celda al
+sacarla de la cola y recién después contrae a las hijas, así que el último nodo
+que pasó por el contractor es otro. Cuando la pasada no resuelve la cota del
+objetivo, o termina con `y` no básica (`λ = 0`), se resuelve `min y` con la
+cota inferior de `y` suelta, como hace `LSmear` (`LPs extra`, ~0.4 por nodo).
+Tres sensibilidades (`DFBH_SENS=redcost|abs|jac`), 8 instancias, 2 semillas,
+celdas contra `lsmearmg` (`results/lsmeardfb_sueltas.csv`):
+
+| sensibilidad | coincide con `LSmear` | mejora | empeora |
+|---|---|---|---|
+| `redcost`: `\|γ_j/γ_goal\|·diam` | 13 % | `ex14_2_7` ×0.5 | `ex2_1_9` ×22, `ex7_2_3` ×12, `himmel16` sin `loup`, `ex6_1_3` y `ex8_4_4bis` al tope |
+| `abs`: `Σ_i \|λ_i\|\|Ā_ij\|·diam` | 35 % | `ex2_1_9` ×0.55, `ex7_2_3` ×0.6, `ex14_2_7` ×0.5 | `himmel16` ×25, `launch` ×10, `ex6_1_3` ×2.5, `ex8_4_4bis` ×2.2 |
+| `jac`: `\|Σ_c λ_c J_cj(mid)\|·diam`, la jacobiana de `LSmear` | 26 % | `ex14_2_7` | `ex2_1_9` ×22, `ex7_2_3` ×12, `himmel16` ×14 |
+
+Mecanismo. El puntaje de `LSmear` resulta ser `\|Σ_i y_i J_ij\|·diam_j`, con
+`y` los duales de las filas de su LP (cotas de las variables como filas aparte):
+una *smear* ponderada por los duales, grande donde la variable pesa en las
+restricciones activas. El costo reducido de DFB es **cero en toda variable
+básica** por definición, aunque bisecarla achique mucho la relajación, así que
+`redcost` sólo ordena las no básicas y el árbol explota. Y `jac`, que usa la
+misma matriz que `LSmear`, también falla: la diferencia está en los `λ`. Los
+del vértice óptimo de la relajación afín son pocos y dispersos (2–4 filas
+activas), y concentran el puntaje en pocas variables; los de `LSmear`, de un LP
+más flojo con las cotas como filas, reparten el peso entre más restricciones.
+Para bisecar sirve un peso ancho, no la sensibilidad exacta de un vértice.
+Cerrada como sustitución directa; el bisector y la propiedad quedan detrás de
+`-b lsmeardfb` para quien quiera retomarla con otra regla. La idea del paso
+dual de anticipación (puntuar las básicas por `viol·θ_r` del test de razón)
+queda sin probar y con la expectativa bajada por esto mismo.
+
 ### Las opciones
 
 0. **`bearing` con `eps_x` = 1e-7** (§4): verificar si el buscador de `loup`
    acierta antes de contraer y falla después.
-1. **Usar en el resto de `ibexopt` lo que DFB ya calcula.** El punto primal `x*`
-   como candidato de `loup` (hoy `LoupFinderXTaylor` resuelve otro LP con SoPlex
-   por nodo; y el `loup` es lo que falla en `bearing`) y los multiplicadores del
-   objetivo para `LSmear`, que hoy los pide a SoPlex. Techo ~12 % de cpu y
-   `ibexopt` sin solver LP externo. Cambia la heurística de bisección: medir
-   celdas.
+1. **El `x*` de DFB como candidato de `loup`.** Hoy `LoupFinderXTaylor`
+   resuelve otro LP con SoPlex por nodo, y el `loup` es lo que falla en
+   `bearing`. Techo ~7 % de cpu. (Los multiplicadores para `LSmear` ya se
+   probaron: arriba.)
 2. **`ibexsolve`**: `DefaultSolver` compone `CtcPolytopeHull` + XTaylor en el
    mismo lugar. Sin cota superior, toda la poda del lineal es prueba de vacío.
    Conservar el linearizador de producción para aislar el cambio. Instancias
    naturales: las Brown/Brent de `data_tests` (que hacen caer a `ibexopt` por no
    tener objetivo).
 3. **El rediseño para relajaciones grandes** (BTRAN/FTRAN sin tableau
-   explícito): la brecha que queda y la condición para que `compo` (celdas
-   ×0.83) sea rentable.
-4. **Dual estricto**: eliminar los pasos primales que quedan sin que el Harris
+   explícito): la brecha que queda, la condición para que `compo` (celdas
+   ×0.83) sea rentable, y lo que haría barata la herencia de base entre nodos.
+   **Modelo de costo (2026-10-02, `perf` con pila; µs por operación inflados
+   por igual por `perf`).** Pivote del tableau contra la suma de lo que haría
+   un pivote revisado (Forrest–Tomlin + BTRAN + FTRAN, medidos con
+   `DFB_SX_LU=actualizada` y `DFBH_LUSTATS=1`):
+
+   | instancia, linealizador | filas `m` | pivote tableau | pivote revisado (estimado) | `pivot` + `compute_basics` en el tiempo total |
+   |---|---|---|---|---|
+   | `ex2_1_9`, afín | 4 | 0.46 | ~5.1 (×11) | 7 % |
+   | `ex6_1_3`, afín | 20 | 3.99 | ~5.9 (×1.5) | 15 % |
+   | `ex5_3_2`, afín | 32 | 8.73 | ~6.9 (×0.8) | 38 % |
+   | `launch`, afín | 50 | 15.6 | ~7.2 (×0.46) | 26 % |
+   | `ex6_1_3`, `compo` | 53 | 14.4 | ~9.7 (×0.67) | 59 % |
+   | `ex5_3_2`, `compo` | 81 | 31.7 | ~15.2 (×0.48) | 73 % |
+
+   Las curvas se cruzan hacia `m` ≈ 25–30, y con el linearizador afín **sólo 3
+   de 134 instancias** pasan de 25 filas (`ex5_3_2`, `ex5_4_3`, `launch`); 93
+   tienen 10 o menos, donde el revisado sería varias veces más caro por pivote.
+   Para la omisión no paga. Donde sí podría pagar es con `compo` (53–81 filas),
+   donde el pivoteo es el 47–61 % del tiempo y el revisado lo bajaría a la mitad
+   o dos tercios: es lo que haría competitivo a `compo`, que poda más (celdas
+   ×0.83). O sea que la opción 3 es, en los hechos, «hacer viable `compo`», con
+   un motor que elija revisado o tableau según `m`.
+
+   **Nunca se implementó**: lo que se midió como «camino sin tableau»,
+   `DFB_SX_EXACT`, mantenía el tableau y además recalculaba `d` y `x_B` desde
+   la LU en cada iteración (§21 de `MEDICIONES_DUELO.md`: no reprodujo, 31.6
+   contra 29.9 piv/LP, con la estrategia que en los hechos era primal).
+4. ~~**Corte del LP del objetivo contra el `loup`**~~ **Cerrado
+   (2026-10-02): techo nulo por construcción.** El optimizador pone el `loup`
+   como cota superior de `y` en la caja, así que cuando la relajación implica
+   `y > loup − eps` el LP no termina `OPTIMAL` con una cota que lo supera: el
+   poliedro con la caja es vacío, el dual lo detecta como `INFEASIBLE` y el nodo
+   muere por Farkas en la primera cota, sea cual sea `k` (`DFBH_GOALPROBE=1`:
+   0 nodos muertos por la cota del objetivo en 8 instancias; la sonda tenía un
+   defecto, contaba después de la rama que vacía la caja, ya corregido). La
+   variante «comprobar Farkas en cada pivote» tampoco paga
+   (`DFBH_VACIO_PROBE=1`): el primer certificado que alcanza llega al 91–97 %
+   del LP, y lo ahorrable es 0.2–0.6 % de los pivotes.
+5. **Dual estricto**: eliminar los pasos primales que quedan sin que el Harris
    absoluto cueste pivotes.
 
 No reabrir salvo evidencia nueva: cortes anytime por presupuesto o brecha,

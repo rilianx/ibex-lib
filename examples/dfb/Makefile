@@ -33,7 +33,7 @@ LDFLAGS = \
 LDLIBS = -libex -lsoplex -lgaol -lgdtoa -lultim
 
 # Fuentes por ejecutable
-ibexopt_SRCS = ibex_CtcDFBHull.cpp ibexopt.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp ibex_DFBSparse.cpp ibex_DFBSimplex.cpp ibex_DFBBasis.cpp affine/ibex_Affine2_fAF2.cpp affine/ibex_Affine3_fAFFullI.cpp affine/ibex_AffineVar.cpp affine/ibex_CtcAffineFwdBwd.cpp affine/ibex_LinearizerAffine2.cpp
+ibexopt_SRCS = ibex_CtcDFBHull.cpp ibex_LSmearDFB.cpp ibexopt.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp ibex_DFBSparse.cpp ibex_DFBSimplex.cpp ibex_DFBBasis.cpp affine/ibex_Affine2_fAF2.cpp affine/ibex_Affine3_fAFFullI.cpp affine/ibex_AffineVar.cpp affine/ibex_CtcAffineFwdBwd.cpp affine/ibex_LinearizerAffine2.cpp
 example_dfb_SRCS = dfb_non_linear_system.cpp ibex_CtcDualFeasibleBounding.cpp ibex_Optimizer05Config.cpp ibex_CtcDFBPropag.cpp ../../src/contractor/ibex_CtcPolytopeHull.cpp ibex_DFBSparse.cpp ibex_DFBSimplex.cpp ibex_DFBBasis.cpp
 # Todos los .cpp en un set único
 SRCS = $(ibexopt_SRCS) $(example_dfb_SRCS)

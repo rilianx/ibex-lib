@@ -70,6 +70,8 @@ static void ph_resumen() {
 static long   ab_LF = 0, ab_LC = 0, ab_PF = 0, ab_PC = 0;
 static double ab_accF = 0.0, ab_accC = 0.0;
 long CtcDFBHull::n_nodes = 0;
+long CtcDFBHull::n_goal_lp = 0;
+long CtcDFBHull::n_sens_extra = 0;
 long CtcDFBHull::n_bounds = 0;
 long CtcDFBHull::n_empty = 0;
 long CtcDFBHull::n_cortes = 0;
@@ -164,6 +166,70 @@ Interval cota_desde_gamma(const IntervalVector& gamma, const IntervalVector& z,
     return (-acc) / gk;
 }
 
+/* Dos sensibilidades posibles para el bisector (`DFBH_SENS=redcost|abs`):
+ *  redcost: |gamma_j / gamma_goal|, el costo reducido normalizado. Es cero en
+ *           toda variable BASICA, asi que ordena solo las no basicas: medido,
+ *           hace explotar el arbol.
+ *  abs:     sum_i |lambda_i| |A_ij| / |gamma_goal|, la smear ponderada por los
+ *           multiplicadores, que es lo que LSmear calcula en los hechos. */
+static bool sens_abs() { static const bool v = getenv("DFBH_SENS") && std::string(getenv("DFBH_SENS")) == "abs"; return v; }
+
+/* Multiplicadores por RESTRICCION del sistema (suma con signo de los de sus
+ * filas), normalizados por |gamma_goal|; para proyectarlos sobre la jacobiana
+ * que usa LSmear (`DFBH_SENS=jac`). Requiere el linearizador afin. */
+static void llenar_lam_ctr(std::vector<double>& out, const std::vector<double>& lam, Linearizer& lr,
+                           const IntervalVector& gamma, int gv) {
+    out.clear();
+    LinearizerAffine2* la = dynamic_cast<LinearizerAffine2*>(&lr);
+    if (!la || la->fila_ctr.size() != lam.size()) return;
+    const double gk = std::fabs(gamma[gv].mid());
+    out.assign(la->sistema().nb_ctr, 0.0);
+    for (size_t r = 0; r < lam.size(); ++r) out[la->fila_ctr[r]] += lam[r] / gk;
+}
+
+static void llenar_sens(std::vector<double>& out, const std::vector<double>& lam, const IntervalMatrix& A,
+                        const IntervalVector& gamma, int nb_var, int gv) {
+    const double gk = std::fabs(gamma[gv].mid());
+    out.assign(nb_var, 0.0);
+    if (!sens_abs()) {
+        for (int j = 0; j < nb_var; ++j) if (j != gv) out[j] = std::fabs(gamma[j].mid()) / gk;
+        return;
+    }
+    const int m = A.nb_rows();
+    for (int i = 0; i < m; ++i) {
+        if (lam[i] == 0.0) continue;
+        const double li = std::fabs(lam[i]);
+        for (int j = 0; j < nb_var; ++j) if (j != gv) out[j] += li * A[i][j].mag();
+    }
+    for (int j = 0; j < nb_var; ++j) out[j] /= gk;
+}
+
+
+/* Contadores de la sonda del corte del objetivo (`DFBH_GOALPROBE=1`). Se
+ * registran tambien en la rama que vacia la caja: antes se contaba despues de
+ * ella, asi que la sonda nunca veia un nodo muerto por la cota del objetivo. */
+struct GoalRep {
+    static long n, muere, cruza, pv_tot, pv_cruce, pv_muere, ahorro, paso_tot, restantes, pv_total_run;
+    static void anota(bool vacia, int iters, int obs, int paso, int restan) {
+        ++n; pv_tot += iters; paso_tot += paso;
+        if (vacia) {
+            ++muere; pv_muere += iters;
+            if (obs >= 0) { ++cruza; pv_cruce += obs; ahorro += iters - obs; restantes += restan; }
+        }
+    }
+    static void volcar(long piv_run) {
+        if (!n) return;
+        fprintf(stderr, "[goalprobe] cotas del objetivo=%ld | matan el nodo %.1f%% | de esas, el flotante cruza antes "
+                "del final en %.1f%%, en el pivote %.2f de %.2f | pivotes ahorrables=%ld (%.2f%% de todos los del "
+                "contractor) | cotas de la pasada que no harian falta %.1f por nodo muerto\n",
+                n, 100.0*muere/n, muere ? 100.0*cruza/muere : 0.0,
+                cruza ? (double)pv_cruce/cruza : 0.0, muere ? (double)pv_muere/muere : 0.0,
+                ahorro, piv_run ? 100.0*ahorro/piv_run : 0.0, cruza ? (double)restantes/cruza : 0.0);
+    }
+};
+long GoalRep::n = 0, GoalRep::muere = 0, GoalRep::cruza = 0, GoalRep::pv_tot = 0, GoalRep::pv_cruce = 0,
+     GoalRep::pv_muere = 0, GoalRep::ahorro = 0, GoalRep::paso_tot = 0, GoalRep::restantes = 0, GoalRep::pv_total_run = 0;
+
 /* Contadores de la sonda del lagrangiano (`DFBH_LAGR=1`), ver `una_pasada`. */
 struct LagrRep {
     static long n, n_ctrl_mal, n_bp_mejor, n_fix, n_c_mejor, n_c_mejor_a, n_mata, n_mata_bp, n_mata_c_solo, n_gap;
@@ -196,9 +262,11 @@ void sk_traza(DFBSimplex& sk, std::vector<std::vector<double> >* t) {
 
 } /* anonymous */
 
+CtcDFBHull* CtcDFBHull::ultimo = NULL;
+
 CtcDFBHull::CtcDFBHull(Linearizer& lr, int goal_var, double eps, Ctc* sonda_ctc) :
     Ctc(lr.nb_var()), lr(lr), nb_var(lr.nb_var()), goal_var(goal_var),
-    sonda_ctc(sonda_ctc), caja_lin(1), lin_valida(false), g_apagado(false), sin_recarga(false),
+    sonda_ctc(sonda_ctc), caja_lin(1), caja_sens(1), sens_ok(false), sens_contrajo(false), calcular_sens(false), sens_pase(false), lin_valida(false), g_apagado(false), sin_recarga(false),
     mylinearsolver(lr.nb_var(), LPSolver::Mode::NotCertified, eps),
     A(1,1), z(1), Af(1,1), gamma(1), hull_primal(1), hull_vacio(true), caja_acum(1), ph_ab(NULL) {
     m_uso = 0;
@@ -213,6 +281,7 @@ CtcDFBHull::CtcDFBHull(Linearizer& lr, int goal_var, double eps, Ctc* sonda_ctc)
     traza_resumen = (getenv("DFBH_SINCOTA") != NULL);
     if (getenv("DFBH_GVAR"))
         fprintf(stderr, "[dfb] nb_var=%d  goal_var=%d\n", nb_var, goal_var);
+    ultimo = this;
     if (getenv("DFBH_AB")) ph_ab = new CtcPolytopeHull(lr);
 }
 
@@ -316,6 +385,12 @@ CtcDFBHull::~CtcDFBHull() {
             DFBSimplex::n_solves ? 100.0*(DFBSimplex::n_solves-DFBSimplex::n_optimal-DFBSimplex::n_infeasible-DFBSimplex::n_iterlimit)/DFBSimplex::n_solves : 0.0,
             DFBSimplex::n_warm, DFBSimplex::n_cold, DFBSimplex::n_fact_fallo);
     LagrRep::volcar();
+    GoalRep::volcar(n_pivots);
+    fprintf(stderr, "[dfb] LPs de la cota inferior del objetivo con certificado=%ld (%.2f por nodo); LPs extra para sensibilidades=%ld\n",
+            n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
+    if (getenv("DFBH_LUSTATS"))
+        fprintf(stderr, "[lustats] factorizaciones=%ld updates=%ld btran=%ld ftran=%ld\n",
+                DFBBasis::n_factorizations, DFBBasis::n_updates, DFBBasis::n_btran, DFBBasis::n_ftran);
     if (n_lagr_aplic)
         fprintf(stderr, "[dfb] cota lagrangiana: aplicada en %ld cotas, mejoro la del LP en %ld (%.1f%%), "
                 "vacios que solo ella prueba=%ld, variables fijadas por cota %.2f\n",
@@ -1014,6 +1089,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         gfila_ok.assign(nb_var, 0);
     }
     gamma.resize(na);
+    sens_pase = false;
     n_bounds += nc;
 
     /* BARRIDO CIRCULAR con punto fijo INTERNO.
@@ -2016,6 +2092,10 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             /* `gamma.z = 0` vale para toda solucion de la relajacion, asi que
              * esto prueba que la caja no contiene ninguna: es riguroso. */
             ++n_empty;
+            if (es_goal) {
+                int q2 = 0; for (int t = 0; t < nc; ++t) if (!hecho[t]) ++q2;
+                GoalRep::anota(true, sk.iterations(), sk.obs_pivote, paso, q2);
+            }
             if (traza_cotas)
                 fprintf(stderr, "    paso=%-3d x%-3d %s  OPTIMAL piv=%-3d | VACIO por cota: z=[%.12g,%.12g] cota=[%.12g,%.12g]\n",
                         paso, k, lado ? "max" : "min", sk.iterations(), z[k].lb(), z[k].ub(), nb.lb(), nb.ub());
@@ -2039,28 +2119,15 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                         n_sin_cota[0], n_cota[0], n_cota[0] ? 100.0*n_sin_cota[0]/n_cota[0] : 0.0,
                         n_sin_cota[1], n_cota[1], n_cota[1] ? 100.0*n_sin_cota[1]/n_cota[1] : 0.0);
         }
-        if (es_goal) {
-            static long n = 0, muere = 0, cruza = 0, pv_tot = 0, pv_cruce = 0;
-            static long paso_tot = 0, restantes = 0;
-            const bool vacia = (z[k] & nb).is_empty();
-            ++n; pv_tot += sk.iterations(); paso_tot += paso;
-            if (vacia) {
-                ++muere;
-                if (sk.obs_pivote >= 0) {
-                    ++cruza; pv_cruce += sk.obs_pivote;
-                    /* cotas de la pasada que quedarian sin resolver */
-                    int q2 = 0; for (int t = 0; t < nc; ++t) if (!hecho[t]) ++q2;
-                    restantes += q2;
-                }
-            }
-            if ((n % 200) == 0)
-                fprintf(stderr, "[goalprobe] cotas del objetivo=%ld | muere el nodo en %.1f%% | "
-                        "de esas, el flotante cruza antes del final en %.1f%% | "
-                        "pivote del cruce %.2f de %.2f | paso medio %.1f de %d | "
-                        "cotas que quedarian sin resolver %.1f\n",
-                        n, 100.0*muere/n, muere ? 100.0*cruza/muere : 0.0,
-                        cruza ? (double)pv_cruce/cruza : 0.0, (double)pv_tot/n,
-                        (double)paso_tot/n, nc, cruza ? (double)restantes/cruza : 0.0);
+        if (es_goal) GoalRep::anota(false, sk.iterations(), sk.obs_pivote, paso, 0);
+        /* Sensibilidades para `LSmearDFB`: del LP del objetivo, cota inferior. */
+        if (k == goal_var && lado == 0 && !gamma[k].contains(0.0)) {
+            ++n_goal_lp;
+            llenar_sens(sens_goal, sk.lambda(), A, gamma, nb_var, k);
+            llenar_lam_ctr(lam_ctr_goal, sk.lambda(), lr, gamma, k);
+            caja_sens = caja_lin;
+            sens_contrajo = nb.lb() > z[k].lb();
+            sens_ok = true; sens_pase = true;
         }
         const double d0 = z[k].diam();
         const Interval zk_pre = z[k];
@@ -2370,6 +2437,39 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         }
     }
 
+    /* SENSIBILIDADES DEL OBJETIVO CUANDO LA PASADA NO LAS DEJO. Si la cota
+     * inferior de `y` se salteo, o termino con `y` no basica (`y = 0`, sin
+     * informacion), se resuelve `min y` con la cota inferior de `y` SUELTA:
+     * es lo que hace `LSmear` (`set_bounds(goal, [-1e10, 1e10])`), y fuerza a
+     * `y` a la base, de donde salen multiplicadores no triviales. La cota que
+     * da es valida (el poliedro solo se agrando) pero no se usa para
+     * contraer: solo se guarda `lambda`. */
+    if (calcular_sens && !sens_pase && goal_var >= 0 && goal_var < nb_var && !box.is_empty()) {
+        const Interval zg = z[goal_var];
+        z[goal_var] = Interval(NEG_INFINITY, zg.ub());
+        const DFBSimplex::Status st2 = sx.solve(goal_var, false, z, tope, true);
+        ++n_sens_extra; ++n_lps; n_pivots += sx.iterations();
+        if (st2 == DFBSimplex::OPTIMAL) {
+            const std::vector<double>& lam = sx.lambda();
+            for (int c = 0; c < na; ++c) gamma[c] = Interval(0.0);
+            for (int j = 0; j < m; ++j) {
+                if (lam[j] == 0.0) continue;
+                const Interval lj(lam[j]);
+                for (int c = 0; c < na; ++c)
+                    if (A[j][c] != Interval(0.0)) gamma[c] += lj * A[j][c];
+            }
+            if (!gamma[goal_var].contains(0.0)) {
+                llenar_sens(sens_goal, lam, A, gamma, nb_var, goal_var);
+                llenar_lam_ctr(lam_ctr_goal, lam, lr, gamma, goal_var);
+                caja_sens = caja_lin;
+                z[goal_var] = zg;
+                sens_contrajo = cota_desde_gamma(gamma, z, goal_var).lb() > zg.lb();
+                sens_ok = true; sens_pase = true;
+            }
+        }
+        z[goal_var] = zg;
+    }
+
     for (int i = 0; i < nb_var; ++i) box[i] = z[i];
 
 }
@@ -2485,7 +2585,22 @@ void CtcDFBHull::contract(IntervalVector& box) {
     contract(box, context);
 }
 
+long BxpDFBSens::id() { static const long i = next_id(); return i; }
+
+void CtcDFBHull::add_property(const IntervalVector& init_box, BoxProperties& prop) {
+    if (calcular_sens && !prop[BxpDFBSens::id()]) prop.add(new BxpDFBSens());
+}
+
 void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
+    contract_nucleo(box, context);
+    if (!calcular_sens || box.is_empty()) return;
+    BxpDFBSens* p = (BxpDFBSens*) context.prop[BxpDFBSens::id()];
+    if (p && sens_pase) {
+        p->sens = sens_goal; p->lam_ctr = lam_ctr_goal; p->caja = caja_sens; p->ok = true; p->contrajo = sens_contrajo;
+    }
+}
+
+void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) {
     if (box.is_unbounded()) return;
 
     /* REUSO DE LA LINEALIZACION DENTRO DEL PUNTO FIJO.

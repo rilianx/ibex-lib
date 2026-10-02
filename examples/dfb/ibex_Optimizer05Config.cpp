@@ -25,6 +25,7 @@
 #include "ibex_RoundRobin.h"
 #include "ibex_SmearFunction.h"
 #include "ibex_LSmear.h"
+#include "ibex_LSmearDFB.h"
 #include "ibex_Random.h"
 #include "ibex_NormalizedSystem.h"
 #include "ibex_LinearizerXTaylor.h"
@@ -351,6 +352,17 @@ Bsc& Optimizer05Config::get_bsc() {
 	else if (bisection=="lsmearmg")
 	        bs = &rec (new LSmear(*ext_sys,prec,
 				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))));
+	/* `lsmeardfb`: LSmear con las sensibilidades del LP del objetivo de DFB,
+	 * sin el LP de SoPlex por nodo. Exige `--lr=dfbhull`. */
+	else if (bisection=="lsmeardfb") {
+		Bsc* cmp = getenv("DFBH_BISEC_CMP")
+		         ? &rec(new LSmear(*ext_sys,prec, rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5))))
+		         : NULL;
+	        bs = &rec (new LSmearDFB(*ext_sys,prec,
+				      rec(new OptimLargestFirst(ext_sys->goal_var(),true,prec,0.5)), cmp));
+		if (CtcDFBHull::ultimo) CtcDFBHull::ultimo->activar_sensibilidades();
+		else ibex_error("[optimizer05] lsmeardfb requiere --lr=dfbhull");
+	}
 	else {
 		stringstream ss;
 		ss << "[optimizer05] " << bisection << " is not an implemented  bisection mode ";

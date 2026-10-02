@@ -8,6 +8,8 @@
 //============================================================================
 
 #include "ibex_LSmear.h"
+#include <cstdio>
+#include <cstdlib>
 #include "ibex_ExtendedSystem.h"
 #include "ibex_Random.h"
 #include "ibex_OptimLargestFirst.h"
@@ -150,6 +152,10 @@ int LSmear::var_to_bisect(IntervalMatrix& J, const IntervalVector& box) const {
 			}
 
 			lsmear*=(box[j].diam());
+			if (getenv("IBEX_LSMEAR_DUMP")) {
+				static long nd = 0;
+				if (nd < 8*sys.nb_var) { ++nd; fprintf(stderr, "[lsmear-dump] x%d dual=%.3g sumJ=%.3g score=%.3g diam=%.3g\n", j, dual_solution[j], (lsmear/box[j].diam()).mid()-dual_solution[j], lsmear.mid(), box[j].diam()); }
+			}
 
 			if (lsmear.mag() > 1e-10  && (j!=goal_var() || mylinearsolver->minimum().mid() > box[goal_var()].lb() )) {
 				k++;

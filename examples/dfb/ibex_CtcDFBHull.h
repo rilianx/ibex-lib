@@ -11,6 +11,9 @@
 #include "ibex_Linearizer.h"
 #include "ibex_LPSolver.h"
 #include "ibex_DFBSimplex.h"
+#include "ibex_Bxp.h"
+#include "ibex_BoxProperties.h"
+#include "ibex_Id.h"
 #include "ibex_CtcPolytopeHull.h"
 
 #include <vector>
@@ -51,6 +54,28 @@ namespace ibex {
  * debil y **nunca falsa**. Si la cota certificada no intersecta a `box[k]`, eso
  * es una prueba rigurosa de vacio.
  */
+/**
+ * \brief Sensibilidades del objetivo guardadas EN LA CELDA.
+ *
+ * El optimizador biseca la celda al sacarla de la cola y recien despues
+ * contrae a las hijas, asi que al bisecar `c` el ultimo nodo que paso por el
+ * contractor es otro. Las sensibilidades tienen que viajar con la celda:
+ * `CtcDFBHull::contract` las escribe en `context.prop` y `LSmearDFB` las lee
+ * de `cell.prop`. Al bisecar se copian a las hijas (siguen siendo validas:
+ * la caja de las hijas esta contenida en la del padre).
+ */
+class BxpDFBSens : public Bxp {
+public:
+    BxpDFBSens() : Bxp(id()), caja(1), ok(false), contrajo(false) {}
+    virtual Bxp* copy(const IntervalVector& box, const BoxProperties& prop) const { return new BxpDFBSens(*this); }
+    virtual void update(const BoxEvent& event, const BoxProperties& prop) {}
+    static long id();
+    std::vector<double> sens;
+    std::vector<double> lam_ctr;   //!< multiplicadores por restriccion del sistema, con signo, / |gamma_goal|
+    IntervalVector caja;
+    bool ok, contrajo;
+};
+
 class CtcDFBHull : public Ctc {
 public:
     /** \param goal_var  indice de la variable objetivo del sistema extendido,
@@ -68,6 +93,8 @@ public:
     virtual void contract(IntervalVector& box);
 
     virtual void contract(IntervalVector& box, ContractContext& context);
+    virtual void add_property(const IntervalVector& init_box, BoxProperties& prop);
+    void contract_nucleo(IntervalVector& box, ContractContext& context);
 
     /**
      * \brief Test de vacio BARATO con los `gamma` ya calculados, sin pivotear ni
@@ -87,6 +114,26 @@ public:
     bool gamma_prueba_vacio(const IntervalVector& box) const;
 
     int nb_var_publico() const { return nb_var; }
+
+    /**
+     * \brief Sensibilidades del LP del objetivo, para bisecar (`LSmearDFB`).
+     *
+     * Tras resolver `min y` con certificado `gamma`, `|gamma_j / gamma_goal|`
+     * es la sensibilidad de la cota inferior de `f` a `x_j` (el costo reducido
+     * de `x_j`, normalizado). Es lo mismo que `LSmear` obtiene resolviendo
+     * OTRO LP con SoPlex. Validas en `caja_sens` y sus sub-cajas.
+     */
+    const std::vector<double>& sensibilidades() const { return sens_goal; }
+    const IntervalVector& caja_sensibilidades() const { return caja_sens; }
+    bool sensibilidades_listas() const { return sens_ok; }
+    bool objetivo_contrajo() const { return sens_contrajo; }
+    static CtcDFBHull* ultimo;   //!< el ultimo construido, para enlazar el bisector
+    /** \brief Pide que cada pasada deje sensibilidades del objetivo aunque la
+     *  cota del objetivo no se haya resuelto o haya terminado con `y` no
+     *  basica: en ese caso se resuelve `min y` con la cota inferior de `y`
+     *  suelta, como hace `LSmear`, solo para obtener `lambda`. */
+    void activar_sensibilidades() { calcular_sens = true; }
+    static long n_sens_extra;    //!< LPs extra resueltos para las sensibilidades
 
     /* Contadores de diagnostico, analogos a los de CtcPolytopeHull. */
     static long n_lps;        //!< resoluciones de LP (llamadas a solve)
@@ -114,6 +161,7 @@ public:
     static long n_bounds;     //!< cotas disponibles (2n por nodo)
     static long n_empty;      //!< vacios probados por la cota certificada
     static long n_cortes;     //!< pasadas cortadas por el criterio temprano
+    static long n_goal_lp;    //!< LPs de la cota inferior del objetivo con OPTIMAL
     static long n_gtest;      //!< llamadas al test barato
     static long n_gvacio;     //!< vacios probados por el test barato
     static long n_gfuera;
@@ -244,6 +292,10 @@ private:
     std::vector<IntervalVector> gs;
     std::vector<char> gs_ok;
     IntervalVector caja_lin;
+    std::vector<double> sens_goal, lam_ctr_goal;
+    IntervalVector caja_sens;
+    bool sens_ok, sens_contrajo;
+    bool calcular_sens, sens_pase;
 
     /**
      * \brief Cota LAGRANGIANA con monotonia para `z_k` (`DFBH_LAGRC=1|2`).
