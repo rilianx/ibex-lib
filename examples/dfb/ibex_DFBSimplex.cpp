@@ -1662,8 +1662,13 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
         const bool m_kb0 = rowof[k] >= 0;
         double m_prev = std::numeric_limits<double>::quiet_NaN();
         if (sonda_mono && m_kb0) { if (xb_sucio) compute_basics(zz); m_prev = xB[rowof[k]]; }
+        long vueltas_lp = 0;
+        static const bool lp_largo = (getenv("DFBH_LPLARGO") != NULL);
         while (iters < max_iter) {
             ++n_vueltas;   /* vueltas del bucle, para separarlas de los pivotes */
+            if (lp_largo && (++vueltas_lp % 5000) == 0)
+                fprintf(stderr, "[lplargo] k=%d max=%d vueltas=%ld iters=%d/%d m=%d k_basica=%d\n",
+                        k, (int)maximize, vueltas_lp, iters, max_iter, m, (int)(rowof[k] >= 0));
             /* OBSERVACION: en que pivote cruza, sin cortar. */
             if (obs_activo && obs_pivote < 0 && rowof[k] >= 0) {
                 if (xb_sucio) compute_basics(zz);

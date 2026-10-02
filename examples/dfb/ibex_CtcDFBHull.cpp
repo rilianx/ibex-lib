@@ -1412,6 +1412,10 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         static const bool goalprobe = (getenv("DFBH_GOALPROBE") != NULL);
         const bool es_goal = goalprobe && k == goal_var && lado == 0;
         sk.obs_tope = es_goal ? z[k].ub() : std::numeric_limits<double>::quiet_NaN();
+        static const bool lp_largo2 = (getenv("DFBH_LPLARGO") != NULL);
+        static long lps_pasada = 0; ++lps_pasada;
+        if (lp_largo2 && (lps_pasada % 1000) == 0)
+            fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
         const DFBSimplex::Status st = sk.solve(k, lado == 1, z, tope_paso, true);
         if (techo) {
             const std::vector<double>& lam0 = sk.lambda();
@@ -2601,6 +2605,16 @@ void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
 }
 
 void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) {
+    /* `DFBH_LATIDO=1`: una linea cada 200 llamadas, para ver que crece cuando
+     * un nodo no termina. */
+    static const bool latido = (getenv("DFBH_LATIDO") != NULL);
+    static long n_llam = 0;
+    if (latido && (++n_llam % 200) == 0) {
+        double per = 0.0; int nfin = 0;
+        for (int i = 0; i < box.size(); ++i) if (box[i].diam() < 1e300) { per += box[i].diam(); ++nfin; }
+        fprintf(stderr, "[latido] llamadas=%ld nodos=%ld LPs=%ld pivotes=%ld iterlimit=%ld | perimetro=%.6g (%d finitas)\n",
+                n_llam, n_nodes, n_lps, n_pivots, DFBSimplex::n_iterlimit, per, nfin);
+    }
     if (box.is_unbounded()) return;
 
     /* REUSO DE LA LINEALIZACION DENTRO DEL PUNTO FIJO.
