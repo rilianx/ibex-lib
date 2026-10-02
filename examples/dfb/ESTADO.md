@@ -461,6 +461,15 @@ del vértice óptimo de la relajación afín son pocos y dispersos (2–4 filas
 activas), y concentran el puntaje en pocas variables; los de `LSmear`, de un LP
 más flojo con las cotas como filas, reparten el peso entre más restricciones.
 Para bisecar sirve un peso ancho, no la sensibilidad exacta de un vértice.
+
+Banco de la variante `abs` contra `lsmearmg` (138 instancias, 4 semillas;
+`results/lsmeardfb_4semillas.csv`): celdas ×1.53 / ×1.88 / ×0.62 y cpu ×1.28 /
+×1.58 / ×0.73 en los cortes > 0.1 / > 1 / > 5 s; **resueltas en 4/4: 131 →
+116**; de las instancias de > 0.1 s, mejora más del 10 % en 13 y empeora en
+23, con colas enormes (`ex7_3_4` ×67, `ex6_2_12` ×58, `house` ×18) frente a
+mejoras acotadas (`ex14_2_4` ×0.35, `ex2_1_9` ×0.55, `ex7_2_3` ×0.65). El
+×0.62 de > 5 s es sólo `bearing` y `ship-1`. Cpu por celda ×0.77: lo que ahorra
+es el LP de SoPlex de `LSmear`, que no compensa el árbol.
 Cerrada como sustitución directa; el bisector y la propiedad quedan detrás de
 `-b lsmeardfb` para quien quiera retomarla con otra regla. La idea del paso
 dual de anticipación (puntuar las básicas por `viol·θ_r` del test de razón)
