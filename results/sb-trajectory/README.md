@@ -169,3 +169,24 @@ lsmear-lffix, nodes and time:
 
 Not free: 20 Ipopt calls cost 1.1 s on mconcon (~55 ms each) and change
 dnieper's tree for the worse (+3 s). ship-1 is the only clear win.
+
+## The drastic HC4 probe end to end (`--oracle-score hc4 --sb-ratio 0.5`)
+
+`hc4-e2e-10.txt`, lsmear-lffix as base, 300 s. Nodes and time; lffix:
+
+    instance   lffix          1 dim x2       1 dim x4       2 dims x2
+    ship-1     680   1.9s     3664  10.0s    326   0.9s     166   0.5s
+    dnieper    434   8.5s     46    2.0s     40    2.2s     76    3.4s
+    ex6_2_8    13672 9.7s     13672 8.3s     16954 12.6s    58144 44.7s
+    schwefel5  698   0.8s     1066  0.6s     994   0.6s     timeout
+    mconcon    18    0.1s     414   1.0s     628   1.6s     86    0.3s
+    ex8_5_6    1852  3.7s     1364  2.5s     1364  2.5s     1744  3.1s
+    others     within ~10% (avgasb, dipigri, avgasa, dualc2)
+
+Pairwise time metric over the 10 (1 s floor, 2 for a timeout; lower is
+better): 1x4 0.846 vs lffix 0.939; 1x2 0.871 vs 0.919; 2x2 0.976 vs 0.922.
+The probe costs 0.1-0.8 ms per candidate, so for the first time a branching
+rule beats lffix in time: dnieper 4x faster, ex8_5_6 and ship-1 too; it
+loses ex6_2_8 (+30%) and mconcon (0.1 -> 1.6 s). Two dimensions is unstable
+(schwefel5 times out). The offline evaluation had said "no signal": it does
+not reproduce the probe faithfully (see dataset-fixedloup/README.md).
