@@ -51,8 +51,12 @@ def run(path):
                 lo = OPT[inst]
                 gv = next((j for j, v in enumerate(node["vars"]) if v.get("is_goal")), -1)
                 if gv >= 0:
+                    # the bound the search prunes with (Optimizer::compute_ymax,
+                    # rel_eps_f=1e-3, abs_eps_f=1e-7), not the optimum itself
+                    ymax = lo / (1 + 1e-3) if lo > 0 else lo / (1 - 1e-3)
+                    ymax = min(ymax, lo - 1e-7)
                     box = [list(b) for b in box]
-                    box[gv][1] = min(box[gv][1], lo)
+                    box[gv][1] = min(box[gv][1], ymax)
                     if box[gv][0] > box[gv][1]: box[gv][0] = box[gv][1]
             srv.set_loup(lo)
             for (cc, d, p), f in fs.items():
