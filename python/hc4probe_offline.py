@@ -24,6 +24,12 @@ CONFIGS = [c for c in (("hc4", 1, 2), ("hc4", 1, 4), ("hc4", 1, 8), ("hc4", 2, 2
            if not os.environ.get("CONFIGS") or "%s-%dx%d" % c in os.environ["CONFIGS"].split(",")]
 
 
+OPT = {}
+_of = os.path.join(DATA, "optima.txt")
+if os.path.exists(_of):   # labels made with the loup fixed at the optimum: probe with it too
+    OPT = {l.split()[0][:-4]: float(l.split()[1]) for l in open(_of)}
+
+
 def run(path):
     inst = os.path.basename(path)[:-6]
     outs = {c: os.path.join(DATA, "hc4probe", "%s-%dx%d" % c, inst + ".jsonl") for c in CONFIGS}
@@ -39,10 +45,19 @@ def run(path):
                           extra_args=["--relax", "both", "--bisector", "lsmear-lffix"]) as srv:
         for sid, line in enumerate(open(path)):
             s = json.loads(line); node = s["node"]
-            srv.set_loup(node["loup"] if node["loup"] is not None else ibexml.INF)
+            lo = node["loup"] if node["loup"] is not None else ibexml.INF
+            box = node["box"]
+            if inst in OPT and OPT[inst] < lo:
+                lo = OPT[inst]
+                gv = next((j for j, v in enumerate(node["vars"]) if v.get("is_goal")), -1)
+                if gv >= 0:
+                    box = [list(b) for b in box]
+                    box[gv][1] = min(box[gv][1], lo)
+                    if box[gv][0] > box[gv][1]: box[gv][0] = box[gv][1]
+            srv.set_loup(lo)
             for (cc, d, p), f in fs.items():
                 try:
-                    pr = srv._call(cmd="probe", box=node["box"], dims=d, parts=p, ctc=cc)["probes"]
+                    pr = srv._call(cmd="probe", box=box, dims=d, parts=p, ctc=cc)["probes"]
                 except ibexml.IbexError:
                     pr = []
                 f.write(json.dumps({"sample": sid, "probes": pr}) + "\n")
