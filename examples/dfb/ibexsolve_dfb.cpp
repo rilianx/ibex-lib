@@ -12,12 +12,13 @@
 // contractor lineal: CtcPolytopeHull (--lr=xn, produccion) o CtcDFBHull
 // (--lr=dfbhull), los dos sobre el mismo LinearizerXTaylor.
 //
-// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps_min] [-t timeout]
+// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=xt|art] [-e eps_min] [-t timeout]
 //                                [--seed=s] [--bfs]
 // Ultima linea: celdas tiempo estado soluciones frontera desconocidas pendientes
 
 #include "ibex.h"
 #include "ibex_CtcDFBHull.h"
+#include "affine/ibex_LinearizerAffine2.h"
 #include <cstring>
 #include <cstdlib>
 
@@ -26,17 +27,20 @@ using namespace ibex;
 
 int main(int argc, char** argv) {
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
-    string lr = "xn"; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
+    string lr = "xn", lin = "xt"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
     for (int i = 2; i < argc; ++i) {
         string a = argv[i];
         if (a.rfind("--lr=", 0) == 0) lr = a.substr(5);
         else if (a == "-e" && i+1 < argc) eps = atof(argv[++i]);
         else if (a == "-t" && i+1 < argc) timeout = atof(argv[++i]);
+        else if (a.rfind("--lin=", 0) == 0) lin = a.substr(6);
         else if (a.rfind("--seed=", 0) == 0) seed = atof(a.substr(7).c_str());
         else if (a == "--bfs") bfs = true;
+        else if (a == "--sols") sols = true;
         else { cerr << "argumento desconocido: " << a << endl; return 1; }
     }
     if (lr != "xn" && lr != "dfbhull") { cerr << "--lr debe ser xn o dfbhull" << endl; return 1; }
+    if (lin != "xt" && lin != "art") { cerr << "--lin debe ser xt o art" << endl; return 1; }
 
     System sys(argv[1]);
     RNG::srand(seed);
@@ -50,8 +54,10 @@ int main(int argc, char** argv) {
     CtcHC4 hc4acid(sys.ctrs, 0.1, true);
     CtcAcid acid(sys, hc4acid);
     CtcNewton* newton = eqs ? new CtcNewton(eqs->f_ctrs, 5e8, eps, 1.e-4) : NULL;
-    LinearizerXTaylor lin(sys);
-    Ctc* clin = (lr == "dfbhull") ? (Ctc*) new CtcDFBHull(lin) : (Ctc*) new CtcPolytopeHull(lin);
+    /* --lin=xt (omision, la de DefaultSolver: XTaylor con dos esquinas) o
+     * --lin=art (el linearizador afin, una fila por lado de cada restriccion). */
+    Linearizer* linp = (lin == "art") ? (Linearizer*) new LinearizerAffine2(sys) : (Linearizer*) new LinearizerXTaylor(sys);
+    Ctc* clin = (lr == "dfbhull") ? (Ctc*) new CtcDFBHull(*linp) : (Ctc*) new CtcPolytopeHull(*linp);
     CtcHC4 hc4xn(sys.ctrs, 0.01);
     CtcCompo compo_xn(*clin, hc4xn);
     CtcFixPoint fix(compo_xn);
@@ -72,6 +78,7 @@ int main(int argc, char** argv) {
     Solver::Status st = s.solve(sys.box);
     const CovSolverData& d = s.get_data();
     s.report();
+    if (sols) cout << d << endl;
     cout << s.get_nb_cells() << " " << s.get_time() << " " << (int) st << " "
          << d.nb_solution() << " " << d.nb_boundary() << " " << d.nb_unknown() << " " << d.nb_pending() << endl;
     return 0;

@@ -205,6 +205,24 @@ static void llenar_sens(std::vector<double>& out, const std::vector<double>& lam
 }
 
 
+/* SONDA DEL TESTIGO (`DFBH_TESTIGO=archivo`): un punto que se sabe solucion.
+ * Si DFB lo deja fuera de la caja, algo no es riguroso. */
+static const std::vector<double>& testigo() {
+    static std::vector<double> t; static bool cargado = false;
+    if (!cargado) {
+        cargado = true;
+        const char* fn = getenv("DFBH_TESTIGO");
+        if (fn) { FILE* fp = fopen(fn, "r"); double v; if (fp) { while (fscanf(fp, "%lf", &v) == 1) t.push_back(v); fclose(fp); } }
+    }
+    return t;
+}
+static bool testigo_en(const IntervalVector& z, int nb_var) {
+    const std::vector<double>& t = testigo();
+    if ((int)t.size() != nb_var) return false;
+    for (int i = 0; i < nb_var; ++i) if (!z[i].contains(t[i])) return false;
+    return true;
+}
+
 /* Contadores de la sonda del corte del objetivo (`DFBH_GOALPROBE=1`). Se
  * registran tambien en la rama que vacia la caja: antes se contaba despues de
  * ella, asi que la sonda nunca veia un nodo muerto por la cota del objetivo. */
@@ -453,7 +471,15 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         Interval enclosure(0.0);
         for (int j = 0; j < nb_var; ++j)
             enclosure += Interval(rows[nb_var+i][j]) * box[j];
-        const Interval bi = lhs_rhs[nb_var+i] & enclosure;
+        /* SoPlex representa el lado infinito de una fila como +-1e100
+         * (`soplex::infinity`). Hay que leerlo como infinito: tomado como cota
+         * finita, con coeficientes del orden de 1e113 (`Brown-15`, cajas de
+         * 1e8 con productos de muchas variables) corta soluciones reales, y DFB
+         * certificaba contracciones y vacios falsos (2026-10-05). */
+        Interval ladob = lhs_rhs[nb_var+i];
+        if (ladob.lb() <= -1e100) ladob = Interval(NEG_INFINITY, ladob.ub());
+        if (ladob.ub() >=  1e100) ladob = Interval(ladob.lb(), POS_INFINITY);
+        const Interval bi = ladob & enclosure;
         z[nb_var+i] = bi.is_empty() ? enclosure : bi;
     }
     for (int i = 0; i < m; ++i) {
@@ -916,6 +942,23 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
     const int m = (m_uso > 0 && m_uso < A.nb_rows()) ? m_uso : A.nb_rows();
     const int na = nb_var + m;
     const int nc = 2*nb_var;
+    const bool hay_testigo = testigo_en(z, nb_var);
+    if (hay_testigo) {
+        const std::vector<double>& t = testigo();
+        int malas = 0;
+        for (int j = 0; j < m; ++j) {
+            Interval v(0.0);
+            for (int c = 0; c < nb_var; ++c) v += A[j][c] * Interval(t[c]);
+            if (!v.intersects(z[nb_var+j])) {
+                if (malas++ < 5)
+                    fprintf(stderr, "[testigo] FILA %d VIOLADA: a.x* = [%.17g,%.17g]  rango b = [%.17g,%.17g]\n",
+                            j, v.lb(), v.ub(), z[nb_var+j].lb(), z[nb_var+j].ub());
+            }
+        }
+        static long n_chk = 0;
+        if (malas || (++n_chk % 50) == 1)
+            fprintf(stderr, "[testigo] pasada con el testigo adentro: m=%d filas violadas=%d\n", m, malas);
+    }
     /* Tope de pivotes POR LP. Distinto del de §20, que era por nodo y por eso
      * dejaba sin nada a las ultimas cotas. En el arbol el simplex necesita ~30
      * pivotes por LP (contra ~3 en la caja raiz), asi que aca un tope si muerde.
@@ -2012,6 +2055,16 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             if ((int)st >= 0 && (int)st < 8) ++est_previos[(int)st];
             static const bool sin_vacio = (getenv("DFBH_NOVACIO") != NULL);
             if (!suma.contains(0.0) && !sin_vacio) {
+                if (testigo_en(z, nb_var)) {
+                    const std::vector<double>& t = testigo();
+                    Interval gz(0.0);
+                    for (int c = 0; c < nb_var; ++c) gz += gamma[c] * Interval(t[c]);
+                    Interval gb(0.0);
+                    for (int j = 0; j < m; ++j) gb += gamma[nb_var+j] * z[nb_var+j];
+                    fprintf(stderr, "[testigo] VACIO POR FARKAS con el testigo adentro: paso=%d k=%d lado=%d estado=%d "
+                            "suma=[%.6g,%.6g] gamma_x.x*=[%.6g,%.6g] gamma_b.b=[%.6g,%.6g]\n",
+                            paso, k, lado, (int)st, suma.lb(), suma.ub(), gz.lb(), gz.ub(), gb.lb(), gb.ub());
+                }
                 ++n_empty;
                 if (traza_cotas)
                     fprintf(stderr, "    paso=%-3d x%-3d %s  estado=%d piv=%-3d | VACIO por Farkas, suma=[%.6g,%.6g]\n",
@@ -2162,6 +2215,9 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                         100.0*nada/std::max(1L, n-sin_gan),
                         piv_tot ? 100.0*(piv_todo+piv_casi)/piv_tot : 0.0);
         }
+        if (testigo_en(z, nb_var) && !nb.contains(testigo()[k]))
+            fprintf(stderr, "[testigo] LA COTA EXCLUYE AL TESTIGO: paso=%d k=%d lado=%d x*_k=%.17g cota=[%.17g,%.17g] z_k=[%.17g,%.17g]\n",
+                    paso, k, lado, testigo()[k], nb.lb(), nb.ub(), z[k].lb(), z[k].ub());
         z[k] &= nb;
         const double d1 = z[k].diam();
         if (traza_cotas) {

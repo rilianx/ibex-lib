@@ -156,7 +156,11 @@ void CtcDFBPropag::linearize(const IntervalVector& box, IntervalMatrix& A, Inter
         for (int j=0; j<nb_var; j++)
             enclosure += Interval(rows[nb_var+i][j]) * box[j];
 
-        Interval bi = lhs_rhs[nb_var+i] & enclosure;
+        /* +-1e100 es el infinito de SoPlex; ver CtcDFBHull::linearize_fresca. */
+        Interval ladob = lhs_rhs[nb_var+i];
+        if (ladob.lb() <= -1e100) ladob = Interval(NEG_INFINITY, ladob.ub());
+        if (ladob.ub() >=  1e100) ladob = Interval(ladob.lb(), POS_INFINITY);
+        Interval bi = ladob & enclosure;
         x[nb_var+i] = bi.is_empty() ? enclosure : bi;
   //      cout << "b[" << i << "]=" << x[nb_var+i] << endl;
     }
