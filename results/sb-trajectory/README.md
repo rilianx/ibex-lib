@@ -190,3 +190,11 @@ rule beats lffix in time: dnieper 4x faster, ex8_5_6 and ship-1 too; it
 loses ex6_2_8 (+30%) and mconcon (0.1 -> 1.6 s). Two dimensions is unstable
 (schwefel5 times out). The offline evaluation had said "no signal": it does
 not reproduce the probe faithfully (see dataset-fixedloup/README.md).
+
+Variants (`hc4-variants-10.txt`; pairwise time metric vs lffix, 10 instances):
+1x4 r=0.5 0.846/0.939 (above); 1x4 r=0.25 0.883/0.939 (ex6_2_8 back to
+13672, dnieper 32, mconcon still 624); 1x4 deviating only on more emptied
+pieces 0.958/0.983 (mconcon back to 18, but dnieper 192: its gain comes from
+volume, not from emptied pieces); 1x2 same 0.948/0.978. No single criterion
+fixes mconcon and keeps dnieper; the benchmark (results/hc4-probe) runs the
+three 1x4 variants.

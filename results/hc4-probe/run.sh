@@ -8,9 +8,10 @@
 #   BIN=build/bin/ibexopt-ml JOBS=16 results/hc4-probe/run.sh
 #   python3 results/hc4-probe/analyze.py
 #
-# Arms (ARMS="lffix hc4" by default):
+# Arms (ARMS="lffix hc4 hc4r025 hc4need" by default):
 #   lffix     lsmear-lffix
 #   hc4       + HC4 probe, 1 dimension x 4 parts, conservative r=0.5
+#   hc4r025   + HC4 probe, 1 x 4, conservative r=0.25
 #   hc4need   + HC4 probe, 1 x 4, deviate only if it empties more pieces
 #   guard10   lsmear-guard:10 (reference)
 cd "$(dirname "$0")/../.."
@@ -19,12 +20,13 @@ OUT=${OUT:-results/hc4-probe/runs.jsonl}
 TLIM=${TLIM:-600}; export TLIM
 $BIN --help 2>/dev/null | grep -q probe-parts || { echo "$BIN no conoce --probe-parts: recompila"; exit 1; }
 touch $OUT
-for arm in ${ARMS:-lffix hc4}; do while read i; do echo "$arm $i"; done < results/hc4-probe/instances.txt; done |
+for arm in ${ARMS:-lffix hc4 hc4r025 hc4need}; do while read i; do echo "$arm $i"; done < results/hc4-probe/instances.txt; done |
 xargs -P ${JOBS:-8} -n2 sh -c '
   arm=$0; i=$1; grep -q "\"instance\": \"$i\", \"arm\": \"$arm\"" '"$OUT"' && exit 0
   case $arm in
     lffix)   a="--bisector lsmear-lffix" ;;
     hc4)     a="--oracle --oracle-score hc4 --probe-dims 1 --probe-parts 4 --sb-ratio 0.5 --bisector lsmear-lffix" ;;
+    hc4r025) a="--oracle --oracle-score hc4 --probe-dims 1 --probe-parts 4 --sb-ratio 0.25 --bisector lsmear-lffix" ;;
     hc4need) a="--oracle --oracle-score hc4 --probe-dims 1 --probe-parts 4 --sb-ratio 0.5 --sb-need-pruned --bisector lsmear-lffix" ;;
     guard10) a="--bisector lsmear-guard --guard-horizon 10" ;;
   esac

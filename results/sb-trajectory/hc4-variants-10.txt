@@ -1,0 +1,12 @@
+ship-1 | p4r0.25 comp 532 2.5s dev=147/266 | p4need comp 748 2.3s dev=102/374 | p2need comp 778 1.7s dev=67/389 |
+dnieper | p4r0.25 comp 32 1.9s dev=9/16 | p4need comp 192 7.1s dev=25/96 | p2need comp 434 10.9s dev=1/217 |
+ex6_2_8 | p4r0.25 comp 13672 9.3s dev=0/6836 | p4need comp 13672 9.3s dev=0/6836 | p2need comp 13672 8.3s dev=0/6836 |
+schwefel5 | p4r0.25 comp 756 0.6s dev=2/378 | p4need comp 698 0.5s dev=0/349 | p2need comp 698 0.5s dev=0/349 |
+mconcon | p4r0.25 comp 624 1.6s dev=294/312 | p4need comp 18 0.1s dev=3/9 | p2need comp 18 0.1s dev=1/9 |
+avgasb | p4r0.25 comp 40 0.1s dev=2/20 | p4need comp 54 0.1s dev=0/27 | p2need comp 54 0.1s dev=0/27 |
+dipigri | p4r0.25 comp 234 0.5s dev=9/117 | p4need comp 234 0.5s dev=9/117 | p2need comp 212 0.4s dev=0/106 |
+avgasa | p4r0.25 comp 172 0.4s dev=9/86 | p4need comp 188 0.4s dev=0/94 | p2need comp 188 0.3s dev=0/94 |
+dualc2 | p4r0.25 comp 140 0.3s dev=1/70 | p4need comp 140 0.3s dev=1/70 | p2need comp 146 0.3s dev=0/73 |
+ex8_5_6 | p4r0.25 comp 1382 2.4s dev=137/691 | p4need comp 1706 2.9s dev=86/853 | p2need comp 1884 2.7s dev=43/942 |
+
+[exited with code 0]
