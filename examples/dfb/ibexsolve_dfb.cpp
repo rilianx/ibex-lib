@@ -8,9 +8,9 @@
 //   HC4, ACID(HC4), Newton si el sistema es cuadrado, y
 //   CtcFixPoint(CtcCompo(<contractor lineal>(LinearizerXTaylor), HC4)),
 // con el mismo bisector (SmearSumRelative si es cuadrado, RoundRobin si no) y
-// el mismo buffer (pila: profundidad primero). Lo unico que cambia es el
-// contractor lineal: CtcPolytopeHull (--lr=xn, produccion) o CtcDFBHull
-// (--lr=dfbhull), los dos sobre el mismo LinearizerXTaylor.
+// el mismo buffer (pila: profundidad primero). Cambia el contractor lineal:
+// CtcPolytopeHull (--lr=xn, produccion) o CtcDFBHull (--lr=dfbhull), y el
+// linearizador (--lin=art por omision, --lin=xt el de DefaultSolver).
 //
 // Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=xt|art] [-e eps_min] [-t timeout]
 //                                [--seed=s] [--bfs]
@@ -27,7 +27,7 @@ using namespace ibex;
 
 int main(int argc, char** argv) {
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
-    string lr = "xn", lin = "xt"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
+    string lr = "xn", lin = "art"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
     for (int i = 2; i < argc; ++i) {
         string a = argv[i];
         if (a.rfind("--lr=", 0) == 0) lr = a.substr(5);
@@ -54,8 +54,10 @@ int main(int argc, char** argv) {
     CtcHC4 hc4acid(sys.ctrs, 0.1, true);
     CtcAcid acid(sys, hc4acid);
     CtcNewton* newton = eqs ? new CtcNewton(eqs->f_ctrs, 5e8, eps, 1.e-4) : NULL;
-    /* --lin=xt (omision, la de DefaultSolver: XTaylor con dos esquinas) o
-     * --lin=art (el linearizador afin, una fila por lado de cada restriccion). */
+    /* --lin=art (omision desde 2026-10-05: el linearizador afin, una fila por
+     * lado de cada restriccion; mas rapido con los dos contractores) o --lin=xt
+     * (el de DefaultSolver: XTaylor con dos esquinas). Para reproducir al
+     * ibexsolve oficial: --lr=xn --lin=xt. */
     Linearizer* linp = (lin == "art") ? (Linearizer*) new LinearizerAffine2(sys) : (Linearizer*) new LinearizerXTaylor(sys);
     Ctc* clin = (lr == "dfbhull") ? (Ctc*) new CtcDFBHull(*linp) : (Ctc*) new CtcPolytopeHull(*linp);
     CtcHC4 hc4xn(sys.ctrs, 0.01);

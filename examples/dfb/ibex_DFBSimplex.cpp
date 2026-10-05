@@ -83,13 +83,14 @@ static bool leer_motor_revisado() {
     const char* v = getenv("DFB_SX_MOTOR");
     return v != NULL && std::string(v) == "revisado";
 }
+/* Omision `auto` (umbral 40) desde 2026-10-05; `DFB_SX_MOTOR=tableau` lo apaga. */
 static bool leer_motor_auto() {
     const char* v = getenv("DFB_SX_MOTOR");
-    return v != NULL && std::string(v) == "auto";
+    return v == NULL || std::string(v) == "auto";
 }
 bool DFBSimplex::motor_revisado = leer_motor_revisado();
 bool DFBSimplex::motor_auto = leer_motor_auto();
-int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 30;
+int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 40;
 long DFBSimplex::n_nodos_rev = 0, DFBSimplex::n_nodos_tab = 0;
 static bool leer_lu_diferida() {
     if (leer_motor_revisado()) return false;
