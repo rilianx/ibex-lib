@@ -331,7 +331,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_TRACE=1`, `IBEX_LOUPSTATS=1`, `IBEX_SMEAR_STATS=1`, `IBEX_ARGS=1` | traza de `loup`/`uplo` con celda, tiempo y ancho; intentos y éxitos del buscador de `loup` por ancho; respaldos del bisector; parámetros recibidos (§4, §8) |
 | `DFB_SX_VERIF=1`, `DFB_SX_FEASTOL=t`, `DFB_SX_TOLANCHO=τ` | verifica cada `OPTIMAL` desde la factorización; tolerancia primal, omisión `1e-9`; tope de la tolerancia en `τ·ancho` de la básica, **omisión 1e-3** (§9) |
 | `DFBH_SINCOTA`, `DFBH_PREDICE`, `DFBH_GOALPROBE`, `DFBH_CHKC=k`, `DFB_SX_DERIVA=1`, `DFBH_LAGR=1` | sondas (las dos últimas: deriva del tableau contra la LU; cota lagrangiana contra la del LP, §9) |
-| `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` (§9) |
+| `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=xt\|art] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` y linearizador a elección (§9) |
+| `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
@@ -485,35 +486,44 @@ queda sin probar y con la expectativa bajada por esto mismo.
    resuelve otro LP con SoPlex por nodo, y el `loup` es lo que falla en
    `bearing`. Techo ~7 % de cpu. (Los multiplicadores para `LSmear` ya se
    probaron: arriba.)
-2. **`ibexsolve`: hecho y medido (2026-10-02).** `ibexsolve_dfb` arma la
+2. **`ibexsolve`: hecho y medido (2026-10-05).** `ibexsolve_dfb` arma la
    composición de `DefaultSolver` (HC4, ACID, Newton si es cuadrado, punto fijo
    del lineal con HC4; mismo bisector y buffer) y sólo cambia el contractor
-   lineal: `--lr=xn` (`CtcPolytopeHull`, reproduce al `ibexsolve` oficial celda
-   por celda) o `--lr=dfbhull`, los dos sobre `LinearizerXTaylor`. Banco
-   `benchs/solver` (231 sistemas), 2 semillas, 60 s internos y 150 s externos
-   (`results/ibexsolve_2semillas.csv`):
+   lineal (`--lr=xn|dfbhull`) y, aparte, el linearizador (`--lin=xt|art`). Con
+   `--lr=xn --lin=xt` reproduce al `ibexsolve` oficial celda por celda.
 
-   | corte (pares que terminan los dos) | celdas | cpu | +rápido / −lento |
-   |---|---|---|---|
-   | > 0.1 s (n=185) | **×0.502** | **×0.937** | 109 / 56 |
-   | > 1 s (n=116) | **×0.402** | **×0.796** | 70 / 35 |
-   | > 5 s (n=69) | **×0.314** | **×0.806** | 35 / 28 |
+   **Defecto de corrección encontrado y arreglado.** SoPlex representa el lado
+   abierto de una fila como ±1e100 (`soplex::infinity`), y `linearize_fresca`
+   lo leía como cota finita de la holgura `b`. Con cajas de 1e8 y productos de
+   muchas variables (`Brown-15`), XTaylor da filas de coeficientes ~1e113 y ese
+   falso «−1e100» cortaba soluciones reales: DFB terminaba con **éxito** y 2
+   soluciones de 3 (infactible con la estrategia primal). Lo destapó una
+   discrepancia entre linearizadores; la sonda `DFBH_TESTIGO=archivo` (un punto
+   solución conocido, verificado contra cada fila y cada cota) lo localizó. Ahora
+   ±1e100 se lee como ±∞. En el banco de `ibexopt` no se activó nunca
+   (`DFBH_INFSTATS=1`: 0 filas en 138 instancias), así que las mediciones de
+   `ibexopt` siguen valiendo; en el solver sí, y las cifras que siguen son las
+   corregidas.
 
-   Terminan en 2/2: producción 138, DFB 146. DFB termina 20 que producción no
-   (`Bratu-0070…0210`, `Brown-15…30`, `Discrete-Integralf2-19…21`,
-   `Trigexp2-15…19`, `DiscreteBoundary-0200`, `Osborne1`, `Trigo1-0014`);
-   producción termina 10 que DFB no, todas grandes (`BroydenBanded-100…140`,
-   `BroydenTri-0100`, `Eiger-0100`, `Katsura-18`, `Katsurabis-14`,
-   `CountercurrentReactors2-14`, `Geneig-icse`, una semilla de `Brown-20`).
-   **0 discrepancias** en el número de cajas solución donde los dos terminan con
-   éxito. La poda es mucho mayor que en `ibexopt` (celdas ×0.3–0.5): sin cota
-   superior, todo lo que hace el lineal es probar vacío, y ahí está la ventaja
-   de Farkas de DFB. Pierde donde la relajación es grande: XTaylor da ~3 filas
-   por variable, y con `n` de 100 el tableau tiene ~200 filas y ~500 columnas,
-   cada LP cuesta ~60 ms y una celda puede pasarse del límite de tiempo (el
-   solver sólo mira el reloj entre celdas). Las peores con mismas celdas son
-   las `Katsura` (×1.75–2.42): es costo por nodo. Es el régimen donde el motor
-   revisado (opción 3) pagaría; en `ibexsolve` no es marginal.
+   Banco `benchs/solver` (231 sistemas), 2 semillas, 60 s internos y 150 s
+   externos, cuatro brazos (`results/ibexsolve_4brazos_2semillas.csv`). Celdas
+   / cpu en los cortes > 0.1 / > 1 / > 5 s, sobre pares que terminan los dos:
+
+   | comparación | > 0.1 s | > 1 s | > 5 s | terminan 2/2 |
+   |---|---|---|---|---|
+   | DFB/XTaylor contra prod/XTaylor | ×0.52 / ×0.96 | ×0.42 / ×0.83 | ×0.34 / ×0.86 | 142 contra 138 |
+   | **DFB/afín contra prod/afín** (efecto del contractor) | ×0.76 / **×0.89** | ×0.71 / **×0.89** | ×0.74 / **×0.87** | 160 contra 148 |
+   | prod/afín contra prod/XTaylor (efecto del linearizador) | ×0.86 / ×0.65 | ×0.72 / ×0.57 | ×0.67 / ×0.52 | 148 contra 138 |
+   | **DFB/afín contra prod/XTaylor** (los dos cambios) | ×0.64 / **×0.56** | ×0.49 / **×0.50** | ×0.45 / **×0.46** | **160 contra 138** |
+
+   0 discrepancias en cajas solución entre todos los brazos. Con XTaylor, DFB
+   gana 13 sistemas y pierde 9, todos grandes (`BroydenBanded-100…140`,
+   `Katsura-18`, `Eiger-0100`…): XTaylor da hasta 4 filas por igualdad (dos
+   esquinas × dos lados) y el tableau explícito se vuelve caro. El afín da la
+   mitad de filas y elimina esas pérdidas: DFB/afín contra producción gana 24 y
+   pierde 2 (`Geneig-icse`, `hayes1`). El afín le sirve también a producción
+   (×0.52–0.65), pero DFB le suma un ×0.87–0.89 encima y 12 sistemas más.
+
 3. **El rediseño para relajaciones grandes** (BTRAN/FTRAN sin tableau
    explícito): la brecha que queda, la condición para que `compo` (celdas
    ×0.83) sea rentable, y lo que haría barata la herencia de base entre nodos.

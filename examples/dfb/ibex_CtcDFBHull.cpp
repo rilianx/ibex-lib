@@ -72,6 +72,7 @@ static double ab_accF = 0.0, ab_accC = 0.0;
 long CtcDFBHull::n_nodes = 0;
 long CtcDFBHull::n_goal_lp = 0;
 long CtcDFBHull::n_sens_extra = 0;
+long CtcDFBHull::n_inf_falso = 0;
 long CtcDFBHull::n_bounds = 0;
 long CtcDFBHull::n_empty = 0;
 long CtcDFBHull::n_cortes = 0;
@@ -404,6 +405,8 @@ CtcDFBHull::~CtcDFBHull() {
             DFBSimplex::n_warm, DFBSimplex::n_cold, DFBSimplex::n_fact_fallo);
     LagrRep::volcar();
     GoalRep::volcar(n_pivots);
+    if (getenv("DFBH_INFSTATS"))
+        fprintf(stderr, "[infstats] filas donde el infinito de SoPlex (1e100) habria cortado=%ld\n", n_inf_falso);
     fprintf(stderr, "[dfb] LPs de la cota inferior del objetivo con certificado=%ld (%.2f por nodo); LPs extra para sensibilidades=%ld\n",
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
     if (getenv("DFBH_LUSTATS"))
@@ -477,6 +480,7 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
          * 1e8 con productos de muchas variables) corta soluciones reales, y DFB
          * certificaba contracciones y vacios falsos (2026-10-05). */
         Interval ladob = lhs_rhs[nb_var+i];
+        if ((ladob.lb() <= -1e100 && enclosure.lb() < -1e100) || (ladob.ub() >= 1e100 && enclosure.ub() > 1e100)) ++n_inf_falso;
         if (ladob.lb() <= -1e100) ladob = Interval(NEG_INFINITY, ladob.ub());
         if (ladob.ub() >=  1e100) ladob = Interval(ladob.lb(), POS_INFINITY);
         const Interval bi = ladob & enclosure;
