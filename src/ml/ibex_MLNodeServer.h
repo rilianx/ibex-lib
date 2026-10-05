@@ -401,6 +401,10 @@ public:
 	 *  child has none), also when strong branching prunes more children. */
 	void set_sb_vol_only(bool b) { sb_vol_only = b; }
 
+	/** \brief With set_sb_ratio(): deviate only when the probe prunes (or
+	 *  empties) strictly more than the base's choice; volume alone never. */
+	void set_sb_need_pruned(bool b) { sb_need_pruned = b; }
+
 	long oracle_deviations;       //!< conservative mode: decisions taken from the base
 
 	/** \brief Oracle decisions taken, and how many the bisector took instead. */
@@ -701,6 +705,7 @@ protected:
 	int probe_ctc;                //!< see set_probe_ctc()
 	std::vector<void*> probe_owned;  //!< linearizers and hull behind lp_ctc
 	bool sb_vol_only;             //!< see set_sb_vol_only()
+	bool sb_need_pruned;          //!< see set_sb_need_pruned()
 
 	OpenStatistics* stats;        //!< operator statistics (owned)
 
