@@ -38,7 +38,7 @@ example_dfb_SRCS = dfb_non_linear_system.cpp ibex_CtcDualFeasibleBounding.cpp ib
 # Todos los .cpp en un set único
 ibexsolve_dfb_SRCS = ibexsolve_dfb.cpp ibex_CtcDFBHull.cpp ibex_CtcDualFeasibleBounding.cpp ibex_CtcDFBPropag.cpp ibex_DFBSparse.cpp ibex_DFBSimplex.cpp ibex_DFBBasis.cpp affine/ibex_Affine2_fAF2.cpp affine/ibex_Affine3_fAFFullI.cpp affine/ibex_AffineVar.cpp affine/ibex_CtcAffineFwdBwd.cpp affine/ibex_LinearizerAffine2.cpp
 ibexsolve_dfb_OBJS = $(ibexsolve_dfb_SRCS:.cpp=.o)
-SRCS = $(ibexopt_SRCS) $(example_dfb_SRCS)
+SRCS = $(ibexopt_SRCS) $(example_dfb_SRCS) $(ibexsolve_dfb_SRCS)
 OBJS = $(SRCS:.cpp=.o)
 DEPS = $(SRCS:.cpp=.d)
 

@@ -334,6 +334,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=xt\|art] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` y linearizador a elección (§9) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
+| `DFB_SX_MOTOR=revisado` | simplex dual revisado sin tableau, prototipo (§9). Apagado |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
@@ -550,7 +551,34 @@ queda sin probar y con la expectativa bajada por esto mismo.
    ×0.83). O sea que la opción 3 es, en los hechos, «hacer viable `compo`», con
    un motor que elija revisado o tableau según `m`.
 
-   **Nunca se implementó**: lo que se midió como «camino sin tableau»,
+   **Prototipo (2026-10-05), `DFB_SX_MOTOR=revisado`**, apagado. Simplex dual
+   revisado sin tableau: la fila del pivote sale de una BTRAN y un producto por
+   `Ā`, el test de razón es el mismo (paso largo, Harris), `d` e `y` se
+   actualizan con la fila, la base cambia en la LU con Forrest–Tomlin, `x_B` se
+   recalcula con un producto y una FTRAN, y devex usa una FTRAN de la columna
+   entrante. Sin pasos primales. Test unitario 528/528 y 200/200. Medido con el
+   orden `lejos` en los dos motores (el orden por costo lee el tableau),
+   semilla 1:
+
+   | sistema (filas) | tableau | revisado |
+   |---|---|---|
+   | `Eiger-0100` | 47.3 s | **0.56 s** |
+   | `Bratu-0060` | 45.4 s | **4.9 s** |
+   | `BroydenTri-0100` | tope (155 s) | **3.5 s**, resuelto |
+   | `BroydenBanded-100` (253) | no termina en 200 s | 94 s |
+   | `BroydenBanded-120` (282) | 114 s, 5 celdas | 187 s, 7 celdas |
+   | `Katsura-16` (43) / `Katsura-14` (56) | 43.0 / 16.4 s | 35.5 / 14.8 s, mismas celdas |
+   | `ex5_3_2` (32, `ibexopt`) | 2.91 s | 2.55 s |
+   | `ex6_1_3` (~20, `ibexopt`) | 26.1 s | 34.3 s (×1.31) |
+   | `ex2_1_9` (~4, `ibexopt`) | 5.0 s | 7.9 s (×1.57) |
+
+   Confirma el modelo de costo: el revisado gana desde ~30 filas, por uno o dos
+   órdenes de magnitud con 100 variables, y pierde con relajaciones chicas por
+   el costo fijo de las llamadas a la LU. Sin devex hacía ×1.5–1.9 más pivotes
+   por LP. Lo que sigue es elegir el motor por nodo según `m` y medir en los
+   bancos.
+
+   **Nunca se implementó** (hasta este prototipo): lo que se midió como «camino sin tableau»,
    `DFB_SX_EXACT`, mantenía el tableau y además recalculaba `d` y `x_B` desde
    la LU en cada iteración (§21 de `MEDICIONES_DUELO.md`: no reprodujo, 31.6
    contra 29.9 piv/LP, con la estrategia que en los hechos era primal).

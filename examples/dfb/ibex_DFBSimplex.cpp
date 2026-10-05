@@ -73,9 +73,19 @@ long DFBSimplex::n_warm       = 0;
 long DFBSimplex::n_cold       = 0;
 long DFBSimplex::n_fact_fallo = 0;
 long DFBSimplex::n_refact_dif = 0;
+long DFBSimplex::n_filas_rev = 0;
 /* `pivot` no actualiza la LU salvo con `DFB_SX_LU=actualizada`: vale para la
  * diferida (cpu por celda x0.94) y para el tableau, que es la omision. */
+/* `DFB_SX_MOTOR=revisado`: simplex dual revisado, sin tableau explicito (ver
+ * `es_revisado`). Exige la LU al dia en cada pivote, asi que fuerza
+ * `DFB_SX_LU=actualizada`. */
+static bool leer_motor_revisado() {
+    const char* v = getenv("DFB_SX_MOTOR");
+    return v != NULL && std::string(v) == "revisado";
+}
+bool DFBSimplex::motor_revisado = leer_motor_revisado();
 static bool leer_lu_diferida() {
+    if (leer_motor_revisado()) return false;
     const char* v = getenv("DFB_SX_LU");
     return v == NULL || std::string(v) != "actualizada";
 }
@@ -83,6 +93,7 @@ bool DFBSimplex::lu_diferida = leer_lu_diferida();
 /* Omision `tableau` desde 2026-09-30 (cpu x0.89 contra la diferida en el
  * banco, ver ESTADO.md §9). `DFB_SX_LU=diferida` o `actualizada` la apagan. */
 static bool leer_lu_tableau() {
+    if (leer_motor_revisado()) return false;
     const char* v = getenv("DFB_SX_LU");
     return v == NULL || (std::string(v) != "diferida" && std::string(v) != "actualizada");
 }
@@ -519,6 +530,7 @@ void DFBSimplex::reparar_cotas_infinitas(const IntervalVector& z) {
 
 long DFBSimplex::n_basics = 0;
 void DFBSimplex::compute_basics(const IntervalVector& z) {
+    if (motor_revisado && fact_ok && !fact_sucia) { compute_basics_revisado(z); return; }
     perf::Cron _c(&perf::t_basics);
     ++n_basics;
     xb_sucio = false;
@@ -593,6 +605,97 @@ void DFBSimplex::set_objective(int k, bool maximize, bool reubicar) {
                 atupper[c] = (d[c] < -DUAL_TOL) ? 1 : 0;
             }
         }
+}
+
+
+/* ===================== MOTOR REVISADO (`DFB_SX_MOTOR=revisado`) =====================
+ *
+ * Simplex dual revisado: no se mantiene el tableau. En cada iteracion la fila
+ * del pivote sale de una BTRAN y un producto por `Abar` (`fila_revisada`), se
+ * deja en `tidx/tval[r]` para que el test de razon de siempre la lea, y
+ * `pivot_revisado` actualiza `d` e `y` con ella y cambia la base en la LU con
+ * Forrest-Tomlin. `x_B` se recalcula con un producto y una FTRAN. Las demas
+ * filas de `tidx/tval` quedan obsoletas: nada en el camino dual las lee (el
+ * orden de cotas por costo si, por eso el prototipo se mide con `lejos`). */
+void DFBSimplex::fila_revisada(int r) {
+    if ((int)rho_buf.size() != m) rho_buf.assign(m, 0.0);
+    if ((int)filaA_buf.size() != na) filaA_buf.assign(na, 0.0);
+    fact.btran_row(r - 1, &rho_buf[0]);
+    fact.row_of_A(&rho_buf[0], &filaA_buf[0]);
+    double amax = 0.0;
+    for (int c = 0; c < na; ++c) if (std::fabs(filaA_buf[c]) > amax) amax = std::fabs(filaA_buf[c]);
+    const double piso = amax * 1e-14;
+    tidx[r].clear(); tval[r].clear();
+    for (int c = 0; c < na; ++c)
+        if (std::fabs(filaA_buf[c]) > piso) { tidx[r].push_back(c); tval[r].push_back(filaA_buf[c]); }
+    ++n_filas_rev;
+}
+
+bool DFBSimplex::pivot_revisado(int r, int col) {
+    perf::Cron _c(&perf::t_pivot);
+    xb_sucio = true;
+    if (col >= na) return false;
+    const double p = filaA_buf[col];
+    if (std::fabs(p) < PIV_TOL) return false;
+    const double theta = d[col] / p;
+    if (theta != 0.0) {
+        const std::vector<int>& ix = tidx[r]; const std::vector<double>& vl = tval[r];
+        for (size_t t = 0; t < ix.size(); ++t) d[ix[t]] -= theta * vl[t];
+        for (int j = 0; j < m; ++j) ylam[j] -= theta * rho_buf[j];   /* y += theta*rho */
+    }
+    /* Pesos devex: hace falta la columna entrante transformada, una FTRAN con
+     * la base vieja. Sin esto el revisado elige por Dantzig y hace 1.5-1.9
+     * veces mas pivotes por LP (medido en las Katsura). */
+    static const bool devex_rev = !(getenv("DFB_SX_DEVEX") && std::string(getenv("DFB_SX_DEVEX")) == "0");
+    if (devex_rev && (int)dw.size() == m+1) {
+        if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
+        fact.ftran_col(col, &colq_buf[0]);
+        const double ap = colq_buf[r-1];
+        if (ap != 0.0) {
+            const double wr = dw[r];
+            for (int i = 1; i <= m; ++i) {
+                if (i == r) continue;
+                const double f = colq_buf[i-1];
+                if (f == 0.0) continue;
+                const double cand = (f*f)/(ap*ap) * wr;
+                if (cand > dw[i]) dw[i] = cand;
+            }
+            const double nw = wr / (ap*ap);
+            dw[r] = nw > 1.0 ? nw : 1.0;
+        }
+    }
+    const int out = basic[r];
+    d[col] = 0.0;
+    rowof[out] = -1;
+    basic[r] = col;
+    rowof[col] = r;
+    for (int rr = 1; rr <= m; ++rr) { const int b = basic[rr]; if (b != out) d[b] = 0.0; }
+    if (!fact.change_basis(r - 1, col)) {
+        for (int rr = 1; rr <= m; ++rr) cols_buf[rr-1] = basic[rr];
+        fact_ok = fact.set_basis(cols_buf);
+    }
+    ++n_pivots;
+    return fact_ok;
+}
+
+void DFBSimplex::compute_basics_revisado(const IntervalVector& z) {
+    perf::Cron _c(&perf::t_basics);
+    ++n_basics;
+    xb_sucio = false;
+    for (int c = 0; c < na; ++c) {
+        if (rowof[c] >= 0) { xN[c] = 0.0; xhat[c] = 0.0; continue; }
+        double v = atupper[c] ? z[c].ub() : z[c].lb();
+        if (v == POS_INFINITY || v == NEG_INFINITY) {
+            const double o = atupper[c] ? z[c].lb() : z[c].ub();
+            if (o == POS_INFINITY || o == NEG_INFINITY) v = 0.0;
+            else { v = o; atupper[c] = atupper[c] ? 0 : 1; }
+        }
+        xN[c] = v; xhat[c] = v;
+    }
+    fact.A_times(&xhat[0], &vbuf[0]);
+    for (int j = 0; j < m; ++j) vbuf[j] = -vbuf[j];
+    fact.ftran_vec(&vbuf[0], &lam_buf[0]);
+    for (int r = 1; r <= m; ++r) xB[r] = lam_buf[r-1];
 }
 
 /* Columna q del tableau: se recorre fila por fila. Con el tableau guardado por
@@ -727,6 +830,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
      * pasadas con tolerancia absoluta, que medido en 8 instancias no gana con
      * claridad (ESTADO.md §9, opcion 3). */
     static const bool harris_rel = (getenv("DFB_SX_HARRISABS") == NULL);
+    if (motor_revisado) fila_revisada(r_out);
     if (bfrt) {
         const std::vector<int>&    ix = tidx[r_out];
         const std::vector<double>& vl = tval[r_out];
@@ -938,7 +1042,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
      * quedaba desfasada (8 discrepancias de 528 en el test unitario). */
     const double x_in  = xN[j_in];
 
-    if (!pivot(r_out, j_in)) {
+    if (!(motor_revisado ? pivot_revisado(r_out, j_in) : pivot(r_out, j_in))) {
         pivote_fallido = true;
         infeasible = false; return false;
     }
@@ -1714,7 +1818,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
                 }
             }
             const int iters_antes = iters;
-            if (primal_step(zz, unbounded)) {
+            if (!motor_revisado && primal_step(zz, unbounded)) {
                 if (sonda_mono && dual_puro) {
                     static long n_ini = 0, n_desp = 0, b[5] = {0,0,0,0,0}, n_k = 0, n_inf = 0;
                     if (iters_antes == 0) ++n_ini; else ++n_desp;

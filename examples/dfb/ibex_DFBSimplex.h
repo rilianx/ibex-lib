@@ -244,6 +244,9 @@ public:
      * `DFB_SX_GUARDIA=tol` fija la tolerancia relativa, omision `1e-9`.
      */
     static bool lu_tableau;
+    /** \brief `DFB_SX_MOTOR=revisado`: simplex dual revisado, sin tableau. */
+    static bool motor_revisado;
+    static long n_filas_rev;   //!< filas del pivote calculadas por BTRAN (motor revisado)
     static long n_guardia_ok, n_guardia_fallo_d, n_guardia_fallo_xb, n_guardia_fallo_fin;
     /**
      * \brief Sonda de deriva del tableau (`DFB_SX_DERIVA=1`). No cambia la
@@ -436,6 +439,10 @@ private:
      */
     bool fact_sucia;
     bool asegurar_fact();
+    void fila_revisada(int r);
+    bool pivot_revisado(int r, int col);
+    void compute_basics_revisado(const IntervalVector& z);
+    std::vector<double> rho_buf, filaA_buf, colq_buf;
     std::vector<double> lam_buf;
     std::vector<int>    cols_buf;
 
