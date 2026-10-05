@@ -246,6 +246,11 @@ public:
     static bool lu_tableau;
     /** \brief `DFB_SX_MOTOR=revisado`: simplex dual revisado, sin tableau. */
     static bool motor_revisado;
+    static bool motor_auto;     //!< `DFB_SX_MOTOR=auto`: revisado si m > motor_umbral
+    static int  motor_umbral;   //!< `DFB_SX_MOTOR_M`, omision 30
+    static long n_nodos_rev, n_nodos_tab;
+    /** \brief El motor del nodo actual es el revisado (el tableau no esta al dia). */
+    bool es_revisado() const { return rev; }
     static long n_filas_rev;   //!< filas del pivote calculadas por BTRAN (motor revisado)
     static long n_guardia_ok, n_guardia_fallo_d, n_guardia_fallo_xb, n_guardia_fallo_fin;
     /**
@@ -438,6 +443,7 @@ private:
      * interruptor, `lu_diferida`, es publico.
      */
     bool fact_sucia;
+    bool rev;   //!< motor revisado en el nodo actual
     bool asegurar_fact();
     void fila_revisada(int r);
     bool pivot_revisado(int r, int col);

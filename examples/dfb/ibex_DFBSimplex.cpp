@@ -83,7 +83,14 @@ static bool leer_motor_revisado() {
     const char* v = getenv("DFB_SX_MOTOR");
     return v != NULL && std::string(v) == "revisado";
 }
+static bool leer_motor_auto() {
+    const char* v = getenv("DFB_SX_MOTOR");
+    return v != NULL && std::string(v) == "auto";
+}
 bool DFBSimplex::motor_revisado = leer_motor_revisado();
+bool DFBSimplex::motor_auto = leer_motor_auto();
+int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 30;
+long DFBSimplex::n_nodos_rev = 0, DFBSimplex::n_nodos_tab = 0;
 static bool leer_lu_diferida() {
     if (leer_motor_revisado()) return false;
     const char* v = getenv("DFB_SX_LU");
@@ -198,7 +205,7 @@ long DFBSimplex::n_base_rechazada = 0;
 DFBSimplex::DFBSimplex() : traza_y(NULL), tope_anytime(std::numeric_limits<double>::quiet_NaN()),
                            obs_tope(std::numeric_limits<double>::quiet_NaN()), obs_pivote(-1), xb_sucio(true), m(0), nx(0), na(0), nc(0), zs(1),
                            bnd(0.0), iters(0),
-                           base_lista(false), fact_ok(false), fact_sucia(false),
+                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false),
                            perturbado(false), pert_eps(0.0), pert_estado(12345u) {
 }
 
@@ -271,6 +278,10 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
     nx = nx_;
     na = Abar.nb_cols();
     nc = na + m;
+    /* Motor de este nodo: `revisado` siempre, `auto` segun el tamano de la
+     * relajacion (DFB_SX_MOTOR_M, omision 30 filas), tableau si no. */
+    rev = motor_revisado || (motor_auto && m > motor_umbral);
+    if (rev) ++n_nodos_rev; else ++n_nodos_tab;
 
     calcular_escalas(Abar);
 
@@ -530,7 +541,7 @@ void DFBSimplex::reparar_cotas_infinitas(const IntervalVector& z) {
 
 long DFBSimplex::n_basics = 0;
 void DFBSimplex::compute_basics(const IntervalVector& z) {
-    if (motor_revisado && fact_ok && !fact_sucia) { compute_basics_revisado(z); return; }
+    if (rev && fact_ok && !fact_sucia) { compute_basics_revisado(z); return; }
     perf::Cron _c(&perf::t_basics);
     ++n_basics;
     xb_sucio = false;
@@ -830,7 +841,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
      * pasadas con tolerancia absoluta, que medido en 8 instancias no gana con
      * claridad (ESTADO.md §9, opcion 3). */
     static const bool harris_rel = (getenv("DFB_SX_HARRISABS") == NULL);
-    if (motor_revisado) fila_revisada(r_out);
+    if (rev) fila_revisada(r_out);
     if (bfrt) {
         const std::vector<int>&    ix = tidx[r_out];
         const std::vector<double>& vl = tval[r_out];
@@ -1042,7 +1053,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
      * quedaba desfasada (8 discrepancias de 528 en el test unitario). */
     const double x_in  = xN[j_in];
 
-    if (!(motor_revisado ? pivot_revisado(r_out, j_in) : pivot(r_out, j_in))) {
+    if (!(rev ? pivot_revisado(r_out, j_in) : pivot(r_out, j_in))) {
         pivote_fallido = true;
         infeasible = false; return false;
     }
@@ -1470,7 +1481,8 @@ bool DFBSimplex::refrescar_desde_tableau(int k, bool maximize,
 }
 
 bool DFBSimplex::refrescar(int k, bool maximize, const IntervalVector& z, bool reubicar) {
-    if (lu_tableau) {
+    if (rev) asegurar_fact();
+    if (lu_tableau && !rev) {
         /* La ubicacion se restaura si la guardia falla despues de reubicar,
          * para que el camino de la LU parta del mismo estado. */
         const std::vector<char> atup = atupper;
@@ -1664,7 +1676,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
             basic[r] = nx + (r-1);
             rowof[nx + (r-1)] = r;
         }
-        if (lu_tableau) fact_sucia = true;     /* se factoriza solo si la guardia lo pide */
+        if (lu_tableau && !rev) fact_sucia = true;     /* se factoriza solo si la guardia lo pide */
         else {
             for (int r = 1; r <= m; ++r) cols_buf[r-1] = basic[r];
             fact_ok = fact.set_basis(cols_buf);
@@ -1818,7 +1830,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
                 }
             }
             const int iters_antes = iters;
-            if (!motor_revisado && primal_step(zz, unbounded)) {
+            if (!rev && primal_step(zz, unbounded)) {
                 if (sonda_mono && dual_puro) {
                     static long n_ini = 0, n_desp = 0, b[5] = {0,0,0,0,0}, n_k = 0, n_inf = 0;
                     if (iters_antes == 0) ++n_ini; else ++n_desp;
@@ -1921,7 +1933,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
         y_tab.resize(m);
         for (int r = 0; r < m; ++r) y_tab[r] = -ylam[r] * rscale[r];
     }
-    if (!(lu_tableau && y_desde_tableau(k, maximize))
+    if (!(lu_tableau && !rev && y_desde_tableau(k, maximize))
         && !y_desde_factorizacion(k, maximize)) {
         ++n_fact_fallo;
         for (int r = 0; r < m; ++r) y[r] = -ylam[r];

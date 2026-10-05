@@ -409,6 +409,8 @@ CtcDFBHull::~CtcDFBHull() {
         fprintf(stderr, "[infstats] filas donde el infinito de SoPlex (1e100) habria cortado=%ld\n", n_inf_falso);
     fprintf(stderr, "[dfb] LPs de la cota inferior del objetivo con certificado=%ld (%.2f por nodo); LPs extra para sensibilidades=%ld\n",
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
+    if (DFBSimplex::n_nodos_rev)
+        fprintf(stderr, "[dfb] motor por nodo: revisado=%ld tableau=%ld\n", DFBSimplex::n_nodos_rev, DFBSimplex::n_nodos_tab);
     if (getenv("DFBH_LUSTATS"))
         fprintf(stderr, "[lustats] factorizaciones=%ld updates=%ld btran=%ld ftran=%ld\n",
                 DFBBasis::n_factorizations, DFBBasis::n_updates, DFBBasis::n_btran, DFBBasis::n_ftran);
@@ -1239,7 +1241,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                          * ganancia relativa fuera despreciable, y en instancias
                          * con escalas dispares eso desordenaba la pasada
                          * —`alkylbis` se iba de 70 a 700 celdas—. */
-                        if (orden == 3) {
+                        if (orden == 3 && !sx.es_revisado()) {
                             const int cnt = sx.dual_infeasibilities(j, lado == 1);
                             if (idx < 0 || cnt < mejor_cnt
                                 || (cnt == mejor_cnt && rel > mejor_gan)) {
@@ -1265,7 +1267,9 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     const double rel = (std::fabs(bd) < 1.0) ? dj
                                                              : std::fabs(dj/bd);
                     if (!no_salteo && rel < PREC) { hecho[q] = 1; continue; }
-                    if (orden == 3) {
+                    /* Con el motor revisado el tableau no esta al dia: orden de
+                     * la mas lejana (`orden == 1`). */
+                    if (orden == 3 && !sx.es_revisado()) {
                         const int cnt = sx.dual_infeasibilities(j, lado == 1);
                         if (idx < 0 || cnt < mejor_cnt
                             || (cnt == mejor_cnt && -dj < mejor)) {
@@ -1275,7 +1279,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                         continue;
                     }
                     const double key = (orden == 0) ? dj
-                                     : (orden == 1) ? -dj
+                                     : (orden == 1 || orden == 3) ? -dj
                                                     : (double)q;
                     if (key < mejor) { mejor = key; idx = q; }
                 }

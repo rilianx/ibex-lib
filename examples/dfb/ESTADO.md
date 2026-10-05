@@ -334,7 +334,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=xt\|art] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` y linearizador a elección (§9) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
-| `DFB_SX_MOTOR=revisado` | simplex dual revisado sin tableau, prototipo (§9). Apagado |
+| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (omisión del umbral 40) (§9). Omisión `tableau` |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
@@ -575,8 +575,29 @@ queda sin probar y con la expectativa bajada por esto mismo.
    Confirma el modelo de costo: el revisado gana desde ~30 filas, por uno o dos
    órdenes de magnitud con 100 variables, y pierde con relajaciones chicas por
    el costo fijo de las llamadas a la LU. Sin devex hacía ×1.5–1.9 más pivotes
-   por LP. Lo que sigue es elegir el motor por nodo según `m` y medir en los
-   bancos.
+   por LP.
+
+   **Híbrido por nodo (2026-10-05), `DFB_SX_MOTOR=auto`**: revisado si la
+   relajación tiene más de `DFB_SX_MOTOR_M` filas (umbral 40), tableau si no.
+   En los nodos revisados el refresco y el certificado usan la LU y el orden de
+   cotas pasa a `lejos`. Con umbral 30 `ex5_3_2` (32 filas) empeoraba 1.75 →
+   2.62 s por perder el orden por costo; con 40 el revisado entra sólo donde su
+   ventaja lo compensa. Bancos:
+
+   | comparación (celdas / cpu) | > 0.1 s | > 1 s | > 5 s | terminan |
+   |---|---|---|---|---|
+   | solver, auto contra tableau, XTaylor | ×0.99 / **×0.87** | ×1.00 / **×0.81** | ×1.00 / **×0.75** | 147 contra 142 |
+   | solver, auto contra tableau, afín | ×1.00 / ×0.93 | ×1.00 / ×0.88 | ×1.00 / ×0.80 | 161 contra 160 |
+   | **solver, DFB auto/afín contra prod/XTaylor** | ×0.64 / **×0.54** | ×0.49 / **×0.47** | ×0.44 / **×0.43** | **161 contra 138** |
+   | `ibexopt`, auto contra omisión (4 semillas) | ×1.00 / ×1.01 | ×1.00 / ×1.01 | ×1.00 / ×1.01 | 131 y 131 |
+
+   0 discrepancias en cajas solución y 0 óptimos incompatibles. En el solver el
+   motor cambia el costo y no el árbol (celdas ×1.00); con XTaylor gana 6
+   sistemas y pierde 1 (`DiscreteBoundary-0200`). En `ibexopt` es neutro: casi
+   ninguna relajación pasa de 40 filas (525 de 552 pares con celdas idénticas).
+   `results/ibexsolve_motor_auto_2semillas.csv`,
+   `results/ibexopt_motor_auto_4semillas.csv`. Quedan `BroydenBanded-100…140`,
+   con LPs de más de 200 pivotes: ahí el límite ya no es el motor.
 
    **Nunca se implementó** (hasta este prototipo): lo que se midió como «camino sin tableau»,
    `DFB_SX_EXACT`, mantenía el tableau y además recalculaba `d` y `x_B` desde
