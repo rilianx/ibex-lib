@@ -1,0 +1,15 @@
+11000 muestras con la elección base entre los candidatos
+  base (lsmear-lffix)                suma/base 1.000   instancias >1:   0%   peor en >=1.5x:   0%   desvía   0%
+  oráculo                            suma/base 0.814   instancias >1:   0%   peor en >=1.5x:   0%   desvía  37%
+  oráculo conservador thr=0.5        suma/base 0.901   instancias >1:   0%   peor en >=1.5x:   0%   desvía   7%
+  oráculo conservador thr=0.7        suma/base 0.828   instancias >1:   0%   peor en >=1.5x:   0%   desvía  21%
+  modelo A thr=0.9                   suma/base 0.988   instancias >1:  15%   peor en >=1.5x:   1%   desvía  10%
+  modelo A thr=0.7                   suma/base 0.997   instancias >1:   5%   peor en >=1.5x:   1%   desvía   1%
+  modelo A thr=0.5                   suma/base 0.999   instancias >1:   0%   peor en >=1.5x:   0%   desvía   0%
+  modelo A thr=0.3                   suma/base 1.000   instancias >1:   0%   peor en >=1.5x:   0%   desvía   0%
+  modelo A+P (con sondeo) thr=0.9    suma/base 0.862   instancias >1:   0%   peor en >=1.5x:   0%   desvía  20%
+  modelo A+P (con sondeo) thr=0.7    suma/base 0.886   instancias >1:   1%   peor en >=1.5x:   0%   desvía  12%
+  modelo A+P (con sondeo) thr=0.5    suma/base 0.895   instancias >1:   0%   peor en >=1.5x:   0%   desvía  10%
+  modelo A+P (con sondeo) thr=0.3    suma/base 0.973   instancias >1:   0%   peor en >=1.5x:   0%   desvía   2%
+
+[exited with code 0]
