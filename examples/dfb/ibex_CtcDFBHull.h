@@ -76,8 +76,35 @@ public:
     bool ok, contrajo;
 };
 
+/**
+ * \brief Pozo de cortes en `x*` (`DFBH_CORTES=1|2`).
+ *
+ * Cada corte es una fila `a.x en rango`, valida en toda `caja` (una XTaylor
+ * en la esquina de `caja` mas cercana al `x*` que separa, con el jacobiano en
+ * intervalos sobre `caja`). Viaja con la celda: la siguiente llamada del
+ * punto fijo en el mismo nodo la agrega a la relajacion afin si la caja actual
+ * esta contenida en `caja`. Con `DFBH_CORTES=2` lo heredan tambien las hijas.
+ */
+struct CorteDFB {
+    std::vector<double> a;
+    Interval rango;
+    IntervalVector caja;
+    unsigned long clave;   //!< restriccion, lado y esquina, para no repetir
+    CorteDFB() : caja(1), clave(0) {}
+};
+class BxpDFBCortes : public Bxp {
+public:
+    BxpDFBCortes() : Bxp(id()) {}
+    virtual Bxp* copy(const IntervalVector& box, const BoxProperties& prop) const;
+    virtual void update(const BoxEvent& event, const BoxProperties& prop) {}
+    static long id();
+    std::vector<CorteDFB> pozo;
+};
+
 class CtcDFBHull : public Ctc {
 public:
+    static int modo_cortes;            //!< `DFBH_CORTES`: 0 apagado, 1 en el nodo, 2 tambien las hijas
+    static long n_cortes_gen, n_cortes_filas, n_cortes_llam;   //!< generados; filas agregadas; llamadas con cortes
     /** \param goal_var  indice de la variable objetivo del sistema extendido,
      *  o -1 si no la hay. Lo unico que poda un nodo es la cota inferior de esa
      *  variable contra el loup; las otras `2n-1` solo mejoran la caja para
@@ -297,6 +324,13 @@ private:
     IntervalVector caja_sens;
     bool sens_ok, sens_contrajo;
     bool calcular_sens, sens_pase;
+    /* Cortes en x*: los de esta llamada (se mezclan al pozo de la celda al
+     * final) y el jacobiano sobre `caja_lin`, calculado una vez por pasada. */
+    std::vector<CorteDFB> cortes_nuevos;
+    IntervalMatrix Jcortes;
+    bool jac_cortes_ok;
+    int m_afin;   //!< filas de la linealizacion afin, sin cortes: tope del pozo
+    void generar_cortes(const std::vector<double>& xs);
 
     /**
      * \brief Cota LAGRANGIANA con monotonia para `z_k` (`DFBH_LAGRC=1|2`).

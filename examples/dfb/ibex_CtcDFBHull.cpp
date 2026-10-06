@@ -290,7 +290,7 @@ CtcDFBHull* CtcDFBHull::ultimo = NULL;
 
 CtcDFBHull::CtcDFBHull(Linearizer& lr, int goal_var, double eps, Ctc* sonda_ctc) :
     Ctc(lr.nb_var()), lr(lr), nb_var(lr.nb_var()), goal_var(goal_var),
-    sonda_ctc(sonda_ctc), caja_lin(1), caja_sens(1), sens_ok(false), sens_contrajo(false), calcular_sens(false), sens_pase(false), lin_valida(false), g_apagado(false), sin_recarga(false),
+    sonda_ctc(sonda_ctc), caja_lin(1), caja_sens(1), sens_ok(false), sens_contrajo(false), calcular_sens(false), sens_pase(false), Jcortes(1,1), jac_cortes_ok(false), m_afin(0), lin_valida(false), g_apagado(false), sin_recarga(false),
     mylinearsolver(lr.nb_var(), LPSolver::Mode::NotCertified, eps),
     A(1,1), z(1), Af(1,1), gamma(1), hull_primal(1), hull_vacio(true), caja_acum(1), ph_ab(NULL) {
     m_uso = 0;
@@ -467,9 +467,24 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
     caja_lin = box;          /* la caja para la que valen esta relajacion y sus gamma */
     lin_valida = false;      /* recien es valida cuando haya gamma calculados */
     n_m_tot += m; ++n_m_llam;
-    A.resize(m, nb_var + m);
+    m_afin = m;
+
+    /* Cortes del pozo de la celda que valen para esta caja (`DFBH_CORTES`). */
+    std::vector<const CorteDFB*> vc;
+    if (modo_cortes > 0) {
+        const BxpDFBCortes* pc = (const BxpDFBCortes*) context.prop[BxpDFBCortes::id()];
+        if (pc)
+            for (size_t t = 0; t < pc->pozo.size(); ++t)
+                if (pc->pozo[t].caja.size() == box.size() && pc->pozo[t].caja.is_superset(box)
+                    && (int)pc->pozo[t].a.size() == nb_var)
+                    vc.push_back(&pc->pozo[t]);
+        if (!vc.empty()) { n_cortes_filas += vc.size(); ++n_cortes_llam; }
+    }
+    const int mt = m + (int)vc.size();
+
+    A.resize(mt, nb_var + mt);
     A.clear();
-    z.resize(nb_var + m);
+    z.resize(nb_var + mt);
     for (int i = 0; i < nb_var; ++i) z[i] = box[i];
 
     /* b_i = fila_i . x, asi que su rango valido es la evaluacion por intervalos
@@ -497,8 +512,19 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         for (int j = 0; j < nb_var; ++j) A[i][j] = rows[nb_var+i][j];
         A[i][nb_var+i] = Interval(-1.0);   /* la parte b de Abar es -I */
     }
+    for (int r = 0; r < (int)vc.size(); ++r) {
+        const int i = m + r;
+        Interval enclosure(0.0);
+        for (int j = 0; j < nb_var; ++j) {
+            A[i][j] = Interval(vc[r]->a[j]);
+            enclosure += Interval(vc[r]->a[j]) * box[j];
+        }
+        A[i][nb_var+i] = Interval(-1.0);
+        const Interval bi = vc[r]->rango & enclosure;
+        z[nb_var+i] = bi.is_empty() ? enclosure : bi;
+    }
 
-    return m;
+    return mt;
 }
 
 /* MATRIZ CONGELADA. Ver `cong_rows` en la cabecera.
@@ -1137,6 +1163,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
     gs_ok.assign(nc, 0);
     lin_valida = true;
     xstar.assign(na, 0.0);
+    jac_cortes_ok = false;
     {   /* El hull se reinicia SIEMPRE. Es una caja de puntos factibles y sirve
          * de techo exacto solo si todos siguen dentro de la caja actual; entre
          * llamadas la caja se encogio, asi que conservarlo seria un techo
@@ -2131,6 +2158,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         }
         hubo_optimo = true;
         sk.primal_solution(z, xstar);
+        if (modo_cortes > 0) generar_cortes(xstar);
         /* H |= x*, con el punto de ESTE ejemplar, no solo del ultimo. */
         if (hull_vacio) {
             for (int i = 0; i < nb_var; ++i) hull_primal[i] = Interval(xstar[i]);
@@ -2685,12 +2713,120 @@ void CtcDFBHull::contract(IntervalVector& box) {
 
 long BxpDFBSens::id() { static const long i = next_id(); return i; }
 
+/* Tope del pozo: `DFBH_CORTES_TOPE` veces las filas afines (omision 1). */
+static int tope_cortes(int m_afin) {
+    static const double f = getenv("DFBH_CORTES_TOPE") ? atof(getenv("DFBH_CORTES_TOPE")) : 1.0;
+    return std::max(1, (int)(f * m_afin + 0.5));
+}
+int CtcDFBHull::modo_cortes = getenv("DFBH_CORTES") ? atoi(getenv("DFBH_CORTES")) : 0;
+long CtcDFBHull::n_cortes_gen = 0, CtcDFBHull::n_cortes_filas = 0, CtcDFBHull::n_cortes_llam = 0;
+long BxpDFBCortes::id() { static const long i = next_id(); return i; }
+Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) const {
+    /* Las hijas estan contenidas en la caja del padre, asi que los cortes
+     * siguen siendo validos; solo se heredan con `DFBH_CORTES=2`. */
+    if (CtcDFBHull::modo_cortes >= 2) return new BxpDFBCortes(*this);
+    return new BxpDFBCortes();
+}
+
+/* CORTES EN X* (`DFBH_CORTES`).
+ *
+ * Para cada restriccion g_c que el `x*` de un LP viola, una fila XTaylor en
+ * la esquina `c` de `caja_lin` mas cercana a `x*`, coordenada a coordenada:
+ *
+ *     g(x) >= g(c) + sum_i a_i (x_i - c_i),   a_i = J_i.lb si c_i = lb, J_i.ub si no
+ *
+ * vale en toda la caja porque el signo de `x_i - c_i` esta fijo (J en
+ * intervalos sobre `caja_lin`). Para `g <= 0` da `a.x <= -g(c) + a.c`; para
+ * `g >= 0`, con la cota superior simetrica, `a.x >= ...`. El lado derecho se
+ * evalua en intervalos y se toma el extremo seguro, asi que el corte es
+ * riguroso. Se guarda solo si separa a `x*`. */
+void CtcDFBHull::generar_cortes(const std::vector<double>& xs) {
+    LinearizerAffine2* la = dynamic_cast<LinearizerAffine2*>(&lr);
+    if (!la || (int)xs.size() < nb_var || caja_lin.size() != nb_var) return;
+    const int tope = tope_cortes(m_afin);
+    if ((int)cortes_nuevos.size() >= tope) return;
+    const System& sys = la->sistema();
+    const int nc = sys.f_ctrs.image_dim();
+    IntervalVector xp(nb_var);
+    for (int i = 0; i < nb_var; ++i) xp[i] = Interval(xs[i]);
+    const IntervalVector gx = sys.f_ctrs.eval_vector(xp);
+    if (gx.is_empty()) return;
+    for (int c = 0; c < nc && (int)cortes_nuevos.size() < tope; ++c) {
+        const CmpOp op = sys.ops[c];
+        int lado;
+        if ((op == LEQ || op == LT || op == EQ) && gx[c].lb() > 0.0) lado = 0;
+        else if ((op == GEQ || op == GT || op == EQ) && gx[c].ub() < 0.0) lado = 1;
+        else continue;
+
+        if (!jac_cortes_ok) {
+            Jcortes.resize(nc, nb_var);
+            sys.f_ctrs.jacobian(caja_lin, Jcortes);
+            jac_cortes_ok = true;
+        }
+        IntervalVector esq(nb_var);
+        std::vector<double> a(nb_var);
+        unsigned long clave = 1469598103934665603UL ^ (unsigned long)(2*c + lado);
+        bool ok = true;
+        for (int i = 0; i < nb_var && ok; ++i) {
+            const Interval& Xi = caja_lin[i];
+            const Interval& Jci = Jcortes[c][i];
+            if (Xi.is_unbounded() || Jci.is_unbounded() || Jci.is_empty()) { ok = false; break; }
+            const bool abajo = xs[i] <= Xi.mid();
+            const double ci = abajo ? Xi.lb() : Xi.ub();
+            esq[i] = Interval(ci);
+            a[i] = (abajo == (lado == 0)) ? Jci.lb() : Jci.ub();
+            clave = (clave ^ (unsigned long)abajo) * 1099511628211UL;
+        }
+        if (!ok) continue;
+        const Interval gc = sys.f_ctrs[c].eval(esq);
+        if (gc.is_empty() || gc.is_unbounded()) continue;
+        Interval rhs = -gc;
+        for (int i = 0; i < nb_var; ++i) rhs += Interval(a[i]) * esq[i];
+        double ax = 0.0;
+        for (int i = 0; i < nb_var; ++i) ax += a[i] * xs[i];
+        const double viol = (lado == 0) ? ax - rhs.ub() : rhs.lb() - ax;
+        if (!(viol > 1e-9 * (1.0 + std::fabs(ax)))) continue;
+        bool rep = false;
+        for (size_t t = 0; t < cortes_nuevos.size() && !rep; ++t) rep = (cortes_nuevos[t].clave == clave);
+        if (rep) continue;
+        CorteDFB ct;
+        ct.a = a;
+        ct.rango = (lado == 0) ? Interval(NEG_INFINITY, rhs.ub()) : Interval(rhs.lb(), POS_INFINITY);
+        ct.caja = caja_lin;
+        ct.clave = clave;
+        cortes_nuevos.push_back(ct);
+        ++n_cortes_gen;
+    }
+}
+
 void CtcDFBHull::add_property(const IntervalVector& init_box, BoxProperties& prop) {
     if (calcular_sens && !prop[BxpDFBSens::id()]) prop.add(new BxpDFBSens());
+    if (modo_cortes > 0 && !prop[BxpDFBCortes::id()]) prop.add(new BxpDFBCortes());
 }
 
 void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
+    cortes_nuevos.clear();
     contract_nucleo(box, context);
+    /* Mezcla de los cortes de esta llamada al pozo de la celda: quedan los
+     * viejos que siguen valiendo para la caja y los nuevos, sin repetir, hasta
+     * el tope (se descartan los mas viejos). */
+    if (modo_cortes > 0 && !box.is_empty()) {
+        BxpDFBCortes* pc = (BxpDFBCortes*) context.prop[BxpDFBCortes::id()];
+        if (pc) {
+            std::vector<CorteDFB> pozo;
+            for (size_t t = 0; t < pc->pozo.size(); ++t)
+                if (pc->pozo[t].caja.size() == box.size() && pc->pozo[t].caja.is_superset(box))
+                    pozo.push_back(pc->pozo[t]);
+            for (size_t t = 0; t < cortes_nuevos.size(); ++t) {
+                bool rep = false;
+                for (size_t u = 0; u < pozo.size() && !rep; ++u) rep = (pozo[u].clave == cortes_nuevos[t].clave);
+                if (!rep) pozo.push_back(cortes_nuevos[t]);
+            }
+            const size_t tope = (size_t) tope_cortes(m_afin);
+            if (pozo.size() > tope) pozo.erase(pozo.begin(), pozo.begin() + (pozo.size() - tope));
+            pc->pozo.swap(pozo);
+        }
+    }
     if (!calcular_sens || box.is_empty()) return;
     BxpDFBSens* p = (BxpDFBSens*) context.prop[BxpDFBSens::id()];
     if (p && sens_pase) {

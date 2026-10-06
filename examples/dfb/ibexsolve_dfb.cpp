@@ -98,6 +98,9 @@ int main(int argc, char** argv) {
     Solver::Status st = s.solve(sys.box);
     const CovSolverData& d = s.get_data();
     s.report();
+    if (CtcDFBHull::modo_cortes > 0)
+        cerr << "[cortes] generados=" << CtcDFBHull::n_cortes_gen << " filas agregadas=" << CtcDFBHull::n_cortes_filas
+             << " en " << CtcDFBHull::n_cortes_llam << " llamadas" << endl;
     if (bis == "lsmeardfb")
         cerr << "[lsmeardfb] llamadas=" << LSmearDFB::n_llamadas << " sin_sens=" << LSmearDFB::n_sin_sens
              << " fuera=" << LSmearDFB::n_fuera << " eligio_dfb=" << LSmearDFB::n_dfb << endl;
