@@ -155,7 +155,31 @@ celdas pagando LPs por nodo (×1.03–1.05).
 
 Producción = `--filtering=acidhc4` + `CtcPolytopeHull` + linearizador afín.
 
-**Línea de base vigente (2026-10-06): SoPlex de fábrica.** Hasta aquí el
+**Línea de base vigente (2026-10-06, tarde): SoPlex de fábrica y sin reloj.**
+SoPlex 4.0.2 leía `times()`, una llamada al sistema, en cada FTRAN/BTRAN de su
+LU y en cada `optimize`, aun con `TIMER_OFF`, porque el parámetro no llegaba a
+la LU ni a las estadísticas. Se parcheó el SoPlex incluido
+(`lp_lib_wrapper/soplex/3rd/soplex-4.0.2.timer.patch`, aplicado por CMake) y el
+`LPSolver` pone `TIMER_OFF` (`IBEX_LP_RELOJ=1` lo restaura). 138 instancias, 4
+semillas, 15 procesos (`results/soplex_sinreloj_4semillas.csv`):
+
+| comparación | > 0.1 s | > 1 s | > 5 s | resueltas 4/4 |
+|---|---|---|---|---|
+| **DFB contra producción** | celdas ×1.040, **cpu ×0.887**, 161/22 | ×1.016, **×0.866**, 56/13 | ×1.017, **×0.808**, 29/5 | 131 contra 131 |
+| producción, sin reloj contra con reloj | celdas ×1.000, cpu ×0.687, 232/0 | ×1.000, ×0.677 | ×1.000, ×0.694 | |
+| DFB, sin reloj contra con reloj | celdas ×1.000, cpu ×0.942, 132/0 | ×1.000, ×0.940 | ×1.000, ×0.951 | |
+
+**La mayor parte de la ventaja de DFB en cpu era el reloj de SoPlex en
+producción**: producción gastaba ~30 % de su tiempo leyendo el reloj y DFB,
+que sólo usa SoPlex para el `loup`, ~6 %. Contra una producción sin ese
+impuesto DFB queda en ×0.81–0.89, con las mismas celdas. Todas las razones
+DFB/producción anteriores en `ibexopt` y en el solver están infladas por esto;
+las comparaciones dentro de DFB (DFB contra DFB) no. 0 óptimos incompatibles;
+DFB resuelve además `ship-1`, producción `bearing`. Lo que más pierde DFB:
+`bearing` (celdas ×2.2), `ex7_2_3` (×1.46), los `chem` (×1.3); lo que más
+gana: `alkyl` (cpu ×0.57), `ex14_2_4` (×0.78).
+
+**Línea de base intermedia (2026-10-06): SoPlex de fábrica, con reloj.** Hasta aquí el
 `LPSolver` de Ibex forzaba el simplex primal por columnas (puesto para comparar
 con las primeras versiones de DFB); ahora usa la configuración de fábrica
 (`IBEX_LP_PRIMAL=1` restaura el primal) y sin el reloj de SoPlex en lo que el
@@ -164,7 +188,7 @@ mismo barrido (`results/soplex_fabrica_4semillas.csv`), `analiza_lu.py`:
 
 | comparación | > 0.1 s | > 1 s | > 5 s | resueltas 4/4 |
 |---|---|---|---|---|
-| **DFB contra producción, los dos de fábrica** | celdas ×1.038, **cpu ×0.646**, 214/11 | ×1.016, **×0.612**, 84/4 | ×1.027, **×0.608**, 45/1 | 131 contra 130 |
+| DFB contra producción, los dos de fábrica | celdas ×1.038, **cpu ×0.646**, 214/11 | ×1.016, **×0.612**, 84/4 | ×1.027, **×0.608**, 45/1 | 131 contra 130 |
 | DFB contra producción, los dos con el primal (reproduce la de abajo) | ×0.983, ×0.623, 215/9 | ×0.978, ×0.623 | ×0.982, ×0.609 | 131 contra 131 |
 | producción, fábrica contra primal | ×1.056, ×1.040 | ×1.015, ×1.016 | ×0.930, ×0.958 | 130 contra 131 |
 | DFB, fábrica contra primal | ×1.159, ×1.122 | ×1.098, ×1.057 | ×1.052, ×1.035 | 131 contra 131 |
