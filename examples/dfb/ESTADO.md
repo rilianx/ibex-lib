@@ -384,6 +384,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=art\|xt\|compo] [-b lsmear\|smearsumrel\|lsmeardfb] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` linearizador y bisector a elección, **afín y `lsmear` por omisión**; `--lr=xn --lin=xt -b smearsumrel` reproduce al oficial (§9) |
 | `DFB_SX_RELOJ=1`, `IBEX_LP_RELOJ=1` | restauran el reloj de SoPlex en la LU de DFB y en el `LPSolver` de Ibex (§9) |
 | `IBEX_LP_PRIMAL=1` | el `LPSolver` vuelve al simplex primal por columnas (antes del 2026-10-06; §4) |
+| `IBEX_LP_REP=col` | SoPlex con representación por columnas (fábrica elige filas en muchos LPs del solver; §9) |
+| `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
 | `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (umbral 40) (§9). **Omisión `auto`** |
@@ -671,6 +673,33 @@ queda sin probar y con la expectativa bajada por esto mismo.
    incluido. Ojo: el wrapper fuerza el simplex primal por columnas
    (`ibex_LPLibWrapper.cpp`, commit `b59a201f`), así que el brazo de
    producción no usa la configuración de fábrica de SoPlex.
+
+   **DFB contra producción en el solver, sin reloj (2026-10-06).** Las
+   cifras de arriba contra producción pagaban el reloj de SoPlex y no valen.
+   264 sistemas, 2 semillas, `lsmear` en los tres primeros brazos
+   (`results/ibexsolve_prod_sinreloj_2semillas.csv`). Celdas / cpu:
+
+   | comparación | > 0.1 s | > 1 s | > 5 s | terminan |
+   |---|---|---|---|---|
+   | DFB/afín contra producción/afín (SoPlex de fábrica, como upstream) | ×0.53 / ×0.79 | ×0.48 / ×0.77 | ×0.46 / ×0.73 | 354 contra 320 |
+   | DFB/afín contra producción/afín con `IBEX_LP_REP=col` | ×0.76 / **×0.96** | ×0.73 / **×0.99** | ×0.71 / **×0.92** | 354 contra 323 |
+   | DFB/afín contra el oficial (XTaylor, `smearsumrel`, fábrica) | ×0.58 / ×0.69 | ×0.50 / ×0.64 | ×0.49 / ×0.63 | 354 contra 318 |
+   | producción, columnas contra fábrica | ×0.70 / ×0.90 | ×0.69 / ×0.88 | ×0.68 / ×0.88 | 323 contra 320 |
+
+   **SoPlex de fábrica debilita a `CtcPolytopeHull` en el solver.** Upstream
+   (ibex-team/ibex-lib, develop y master) no fija algoritmo ni representación,
+   y en muchos LPs del solver SoPlex elige la representación por filas; ahí
+   aparecen cientos de LPs declarados vacíos sin prueba de Neumaier–Shcherbina
+   (la prueba es idéntica a la de upstream), que cortan la pasada sin vaciar la
+   caja (`IBEX_PH_STATS=1` cuenta los estados). Discrete-Integralf2-15: 4641
+   celdas y 2519 vacíos sin prueba de fábrica, 19 y 2 con columnas. No está
+   aislado si el rayo falla la verificación o si el LP no era vacío. Las
+   columnas no arreglan todo: producción deja de terminar `Brown-15…20`. En
+   `ibexopt` casi no hay vacíos sin prueba con fábrica (0–1 por instancia) y
+   las columnas sólo mueven el árbol en las dos direcciones. Omisión: la de
+   upstream. **Mérito honesto del contractor en el solver: contra la
+   producción más fuerte, celdas ×0.71–0.76 y cpu ×0.92–0.99, 31 sistemas
+   más terminados.**
 
    **Bisector y `compo` en el solver (2026-10-06).** 264 sistemas, 2
    semillas, todo con `--lr=dfbhull` y sin el reloj

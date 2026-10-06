@@ -104,5 +104,6 @@ int main(int argc, char** argv) {
     if (sols) cout << d << endl;
     cout << s.get_nb_cells() << " " << s.get_time() << " " << (int) st << " "
          << d.nb_solution() << " " << d.nb_boundary() << " " << d.nb_unknown() << " " << d.nb_pending() << endl;
+    if (lr == "xn") delete clin;   /* imprime las sondas de CtcPolytopeHull */
     return 0;
 }

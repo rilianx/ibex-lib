@@ -127,6 +127,13 @@ void LPSolver::init(LPSolver::Mode mode, double tolerance, double timeout, int m
             mysoplex->setIntParam(SoPlex::TIMER, SoPlex::TIMER_OFF);
     }
 
+    /* `IBEX_LP_REP=col`: representacion por columnas. De fabrica SoPlex elige
+     * la de filas en muchos LPs del solver, y ahi `CtcPolytopeHull` acumula
+     * LPs declarados vacios SIN prueba de Neumaier-Shcherbina (corta la pasada
+     * sin vaciar la caja): Discrete-Integralf2-15 4641 celdas contra 19. Upstream
+     * (ibex-team/ibex-lib) usa fabrica, asi que la omision es la de upstream. */
+    if (getenv("IBEX_LP_REP") && std::string(getenv("IBEX_LP_REP")) == "col")
+        mysoplex->setIntParam(SoPlex::REPRESENTATION, SoPlex::REPRESENTATION_COLUMN);
     /* SoPlex de fabrica desde 2026-10-06. `IBEX_LP_PRIMAL=1` restaura el
      * simplex primal por columnas que se forzo para comparar con las primeras
      * versiones de DFB. */

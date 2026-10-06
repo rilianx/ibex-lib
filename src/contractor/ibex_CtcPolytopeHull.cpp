@@ -51,8 +51,21 @@ double ph_reloj() { if (!ph_on()) return 0.0;
                     return ts.tv_sec + 1e-9*ts.tv_nsec; } }
 extern double ph_t_solve, ph_t_extrae, ph_t_cert;
 
+/* Estados de SoPlex por LP (`IBEX_PH_STATS=1`, resumen al destruir). */
+static long ph_st[5] = {0,0,0,0,0};   // OptimalProved, InfeasibleProved, Infeasible, Unknown, otro
+static void ph_cuenta(LPSolver::Status st) {
+	if (st == LPSolver::Status::OptimalProved) ++ph_st[0];
+	else if (st == LPSolver::Status::InfeasibleProved) ++ph_st[1];
+	else if (st == LPSolver::Status::Infeasible) ++ph_st[2];
+	else if (st == LPSolver::Status::Unknown) ++ph_st[3];
+	else ++ph_st[4];
+}
+
 CtcPolytopeHull::~CtcPolytopeHull() {
 	if (own_lr) delete &lr;
+	if (getenv("IBEX_PH_STATS"))
+		fprintf(stderr, "[phull] estados: optimo=%ld vacio_probado=%ld vacio_sin_prueba=%ld desconocido=%ld otro=%ld\n",
+		        ph_st[0], ph_st[1], ph_st[2], ph_st[3], ph_st[4]);
 }
 
 void CtcPolytopeHull::add_property(const IntervalVector& init_box, BoxProperties& map) {
@@ -157,6 +170,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			inf_bound[i]=1;
 			mylinearsolver.set_cost(i, 1.0);
 			stat = mylinearsolver.minimize();
+			ph_cuenta(stat);
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
 			
@@ -216,6 +230,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			sup_bound[i]=1;
 			mylinearsolver.set_cost(i, -1.0);
 			stat= mylinearsolver.minimize();
+			ph_cuenta(stat);
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
 
