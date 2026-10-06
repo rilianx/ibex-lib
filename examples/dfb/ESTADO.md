@@ -83,6 +83,7 @@ nulas (§8).
 | **Tolerancia primal a escala de la caja**, τ = 1e-3 (§9) | neutra para el primal; sin ella el dual puro declaraba factibles poliedros vacíos en cajas angostas |
 | **Devex en la fila que sale** (§9) | cpu ×0.98–0.99 con el dual puro |
 | **Motor híbrido**: simplex revisado sin tableau en relajaciones de más de 40 filas (§9) | `ibexsolve` cpu ×0.75–0.93 con las mismas celdas; neutro en `ibexopt` |
+| **LU sin el reloj de SoPlex** (`SLUFactor` leía `times()` en cada FTRAN/BTRAN) (§9) | `ibexsolve` cpu ×0.92–0.93 con el afín y ×0.83 con `compo`, mismas celdas; `launch` ×0.85 |
 | **Un solo simplex secuencial** | 6.8–12.3 % más rápido que `2n` ejemplares sembrados |
 | **`x_B` sólo si está sucio en `primal_step`** | cpu ×0.99, resultados **idénticos bit a bit** |
 | **LU diferida** (§9) | cpu por celda ×0.94; celdas dentro del ruido de redondeo |
@@ -332,7 +333,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_TRACE=1`, `IBEX_LOUPSTATS=1`, `IBEX_SMEAR_STATS=1`, `IBEX_ARGS=1` | traza de `loup`/`uplo` con celda, tiempo y ancho; intentos y éxitos del buscador de `loup` por ancho; respaldos del bisector; parámetros recibidos (§4, §8) |
 | `DFB_SX_VERIF=1`, `DFB_SX_FEASTOL=t`, `DFB_SX_TOLANCHO=τ` | verifica cada `OPTIMAL` desde la factorización; tolerancia primal, omisión `1e-9`; tope de la tolerancia en `τ·ancho` de la básica, **omisión 1e-3** (§9) |
 | `DFBH_SINCOTA`, `DFBH_PREDICE`, `DFBH_GOALPROBE`, `DFBH_CHKC=k`, `DFB_SX_DERIVA=1`, `DFBH_LAGR=1` | sondas (las dos últimas: deriva del tableau contra la LU; cota lagrangiana contra la del LP, §9) |
-| `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=art\|xt] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` y linearizador a elección, **afín por omisión**; `--lr=xn --lin=xt` reproduce al oficial (§9) |
+| `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=art\|xt\|compo] [-b lsmear\|smearsumrel\|lsmeardfb] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` linearizador y bisector a elección, **afín y `lsmear` por omisión**; `--lr=xn --lin=xt -b smearsumrel` reproduce al oficial (§9) |
+| `DFB_SX_RELOJ=1`, `IBEX_LP_RELOJ=1` | restauran el reloj de SoPlex en la LU de DFB y en el `LPSolver` de Ibex (§9) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
 | `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (umbral 40) (§9). **Omisión `auto`** |
@@ -603,6 +605,46 @@ queda sin probar y con la expectativa bajada por esto mismo.
    **Por omisión desde 2026-10-05:** el motor `auto` con umbral 40 en DFB
    (`DFB_SX_MOTOR=tableau` lo apaga) y el linearizador afín en
    `ibexsolve_dfb` (`--lin=xt` vuelve a XTaylor).
+
+   **El reloj de SoPlex (2026-10-06).** `perf` sobre `compo` mostró que el
+   17–32 % del tiempo era `times()`: el `SLUFactor` arranca un `UserTimer` en
+   cada FTRAN/BTRAN, y esa LU es la del motor revisado. `DFBBasis` usa ahora
+   una subclase con el reloj apagado (`DFB_SX_RELOJ=1` lo restaura). Semilla 1
+   del banco de abajo, con contra sin reloj, celdas idénticas: cpu ×0.92–0.93
+   con el afín y ×0.83 con `compo` (`results/ibexsolve_reloj_semilla1.csv`; la
+   corrida nueva iba con 15 procesos y la vieja con 8, así que es una cota
+   conservadora). En `ibexopt` sólo pesa donde hay relajaciones grandes
+   (`launch` ×0.85; `ex6_1_3` neutro). Las cifras del motor híbrido de arriba
+   tenían este impuesto. En el `LPSolver` de Ibex se puso `TIMER_OFF`
+   (`IBEX_LP_RELOJ=1`), pero en SoPlex 4.0.2 ese parámetro no llega a la LU ni
+   a las estadísticas: producción en `ex6_1_3` ×0.964 y siguen ~240 000
+   lecturas de `times()` por segundo. Apagarlas exige parchear el SoPlex
+   incluido. Ojo: el wrapper fuerza el simplex primal por columnas
+   (`ibex_LPLibWrapper.cpp`, commit `b59a201f`), así que el brazo de
+   producción no usa la configuración de fábrica de SoPlex.
+
+   **Bisector y `compo` en el solver (2026-10-06).** 264 sistemas, 2
+   semillas, todo con `--lr=dfbhull` y sin el reloj
+   (`results/ibexsolve_bisector_compo_2semillas.csv`). Celdas / cpu en
+   > 0.1 / > 1 / > 5 s:
+
+   | comparación | > 0.1 s | > 1 s | > 5 s | terminan |
+   |---|---|---|---|---|
+   | `lsmear` contra `smearsumrel` | ×0.95 / ×1.00 | ×0.96 / ×1.02 | ×0.95 / ×1.00 | 354 contra 346 |
+   | `lsmeardfb` contra `smearsumrel` | ×1.13 / ×1.10 | ×1.16 / ×1.14 | ×1.15 / ×1.16 | 338 contra 346 |
+   | `compo` contra afín (los dos `lsmear`) | ×0.60 / ×1.62 | ×0.56 / ×1.58 | ×0.53 / ×1.53 | 341 contra 354 |
+
+   `lsmear` (omisión desde 2026-10-06) baja las celdas un 5 % y lo paga con su
+   LP: neutro en tiempo, 8 terminadas más (`DiscreteBoundary-0200`,
+   `Geneig-icse`, `Yamamura`); pierde en `exnewton` ×3.2 y
+   `CountercurrentReactors2`. `lsmeardfb` en el solver suma las
+   sensibilidades `abs` de todos los LPs de la pasada (no hay objetivo):
+   gana toda la familia `BroydenBanded` (×0.52, termina la 200) y
+   `Discrete-Integralf2`, pero deja de terminar `Redeco9`, `Eco10`,
+   `Fredtest`, `Fourbarbis-1`. `compo` parte el árbol a la mitad, mucho más
+   que el ×0.83 de `ibexopt`, y cuesta ×2.8 por celda aun sin el reloj; gana
+   los `Bratu` grandes. Es el argumento para los cortes dirigidos en `x*`:
+   las filas extra compran celdas, el problema es agregarlas a ciegas.
 
    **Nunca se implementó** (hasta este prototipo): lo que se midió como «camino sin tableau»,
    `DFB_SX_EXACT`, mantenía el tableau y además recalculaba `d` y `x_B` desde
