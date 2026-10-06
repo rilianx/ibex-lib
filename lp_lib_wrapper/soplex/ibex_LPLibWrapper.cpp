@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <string>
 #include "ibex_LPSolver.h"
 
 namespace {
@@ -116,6 +118,14 @@ void LPSolver::init(LPSolver::Mode mode, double tolerance, double timeout, int m
 	mysoplex->setIntParam(SoPlex::SOLVEMODE, SoPlex::SOLVEMODE_REAL);
     mysoplex->setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MINIMIZE);
     mysoplex->setBoolParam(SoPlex::ENSURERAY, true);
+    /* Sin reloj: con el de CPU, SoPlex lee `times()` (una llamada al sistema)
+     * en cada FTRAN/BTRAN de su LU. Con el reloj apagado el TIMELIMIT deja de
+     * aplicarse; el ITERLIMIT sigue. `IBEX_LP_RELOJ=1` lo restaura. */
+    {
+        const char* r = getenv("IBEX_LP_RELOJ");
+        if (!(r && *r && std::string(r) != "0"))
+            mysoplex->setIntParam(SoPlex::TIMER, SoPlex::TIMER_OFF);
+    }
 
     // forzar simplex primal en modo tablaeu
     mysoplex->setIntParam(SoPlex::ALGORITHM,    SoPlex::ALGORITHM_PRIMAL);
