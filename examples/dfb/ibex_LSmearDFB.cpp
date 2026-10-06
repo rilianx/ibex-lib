@@ -11,7 +11,10 @@ long LSmearDFB::n_llamadas = 0, LSmearDFB::n_sin_sens = 0, LSmearDFB::n_fuera = 
      LSmearDFB::n_dfb = 0, LSmearDFB::n_iguales = 0;
 
 LSmearDFB::LSmearDFB(ExtendedSystem& sys, const Vector& prec, LargestFirst& lf, Bsc* comparar) :
-    SmearSumRelative(sys, prec, lf), esys(sys), comparar(comparar) {}
+    SmearSumRelative(sys, prec, lf), esys(sys), gv(sys.goal_var()), comparar(comparar) {}
+
+LSmearDFB::LSmearDFB(System& sys, double prec) :
+    SmearSumRelative(sys, prec), esys(sys), gv(-1), comparar(NULL) {}
 
 BisectionPoint LSmearDFB::choose_var(const Cell& cell) {
     ++n_llamadas;
@@ -25,7 +28,6 @@ BisectionPoint LSmearDFB::choose_var(const Cell& cell) {
             if (!p->caja[j].is_superset(box[j])) dentro = false;
         if (!dentro) { ++n_fuera; }
         else {
-            const int gv = esys.goal_var();
             /* `DFBH_SENS=jac`: los multiplicadores de DFB por restriccion, con
              * signo, proyectados sobre la jacobiana del medio como en LSmear. */
             static const bool jac = getenv("DFBH_SENS") && std::string(getenv("DFBH_SENS")) == "jac";

@@ -2194,6 +2194,26 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             sens_contrajo = nb.lb() > z[k].lb();
             sens_ok = true; sens_pase = true;
         }
+        /* Sin objetivo (solver): no hay un LP privilegiado, asi que se SUMAN las
+         * sensibilidades `abs` de todos los LPs certificados de la pasada, cada
+         * uno normalizado por su |gamma_k|. En el optimizador la de un solo
+         * vertice concentraba el peso en 2-4 filas activas y el arbol
+         * explotaba; sumar las `2n` cotas da el peso ancho que sirve para
+         * bisecar. */
+        if (calcular_sens && goal_var < 0 && !gamma[k].contains(0.0)) {
+            const std::vector<double>& lam = sk.lambda();
+            const double gk = std::fabs(gamma[k].mid());
+            if ((int)sens_goal.size() != nb_var || !sens_pase) sens_goal.assign(nb_var, 0.0);
+            for (int i = 0; i < (int)lam.size() && i < A.nb_rows(); ++i) {
+                if (lam[i] == 0.0) continue;
+                const double li = std::fabs(lam[i]) / gk;
+                for (int j = 0; j < nb_var; ++j) if (j != k) sens_goal[j] += li * A[i][j].mag();
+            }
+            lam_ctr_goal.clear();
+            caja_sens = caja_lin;
+            sens_contrajo = false;
+            sens_ok = true; sens_pase = true;
+        }
         const double d0 = z[k].diam();
         const Interval zk_pre = z[k];
         if (hay_libre) {

@@ -10,16 +10,20 @@
 // y el mismo buffer (pila: profundidad primero). Cambia el contractor lineal:
 // CtcPolytopeHull (--lr=xn, produccion) o CtcDFBHull (--lr=dfbhull), y el
 // linearizador (--lin=art por omision, --lin=xt el de DefaultSolver), y el
-// bisector: -b lsmear (omision desde 2026-10-06) o -b smearsumrel, el de
-// DefaultSolver (SmearSumRelative si es cuadrado, RoundRobin si no).
+// bisector: -b lsmear (omision desde 2026-10-06), -b smearsumrel, el de
+// DefaultSolver (SmearSumRelative si es cuadrado, RoundRobin si no), o
+// -b lsmeardfb, la regla de LSmear con las sensibilidades de DFB (requiere
+// --lr=dfbhull). --lin=compo escribe las filas del afin y de XTaylor.
 //
-// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=art|xt] [-b lsmear|smearsumrel] [-e eps_min] [-t timeout]
+// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=art|xt|compo] [-b lsmear|smearsumrel|lsmeardfb] [-e eps_min] [-t timeout]
 //                                [--seed=s] [--bfs]
 // Ultima linea: celdas tiempo estado soluciones frontera desconocidas pendientes
 
 #include "ibex.h"
 #include "ibex_CtcDFBHull.h"
 #include "affine/ibex_LinearizerAffine2.h"
+#include "ibex_LSmearDFB.h"
+#include "ibex_LinearizerCompo.h"
 #include <cstring>
 #include <cstdlib>
 
@@ -42,8 +46,9 @@ int main(int argc, char** argv) {
         else { cerr << "argumento desconocido: " << a << endl; return 1; }
     }
     if (lr != "xn" && lr != "dfbhull") { cerr << "--lr debe ser xn o dfbhull" << endl; return 1; }
-    if (lin != "xt" && lin != "art") { cerr << "--lin debe ser xt o art" << endl; return 1; }
-    if (bis != "lsmear" && bis != "smearsumrel") { cerr << "-b debe ser lsmear o smearsumrel" << endl; return 1; }
+    if (lin != "xt" && lin != "art" && lin != "compo") { cerr << "--lin debe ser art, xt o compo" << endl; return 1; }
+    if (bis != "lsmear" && bis != "smearsumrel" && bis != "lsmeardfb") { cerr << "-b debe ser lsmear, smearsumrel o lsmeardfb" << endl; return 1; }
+    if (bis == "lsmeardfb" && lr != "dfbhull") { cerr << "-b lsmeardfb requiere --lr=dfbhull" << endl; return 1; }
 
     System sys(argv[1]);
     RNG::srand(seed);
@@ -61,8 +66,12 @@ int main(int argc, char** argv) {
      * lado de cada restriccion; mas rapido con los dos contractores) o --lin=xt
      * (el de DefaultSolver: XTaylor con dos esquinas). Para reproducir al
      * ibexsolve oficial: --lr=xn --lin=xt. */
-    Linearizer* linp = (lin == "art") ? (Linearizer*) new LinearizerAffine2(sys) : (Linearizer*) new LinearizerXTaylor(sys);
+    Linearizer* linp;
+    if (lin == "art") linp = new LinearizerAffine2(sys);
+    else if (lin == "xt") linp = new LinearizerXTaylor(sys);
+    else linp = new LinearizerCompo(*new LinearizerAffine2(sys), *new LinearizerXTaylor(sys));
     Ctc* clin = (lr == "dfbhull") ? (Ctc*) new CtcDFBHull(*linp) : (Ctc*) new CtcPolytopeHull(*linp);
+    if (bis == "lsmeardfb") ((CtcDFBHull*) clin)->activar_sensibilidades();
     CtcHC4 hc4xn(sys.ctrs, 0.01);
     CtcCompo compo_xn(*clin, hc4xn);
     CtcFixPoint fix(compo_xn);
@@ -80,6 +89,7 @@ int main(int argc, char** argv) {
      * variable al azar. -b smearsumrel reproduce a DefaultSolver. */
     Bsc* bsc;
     if (bis == "lsmear") bsc = new LSmear(eqs ? *eqs : sys, eps);
+    else if (bis == "lsmeardfb") bsc = new LSmearDFB(sys, eps);
     else bsc = eqs ? (Bsc*) new SmearSumRelative(*eqs, eps) : (Bsc*) new RoundRobin(eps);
     CellBuffer* buf = bfs ? (CellBuffer*) new CellList() : (CellBuffer*) new CellStack();
 
@@ -88,6 +98,9 @@ int main(int argc, char** argv) {
     Solver::Status st = s.solve(sys.box);
     const CovSolverData& d = s.get_data();
     s.report();
+    if (bis == "lsmeardfb")
+        cerr << "[lsmeardfb] llamadas=" << LSmearDFB::n_llamadas << " sin_sens=" << LSmearDFB::n_sin_sens
+             << " fuera=" << LSmearDFB::n_fuera << " eligio_dfb=" << LSmearDFB::n_dfb << endl;
     if (sols) cout << d << endl;
     cout << s.get_nb_cells() << " " << s.get_time() << " " << (int) st << " "
          << d.nb_solution() << " " << d.nb_boundary() << " " << d.nb_unknown() << " " << d.nb_pending() << endl;

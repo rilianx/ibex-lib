@@ -31,11 +31,15 @@ namespace ibex {
 class LSmearDFB : public SmearSumRelative {
 public:
     LSmearDFB(ExtendedSystem& sys, const Vector& prec, LargestFirst& lf, Bsc* comparar = NULL);
+    /** Sin objetivo (solver): las sensibilidades son la suma sobre los `2n`
+     *  LPs de la pasada (ver `CtcDFBHull`). */
+    LSmearDFB(System& sys, double prec);
     virtual BisectionPoint choose_var(const Cell& cell);
     virtual int var_to_bisect(IntervalMatrix& J, const IntervalVector& box) const;
     static long n_llamadas, n_sin_sens, n_fuera, n_dfb, n_iguales;
 private:
-    ExtendedSystem& esys;
+    System& esys;
+    int gv;   //!< variable objetivo, o -1
     Bsc* comparar;
 };
 
