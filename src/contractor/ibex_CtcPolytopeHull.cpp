@@ -127,7 +127,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 	 * secuencial del unico LPSolver. Es el termino que faltaba para comparar
 	 * contra los pivotes de DFB: las sondas resolvian SoPlex en frio, que no es
 	 * lo que corre aca. `IBEX_PH_STATS=1` lo imprime cada 2000 LPs. */
-	if (getenv("IBEX_PH_STATS") && n_soplex_calls > 0 && (n_soplex_calls % 2000) < 2*nb_var)
+	if (([]() { static const bool v_ = (getenv("IBEX_PH_STATS") != NULL); return v_; }()) && n_soplex_calls > 0 && (n_soplex_calls % 2000) < 2*nb_var)
 	{
 		const double T = ph_t_lin + ph_t_total;
 		fprintf(stderr, "[phull] LPs=%d  iter/LP=%.2f | armado %.0f%%  simplex %.0f%%  "

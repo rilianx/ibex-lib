@@ -10,6 +10,11 @@
 #include <cstdlib>
 #include <cstdio>
 
+/* `getenv` recorre todo el entorno; las sondas que se consultan dentro del
+ * bucle de LPs lo pagaban en cada LP (perf: ~1 % del total). Esto lo lee una
+ * sola vez por punto de llamada. */
+#define DFB_ENV(n) ([]() { static const bool v_ = (getenv(n) != NULL); return v_; }())
+
 namespace ibex {
 
 /* --- Perfilado interno del simplex (DFB_SX_PERF=1) ---

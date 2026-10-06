@@ -69,7 +69,7 @@ struct SmearStats {
 	long llamadas, jac_inf, var_nula, no_bisectable;
 	SmearStats() : llamadas(0), jac_inf(0), var_nula(0), no_bisectable(0) {}
 	~SmearStats() {
-		if (getenv("IBEX_SMEAR_STATS") && llamadas)
+		if (([]() { static const bool v_ = (getenv("IBEX_SMEAR_STATS") != NULL); return v_; }()) && llamadas)
 			fprintf(stderr, "[smear] llamadas=%ld | respaldo LargestFirst: jacobiana infinita=%ld  "
 			        "sin variable=%ld  variable no bisecable=%ld  (%.2f%% del total)\n",
 			        llamadas, jac_inf, var_nula, no_bisectable,

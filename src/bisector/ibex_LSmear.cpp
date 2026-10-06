@@ -152,7 +152,7 @@ int LSmear::var_to_bisect(IntervalMatrix& J, const IntervalVector& box) const {
 			}
 
 			lsmear*=(box[j].diam());
-			if (getenv("IBEX_LSMEAR_DUMP")) {
+			if (([]() { static const bool v_ = (getenv("IBEX_LSMEAR_DUMP") != NULL); return v_; }())) {
 				static long nd = 0;
 				if (nd < 8*sys.nb_var) { ++nd; fprintf(stderr, "[lsmear-dump] x%d dual=%.3g sumJ=%.3g score=%.3g diam=%.3g\n", j, dual_solution[j], (lsmear/box[j].diam()).mid()-dual_solution[j], lsmear.mid(), box[j].diam()); }
 			}

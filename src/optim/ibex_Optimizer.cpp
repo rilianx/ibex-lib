@@ -112,7 +112,7 @@ bool Optimizer::update_loup(const IntervalVector& box, BoxProperties& prop) {
 			LoupStats() { for (int i=0;i<7;i++) n[i]=ok[i]=0; }
 			static int cubeta(double w) { return w<1e-7?0: w<1e-6?1: w<1e-5?2: w<1e-4?3: w<1e-3?4: w<1e-2?5:6; }
 			~LoupStats() {
-				if (!getenv("IBEX_LOUPSTATS")) return;
+				if (!([]() { static const bool v_ = (getenv("IBEX_LOUPSTATS") != NULL); return v_; }())) return;
 				const char* et[7]={"<1e-7","<1e-6","<1e-5","<1e-4","<1e-3","<1e-2",">=1e-2"};
 				fprintf(stderr, "[loupstats] intentos/exitos por ancho:");
 				for (int i=0;i<7;i++) fprintf(stderr, "  %s %ld/%ld", et[i], n[i], ok[i]);
@@ -298,7 +298,7 @@ void Optimizer::contract_and_bound(Cell& c) {
 	if (((tmp_box.diam()-eps_x).max()<=0 && y.diam() <=abs_eps_f) || !c.box.is_bisectable()) {
 		if (trace) cout << " [tiny] loup encontrado aca=" << loup_ch << "  ancho=" << tmp_box.max_diam()
 		                << "  y=" << y << "  loup=" << loup << endl;
-		if (getenv("IBEX_TINYDUMP") && y.lb() < loup - 1e-6) {
+		if (([]() { static const bool v_ = (getenv("IBEX_TINYDUMP") != NULL); return v_; }()) && y.lb() < loup - 1e-6) {
 			cout.precision(17);
 			cout << " [tinybox] " << tmp_box << endl;
 		}

@@ -15,6 +15,11 @@
 #include <string>
 #include <ctime>
 
+/* `getenv` recorre todo el entorno; las sondas que se consultan dentro del
+ * bucle de LPs lo pagaban en cada LP (perf: ~1 % del total). Esto lo lee una
+ * sola vez por punto de llamada. */
+#define DFB_ENV(n) ([]() { static const bool v_ = (getenv(n) != NULL); return v_; }())
+
 namespace ibex {
 
 long CtcDFBHull::n_lps = 0;
@@ -298,15 +303,15 @@ CtcDFBHull::CtcDFBHull(Linearizer& lr, int goal_var, double eps, Ctc* sonda_ctc)
     traza_cotas = false;
     nodo_nuevo = true;
     traza_resumen = (getenv("DFBH_SINCOTA") != NULL);
-    if (getenv("DFBH_GVAR"))
+    if (DFB_ENV("DFBH_GVAR"))
         fprintf(stderr, "[dfb] nb_var=%d  goal_var=%d\n", nb_var, goal_var);
     ultimo = this;
-    if (getenv("DFBH_AB")) ph_ab = new CtcPolytopeHull(lr);
+    if (DFB_ENV("DFBH_AB")) ph_ab = new CtcPolytopeHull(lr);
 }
 
 CtcDFBHull::~CtcDFBHull() {
     ibex::perf_volcar();
-    if (getenv("DFBH_ENACID"))
+    if (DFB_ENV("DFBH_ENACID"))
         fprintf(stderr, "[gtest] llamadas=%ld  rechazadas=%ld (%.1f%%)  "
                 "vacios=%ld (%.2f%% de las aplicables)%s\n",
                 n_gtest, n_gfuera, n_gtest ? 100.0*n_gfuera/n_gtest : 0.0,
@@ -350,12 +355,12 @@ CtcDFBHull::~CtcDFBHull() {
     if (n_m_tot)
         fprintf(stderr, "[dfb] filas de la relajacion: %.2f por linealizacion (%ld llamadas)\n",
                 (double)n_m_tot/n_m_llam, n_m_llam);
-    if (getenv("DFBH_AFALLOC")) {
+    if (DFB_ENV("DFBH_AFALLOC")) {
         extern long af_n_alloc, af_n_double;
         fprintf(stderr, "[afalloc] asignaciones de la afin=%ld  doubles=%ld  (%.1f por linealizacion)\n",
                 af_n_alloc, af_n_double, n_nodes ? (double)af_n_alloc/n_nodes : 0.0);
     }
-    if (getenv("DFBH_LINPERF")) lin_perf_volcar();
+    if (DFB_ENV("DFBH_LINPERF")) lin_perf_volcar();
     pf_resumen();
     ph_resumen();
     if (ab_n)
@@ -405,13 +410,13 @@ CtcDFBHull::~CtcDFBHull() {
             DFBSimplex::n_warm, DFBSimplex::n_cold, DFBSimplex::n_fact_fallo);
     LagrRep::volcar();
     GoalRep::volcar(n_pivots);
-    if (getenv("DFBH_INFSTATS"))
+    if (DFB_ENV("DFBH_INFSTATS"))
         fprintf(stderr, "[infstats] filas donde el infinito de SoPlex (1e100) habria cortado=%ld\n", n_inf_falso);
     fprintf(stderr, "[dfb] LPs de la cota inferior del objetivo con certificado=%ld (%.2f por nodo); LPs extra para sensibilidades=%ld\n",
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
     if (DFBSimplex::n_nodos_rev)
         fprintf(stderr, "[dfb] motor por nodo: revisado=%ld tableau=%ld\n", DFBSimplex::n_nodos_rev, DFBSimplex::n_nodos_tab);
-    if (getenv("DFBH_LUSTATS"))
+    if (DFB_ENV("DFBH_LUSTATS"))
         fprintf(stderr, "[lustats] factorizaciones=%ld updates=%ld btran=%ld ftran=%ld\n",
                 DFBBasis::n_factorizations, DFBBasis::n_updates, DFBBasis::n_btran, DFBBasis::n_ftran);
     if (n_lagr_aplic)
@@ -1058,7 +1063,12 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
 
     Af.resize(m, na);
     for (int i = 0; i < m; ++i)
-        for (int j = 0; j < na; ++j) Af[i][j] = A[i][j].mid();
+        for (int j = 0; j < na; ++j) {
+            /* `mid()` de gaol guarda y restaura el modo de redondeo aun en un
+             * intervalo degenerado; la mayoria lo son (ceros, la parte -I). */
+            const double l = A[i][j].lb(), u = A[i][j].ub();
+            Af[i][j] = (l == u) ? l : A[i][j].mid();
+        }
 
     /* CUANTO CAMBIA LA RELAJACION ENTRE LLAMADAS (`DFBH_ACHG=1`).
      *
@@ -1067,7 +1077,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
      * sobre OTRO poliedro y no sirve por mas bien implementada que este. Con
      * `LinearizerXTaylor` cambiaban en cada nodo porque expande en una esquina
      * aleatoria; con la afin, que es el default de hoy, hay que remedirlo. */
-    if (getenv("DFBH_ACHG")) {
+    if (DFB_ENV("DFBH_ACHG")) {
         static Matrix Aprev(1,1); static bool hay = false;
         static long n = 0, iguales = 0, chico = 0, grande = 0, dim = 0;
         static double acc = 0.0;
@@ -1539,7 +1549,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * fuera de rango tras reubicar: modelo de costo del DUAL. Se registran
          * los dos contra los pivotes que la cota costo de verdad, para saber
          * cual predice mejor en cada camino. */
-        if (getenv("DFBH_PREDICE") && cnt_elegido >= 0) {
+        if (DFB_ENV("DFBH_PREDICE") && cnt_elegido >= 0) {
             static long nrec[2][9], piv[2][9], tot = 0;
             const int br = DFBSimplex::pivoteo_dual ? 1 : 0;
             const int b = cnt_elegido > 8 ? 8 : cnt_elegido;
@@ -1557,7 +1567,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 }
             }
         }
-        if (getenv("DFBH_PREDICE2") && cnt_pinf >= 0) {
+        if (DFB_ENV("DFBH_PREDICE2") && cnt_pinf >= 0) {
             static long nrec[2][9], piv[2][9], tot = 0;
             const int br = DFBSimplex::pivoteo_dual ? 1 : 0;
             const int b = cnt_pinf > 8 ? 8 : cnt_pinf;
@@ -1582,7 +1592,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * base de la anterior. La hipotesis es que el grueso del costo esta en
          * esa primera. Si es asi, lo que hay que atacar es el arranque del
          * NODO, no el de cada cota. */
-        if (getenv("DFBH_PORPASO")) {
+        if (DFB_ENV("DFBH_PORPASO")) {
             static std::vector<long> piv, cnt;
             if ((int)piv.size() < nc) { piv.assign(nc, 0); cnt.assign(nc, 0); }
             piv[paso] += sk.iterations(); ++cnt[paso];
@@ -1606,7 +1616,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * las filas de xtaylor activas son POCAS, conviene resolver primero con
          * las de afin y agregar las otras despues con pasos duales: las que no
          * cortan no cuestan un solo pivote. Si son la mitad, no hay negocio. */
-        if (getenv("DFBH_ACTIVAS")) {
+        if (DFB_ENV("DFBH_ACTIVAS")) {
             const LinearizerCompo* lc = dynamic_cast<const LinearizerCompo*>(&lr);
             if (lc && lc->nb_l1 > 0 && lc->nb_l1 < m) {
                 const std::vector<double>& lam = sk.lambda();
@@ -1978,7 +1988,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
              * A[j][i]` se acumula con la cantidad de terminos, asi que un rayo
              * de Farkas mas disperso deberia certificar mas seguido. Se compara
              * nnz(lambda) entre los que certifican y los que no. */
-            if (getenv("DFBH_MARGEN") && st == DFBSimplex::INFEASIBLE) {
+            if (DFB_ENV("DFBH_MARGEN") && st == DFBSimplex::INFEASIBLE) {
                 const std::vector<double>& lm = sk.lambda();
                 int nz = 0;
                 for (int j = 0; j < m; ++j) if (lm[j] != 0.0) ++nz;
@@ -2010,7 +2020,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
              * Vale como dato sobre el metodo: el certificado en intervalos es
              * valido para CUALQUIER lambda, y cuando el rayo del simplex no
              * sobrevive siempre hay otra fila de B^-1 que si. */
-            if (getenv("DFBH_OTRORAYO") && st == DFBSimplex::INFEASIBLE
+            if (DFB_ENV("DFBH_OTRORAYO") && st == DFBSimplex::INFEASIBLE
                 && suma.contains(0.0)) {
                 std::vector<double> lam2;
                 IntervalVector g2(na);
@@ -2029,7 +2039,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     for (int cc = 0; cc < na; ++cc) s2 += g2[cc] * z[cc];
                     if (!s2.contains(0.0)) exito = r;
                 }
-                if (getenv("DFBH_OTRORAYO")) {
+                if (DFB_ENV("DFBH_OTRORAYO")) {
                     static long n = 0, rec = 0, acc = 0;
                     ++n;
                     if (exito >= 0) { ++rec; acc += probadas; }
@@ -2041,7 +2051,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 if (exito >= 0) { ++n_empty; box.set_empty(); return; }
             }
 
-            if (getenv("DFBH_MARGEN") && st == DFBSimplex::INFEASIBLE
+            if (DFB_ENV("DFBH_MARGEN") && st == DFBSimplex::INFEASIBLE
                 && suma.contains(0.0)) {
                 const double lo = suma.lb(), hi = suma.ub();
                 const double anc = hi - lo;
@@ -2085,7 +2095,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                  * que aparecer en la cota 0 o nunca. Aparece despues solo
                  * porque la pasada aprieta `z[k] &= nb` sobre la marcha: lo que
                  * poda es la contraccion ACUMULADA, no la cota de turno. */
-                if (getenv("DFBH_POSVACIO")) {
+                if (DFB_ENV("DFBH_POSVACIO")) {
                     /* Si alguna cota previa de esta pasada llego a OPTIMAL, el
                      * poliedro era NO VACIO; y como `z[k] &= nb` recorta solo
                      * fuera de el, no puede haberse vaciado despues. Un vacio
@@ -2335,7 +2345,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     if (e0 > 0.0 && e0 < POS_INFINITY) acum_var[j] *= (e1/e0);
                 }
             }
-            if (getenv("DFBH_FILASTAT") && (n_int % 20000) == 0)
+            if (DFB_ENV("DFBH_FILASTAT") && (n_int % 20000) == 0)
                 fprintf(stderr, "[filas] evaluadas=%ld | construidas=%ld (%.2f por evaluacion) | "
                         "contraen %.1f%%\n", n_re, n_con, n_re ? (double)n_con/n_re : 0.0,
                         100.0*n_gan/std::max(1L, n_re));
@@ -2747,7 +2757,7 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
     /* Cuantas veces cambia `m` entre nodos consecutivos: si cambia seguido, la
      * herencia de base ni siquiera es aplicable, porque el conjunto de columnas
      * basicas deja de tener sentido. */
-    if (getenv("DFBH_MCHG")) {
+    if (DFB_ENV("DFBH_MCHG")) {
         static int m_prev = -1; static long cambios = 0, total = 0;
         if (m_prev >= 0) { ++total; if (m != m_prev) ++cambios; }
         m_prev = m;
@@ -2861,7 +2871,7 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
             if (vph) ++ph_vac_prod;
             if (vdf) ++ph_vac_dfb;
             if (!vph && !vdf) { if (pph < pdf*(1-1e-9)) ++ph_gana_prod; else if (pdf < pph*(1-1e-9)) ++ph_gana_dfb; }
-            if (getenv("DFBH_ABVERBOSE") && (ph_n % 200) == 0)
+            if (DFB_ENV("DFBH_ABVERBOSE") && (ph_n % 200) == 0)
             {
                 (void)lp0;
                 fprintf(stderr, "[ab] nodos=%ld | PH: %ld LPs %ld iters %.2f it/LP %.1f us/LP %.3fs | "
@@ -3027,7 +3037,7 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
                 una_pasada(box);
             }
         }
-        if (getenv("DFBH_CRONO") && (n_nodo % 500) == 0)
+        if (DFB_ENV("DFBH_CRONO") && (n_nodo % 500) == 0)
             fprintf(stderr, "[adapt] nodos=%ld  segunda pasada en %.0f%%\n",
                     n_nodo, 100.0*n_seg/n_nodo);
     } else {
