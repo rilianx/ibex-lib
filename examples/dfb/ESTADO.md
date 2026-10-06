@@ -298,6 +298,7 @@ Todas medidas con el banco completo.
 | Corte anytime por brecha sobre el pivoteo dual (`DFBH_ANYTAU=τ`) | ahorra pivotes (×0.84) pero celdas ×1.39–1.60 y cpu ×1.36–1.49 |
 | Herencia de base entre nodos (`DFB_SX_BASENODOS=1`) | con el dual destapó el defecto de devex (§9); arreglado, baja pivotes ×0.78–0.96 pero reconstruir el tableau cuesta lo que ahorra: tiempo ×1.00–1.10 |
 | Test de `γ` en las rodajas de ACID (`DFBH_ENACID=1`), re-medido tras el filtro de estabilidad | con `γ` propios acierta ≈ 0 %; con los de un ancestro mata rodajas que el lineal del nodo mata igual (§9) |
+| Cortes en `x*` (`DFBH_CORTES=1\|2`, tope 0.25, §9), solver | celdas ×0.82–0.84 pero cpu ×1.18–1.24 en el nodo; heredados a las hijas, celdas ×0.80 y cpu ×1.26–1.30 |
 | Cota lagrangiana con monotonía (`DFBH_LAGRC=1\|2`, §9) | mejora la cota del LP en el 70–97 % de las aplicaciones y mata nodos que el LP no mata; en el objetivo solo, celdas iguales y cpu ×1.08–1.24; en las `2n` cotas, celdas ×0.81–0.96 y cpu ×1.6–3.5 |
 
 **El patrón.** Adelantar trabajo dentro del nodo no mueve el árbol. Lo único
@@ -673,6 +674,28 @@ queda sin probar y con la expectativa bajada por esto mismo.
    incluido. Ojo: el wrapper fuerza el simplex primal por columnas
    (`ibex_LPLibWrapper.cpp`, commit `b59a201f`), así que el brazo de
    producción no usa la configuración de fábrica de SoPlex.
+
+   **Cortes en `x*` (2026-10-06, cerrado como agregado).** Tras cada LP
+   óptimo, para cada restricción que `x*` viola, una fila XTaylor en la esquina
+   de la caja más cercana a `x*` (jacobiano en intervalos sobre la caja de
+   linealización, lado derecho en intervalos: riguroso); viajan con la celda
+   (`BxpDFBCortes`) y entran en la relajación afín de la siguiente llamada del
+   punto fijo (`DFBH_CORTES=1`) o también en las hijas (`=2`), hasta
+   `DFBH_CORTES_TOPE` veces las filas afines. Banco del solver, 264 sistemas, 2
+   semillas, tope 0.25 (`results/ibexsolve_cortes_xstar_2semillas.csv`):
+
+   | brazo contra sin cortes | > 0.1 s | > 1 s | > 5 s | terminan |
+   |---|---|---|---|---|
+   | en el nodo | celdas ×0.84, cpu ×1.24 | ×0.82, ×1.20 | ×0.84, ×1.18 | 350 contra 354 |
+   | heredados | ×0.82, ×1.30 | ×0.80, ×1.28 | ×0.80, ×1.26 | 344 contra 354 |
+
+   Generarlos es barato (~3 % en evaluar funciones con `perf`); lo caro es el
+   LP: las filas extra agrandan el tableau y suman pivotes (`axpy` de 29 % a
+   37 % del total en Bellido). Es el mecanismo de `compo` con menos filas: más
+   filas compran celdas, pero el costo por celda (×1.45) se come la ganancia.
+   Heredar suma cortes viejos que valen pero aprietan poco en la hija. Variante
+   sin probar: **reemplazar** la fila afín de la restricción por el corte
+   cuando es más fuerte en `x*`, sin agrandar el LP.
 
    **DFB contra producción en el solver, sin reloj (2026-10-06).** Las
    cifras de arriba contra producción pagaban el reloj de SoPlex y no valen.
