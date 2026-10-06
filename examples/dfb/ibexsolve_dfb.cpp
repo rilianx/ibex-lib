@@ -7,12 +7,13 @@
 // Misma composicion que DefaultSolver (ibex_DefaultSolver.cpp):
 //   HC4, ACID(HC4), Newton si el sistema es cuadrado, y
 //   CtcFixPoint(CtcCompo(<contractor lineal>(LinearizerXTaylor), HC4)),
-// con el mismo bisector (SmearSumRelative si es cuadrado, RoundRobin si no) y
-// el mismo buffer (pila: profundidad primero). Cambia el contractor lineal:
+// y el mismo buffer (pila: profundidad primero). Cambia el contractor lineal:
 // CtcPolytopeHull (--lr=xn, produccion) o CtcDFBHull (--lr=dfbhull), y el
-// linearizador (--lin=art por omision, --lin=xt el de DefaultSolver).
+// linearizador (--lin=art por omision, --lin=xt el de DefaultSolver), y el
+// bisector: -b lsmear (omision desde 2026-10-06) o -b smearsumrel, el de
+// DefaultSolver (SmearSumRelative si es cuadrado, RoundRobin si no).
 //
-// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=xt|art] [-e eps_min] [-t timeout]
+// Uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [--lin=art|xt] [-b lsmear|smearsumrel] [-e eps_min] [-t timeout]
 //                                [--seed=s] [--bfs]
 // Ultima linea: celdas tiempo estado soluciones frontera desconocidas pendientes
 
@@ -27,10 +28,11 @@ using namespace ibex;
 
 int main(int argc, char** argv) {
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
-    string lr = "xn", lin = "art"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
+    string lr = "xn", lin = "art", bis = "lsmear"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
     for (int i = 2; i < argc; ++i) {
         string a = argv[i];
         if (a.rfind("--lr=", 0) == 0) lr = a.substr(5);
+        else if (a == "-b" && i+1 < argc) bis = argv[++i];
         else if (a == "-e" && i+1 < argc) eps = atof(argv[++i]);
         else if (a == "-t" && i+1 < argc) timeout = atof(argv[++i]);
         else if (a.rfind("--lin=", 0) == 0) lin = a.substr(6);
@@ -41,6 +43,7 @@ int main(int argc, char** argv) {
     }
     if (lr != "xn" && lr != "dfbhull") { cerr << "--lr debe ser xn o dfbhull" << endl; return 1; }
     if (lin != "xt" && lin != "art") { cerr << "--lin debe ser xt o art" << endl; return 1; }
+    if (bis != "lsmear" && bis != "smearsumrel") { cerr << "-b debe ser lsmear o smearsumrel" << endl; return 1; }
 
     System sys(argv[1]);
     RNG::srand(seed);
@@ -72,7 +75,12 @@ int main(int argc, char** argv) {
     lista.resize(k);
     CtcCompo ctc(lista);
 
-    Bsc* bsc = eqs ? (Bsc*) new SmearSumRelative(*eqs, eps) : (Bsc*) new RoundRobin(eps);
+    /* -b lsmear: sobre las igualdades si el sistema es cuadrado, sobre todo el
+     * sistema si no. Sin objetivo, cada LP de LSmear minimiza o maximiza una
+     * variable al azar. -b smearsumrel reproduce a DefaultSolver. */
+    Bsc* bsc;
+    if (bis == "lsmear") bsc = new LSmear(eqs ? *eqs : sys, eps);
+    else bsc = eqs ? (Bsc*) new SmearSumRelative(*eqs, eps) : (Bsc*) new RoundRobin(eps);
     CellBuffer* buf = bfs ? (CellBuffer*) new CellList() : (CellBuffer*) new CellStack();
 
     Solver s(sys, ctc, *bsc, *buf, Vector(sys.nb_var, eps), Vector(sys.nb_var, POS_INFINITY));

@@ -43,6 +43,13 @@ public :
 			lsmear_mode lsmode=LSMEAR_MG);
 
 	/*
+	 * \brief Variant for a system without objective (solver). Each call takes
+	 * a random variable and direction as the LP cost (see #getdual).
+	 */
+	LSmear (System& sys,  double prec, double ratio=Bsc::default_ratio(),
+			lsmear_mode lsmode=LSMEAR_MG);
+
+	/*
 	 * \brief Variant with a vector of precisions.
 	 *
 	 * \see #LSmear(System&, double, double, lsmear_mode)
@@ -97,6 +104,11 @@ public :
 /*============================================ inline implementation ============================================ */
 
 inline LSmear::LSmear(ExtendedSystem& sys,  double prec, double ratio, lsmear_mode lsmode) : SmearSumRelative(sys,prec,ratio),
+		lsmode(lsmode) {
+		  mylinearsolver = new LPSolver(sys.nb_var);
+}
+
+inline LSmear::LSmear(System& sys,  double prec, double ratio, lsmear_mode lsmode) : SmearSumRelative(sys,prec,ratio),
 		lsmode(lsmode) {
 		  mylinearsolver = new LPSolver(sys.nb_var);
 }
