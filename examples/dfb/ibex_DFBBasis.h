@@ -7,6 +7,8 @@
 #ifndef __IBEX_DFB_BASIS_H__
 #define __IBEX_DFB_BASIS_H__
 
+#include <string>
+#include <cstdlib>
 #include "ibex_Matrix.h"
 #include "soplex.h"
 #include "soplex/slufactor.h"
@@ -137,7 +139,19 @@ private:
     std::vector<int> basic;        //!< columna basica de cada fila
     std::vector<int> where_basic;  //!< fila de cada columna, o -1
 
-    soplex::SLUFactor lu;
+    /* `SLUFactor` arranca un `UserTimer` en cada solve, y ese reloj lee
+     * `times()`, una llamada al sistema: medido con perf, el 17-32 % del
+     * tiempo total del motor revisado se iba ahi. Se cambia por un reloj
+     * apagado; `DFB_SX_RELOJ=1` deja el de SoPlex para comparar. */
+    struct LUSinReloj : public soplex::SLUFactor {
+        LUSinReloj() {
+            const char* r = getenv("DFB_SX_RELOJ");
+            if (r && *r && std::string(r) != "0") return;
+            solveTime = soplex::TimerFactory::switchTimer(solveTime, soplex::Timer::OFF);
+            timerType = soplex::Timer::OFF;
+        }
+    };
+    LUSinReloj lu;
     soplex::DVector   rhs, sol;
     soplex::SSVector* eta;   //!< se recrea en load_matrix con la dimension m
     int updates_since_factor;
