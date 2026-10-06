@@ -155,8 +155,32 @@ celdas pagando LPs por nodo (×1.03–1.05).
 
 Producción = `--filtering=acidhc4` + `CtcPolytopeHull` + linearizador afín.
 
-**Línea de base vigente (2026-10-02)**, con `eps_x` = 1e-7 de verdad (§8) y la
-omisión actual de DFB, incluido el arreglo de devex (§9). 138 instancias, 4
+**Línea de base vigente (2026-10-06): SoPlex de fábrica.** Hasta aquí el
+`LPSolver` de Ibex forzaba el simplex primal por columnas (puesto para comparar
+con las primeras versiones de DFB); ahora usa la configuración de fábrica
+(`IBEX_LP_PRIMAL=1` restaura el primal) y sin el reloj de SoPlex en lo que el
+parámetro alcanza. 139 instancias, 4 semillas, 15 procesos, cuatro brazos en el
+mismo barrido (`results/soplex_fabrica_4semillas.csv`), `analiza_lu.py`:
+
+| comparación | > 0.1 s | > 1 s | > 5 s | resueltas 4/4 |
+|---|---|---|---|---|
+| **DFB contra producción, los dos de fábrica** | celdas ×1.038, **cpu ×0.646**, 214/11 | ×1.016, **×0.612**, 84/4 | ×1.027, **×0.608**, 45/1 | 131 contra 130 |
+| DFB contra producción, los dos con el primal (reproduce la de abajo) | ×0.983, ×0.623, 215/9 | ×0.978, ×0.623 | ×0.982, ×0.609 | 131 contra 131 |
+| producción, fábrica contra primal | ×1.056, ×1.040 | ×1.015, ×1.016 | ×0.930, ×0.958 | 130 contra 131 |
+| DFB, fábrica contra primal | ×1.159, ×1.122 | ×1.098, ×1.057 | ×1.052, ×1.035 | 131 contra 131 |
+
+0 óptimos incompatibles en todos los pares. DFB resuelve además `ex8_4_4bis`
+y `ship-1`; producción, `bearing`. Los dos brazos con el primal reproducen el
+barrido del 2026-10-02 celda por celda en 525 de 552 pares (el resto, al
+tope). El cambio a fábrica pesa más en DFB porque sólo toca su buscador de
+`loup`, y ahí está el daño: `alkyl`/`alkylbis` explotan en algunas semillas
+(62 → 4 542–32 416 celdas, en los dos brazos) y `launch` pasa de ~64 a
+~200–300 celdas en los dos. Es el LP de `LoupFinderXTaylor`, no la
+contracción: con el primal el vértice que devuelve SoPlex servía mejor de
+candidato.
+
+**Línea de base anterior (2026-10-02, con el primal forzado)**, con `eps_x` = 1e-7 de verdad (§8) y la
+omisión de DFB de entonces, incluido el arreglo de devex (§9). 138 instancias, 4
 semillas, 8 cores, los brazos en el mismo barrido
 (`results/devex_arreglo_4semillas.csv`):
 
@@ -335,6 +359,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_SINCOTA`, `DFBH_PREDICE`, `DFBH_GOALPROBE`, `DFBH_CHKC=k`, `DFB_SX_DERIVA=1`, `DFBH_LAGR=1` | sondas (las dos últimas: deriva del tableau contra la LU; cota lagrangiana contra la del LP, §9) |
 | `ibexsolve_dfb archivo.bch [--lr=xn\|dfbhull] [--lin=art\|xt\|compo] [-b lsmear\|smearsumrel\|lsmeardfb] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]` | `ibexsolve` con DFB en el hueco de `CtcPolytopeHull` linearizador y bisector a elección, **afín y `lsmear` por omisión**; `--lr=xn --lin=xt -b smearsumrel` reproduce al oficial (§9) |
 | `DFB_SX_RELOJ=1`, `IBEX_LP_RELOJ=1` | restauran el reloj de SoPlex en la LU de DFB y en el `LPSolver` de Ibex (§9) |
+| `IBEX_LP_PRIMAL=1` | el `LPSolver` vuelve al simplex primal por columnas (antes del 2026-10-06; §4) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
 | `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (umbral 40) (§9). **Omisión `auto`** |
