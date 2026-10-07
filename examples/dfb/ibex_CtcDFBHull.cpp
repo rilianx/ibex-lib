@@ -290,7 +290,7 @@ CtcDFBHull* CtcDFBHull::ultimo = NULL;
 
 CtcDFBHull::CtcDFBHull(Linearizer& lr, int goal_var, double eps, Ctc* sonda_ctc) :
     Ctc(lr.nb_var()), lr(lr), nb_var(lr.nb_var()), goal_var(goal_var),
-    sonda_ctc(sonda_ctc), caja_lin(1), caja_sens(1), sens_ok(false), sens_contrajo(false), calcular_sens(false), sens_pase(false), Jcortes(1,1), jac_cortes_ok(false), m_afin(0), lin_valida(false), g_apagado(false), sin_recarga(false),
+    sonda_ctc(sonda_ctc), caja_lin(1), caja_sens(1), sens_ok(false), sens_contrajo(false), calcular_sens(false), sens_pase(false), jac_cortes_ok(false), m_afin(0), lin_valida(false), g_apagado(false), sin_recarga(false),
     mylinearsolver(lr.nb_var(), LPSolver::Mode::NotCertified, eps),
     A(1,1), z(1), Af(1,1), gamma(1), hull_primal(1), hull_vacio(true), caja_acum(1), ph_ab(NULL) {
     m_uso = 0;
@@ -2724,7 +2724,20 @@ long BxpDFBCortes::id() { static const long i = next_id(); return i; }
 Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) const {
     /* Las hijas estan contenidas en la caja del padre, asi que los cortes
      * siguen siendo validos; solo se heredan con `DFBH_CORTES=2`. */
-    if (CtcDFBHull::modo_cortes >= 2) return new BxpDFBCortes(*this);
+    if (CtcDFBHull::modo_cortes == 2) return new BxpDFBCortes(*this);
+    if (CtcDFBHull::modo_cortes == 3) {
+        /* la hija aplica los del padre: los que el padre aplicaba y los que
+         * genero; los suyos propios iran a sus hijas */
+        BxpDFBCortes* h = new BxpDFBCortes();
+        h->tope = tope;
+        h->pozo = pozo;
+        h->pozo.insert(h->pozo.end(), pendientes.begin(), pendientes.end());
+        /* sin tope el pozo acumularia los cortes de todos los ancestros (todos
+         * siguen valiendo): se quedan los mas nuevos */
+        if (tope > 0 && h->pozo.size() > tope)
+            h->pozo.erase(h->pozo.begin(), h->pozo.begin() + (h->pozo.size() - tope));
+        return h;
+    }
     return new BxpDFBCortes();
 }
 
@@ -2758,18 +2771,19 @@ void CtcDFBHull::generar_cortes(const std::vector<double>& xs) {
         else if ((op == GEQ || op == GT || op == EQ) && gx[c].ub() < 0.0) lado = 1;
         else continue;
 
-        if (!jac_cortes_ok) {
-            Jcortes.resize(nc, nb_var);
-            sys.f_ctrs.jacobian(caja_lin, Jcortes);
-            jac_cortes_ok = true;
-        }
+        /* Solo el gradiente de esta restriccion, una vez por pasada: el
+         * jacobiano completo costaba x3.8 por pivote en `Trigexp1-100`. */
+        if (!jac_cortes_ok) { grad_cortes.assign(nc, IntervalVector(1)); grad_cortes_ok.assign(nc, 0); jac_cortes_ok = true; }
+        if (!grad_cortes_ok[c]) { grad_cortes[c] = sys.f_ctrs[c].gradient(caja_lin); grad_cortes_ok[c] = 1; }
+        const IntervalVector& Jc = grad_cortes[c];
+        if (Jc.size() != nb_var) continue;
         IntervalVector esq(nb_var);
         std::vector<double> a(nb_var);
         unsigned long clave = 1469598103934665603UL ^ (unsigned long)(2*c + lado);
         bool ok = true;
         for (int i = 0; i < nb_var && ok; ++i) {
             const Interval& Xi = caja_lin[i];
-            const Interval& Jci = Jcortes[c][i];
+            const Interval& Jci = Jc[i];
             if (Xi.is_unbounded() || Jci.is_unbounded() || Jci.is_empty()) { ok = false; break; }
             const bool abajo = xs[i] <= Xi.mid();
             const double ci = abajo ? Xi.lb() : Xi.ub();
@@ -2814,9 +2828,10 @@ void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
         BxpDFBCortes* pc = (BxpDFBCortes*) context.prop[BxpDFBCortes::id()];
         if (pc) {
             std::vector<CorteDFB> pozo;
-            for (size_t t = 0; t < pc->pozo.size(); ++t)
-                if (pc->pozo[t].caja.size() == box.size() && pc->pozo[t].caja.is_superset(box))
-                    pozo.push_back(pc->pozo[t]);
+            const std::vector<CorteDFB>& base = (modo_cortes == 3) ? pc->pendientes : pc->pozo;
+            for (size_t t = 0; t < base.size(); ++t)
+                if (base[t].caja.size() == box.size() && base[t].caja.is_superset(box))
+                    pozo.push_back(base[t]);
             for (size_t t = 0; t < cortes_nuevos.size(); ++t) {
                 bool rep = false;
                 for (size_t u = 0; u < pozo.size() && !rep; ++u) rep = (pozo[u].clave == cortes_nuevos[t].clave);
@@ -2824,7 +2839,9 @@ void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
             }
             const size_t tope = (size_t) tope_cortes(m_afin);
             if (pozo.size() > tope) pozo.erase(pozo.begin(), pozo.begin() + (pozo.size() - tope));
-            pc->pozo.swap(pozo);
+            pc->tope = tope;
+            if (modo_cortes == 3) pc->pendientes.swap(pozo);
+            else pc->pozo.swap(pozo);
         }
     }
     if (!calcular_sens || box.is_empty()) return;

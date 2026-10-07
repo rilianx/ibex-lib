@@ -98,6 +98,9 @@ int main(int argc, char** argv) {
     Solver::Status st = s.solve(sys.box);
     const CovSolverData& d = s.get_data();
     s.report();
+    if (lr == "dfbhull" && getenv("DFBH_CUENTAS"))
+        cerr << "[cuentas] celdas=" << s.get_nb_cells() << " llamadas=" << CtcDFBHull::n_nodes
+             << " LPs=" << CtcDFBHull::n_lps << " pivotes=" << CtcDFBHull::n_pivots << endl;
     if (CtcDFBHull::modo_cortes > 0)
         cerr << "[cortes] generados=" << CtcDFBHull::n_cortes_gen << " filas agregadas=" << CtcDFBHull::n_cortes_filas
              << " en " << CtcDFBHull::n_cortes_llam << " llamadas" << endl;

@@ -84,6 +84,9 @@ public:
  * intervalos sobre `caja`). Viaja con la celda: la siguiente llamada del
  * punto fijo en el mismo nodo la agrega a la relajacion afin si la caja actual
  * esta contenida en `caja`. Con `DFBH_CORTES=2` lo heredan tambien las hijas.
+ * Con `DFBH_CORTES=3` se generan en el nodo pero se aplican SOLO en las hijas:
+ * dentro del nodo la relajacion es la afin sola, asi que el punto fijo no da
+ * vueltas de mas por la contraccion extra.
  */
 struct CorteDFB {
     std::vector<double> a;
@@ -94,16 +97,18 @@ struct CorteDFB {
 };
 class BxpDFBCortes : public Bxp {
 public:
-    BxpDFBCortes() : Bxp(id()) {}
+    BxpDFBCortes() : Bxp(id()), tope(0) {}
     virtual Bxp* copy(const IntervalVector& box, const BoxProperties& prop) const;
     virtual void update(const BoxEvent& event, const BoxProperties& prop) {}
     static long id();
-    std::vector<CorteDFB> pozo;
+    std::vector<CorteDFB> pozo;        //!< los que se agregan a la relajacion de esta celda
+    std::vector<CorteDFB> pendientes;  //!< `DFBH_CORTES=3`: generados aqui, para las hijas
+    size_t tope;                       //!< tamano maximo del pozo (lo fija el contractor)
 };
 
 class CtcDFBHull : public Ctc {
 public:
-    static int modo_cortes;            //!< `DFBH_CORTES`: 0 apagado, 1 en el nodo, 2 tambien las hijas
+    static int modo_cortes;            //!< `DFBH_CORTES`: 0 apagado, 1 en el nodo, 2 tambien las hijas, 3 solo las hijas
     static long n_cortes_gen, n_cortes_filas, n_cortes_llam;   //!< generados; filas agregadas; llamadas con cortes
     /** \param goal_var  indice de la variable objetivo del sistema extendido,
      *  o -1 si no la hay. Lo unico que poda un nodo es la cota inferior de esa
@@ -327,7 +332,8 @@ private:
     /* Cortes en x*: los de esta llamada (se mezclan al pozo de la celda al
      * final) y el jacobiano sobre `caja_lin`, calculado una vez por pasada. */
     std::vector<CorteDFB> cortes_nuevos;
-    IntervalMatrix Jcortes;
+    std::vector<IntervalVector> grad_cortes;   //!< gradiente de cada restriccion sobre `caja_lin`
+    std::vector<char> grad_cortes_ok;          //!< calculado en esta pasada
     bool jac_cortes_ok;
     int m_afin;   //!< filas de la linealizacion afin, sin cortes: tope del pozo
     void generar_cortes(const std::vector<double>& xs);
