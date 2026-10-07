@@ -1,3 +1,4 @@
+#include <string>
 #include <cmath>
 //============================================================================
 //                                  I B E X
@@ -350,10 +351,17 @@ bool CtcPolytopeHull::choose_next_variable(IntervalVector & box, int & nexti, in
 
 	for (int j=0; j<nb_var; j++)	{
 
+		/* `IBEX_PH_SALTEO=ancho`: tolerancia relativa al ancho de la caja, no a
+		 * |cota|; la de Achterberg saltea cotas contraibles en cajas angostas
+		 * lejos del cero. */
+		static const bool salteo_ancho = getenv("IBEX_PH_SALTEO") && std::string(getenv("IBEX_PH_SALTEO")) == "ancho";
+		const double wj = box[j].diam();
+		const bool usa_ancho = salteo_ancho && wj > 0 && wj < POS_INFINITY;
 		if (inf_bound[j]==0) {
 			deltaj= fabs(primal_solution[j]- box[j].lb());
-			if ((fabs (box[j].lb()) < 1 && deltaj < prec_bound) ||
-					(fabs (box[j].lb()) >= 1 && fabs (deltaj /(box[j].lb())) < prec_bound))	{
+			if ((usa_ancho && deltaj < prec_bound*wj) ||
+			    (!usa_ancho && fabs (box[j].lb()) < 1 && deltaj < prec_bound) ||
+					(!usa_ancho && fabs (box[j].lb()) >= 1 && fabs (deltaj /(box[j].lb())) < prec_bound))	{
 				inf_bound[j]=1;
 			}
 			if (inf_bound[j]==0 && deltaj < delta) 	{
@@ -365,8 +373,9 @@ bool CtcPolytopeHull::choose_next_variable(IntervalVector & box, int & nexti, in
 			deltaj = fabs (primal_solution[j]- box[j].ub());
 
 
-			if ((fabs (box[j].ub()) < 1 && deltaj < prec_bound) 	||
-					(fabs (box[j].ub()) >= 1 && fabs (deltaj/(box[j].ub())) < prec_bound)) {
+			if ((usa_ancho && deltaj < prec_bound*wj) ||
+			    (!usa_ancho && fabs (box[j].ub()) < 1 && deltaj < prec_bound) 	||
+					(!usa_ancho && fabs (box[j].ub()) >= 1 && fabs (deltaj/(box[j].ub())) < prec_bound)) {
 				sup_bound[j]=1;
 			}
 			if (sup_bound[j]==0 && deltaj < delta) {

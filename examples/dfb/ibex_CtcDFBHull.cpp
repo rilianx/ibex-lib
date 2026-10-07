@@ -1301,7 +1301,14 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     if (hecho[q]) continue;
                     const double bd = lado ? z[j].ub() : z[j].lb();
                     const double dj = std::fabs(xstar[j] - bd);
-                    const double rel = (std::fabs(bd) < 1.0) ? dj
+                    /* `DFBH_SALTEO=ancho`: tolerancia relativa al ANCHO de la
+                     * caja. La de Achterberg es relativa a |cota| y, en cajas
+                     * angostas lejos del cero, salteaba cotas que todavia se
+                     * podian contraer (sonda `DFBH_ABHULL`). */
+                    static const bool salteo_ancho = getenv("DFBH_SALTEO") && std::string(getenv("DFBH_SALTEO")) == "ancho";
+                    const double wj = z[j].diam();
+                    const double rel = (salteo_ancho && wj > 0.0 && wj < POS_INFINITY) ? dj / wj
+                                     : (std::fabs(bd) < 1.0) ? dj
                                                              : std::fabs(dj/bd);
                     if (!no_salteo && rel < PREC) { hecho[q] = 1; continue; }
                     /* Con el motor revisado el tableau no esta al dia: orden de
