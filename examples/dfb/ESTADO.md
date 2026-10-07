@@ -84,6 +84,7 @@ nulas (§8).
 | **Devex en la fila que sale** (§9) | cpu ×0.98–0.99 con el dual puro |
 | **Motor híbrido**: simplex revisado sin tableau en relajaciones de más de 40 filas (§9) | `ibexsolve` cpu ×0.75–0.93 con las mismas celdas; neutro en `ibexopt` |
 | **LU sin el reloj de SoPlex** (`SLUFactor` leía `times()` en cada FTRAN/BTRAN) (§9) | `ibexsolve` cpu ×0.92–0.93 con el afín y ×0.83 con `compo`, mismas celdas; `launch` ×0.85 |
+| **Sondas leídas una vez y `mid()` directo** (más de 20 `getenv` por LP en `una_pasada`; el `mid()` de gaol guarda y restaura el redondeo aun en intervalos de un punto, en `Af = mid(A)` cada pasada; también los `getenv` de `CtcPolytopeHull`, `LSmear` y el optimizador) | mismas celdas, DFB ~×0.97 en `ex6_1_3` y `ex7_2_3` (corridas sueltas, sin banco) |
 | **Un solo simplex secuencial** | 6.8–12.3 % más rápido que `2n` ejemplares sembrados |
 | **`x_B` sólo si está sucio en `primal_step`** | cpu ×0.99, resultados **idénticos bit a bit** |
 | **LU diferida** (§9) | cpu por celda ×0.94; celdas dentro del ruido de redondeo |
@@ -386,6 +387,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFB_SX_RELOJ=1`, `IBEX_LP_RELOJ=1` | restauran el reloj de SoPlex en la LU de DFB y en el `LPSolver` de Ibex (§9) |
 | `IBEX_LP_PRIMAL=1` | el `LPSolver` vuelve al simplex primal por columnas (antes del 2026-10-06; §4) |
 | `IBEX_LP_REP=col` | SoPlex con representación por columnas (fábrica elige filas en muchos LPs del solver; §9) |
+| `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
+| `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
