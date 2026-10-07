@@ -298,7 +298,7 @@ Todas medidas con el banco completo.
 | Corte anytime por brecha sobre el pivoteo dual (`DFBH_ANYTAU=τ`) | ahorra pivotes (×0.84) pero celdas ×1.39–1.60 y cpu ×1.36–1.49 |
 | Herencia de base entre nodos (`DFB_SX_BASENODOS=1`) | con el dual destapó el defecto de devex (§9); arreglado, baja pivotes ×0.78–0.96 pero reconstruir el tableau cuesta lo que ahorra: tiempo ×1.00–1.10 |
 | Test de `γ` en las rodajas de ACID (`DFBH_ENACID=1`), re-medido tras el filtro de estabilidad | con `γ` propios acierta ≈ 0 %; con los de un ancestro mata rodajas que el lineal del nodo mata igual (§9) |
-| Cortes en `x*` (`DFBH_CORTES=1\|2`, tope 0.25, §9), solver | celdas ×0.82–0.84 pero cpu ×1.18–1.24 en el nodo; heredados a las hijas, celdas ×0.80 y cpu ×1.26–1.30 |
+| Cortes en `x*` (`DFBH_CORTES=1\|2\|3`, tope 0.25, §9), solver | en el nodo celdas ×0.82–0.84, cpu ×1.18–1.24 (vueltas extra del punto fijo y más pivotes); heredados ×0.80, ×1.26–1.30; sólo en las hijas ×0.84–0.88, ×1.25–1.31 y ninguna instancia gana |
 | Cota lagrangiana con monotonía (`DFBH_LAGRC=1\|2`, §9) | mejora la cota del LP en el 70–97 % de las aplicaciones y mata nodos que el LP no mata; en el objetivo solo, celdas iguales y cpu ×1.08–1.24; en las `2n` cotas, celdas ×0.81–0.96 y cpu ×1.6–3.5 |
 
 **El patrón.** Adelantar trabajo dentro del nodo no mueve el árbol. Lo único
@@ -689,13 +689,23 @@ queda sin probar y con la expectativa bajada por esto mismo.
    | en el nodo | celdas ×0.84, cpu ×1.24 | ×0.82, ×1.20 | ×0.84, ×1.18 | 350 contra 354 |
    | heredados | ×0.82, ×1.30 | ×0.80, ×1.28 | ×0.80, ×1.26 | 344 contra 354 |
 
-   Generarlos es barato (~3 % en evaluar funciones con `perf`); lo caro es el
-   LP: las filas extra agrandan el tableau y suman pivotes (`axpy` de 29 % a
-   37 % del total en Bellido). Es el mecanismo de `compo` con menos filas: más
-   filas compran celdas, pero el costo por celda (×1.45) se come la ganancia.
-   Heredar suma cortes viejos que valen pero aprietan poco en la hija. Variante
-   sin probar: **reemplazar** la fila afín de la restricción por el corte
-   cuando es más fuerte en `x*`, sin agrandar el LP.
+   | sólo en las hijas (`=3`, contra un brazo sin cortes del mismo binario; control nulo ×1.000 / ×1.005) | ×0.88, ×1.31 | ×0.86, ×1.30 | ×0.84, ×1.25 | 349 contra 354 |
+
+   **Mecanismo** (`DFBH_CUENTAS=1`: celdas, llamadas, LPs y pivotes). El costo
+   por celda se descompone en llamadas/celda × LPs/llamada × pivotes/LP ×
+   µs/pivote, y domina uno distinto según el sistema: (1) **vueltas extra del
+   punto fijo** en el nodo: los cortes contraen más, `CtcFixPoint` supera su
+   umbral y vuelve a llamar a DFB, que re-linealiza y resuelve otros `2n` LPs
+   (Bellido 3.10 → 4.11 llamadas/celda, Redeco8 1.00 → 1.11); (2) **más
+   pivotes por LP** por las filas extra (Katsura-16 15.0 → 19.6); (3) en
+   sistemas grandes, generarlos (Trigexp1-100, µs/pivote ×3.8; no se arregló
+   con gradientes por restricción). Aplicarlos sólo en las hijas elimina (1)
+   pero los cortes heredados separan los `x*` del padre, que son extremos de su
+   caja y caen fuera de la hija en la mitad de los casos: valen pero no
+   aprietan (el precedente del caché de `γ`), y (2) se paga igual. El modo 3
+   necesitó tope también al heredar: sin él el pozo acumula los cortes de todos
+   los ancestros. Variante sin probar: **reemplazar** la fila afín de la
+   restricción por el corte cuando es más fuerte en `x*`, sin agrandar el LP.
 
    **DFB contra producción en el solver, sin reloj (2026-10-06).** Las
    cifras de arriba contra producción pagaban el reloj de SoPlex y no valen.
