@@ -388,6 +388,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_LP_PRIMAL=1` | el `LPSolver` vuelve al simplex primal por columnas (antes del 2026-10-06; §4) |
 | `IBEX_LP_REP=col` | SoPlex con representación por columnas (fábrica elige filas en muchos LPs del solver; §9) |
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
+| `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
+| `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
@@ -677,6 +679,38 @@ queda sin probar y con la expectativa bajada por esto mismo.
    incluido. Ojo: el wrapper fuerza el simplex primal por columnas
    (`ibex_LPLibWrapper.cpp`, commit `b59a201f`), así que el brazo de
    producción no usa la configuración de fábrica de SoPlex.
+
+   **Por qué DFB contrae más que `CtcPolytopeHull` con la misma relajación
+   (2026-10-07).** Sonda `DFBH_AB` (misma caja de entrada, mismo poliedro
+   afín, determinista) más `IBEX_PH_STATS` y `DFBH_ABHULL`. **Rigor:** en 973
+   cotas donde DFB contrae más, se resolvió el LP exacto del poliedro sobre la
+   caja de entrada: DFB nunca lo pasa y llega a él en el 97 %; producción en el
+   3 %. **Mecanismos**, por sistema: (1) **el salto de Achterberg de
+   producción** da por hecha una cota si el `x*` anterior está a menos de
+   1e-8·|cota|, relativo a la magnitud y no al ancho: en cajas angostas lejos
+   del cero deja sin resolver cotas contraíbles (22 % de las cotas en
+   Discrete-Integralf2-13 y Bellido; sin el salto producción supera a DFB en
+   esos dos); (2) **la pasada se corta** cuando SoPlex da vacío sin prueba o
+   desconocido (9–11 % de las cotas sin resolver en Bratu-0060 y Geneig), más
+   los nodos que no se podan por esos vacíos; (3) **la holgura de
+   Neumaier–Shcherbina** es menor: 2–6 % de la contracción posible por LP,
+   20–28 % en Discrete-Integralf2-13. DFB usa la misma regla de salto, y el
+   salto relativo al ancho (`DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho`) sube
+   la contracción de los dos sobre la misma caja sin cambiar la razón.
+
+   Banco del salto relativo al ancho, cada contractor con y sin
+   (`results/salto_achterberg_ancho.csv`), cpu > 0.1 / > 1 / > 5 s: solver,
+   los dos ×1.02 / ×1.02 / ×1.03 con celdas iguales; `ibexopt`, DFB ×0.97 /
+   ×0.84 / ×0.66 y producción ×0.98 / ×0.92 / ×0.87, casi todo por
+   `alkyl`/`alkylbis` (las semillas que explotaban con SoPlex de fábrica
+   vuelven a decenas de celdas: no era sólo el buscador de `loup`; hipótesis
+   sin verificar). DFB contra producción con la misma regla: solver igual
+   (celdas ×0.48–0.53, cpu ×0.72–0.78) con las dos; `ibexopt` ×0.86 / ×0.84 /
+   ×0.78 con Achterberg y ×0.87 / ×0.89 / ×0.86 con el ancho. Conclusión: el
+   salto explica parte de la contracción extra sobre la misma caja, pero no
+   la ventaja en el árbol del solver, que viene de (2): el certificado en
+   intervalos de DFB siempre es utilizable, no depende del rayo ni del dual de
+   SoPlex, y la pasada no se abandona. Omisión: Achterberg, como upstream.
 
    **Cortes en `x*` (2026-10-06, cerrado como agregado).** Tras cada LP
    óptimo, para cada restricción que `x*` viola, una fila XTaylor en la esquina
