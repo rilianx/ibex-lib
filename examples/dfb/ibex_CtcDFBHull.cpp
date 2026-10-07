@@ -3016,6 +3016,45 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
             if (entrada[i].diam() < 1e18) pph += copia[i].diam();
         if (!vdf) for (int i = 0; i < nb_var; ++i)
             if (entrada[i].diam() < 1e18) pdf += box[i].diam();
+        /* VERIFICACION DE RIGOR (`DFBH_ABHULL=1`): donde DFB deja una cota mas
+         * apretada que produccion, se resuelve el LP exacto de esa cota sobre
+         * la caja de ENTRADA con un SoPlex nuevo. Ninguna contraccion valida
+         * puede pasar el hull exacto del poliedro; si DFB lo pasa (mas alla de
+         * la tolerancia), corto puntos factibles de la relajacion. Tambien
+         * cuenta cuanto se acerca produccion a ese hull. */
+        static const bool abhull = DFB_ENV("DFBH_ABHULL");
+        static long hv_n = 0, hv_pasa = 0, hv_dfb_al_hull = 0, hv_ph_al_hull = 0;
+        static double hv_peor = 0.0;
+        if (abhull && !vph && !vdf) {
+            LPSolver lp(nb_var, LPSolver::Mode::NotCertified);
+            IntervalVector ent(entrada);
+            if (lr.linearize(ent, lp, context.prop) > 0) {
+                lp.set_bounds(ent);
+                for (int i = 0; i < nb_var; ++i) {
+                    const double w = entrada[i].diam();
+                    if (!(w > 0) || w > 1e18) continue;
+                    for (int lado = 0; lado < 2; ++lado) {
+                        const double bd = lado ? box[i].ub() : box[i].lb();
+                        const double bp = lado ? copia[i].ub() : copia[i].lb();
+                        const bool dfb_mejor = lado ? (bd < bp - 1e-9*w) : (bd > bp + 1e-9*w);
+                        if (!dfb_mejor) continue;
+                        lp.set_cost(i, lado ? -1.0 : 1.0);
+                        const LPSolver::Status st = lp.minimize();
+                        lp.set_cost(i, 0.0);
+                        if (st != LPSolver::Status::OptimalProved && st != LPSolver::Status::Optimal) continue;
+                        const double h = lado ? -lp.minimum().mid() : lp.minimum().mid();
+                        ++hv_n;
+                        const double exceso = (lado ? (h - bd) : (bd - h)) / w;   /* > 0: DFB paso el hull */
+                        if (exceso > 1e-7) { ++hv_pasa; if (exceso > hv_peor) hv_peor = exceso; }
+                        if (std::fabs(bd - h) <= 1e-6*w) ++hv_dfb_al_hull;
+                        if (std::fabs(bp - h) <= 1e-6*w) ++hv_ph_al_hull;
+                    }
+                }
+            }
+            if (hv_n && (ph_n % 100) == 0)
+                fprintf(stderr, "[abhull] cotas donde DFB gana=%ld | DFB pasa el hull exacto=%ld (peor %.3g del ancho) | "
+                        "DFB en el hull=%ld  produccion en el hull=%ld\n", hv_n, hv_pasa, hv_peor, hv_dfb_al_hull, hv_ph_al_hull);
+        }
         /* acumuladores a nivel de archivo: el resumen lo emite el destructor */
         if (per0 > 0) {
             ++ph_n;

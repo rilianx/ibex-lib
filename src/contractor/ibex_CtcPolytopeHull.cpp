@@ -1,3 +1,4 @@
+#include <cmath>
 //============================================================================
 //                                  I B E X
 // File        : ibex_CtcPolytopeHull.cpp
@@ -50,9 +51,28 @@ double ph_reloj() { if (!ph_on()) return 0.0;
                     struct timespec ts; clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
                     return ts.tv_sec + 1e-9*ts.tv_nsec; } }
 extern double ph_t_solve, ph_t_extrae, ph_t_cert;
+extern bool ph_stats();
 
 /* Estados de SoPlex por LP (`IBEX_PH_STATS=1`, resumen al destruir). */
 static long ph_st[5] = {0,0,0,0,0};   // OptimalProved, InfeasibleProved, Infeasible, Unknown, otro
+/* Holgura de Neumaier-Shcherbina: contraccion que permitiria el optimo
+ * flotante de SoPlex contra la que deja la cota certificada, sumadas como
+ * fraccion del ancho de la variable. */
+static double ph_pot = 0.0, ph_real = 0.0; static long ph_nopt = 0, ph_perdida = 0;
+/* Destino de las 2n cotas de cada llamada: resueltas con un LP, saltadas por
+ * Achterberg (el punto del LP anterior ya estaba en la cota), o sin resolver
+ * porque la pasada se corto (vacio sin prueba, desconocido, tope). */
+static long ph_cotas = 0, ph_resueltas = 0, ph_achterberg = 0, ph_sin_resolver = 0, ph_llamadas = 0;
+static void ph_holgura(double flot, double cert, const Interval& xi) {
+	const double w = xi.diam();
+	if (!(w > 0) || !std::isfinite(w) || !std::isfinite(flot)) return;
+	const double pot = std::max(0.0, std::min(w, flot - xi.lb())) / w;
+	const double re  = std::isfinite(cert) ? std::max(0.0, std::min(w, cert - xi.lb())) / w : 0.0;
+	++ph_nopt; ph_pot += pot; ph_real += re;
+	static const int vol = getenv("IBEX_PH_VOLCAR") ? atoi(getenv("IBEX_PH_VOLCAR")) : 0;
+	if (ph_nopt <= vol) fprintf(stderr, "[ns] x=[%.10g,%.10g] flot=%.10g cert=%.10g pot=%.4f real=%.4f\n", xi.lb(), xi.ub(), flot, cert, pot, re);
+	if (pot > 1e-6 && re < pot * 0.9) ++ph_perdida;
+}
 static void ph_cuenta(LPSolver::Status st) {
 	if (st == LPSolver::Status::OptimalProved) ++ph_st[0];
 	else if (st == LPSolver::Status::InfeasibleProved) ++ph_st[1];
@@ -66,6 +86,13 @@ CtcPolytopeHull::~CtcPolytopeHull() {
 	if (getenv("IBEX_PH_STATS"))
 		fprintf(stderr, "[phull] estados: optimo=%ld vacio_probado=%ld vacio_sin_prueba=%ld desconocido=%ld otro=%ld\n",
 		        ph_st[0], ph_st[1], ph_st[2], ph_st[3], ph_st[4]);
+	if (getenv("IBEX_PH_STATS") && ph_cotas)
+		fprintf(stderr, "[phull] cotas: %ld en %ld llamadas | resueltas %.1f%%  saltadas por Achterberg %.1f%%  sin resolver (pasada cortada) %.1f%%\n",
+		        ph_cotas, ph_llamadas, 100.0*ph_resueltas/ph_cotas, 100.0*ph_achterberg/ph_cotas, 100.0*ph_sin_resolver/ph_cotas);
+	if (getenv("IBEX_PH_STATS") && ph_nopt)
+		fprintf(stderr, "[phull] holgura NS: %ld LPs optimos | contraccion potencial (flotante) %.5f real (certificada) %.5f -> se pierde %.1f%% | LPs que pierden >10%%: %ld (%.1f%%)\n",
+		        ph_nopt, ph_pot/ph_nopt, ph_real/ph_nopt, ph_pot > 0 ? 100.0*(1.0 - ph_real/ph_pot) : 0.0,
+		        ph_perdida, 100.0*ph_perdida/ph_nopt);
 }
 
 void CtcPolytopeHull::add_property(const IntervalVector& init_box, BoxProperties& map) {
@@ -124,6 +151,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 	Interval opt(0.0);
 	int* inf_bound = new int[nb_var]; // indicator inf_bound = 1 means the inf bound is feasible or already contracted, call to simplex useless (cf Baharev)
 	int* sup_bound = new int[nb_var]; // indicator sup_bound = 1 means the sup bound is feasible or already contracted, call to simplex useless
+	long ph_lps_esta = 0, ph_fijas = 0;
 
 	for (int i=0; i<nb_var; i++) {
 
@@ -133,6 +161,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 		} else {
 			inf_bound[i]=1;
 			sup_bound[i]=1;
+			ph_fijas += 2;
 		}
 	}
 
@@ -170,7 +199,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			inf_bound[i]=1;
 			mylinearsolver.set_cost(i, 1.0);
 			stat = mylinearsolver.minimize();
-			ph_cuenta(stat);
+			ph_cuenta(stat); ++ph_resueltas; ++ph_lps_esta;
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
 			
@@ -179,6 +208,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			//cout << "[polytope-hull]->[optimize] simplex for left bound returns stat:" << stat << endl;
 			if (stat == LPSolver::Status::OptimalProved) {
 				opt = mylinearsolver.minimum();
+				if (ph_stats()) ph_holgura(mylinearsolver.not_proved_primal_sol()[i], opt.lb(), box[i]);
 				//std::cout << "opt=" << opt << endl;
 				if(opt.lb()>box[i].ub()) {
 					delete[] inf_bound;
@@ -230,7 +260,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			sup_bound[i]=1;
 			mylinearsolver.set_cost(i, -1.0);
 			stat= mylinearsolver.minimize();
-			ph_cuenta(stat);
+			ph_cuenta(stat); ++ph_resueltas; ++ph_lps_esta;
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
 
@@ -239,6 +269,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 			//cout << "[polytope-hull]->[optimize] simplex for right bound returns stat=" << stat << endl;
 			if( stat == LPSolver::Status::OptimalProved) {
 				opt = -mylinearsolver.minimum();
+				if (ph_stats()) ph_holgura(-mylinearsolver.not_proved_primal_sol()[i], -opt.ub(), -box[i]);
 				//std::cout << "opt=" << opt << endl;
 				if(opt.ub() <box[i].lb()) {
 					delete[] inf_bound;
@@ -287,6 +318,13 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 		}
 		else break; // in case of stat==MAX_ITER  we do not recall the simplex on a another variable  (for efficiency reason)
 	}
+	if (ph_stats()) {
+		/* las marcadas sin LP son las de Achterberg; las que quedaron en 0, sin resolver */
+		long marcadas = 0, ceros = 0;
+		for (int j = 0; j < nb_var; ++j) { marcadas += inf_bound[j] + sup_bound[j]; ceros += (inf_bound[j]==0) + (sup_bound[j]==0); }
+		++ph_llamadas; ph_cotas += 2*nb_var - ph_fijas; ph_sin_resolver += ceros;
+		ph_achterberg += marcadas - ph_fijas - ph_lps_esta;
+	}
 	delete[] inf_bound;
 	delete[] sup_bound;
 }
@@ -304,6 +342,9 @@ bool CtcPolytopeHull::choose_next_variable(IntervalVector & box, int & nexti, in
 
 	// double prec_bound = mylinearsolver.getEpsilon(); // relative precision for the indicators TODO change with the precision of the optimizer ??
 	double prec_bound = 1.e-8; // relative precision for the indicators      :  compatibility for testing  BNE
+	/* `IBEX_PH_NOACH=1`: sonda, apaga el salto de Achterberg (prec_bound = 0). */
+	static const bool noach = (getenv("IBEX_PH_NOACH") != NULL);
+	if (noach) prec_bound = -1.0;
 	double delta=1.e100;
 	double deltaj=delta;
 
