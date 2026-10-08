@@ -98,25 +98,38 @@ the pruning gap between contractors that share the same polytope
 \paragraph{Positioning.} The certificate we use is not new. That \emph{any}
 multiplier vector yields a valid bound once the residual is evaluated in
 interval arithmetic is the principle of Neumaier and
-Shcherbina~\cite{neumaier2004safe}, and Domes and Neumaier~\cite{domes2012rigorous}
-already applied it to filtering with linear relaxations: they solve the bound
-LPs with an external solver, collect the multipliers, and solve the
-preconditioned interval system row by row. What changes in DFB is \emph{where
-the multipliers come from and how often a usable certificate is available}. In
-the approaches above, multipliers are a by-product of an external solver,
-certification is a post-processing step, and its cost and fragility lead to
-applying it to a few promising variables~\cite{domes2012rigorous} or to
-abandoning the pass when it fails (Ibex). DFB is a simplex designed for the
-certificate: the relaxation is written in a homogeneous form in which a
-dual-feasible basis is available for free for every bound, the $2n$ problems
-share one tableau, and the multipliers of the current basis give a valid
-certificate at every bound, and, with the dual method, at every iteration.
-Bound-tightening by optimization is also central in MINLP
-solvers~\cite{belotti2009branching,gleixner2017three}, where rigor is not
+Shcherbina~\cite{neumaier2004safe}. Domes and Neumaier~\cite{domes2012rigorous}
+applied it to filtering with linear relaxations: they solve the bound LPs with
+an external solver, collect the multipliers, and solve the preconditioned
+interval system row by row. Reyes and Araya~\cite{reyes2023preconditioning}
+wrote the relaxation in the same homogeneous form we use, with one auxiliary
+variable per row, and showed that the optimal preconditioner for an interval
+Gauss--Seidel projection is given by the dual solutions of the bound LPs; the
+equivalent valid inequalities appear in the optimization-based bound
+tightening of Gleixner et al.~\cite{gleixner2017three}, and both works reuse
+them in sub-boxes. On the solver side, Yamamura and
+coworkers~\cite{yamamura2001dual,yamamura2006dual} observed that, after a
+bisection, the optimal tableau of the parent remains dual feasible for the
+child, so that an LP emptiness test can be resumed by the dual simplex method
+with few or no pivots per box.
+
+What changes in DFB is \emph{where the multipliers come from and how often a
+usable certificate is available}. In the approaches above, multipliers are a
+by-product of an external solver and certification is a post-processing step;
+its cost and fragility lead to applying it to a few promising
+variables~\cite{domes2012rigorous}, to recomputing it only periodically and
+reusing it in between~\cite{reyes2023preconditioning}, or to abandoning the pass
+when it fails (Ibex). The dual-simplex warm start of Yamamura et al.\ concerns a
+single feasibility LP on a fixed relaxation, without rigorous certification.
+DFB is a simplex designed for the certificate: in the homogeneous form every
+basis can be made dual feasible by relocating nonbasic variables, so each of the
+$2n$ bound problems, and each problem after the box contracts, starts dual
+feasible; the $2n$ problems share one tableau; and the multipliers of the
+current basis give a valid certificate at every bound and, with the dual
+method, at every iteration. Bound tightening by optimization is also central in
+MINLP solvers~\cite{belotti2009branching,gleixner2017three}, where rigor is not
 required; the heuristic of skipping bounds already attained by a primal point,
 used by Ibex, comes from Baharev, Achterberg and R\'ev~\cite{baharev2009distillation}.
-\todo{leer Yamamura y Tanaka~\cite{yamamura2006dual}: simplex dual para hallar
-todas las soluciones; posible antecedente directo}
 
 \paragraph{Contributions.}
 \begin{itemize}
@@ -145,8 +158,10 @@ why the standard contractor loses bounds, and an ablation
 \todo{Ibex (ibexsolve, ibexopt), HC4, ACID, Newton; X-Newton y la relajacion
 XTaylor~\cite{araya2012xnewton}; relajacion afin~\cite{ninin2015affine} y su
 hibridacion con XTaylor~\cite{araya2025hybridizing}; precondicionamiento de la
-relajacion~\cite{reyes2023preconditioning}; QUAD~\cite{lebbah2005quad};
-GloptLab~\cite{domes2012rigorous}.}
+relajacion~\cite{reyes2023preconditioning} (forma homogenea, precondicionador
+optimo = duales, OBBT-GS en IbexOpt); QUAD~\cite{lebbah2005quad};
+GloptLab~\cite{domes2012rigorous}; test LP de no existencia con simplex dual
+tibio tras la biseccion~\cite{yamamura2001dual,yamamura2006dual}.}
 
 \paragraph{Rigorous bounds for linear programs.}
 \todo{Neumaier--Shcherbina~\cite{neumaier2004safe}; Jansson~\cite{jansson2004rigorous};
@@ -273,9 +288,12 @@ and Proposition~\ref{prop:valid} applies to $P'$. The inclusion follows from
 the inclusion isotonicity of interval arithmetic.
 \end{proof}
 
-A certificate computed at a node can thus be reused in all its descendants.
-It stays valid, but it was optimized for the parent box and is usually weak in
-a child; we measured such reuse and it does not pay
+A certificate computed at a node can thus be reused in all its descendants,
+as Reyes and Araya do with their preconditioner~\cite{reyes2023preconditioning}
+and Gleixner et al.\ with their dual-derived
+inequalities~\cite{gleixner2017three}. It stays valid, but it was optimized for
+the parent box and is usually weak in a child; in DFB, where a fresh
+certificate costs one LP, we measured such reuse and it does not pay
 (Section~\ref{sec:discussion}).
 
 \subsection{Tightness}
@@ -345,9 +363,14 @@ Written back in the variables $x$, $\inff\iv{C}_k(\lambda,\iv{z})$ is the
 Neumaier--Shcherbina safe lower bound of $\min x_k$ subject to $Ax\in\iv{b}$,
 $x\in\iv{x}$, with approximate dual $\lambda$~\cite{neumaier2004safe}, and the
 row-wise solution of the preconditioned system in the linear bounding of Domes
-and Neumaier~\cite[\S5]{domes2012rigorous}. The certificate is therefore the
-known one; Propositions~\ref{prop:start} and~\ref{prop:mono} are what make it
-cheap and always available inside the simplex.
+and Neumaier~\cite[\S5]{domes2012rigorous}. In the homogeneous form,
+Proposition~\ref{prop:exact} is the statement of Reyes and
+Araya~\cite[Prop.~1]{reyes2023preconditioning} that the dual solution of the
+bound LP is an optimal preconditioner for the Gauss--Seidel projection, with
+the vector $\lambda^T\Abar$ playing the role of a preconditioned row. The
+certificate is therefore the known one; Propositions~\ref{prop:start}
+and~\ref{prop:mono} are what make it cheap and always available inside the
+simplex.
 \end{remark}
 
 \subsection{Dual feasibility for free}
@@ -369,7 +392,11 @@ whenever the required bound is finite.
 
 When the objective changes from one bound to the next, or the box is
 contracted between two bounds, relocation restores dual feasibility without a
-phase~1. This is what allows one tableau to be shared by the $2n$ problems.
+phase~1. This is what allows one tableau to be shared by the $2n$ problems. The
+case of a box change was exploited by Yamamura and
+coworkers~\cite{yamamura2001dual,yamamura2006dual} to resume an LP emptiness test
+after a bisection; Proposition~\ref{prop:start} extends it to a change of
+objective, which is what the $2n$ bound problems need.
 Slacks with an infinite side are relocated to their finite bound when the sign
 allows it; otherwise they are handled by a primal step
 \todo{precisar el tratamiento de las cotas infinitas en la implementacion}.
