@@ -79,7 +79,9 @@ constraints are linearized over the box, by convex interval
 Taylor forms~\cite{araya2012xnewton} or affine
 arithmetic~\cite{ninin2015affine,araya2025hybridizing}, and each variable is
 minimized and maximized over the resulting polytope. In Ibex this is the
-polytope-hull contractor, the linear part of X-Newton~\cite{araya2012xnewton}.
+polytope-hull contractor, the linear part of X-Newton, which we introduced
+in~\cite{araya2012xnewton}; we later combined the affine and Taylor-based
+relaxations~\cite{araya2025hybridizing}.
 
 Each call solves up to $2n$ linear programs, and the rigor of the result cannot
 come from the LP solver, which works in floating point. Current implementations
@@ -101,13 +103,15 @@ interval arithmetic is the principle of Neumaier and
 Shcherbina~\cite{neumaier2004safe}. Domes and Neumaier~\cite{domes2012rigorous}
 applied it to filtering with linear relaxations: they solve the bound LPs with
 an external solver, collect the multipliers, and solve the preconditioned
-interval system row by row. Reyes and Araya~\cite{reyes2023preconditioning}
-wrote the relaxation in the same homogeneous form we use, with one auxiliary
+interval system row by row. In previous work~\cite{reyes2023preconditioning} we
+wrote the relaxation in the homogeneous form used here, with one auxiliary
 variable per row, and showed that the optimal preconditioner for an interval
 Gauss--Seidel projection is given by the dual solutions of the bound LPs; the
 equivalent valid inequalities appear in the optimization-based bound
 tightening of Gleixner et al.~\cite{gleixner2017three}, and both works reuse
-them in sub-boxes. On the solver side, Yamamura and
+them in sub-boxes. The present paper continues that line: there the
+multipliers were still computed by an external LP solver, and the
+preconditioner was recomputed only periodically to amortize its cost. On the solver side, Yamamura and
 coworkers~\cite{yamamura2001dual,yamamura2006dual} observed that, after a
 bisection, the optimal tableau of the parent remains dual feasible for the
 child, so that an LP emptiness test can be resumed by the dual simplex method
@@ -289,7 +293,7 @@ the inclusion isotonicity of interval arithmetic.
 \end{proof}
 
 A certificate computed at a node can thus be reused in all its descendants,
-as Reyes and Araya do with their preconditioner~\cite{reyes2023preconditioning}
+as we did with the preconditioner of~\cite{reyes2023preconditioning}
 and Gleixner et al.\ with their dual-derived
 inequalities~\cite{gleixner2017three}. It stays valid, but it was optimized for
 the parent box and is usually weak in a child; in DFB, where a fresh
@@ -364,8 +368,8 @@ Neumaier--Shcherbina safe lower bound of $\min x_k$ subject to $Ax\in\iv{b}$,
 $x\in\iv{x}$, with approximate dual $\lambda$~\cite{neumaier2004safe}, and the
 row-wise solution of the preconditioned system in the linear bounding of Domes
 and Neumaier~\cite[\S5]{domes2012rigorous}. In the homogeneous form,
-Proposition~\ref{prop:exact} is the statement of Reyes and
-Araya~\cite[Prop.~1]{reyes2023preconditioning} that the dual solution of the
+Proposition~\ref{prop:exact} is our earlier
+result~\cite[Prop.~1]{reyes2023preconditioning} that the dual solution of the
 bound LP is an optimal preconditioner for the Gauss--Seidel projection, with
 the vector $\lambda^T\Abar$ playing the role of a preconditioned row. The
 certificate is therefore the known one; Propositions~\ref{prop:start}
