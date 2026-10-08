@@ -1,0 +1,453 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage[margin=2.6cm]{geometry}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+
+% Notas de trabajo: se apagan cambiando \todo por un comando vacio.
+\newcommand{\todo}[1]{{\color{red!70!black}\textbf{[TODO:} #1\textbf{]}}}
+
+% Notacion
+\newcommand{\iv}[1]{\mathbf{#1}}          % intervalo o caja
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\IR}{\mathbb{IR}}
+\newcommand{\Abar}{\bar{A}}
+\newcommand{\inff}{\operatorname{inf}}
+\newcommand{\supp}{\operatorname{sup}}
+\newcommand{\wid}{\operatorname{wid}}
+\newcommand{\magn}{\operatorname{mag}}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}[proposition]{Lemma}
+\newtheorem{corollary}[proposition]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[proposition]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[proposition]{Remark}
+
+\title{Dual Feasible Bounding: a certified simplex for\\ polytope-hull contraction in interval branch and bound}
+\author{Ignacio Araya \and \todo{coautores}}
+\date{\todo{borrador del 2026-10-08}}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+Polytope-hull contractors are a key component of interval branch-and-bound
+solvers: at every node they bound each variable over a linear relaxation of the
+constraints by solving $2n$ linear programs. Current implementations delegate
+these programs to a floating-point LP solver and recover rigor afterwards, by
+Neumaier--Shcherbina safe bounds and Farkas-ray verification. When the
+verification fails, the bound is lost, the pass is abandoned and nodes that
+could be discarded survive. We present Dual Feasible Bounding (DFB), a
+contractor that computes its own multipliers. The rigor principle is the
+classical one: writing the relaxation as $\Abar z = 0$ with interval-bounded
+slacks, any multiplier vector $\lambda$ yields an interval certificate
+$\lambda^T\Abar$ that bounds a variable, or proves emptiness, over the current
+box and every sub-box, whatever the numerical quality of $\lambda$. The
+contribution is a simplex built around this certificate, so that a usable
+certificate exists for every one of the $2n$ bounds: a free dual-feasible start,
+one tableau shared by the $2n$ problems, and a hybrid engine that solves small
+relaxations on an explicit tableau and large ones with a tableau-free revised
+dual simplex. Integrated in Ibex, DFB never exceeds the exact LP hull, and on
+identical boxes it attains that hull in 97\% of the bounds where it differs
+from the standard contractor, against 3\% for the latter. On 264 systems of
+equations, against the strongest production configuration, DFB explores
+23--30\% fewer cells, is 5--11\% faster and solves 31 more runs; against Ibex
+as distributed it explores half the cells and is 24--29\% faster. On 138
+constrained global optimization problems it is 14--21\% faster with the same
+search trees. An ablation shows that the gains come from the robustness of the
+certificate and from the hybrid engine, not from tighter relaxations.
+\todo{actualizar las cifras con el banco de confirmacion (omision final:
+estrategia por nodo, umbral 80)}
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}\label{sec:intro}
+
+Interval branch-and-bound solvers compute, with mathematical certainty, an
+enclosure of all solutions of a system of nonlinear equations and inequalities,
+or the global optimum of a constrained problem~\cite{neumaier2004complete}.
+Their efficiency depends on \emph{contractors}, operators that shrink the
+current box without losing solutions~\cite{chabert2009contractor}. Among them,
+contractors based on linear relaxations are among the most effective: the
+constraints are linearized over the box, by convex interval
+Taylor forms~\cite{araya2012xnewton} or affine
+arithmetic~\cite{ninin2015affine,araya2025hybridizing}, and each variable is
+minimized and maximized over the resulting polytope. In Ibex this is the
+polytope-hull contractor, the linear part of X-Newton~\cite{araya2012xnewton}.
+
+Each call solves up to $2n$ linear programs, and the rigor of the result cannot
+come from the LP solver, which works in floating point. Current implementations
+therefore treat the LP solver as a black box and certify its output a
+posteriori: the dual solution is turned into a safe bound by the
+Neumaier--Shcherbina procedure~\cite{neumaier2004safe}, and an infeasibility
+claim is accepted only if the returned Farkas ray passes the same verification.
+This design has a cost that is easy to miss. When the verification fails, which
+happens when the dual is inaccurate or the solver works in an unfavourable
+representation, the bound is lost; when the solver reports infeasibility
+without a verifiable ray, the pass is abandoned and the node survives. On our
+benchmark, these losses, and not the quality of the relaxation, explain most of
+the pruning gap between contractors that share the same polytope
+(Section~\ref{sec:experiments}).
+
+\paragraph{Positioning.} The certificate we use is not new. That \emph{any}
+multiplier vector yields a valid bound once the residual is evaluated in
+interval arithmetic is the principle of Neumaier and
+Shcherbina~\cite{neumaier2004safe}, and Domes and Neumaier~\cite{domes2012rigorous}
+already applied it to filtering with linear relaxations: they solve the bound
+LPs with an external solver, collect the multipliers, and solve the
+preconditioned interval system row by row. What changes in DFB is \emph{where
+the multipliers come from and how often a usable certificate is available}. In
+the approaches above, multipliers are a by-product of an external solver,
+certification is a post-processing step, and its cost and fragility lead to
+applying it to a few promising variables~\cite{domes2012rigorous} or to
+abandoning the pass when it fails (Ibex). DFB is a simplex designed for the
+certificate: the relaxation is written in a homogeneous form in which a
+dual-feasible basis is available for free for every bound, the $2n$ problems
+share one tableau, and the multipliers of the current basis give a valid
+certificate at every bound, and, with the dual method, at every iteration.
+Bound-tightening by optimization is also central in MINLP
+solvers~\cite{belotti2009branching,gleixner2017three}, where rigor is not
+required; the heuristic of skipping bounds already attained by a primal point,
+used by Ibex, comes from Baharev, Achterberg and R\'ev~\cite{baharev2009distillation}.
+\todo{leer Yamamura y Tanaka~\cite{yamamura2006dual}: simplex dual para hallar
+todas las soluciones; posible antecedente directo}
+
+\paragraph{Contributions.}
+\begin{itemize}
+\item A homogeneous formulation of the relaxation in which every basis can be
+made dual feasible by relocating nonbasic variables, so that each of the $2n$
+bound problems starts dual feasible without a phase~1
+(Section~\ref{sec:properties}).
+\item A specialized simplex for the $2n$ problems: shared tableau, long-step
+dual ratio test, devex pricing, box-scaled tolerances, a per-node choice of
+strategy (dual on revised nodes, primal on tableau nodes) and a hybrid
+tableau/revised engine (Section~\ref{sec:simplex}).
+\item Properties of the certificate: validity for any multipliers and any
+sub-box, exactness at an optimal basis, and, under the dual method, a valid
+lower bound that is nondecreasing along the iterations
+(Section~\ref{sec:properties}).
+\item An evaluation in Ibex on 264 systems of equations and 138 optimization
+problems, with a rigor check against the exact LP hull, a same-box analysis of
+why the standard contractor loses bounds, and an ablation
+(Section~\ref{sec:experiments}).
+\end{itemize}
+
+% =====================================================================
+\section{Background and related work}\label{sec:background}
+
+\paragraph{Interval solvers and linear relaxations.}
+\todo{Ibex (ibexsolve, ibexopt), HC4, ACID, Newton; X-Newton y la relajacion
+XTaylor~\cite{araya2012xnewton}; relajacion afin~\cite{ninin2015affine} y su
+hibridacion con XTaylor~\cite{araya2025hybridizing}; precondicionamiento de la
+relajacion~\cite{reyes2023preconditioning}; QUAD~\cite{lebbah2005quad};
+GloptLab~\cite{domes2012rigorous}.}
+
+\paragraph{Rigorous bounds for linear programs.}
+\todo{Neumaier--Shcherbina~\cite{neumaier2004safe}; Jansson~\cite{jansson2004rigorous};
+LP exacto o con refinamiento iterativo (QSopt\_ex, SoPlex; verificar
+referencias). Linear bounding de Domes y Neumaier~\cite{domes2012rigorous}, \S5:
+la formula del certificado, aplicada a posteriori y a pocas variables.}
+
+\paragraph{Optimization-based bound tightening.}
+\todo{Couenne~\cite{belotti2009branching}, SCIP~\cite{gleixner2017three}
+(filtrado de cotas con puntos factibles, propagacion lagrangiana), BARON
+(reduccion de rangos; verificar referencia). Heuristica de
+Achterberg~\cite{baharev2009distillation}: saltar una cota alcanzada por un
+punto primal, arranque tibio primal y la variable mas cercana a su cota.}
+
+\paragraph{Dual simplex techniques.}
+\todo{Paso largo (bound flipping)~\cite{maros2003generalized,koberstein2005dual};
+devex~\cite{harris1973devex}; dual steepest edge~\cite{forrest1992steepest};
+Forrest--Tomlin; arranque tibio.}
+
+% =====================================================================
+\section{The DFB relaxation and its certificate}\label{sec:dfb}
+
+Let $\iv{x}\in\IR^n$ be the current box. A linearizer returns a matrix
+$A\in\R^{m\times n}$ of floating-point numbers and an interval vector
+$\iv{b}\in\IR^m$, possibly with infinite bounds, such that
+\begin{equation}\label{eq:relax}
+x \in \iv{x} \text{ is a solution} \;\Longrightarrow\; A x \in \iv{b}.
+\end{equation}
+We introduce one slack per row, $s = Ax$, and write the relaxation in the
+homogeneous form
+\begin{equation}\label{eq:homog}
+\Abar z = 0,\qquad z = (x,s)\in \iv{z} := \iv{x}\times\iv{s},\qquad
+\Abar := [\,A \;\; -I_m\,],
+\end{equation}
+where $\iv{s}_i := \iv{b}_i \cap \square(A_{i:}\,\iv{x})$ and
+$\square(\cdot)$ denotes evaluation in interval arithmetic. We call
+$P(\iv{x}) := \{ z\in\iv{z} : \Abar z = 0\}$ the \emph{relaxation polytope}.
+
+\begin{lemma}\label{lem:relax}
+If $x^*\in\iv{x}$ is a solution, then $(x^*, Ax^*)\in P(\iv{x})$.
+\end{lemma}
+\begin{proof}
+$A_{i:}x^*\in\iv{b}_i$ by~\eqref{eq:relax} and $A_{i:}x^*\in\square(A_{i:}\iv{x})$
+by the inclusion property of interval arithmetic; the equation holds by
+construction of $s$.
+\end{proof}
+
+\begin{definition}[Certificate]\label{def:cert}
+For $\lambda\in\R^m$, let $\iv{\gamma}\in\IR^{n+m}$ be an interval vector that
+contains $\gamma := \Abar^T\lambda$, computed in outward-rounded interval
+arithmetic. For $k\in\{1,\dots,n+m\}$ with $0\notin\iv{\gamma}_k$, the
+\emph{certified enclosure} of $z_k$ is
+\[
+\iv{C}_k(\lambda,\iv{z}) := -\Big(\textstyle\sum_{j\neq k}\iv{\gamma}_j\,\iv{z}_j\Big) \Big/ \iv{\gamma}_k ,
+\]
+and the \emph{residual} is $\iv{R}(\lambda,\iv{z}) := \sum_{j}\iv{\gamma}_j\,\iv{z}_j$.
+\end{definition}
+
+A contraction step replaces $\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$;
+an emptiness test checks $0\notin\iv{R}(\lambda,\iv{z})$.
+Section~\ref{sec:simplex} explains how DFB produces $\lambda$, and
+Section~\ref{sec:properties} why these steps are valid and when they are tight.
+
+% =====================================================================
+\section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
+
+\todo{Escribir. Contenido (ver ESTADO.md \S1--2):
+(i) el problema de la cota $k$: $\min / \max\, z_k$ sujeto a~\eqref{eq:homog};
+(ii) arranque en frio con la base de holguras $B=-I$, dual-factible para todo
+$k$ (Proposicion~\ref{prop:start});
+(iii) una pasada de hasta $2n$ cotas con un solo tableau, orden de las cotas y
+salto de Achterberg;
+(iv) estrategias: dual puro (reubica todas las no basicas, $k$ incluida), primal
+(conserva la factibilidad primal), y la estrategia por nodo de la omision;
+(v) test de razon de paso largo, Harris relativo, devex, tolerancia primal a
+escala de la caja $\min(10^{-9}(1+|v|),\,\tau\,\wid)$ con $\tau=10^{-3}$;
+(vi) motor hibrido: tableau explicito con LU diferida y guarda de deriva, o
+simplex dual revisado sin tableau (BTRAN/FTRAN, Forrest--Tomlin) cuando la
+relajacion pasa de 80 filas; el revisado exige el dual porque no tiene pasos
+primales;
+(vii) el certificado se calcula una vez por cota con los $\lambda$ de la base final.}
+
+% =====================================================================
+\section{Properties of the certificate}\label{sec:properties}
+
+All statements hold for the floating-point $A$ returned by the linearizer;
+rounding in the computation of $\iv{\gamma}$ and $\iv{C}_k$ is covered by
+outward rounding. We write $e_k$ for the $k$-th unit vector of $\R^{n+m}$.
+
+\subsection{Validity}
+
+\begin{proposition}[Validity for any multipliers]\label{prop:valid}
+Let $\lambda\in\R^m$ be arbitrary. For every $z\in P(\iv{x})$ and every $k$ with
+$0\notin\iv{\gamma}_k$, we have $z_k\in\iv{C}_k(\lambda,\iv{z})$. If
+$0\notin\iv{R}(\lambda,\iv{z})$, then $P(\iv{x})=\emptyset$, and by
+Lemma~\ref{lem:relax} the box $\iv{x}$ contains no solution.
+\end{proposition}
+\begin{proof}
+Let $\gamma=\Abar^T\lambda$ be the exact vector, so $\gamma\in\iv{\gamma}$. For
+$z\in P(\iv{x})$, $\gamma^T z = \lambda^T\Abar z = 0$, hence
+$\gamma_k z_k = -\sum_{j\ne k}\gamma_j z_j$. Each product $\gamma_j z_j$ belongs
+to $\iv{\gamma}_j\iv{z}_j$ and the sum to the interval sum; dividing by
+$\gamma_k\in\iv{\gamma}_k$, which does not contain $0$, gives
+$z_k\in\iv{C}_k(\lambda,\iv{z})$ by the inclusion property. For the second
+claim, any $z\in P(\iv{x})$ would give $0=\gamma^T z\in\iv{R}(\lambda,\iv{z})$.
+\end{proof}
+
+No property of $\lambda$ is used: it need not be optimal, feasible, or
+accurate. Errors in $\lambda$ can only weaken the enclosure, never invalidate
+it. In particular, a Farkas multiplier read from the simplex when it detects
+primal infeasibility either passes the residual test or is simply not used:
+there is no ``infeasible but unproved'' outcome that forces the pass to stop.
+
+\begin{proposition}[Validity on sub-boxes]\label{prop:subbox}
+Let $\iv{x}'\subseteq\iv{x}$ and let $\iv{z}'\subseteq\iv{z}$ be the
+corresponding box of~\eqref{eq:homog}, built with the matrix $\Abar$ computed
+on $\iv{x}$. Then every solution in $\iv{x}'$ satisfies
+$z_k\in\iv{C}_k(\lambda,\iv{z}')\subseteq\iv{C}_k(\lambda,\iv{z})$.
+\end{proposition}
+\begin{proof}
+The linearization~\eqref{eq:relax} on $\iv{x}$ remains valid for solutions in
+$\iv{x}'$, so $P'=\{z\in\iv{z}':\Abar z=0\}\subseteq P(\iv{x})$ contains them,
+and Proposition~\ref{prop:valid} applies to $P'$. The inclusion follows from
+the inclusion isotonicity of interval arithmetic.
+\end{proof}
+
+A certificate computed at a node can thus be reused in all its descendants.
+It stays valid, but it was optimized for the parent box and is usually weak in
+a child; we measured such reuse and it does not pay
+(Section~\ref{sec:discussion}).
+
+\subsection{Tightness}
+
+Consider the bound problem
+\begin{equation}\label{eq:lpk}
+\mathrm{LP}_k:\quad \min\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
+\end{equation}
+with $\iv{z}$ bounded; maximization is obtained with $-z_k$. A basis is a set
+of $m$ columns of $\Abar$ forming a nonsingular matrix $B$; the multipliers are
+$\lambda^T = c_B^T B^{-1}$ and the reduced costs $d = e_k - \Abar^T\lambda$.
+For the bounded-variable simplex, a basis with each nonbasic variable at one of
+its bounds is \emph{dual feasible} if $d_j\ge 0$ for nonbasic variables at their
+lower bound and $d_j\le 0$ for those at their upper bound.
+
+\begin{lemma}\label{lem:dualfun}
+For any $\lambda$ with $d = e_k - \Abar^T\lambda$ and $d_k=0$, the exact
+certificate satisfies $\gamma_k=1$ and
+\[
+\inff \iv{C}_k(\lambda,\iv{z}) \;=\; \sum_{j\neq k}\min_{z_j\in\iv{z}_j} d_j z_j
+\;=\; \min_{z\in\iv{z}} d^T z \;=: g(\lambda),
+\]
+the value of the Lagrangian dual function of~\eqref{eq:lpk} at $\lambda$.
+\end{lemma}
+\begin{proof}
+$\gamma=\Abar^T\lambda = e_k - d$, so $\gamma_k = 1-d_k = 1$ and $\gamma_j=-d_j$
+for $j\ne k$. Then
+$\iv{C}_k = \sum_{j\ne k} d_j\iv{z}_j$, whose infimum is the sum of the minima of
+the independent terms. The term $j=k$ of $d^Tz$ vanishes. Finally, the
+Lagrangian of~\eqref{eq:lpk} relaxing $\Abar z=0$ with multiplier $\lambda$ is
+$z_k - \lambda^T\Abar z = d^T z$, minimized over the box $\iv{z}$.
+\end{proof}
+
+\begin{proposition}[Exactness at an optimal basis]\label{prop:exact}
+Let $B$ be an optimal basis of~\eqref{eq:lpk} with multipliers $\lambda^*$.
+If $z_k$ is basic, then in exact arithmetic
+$\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value of $\mathrm{LP}_k$.
+If $z_k$ is nonbasic at its lower bound, the optimal value is $\inff\iv{z}_k$ and
+there is nothing to contract.
+\end{proposition}
+\begin{proof}
+If $z_k$ is basic, $d_k=0$ and Lemma~\ref{lem:dualfun} gives
+$\inff\iv{C}_k=g(\lambda^*)$. By weak duality $g(\lambda^*)$ is a lower bound
+of the optimum. The basic solution $\bar z$ places each nonbasic variable at
+the bound that minimizes $d_j z_j$ (optimality signs) and has $d_j=0$ on basic
+variables, so $d^T\bar z=g(\lambda^*)$; since $\bar z\in P(\iv{x})$,
+$\bar z_k = e_k^T\bar z = d^T\bar z + \lambda^{*T}\Abar\bar z = g(\lambda^*)$.
+If $z_k$ is nonbasic at its lower bound, $\bar z_k=\inff\iv{z}_k$ is feasible
+and optimal.
+\end{proof}
+
+The remaining case, $z_k$ nonbasic at its upper bound in an optimal basis of the
+minimization, means that $P(\iv{x})$ lies in the hyperplane
+$z_k=\supp\iv{z}_k$. Then $d_k\le 0$, so $\gamma_k=1-d_k\ge 1$, and the same
+computation as in Lemma~\ref{lem:dualfun}, divided by $\gamma_k$, shows that the
+certificate is exact as well.
+
+In floating point, the computed enclosure exceeds the LP bound by at most
+$\sum_j \wid(\iv{\gamma}_j)\,\magn(\iv{z}_j)$ plus the effect of the inaccuracy of
+$\lambda$, the same slack as in the Neumaier--Shcherbina
+bound~\cite{neumaier2004safe}. On identical boxes, DFB attains the exact hull in
+97\% of the bounds where it differs from the standard contractor
+(Section~\ref{sec:experiments}).
+
+\begin{remark}[Relation to Neumaier--Shcherbina and Domes--Neumaier]
+Written back in the variables $x$, $\inff\iv{C}_k(\lambda,\iv{z})$ is the
+Neumaier--Shcherbina safe lower bound of $\min x_k$ subject to $Ax\in\iv{b}$,
+$x\in\iv{x}$, with approximate dual $\lambda$~\cite{neumaier2004safe}, and the
+row-wise solution of the preconditioned system in the linear bounding of Domes
+and Neumaier~\cite[\S5]{domes2012rigorous}. The certificate is therefore the
+known one; Propositions~\ref{prop:start} and~\ref{prop:mono} are what make it
+cheap and always available inside the simplex.
+\end{remark}
+
+\subsection{Dual feasibility for free}
+
+\begin{proposition}[Dual-feasible start for every bound]\label{prop:start}
+The slack basis $B=-I_m$ is dual feasible for $\mathrm{LP}_k$, for every
+structural variable $k\le n$ with $\inff\iv{z}_k$ finite. More generally, if
+every $\iv{z}_j$ is bounded, any basis becomes dual feasible after placing each
+nonbasic $z_j$ at its lower bound if $d_j>0$ and at its upper bound if $d_j<0$.
+\end{proposition}
+\begin{proof}
+With the slack basis, $c_B=0$ for $k\le n$, so $\lambda=0$ and $d=e_k$: the only
+nonzero reduced cost is $d_k=1$, and $z_k$ at its lower bound satisfies the
+sign condition. In general, dual feasibility is a condition on the signs of
+$d_j$ for nonbasic variables relative to the bound at which they sit; $d$ does
+not depend on that placement, so the relocation enforces the condition
+whenever the required bound is finite.
+\end{proof}
+
+When the objective changes from one bound to the next, or the box is
+contracted between two bounds, relocation restores dual feasibility without a
+phase~1. This is what allows one tableau to be shared by the $2n$ problems.
+Slacks with an infinite side are relocated to their finite bound when the sign
+allows it; otherwise they are handled by a primal step
+\todo{precisar el tratamiento de las cotas infinitas en la implementacion}.
+
+\subsection{An anytime certified bound under the dual method}
+
+\begin{proposition}[Monotone certified bound]\label{prop:mono}
+Run the dual simplex method on~\eqref{eq:lpk} from a dual-feasible basis, with
+the standard or the long-step ratio test. At every iteration $t$ in which $z_k$
+is basic, $\inff\iv{C}_k(\lambda_t,\iv{z})$ is a valid lower bound on $z_k$ over
+$P(\iv{x})$, and, in exact arithmetic, these bounds are nondecreasing in $t$.
+\end{proposition}
+\begin{proof}
+Validity is Proposition~\ref{prop:valid}. With $z_k$ basic, $d_k=0$ and
+Lemma~\ref{lem:dualfun} identifies the bound with the dual objective
+$g(\lambda_t)$. Every iterate of the dual simplex is dual feasible, and each
+iteration moves $\lambda$ along a dual ascent direction with a step chosen by
+the ratio test; the long-step test maximizes the piecewise-linear dual function
+along that direction~\cite{maros2003generalized}. Hence $g(\lambda_t)$ is
+nondecreasing, strictly so on nondegenerate iterations.
+\end{proof}
+
+The certificate can thus be read at any point of the dual method, and an LP
+can be truncated with a valid bound. We measured such truncation and it does
+not pay (Section~\ref{sec:discussion}). The per-node strategy keeps the dual
+method on revised nodes and uses the primal method on tableau nodes, where it
+is faster; the primal method reaches an optimal basis too, so
+Proposition~\ref{prop:exact} still applies at termination, and only the anytime
+property is lost on those nodes.
+
+\paragraph{Cost.}
+The certificate of one bound costs one interval product per nonzero of the
+rows of $\Abar$ with $\lambda_i\neq 0$, plus $O(n+m)$ operations for
+$\iv{C}_k$. \todo{comparar con el costo del post-proceso de
+Neumaier--Shcherbina en Ibex (matriz transpuesta densa por LP)}.
+
+% =====================================================================
+\section{Experimental evaluation}\label{sec:experiments}
+
+\todo{Escribir con el banco de confirmacion (results/ y ESTADO.md \S4, \S9).
+Configuracion: Ibex con SoPlex 4.0.2 de fabrica y sin reloj (parche del
+temporizador); ibexsolve con HC4, ACID, Newton y el contractor lineal;
+linearizador afin; bisector LSmear; 264 sistemas de benchs/solver, 2
+semillas, 60 s; ibexopt con 139 instancias, 4 semillas, 60 s; 15 procesos.
+Produccion: CtcPolytopeHull de fabrica y la mas fuerte de cada programa
+(columnas en el solver).}
+
+\paragraph{Rigor.} \todo{973 cotas donde DFB gana: nunca pasa el hull exacto,
+lo alcanza en el 97\%, produccion en el 3\% (sonda DFBH\_ABHULL).}
+
+\paragraph{Same-box analysis.} \todo{Contraccion sobre la misma caja y el mismo
+poliedro (sonda DFBH\_AB); destino de las $2n$ cotas de produccion: resueltas,
+saltadas por Achterberg, sin resolver por pasada cortada; holgura de
+Neumaier--Shcherbina por LP; vacios sin prueba segun la representacion de
+SoPlex.}
+
+\paragraph{Main comparison.} \todo{Tabla: celdas, cpu y corridas terminadas en
+los cortes $>0.1$, $>1$ y $>5$ s; perfiles de
+desempeno~\cite{dolan2002benchmarking}.}
+
+\paragraph{Ablation.} \todo{Primal y dual con el mismo motor, sin paso largo,
+sin $\tau$, sin devex, solo tableau; ninguna pieza cambia la poda, el motor
+hibrido es la que pesa.}
+
+\paragraph{Fair evaluation.} \todo{El reloj de SoPlex (~30\% del tiempo de
+produccion) y la representacion por filas; que configuracion se compara.}
+
+% =====================================================================
+\section{Discussion}\label{sec:discussion}
+
+\todo{Por que gana DFB (robustez del certificado, no un poliedro mejor); donde
+pierde (Bratu-0050, BroydenTri, Katsurabis-14); lo que no funciono y por que:
+reuso de certificados en subcajas, truncamiento anytime, cortes en $x^*$,
+cota lagrangiana; limites: igualdades estrechas (bearing) y el buscador de
+loup.}
+
+% =====================================================================
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
