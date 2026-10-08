@@ -432,10 +432,31 @@ Proposition~\ref{prop:exact} still applies at termination, and only the anytime
 property is lost on those nodes.
 
 \paragraph{Cost.}
-The certificate of one bound costs one interval product per nonzero of the
-rows of $\Abar$ with $\lambda_i\neq 0$, plus $O(n+m)$ operations for
-$\iv{C}_k$. \todo{comparar con el costo del post-proceso de
-Neumaier--Shcherbina en Ibex (matriz transpuesta densa por LP)}.
+Certifying a bound costs the same in DFB as the Neumaier--Shcherbina
+post-processing. Both compute a product of the transposed constraint matrix by
+the multipliers, restricted to the rows with $\lambda_i\neq 0$, plus $O(n+m)$
+operations: $\iv{\gamma}=\Abar^T\lambda$ and $\iv{C}_k$ in DFB, and the
+residual $A^T\lambda-c$ and the bound $\lambda^T\iv{b}-(A^T\lambda-c)^T\iv{x}$
+in Neumaier--Shcherbina. The difference is not the cost of a certificate but its
+availability. DFB reads $\lambda$ from its own basis, whereas the
+post-processing first extracts the dual and primal solutions from the external
+solver, and its infeasibility test depends on the solver returning a ray.
+
+We measured both in Ibex on three optimization problems (ex6\_1\_3, ex7\_2\_3,
+chem). The DFB certificate costs 1.3--3.1\,$\mu$s per LP, and the
+Neumaier--Shcherbina post-processing 1.9--3.0\,$\mu$s, plus 1.2--1.5\,$\mu$s to
+extract the solution from SoPlex. The implementation distributed with Ibex
+builds the dense matrix of the relaxation and its transpose at every LP, which
+raises the post-processing to 5.6--11.3\,$\mu$s; we replaced it by a sparse
+accumulation over the nonzero multipliers for all the comparisons of
+Section~\ref{sec:experiments}. That implementation also accumulates the
+residual $A^T\lambda-c$ in floating point, so its rounding error, multiplied by
+the width of the box, is not covered. Evaluating the residual in interval
+arithmetic, as DFB does for $\iv{\gamma}$, closes this gap at no measurable
+cost (same 1.9--3.0\,$\mu$s).
+\todo{mover las cifras a una tabla en la Seccion~\ref{sec:experiments} y
+medir mas instancias; usar la version rigurosa del residuo en produccion para
+la comparacion final}
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
