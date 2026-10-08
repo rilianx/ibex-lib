@@ -461,33 +461,173 @@ la comparacion final}
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
 
-\todo{Escribir con el banco de confirmacion (results/ y ESTADO.md \S4, \S9).
-Configuracion: Ibex con SoPlex 4.0.2 de fabrica y sin reloj (parche del
-temporizador); ibexsolve con HC4, ACID, Newton y el contractor lineal;
-linearizador afin; bisector LSmear; 264 sistemas de benchs/solver, 2
-semillas, 60 s; ibexopt con 139 instancias, 4 semillas, 60 s; 15 procesos.
-Produccion: CtcPolytopeHull de fabrica y la mas fuerte de cada programa
-(columnas en el solver).}
+\paragraph{Setting.}
+DFB is implemented in C++ inside Ibex, in place of the polytope-hull
+contractor. Both contractors share the same linearizer (affine
+relaxation~\cite{ninin2015affine}), the same search and the same other
+contractors. For systems of equations we use the solver composition of Ibex
+(HC4, ACID, interval Newton when the system is square, and the linear
+contractor within a fixed point with HC4) with the LSmear bisector, on the 264
+systems of the Ibex solver benchmark, 2 seeds, 60\,s per run. For optimization
+we use IbexOpt with the same linear relaxation on 139 problems, 4 seeds, 60\,s
+per run. The production contractor uses SoPlex~4.0.2 with the default
+configuration of Ibex and with the solver timers disabled (see
+\emph{Fair evaluation} below). Runs were executed 15 at a time on a 16-core
+machine. We report geometric means of ratios over the pairs of runs in which
+both methods finish, for runs whose reference time exceeds 0.1, 1 and 5\,s, and
+the number of runs that finish within the time limit.
+\todo{CPU, compilador, version de Ibex; publicar el codigo y los scripts}
 
-\paragraph{Rigor.} \todo{973 cotas donde DFB gana: nunca pasa el hull exacto,
-lo alcanza en el 97\%, produccion en el 3\% (sonda DFBH\_ABHULL).}
+\subsection{Rigor}
 
-\paragraph{Same-box analysis.} \todo{Contraccion sobre la misma caja y el mismo
-poliedro (sonda DFBH\_AB); destino de las $2n$ cotas de produccion: resueltas,
-saltadas por Achterberg, sin resolver por pasada cortada; holgura de
-Neumaier--Shcherbina por LP; vacios sin prueba segun la representacion de
-SoPlex.}
+DFB is rigorous by Proposition~\ref{prop:valid}; we checked it empirically
+against the exact LP hull. On identical boxes and with the same polytope, for
+every bound where DFB and the production contractor give different results, we
+solved the bound LP of the polytope over the input box with a fresh LP solver.
+No valid contraction can go beyond this hull. Over 973 such bounds in four
+systems (Table~\ref{tab:hull}), DFB never went beyond the hull and attained it
+in 97\% of the cases; the production contractor attained it in 3\%.
 
-\paragraph{Main comparison.} \todo{Tabla: celdas, cpu y corridas terminadas en
-los cortes $>0.1$, $>1$ y $>5$ s; perfiles de
-desempeno~\cite{dolan2002benchmarking}.}
+\begin{table}[t]
+\centering
+\caption{Bounds where DFB contracts more than the production contractor on the
+same box, compared with the exact hull of the polytope over the input box.}
+\label{tab:hull}
+\begin{tabular}{lrrrr}
+\toprule
+system & bounds & DFB beyond hull & DFB at hull & production at hull\\
+\midrule
+Bratu-0060             &  84 & 0 &  84 & 25\\
+Discrete-Integralf2-13 &  22 & 0 &  22 &  0\\
+Geneig                 & 617 & 0 & 584 &  0\\
+Bellido                & 250 & 0 & 249 &  1\\
+\midrule
+total                  & 973 & 0 & 939 & 26\\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\paragraph{Ablation.} \todo{Primal y dual con el mismo motor, sin paso largo,
-sin $\tau$, sin devex, solo tableau; ninguna pieza cambia la poda, el motor
-hibrido es la que pesa.}
+\subsection{Why DFB contracts more with the same relaxation}
 
-\paragraph{Fair evaluation.} \todo{El reloj de SoPlex (~30\% del tiempo de
-produccion) y la representacion por filas; que configuracion se compara.}
+Both contractors work on the same polytope, so the exact LP hull is the same
+for both. Table~\ref{tab:samebox} measures, on the same input boxes, the mean
+relative contraction of each contractor and where the production contractor
+loses bounds. Three mechanisms appear, with different weights in different
+systems.
+\begin{enumerate}
+\item \emph{Skipped bounds.} The heuristic of Baharev et
+al.~\cite{baharev2009distillation} declares a bound done when the primal point
+of a previous LP lies on it within $10^{-8}$ relative to the magnitude of the
+bound, not to the width of the box. In narrow boxes far from zero this skips
+bounds that could still be contracted: 22\% of the bounds in
+Discrete-Integralf2-13 and Bellido. Without the skip, the production
+contractor contracts slightly more than DFB on these two systems (0.282 against
+0.251, and 0.283 against 0.280). DFB uses the same rule.
+\item \emph{Abandoned passes.} When SoPlex reports an infeasible LP without a
+verifiable ray, or an unknown status, the production contractor stops the pass
+and the remaining bounds are not computed (9--11\% of the bounds in Bratu-0060
+and Geneig); the node also survives when it was in fact empty.
+\item \emph{Neumaier--Shcherbina slack.} The safe bound loses a fraction of the
+contraction that the floating-point optimum would give: 2--6\% in most
+systems, 20--28\% in Discrete-Integralf2-13.
+\end{enumerate}
+Changing the skipping rule in both contractors to a tolerance relative to the
+box width raises the contraction of both on the same boxes but leaves the
+search-tree advantage of DFB on systems of equations unchanged (cells
+$\times0.48$--$0.53$ with either rule). The advantage in the tree comes from the
+second mechanism: the certificate of DFB is always usable, and a pass is never
+abandoned.
+
+\begin{table}[t]
+\centering
+\caption{Same input boxes, same polytope. Mean relative contraction of the
+perimeter, and fate of the $2n$ bounds of the production contractor: solved by
+an LP, skipped by the heuristic, or left unsolved because the pass was
+abandoned. Last column: contraction lost by the Neumaier--Shcherbina bound with
+respect to the floating-point optimum of the same LPs.}
+\label{tab:samebox}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{contraction} & \multicolumn{3}{c}{production bounds (\%)} & NS slack\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-6}
+system & production & DFB & solved & skipped & unsolved & (\%)\\
+\midrule
+Bratu-0060             & 0.156 & 0.236 & 55 & 36 &  9 &  1.7\\
+Discrete-Integralf2-13 & 0.209 & 0.251 & 78 & 22 &  0 & 28\\
+Geneig                 & 0.314 & 0.345 & 78 & 11 & 11 &  3.0\\
+Bellido                & 0.277 & 0.280 & 79 & 22 &  0 &  1.9\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Main comparison}
+
+\todo{Tabla con el banco de confirmacion (omision final): solver contra
+produccion de fabrica y con representacion por columnas, contra el oficial;
+IbexOpt contra produccion de fabrica. Celdas, cpu, corridas terminadas;
+perfiles de desempeno~\cite{dolan2002benchmarking}; donde gana y donde pierde.}
+
+\subsection{Ablation}
+
+Table~\ref{tab:ablation} removes one component of DFB at a time. In IbexOpt we
+exclude three problems (alkyl, alkylbis, bearing) whose search trees change by
+two orders of magnitude between seeds within the same configuration and
+dominate the $>5$\,s cut. No component changes the pruning: all cell ratios are
+within 1\%. The components differ in cost, and only on systems of equations,
+where relaxations are larger. The hybrid engine is the one that matters
+(without it, CPU time $\times1.13$--$1.25$). With the same engine (tableau), the
+primal method is 15--20\% faster than the dual one; the value of the dual
+method is that it enables the tableau-free revised engine, which has no primal
+steps, on large relaxations. This is why DFB uses the dual method on revised
+nodes and the primal method on tableau nodes.
+
+\begin{table}[t]
+\centering
+\caption{Ablation on systems of equations: each row removes one component
+from DFB. Cell and CPU ratios against full DFB for runs above 0.1, 1 and 5\,s.
+In IbexOpt all ratios are within $\pm3\%$.}
+\label{tab:ablation}
+\begin{tabular}{lcccc}
+\toprule
+& cells & \multicolumn{3}{c}{CPU}\\
+\cmidrule(lr){3-5}
+configuration & & $>0.1$\,s & $>1$\,s & $>5$\,s\\
+\midrule
+primal method, tableau only                 & 1.00 & 0.96 & 0.97 & 1.01\\
+without long-step ratio test                & 1.01 & 0.99 & 0.99 & 1.01\\
+without box-scaled tolerance                & 1.00 & 1.00 & 1.00 & 1.00\\
+without devex                               & 1.00 & 1.03 & 1.03 & 1.05\\
+tableau only (no hybrid engine)             & 1.00 & 1.13 & 1.19 & 1.25\\
+\midrule
+primal against dual, both on tableau        & 1.01 & 0.85 & 0.82 & 0.80\\
+\bottomrule
+\end{tabular}
+\end{table}
+\todo{repetir la ablacion con la omision final (estrategia por nodo, umbral 80)}
+
+\subsection{Fair evaluation}
+
+Two issues of the LP solver configuration change the comparison and should be
+controlled in any evaluation of LP-based contractors.
+\begin{itemize}
+\item \emph{Solver timers.} SoPlex~4.0.2 reads the CPU clock, a system call,
+in every forward and backward solve of its LU factorization and in every call,
+even with its timer parameter turned off: the parameter does not reach the
+factorization nor the statistics. In IbexOpt this took about 30\% of the time of
+the production contractor and 6\% of DFB, which uses SoPlex only for upper
+bounding. We patched the bundled SoPlex so that the parameter disables all
+timers; all results above use the patched version. Before the patch, the
+advantage of DFB in IbexOpt appeared as a CPU ratio of 0.60 instead of
+0.81--0.89.
+\item \emph{LP representation.} With its default configuration, which is the
+one distributed with Ibex, SoPlex chooses the row representation for many LPs
+of the systems of equations, and there the production contractor accumulates
+LPs declared infeasible without a verifiable ray. For instance, on
+Discrete-Integralf2-15 it reports 2519 unproved infeasible LPs and explores 4641
+cells, against 2 and 19 with the column representation. Forcing the column
+representation helps on average (cells $\times0.70$) but makes other systems
+fail (Brown-15 to Brown-20). We report both configurations.
+\end{itemize}
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
