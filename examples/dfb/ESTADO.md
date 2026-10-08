@@ -174,7 +174,11 @@ sin ellas). `results/produccion_fuerte_2026-10-08.csv`:
 
 La estrategia por nodo contra la omisión dual: solver cpu ×0.97–0.98 con
 celdas iguales (Bellido ×0.77, `Katsura-16…18` ×0.78–0.83, ninguna pierde);
-`ibexopt` neutro.
+`ibexopt` neutro. Umbral del motor híbrido con la estrategia por nodo
+(`results/umbral_por_motor_2semillas.csv`, solver), contra 40 filas: 60 →
+cpu ×0.98; 80 → ×0.97–0.98; 120 → igual que 80 (celdas iguales en todos).
+Con el primal el tableau es más barato, así que conviene mandarle más nodos,
+pero la ganancia se aplana desde 60–80.
 
 **Línea de base vigente (2026-10-06, tarde): SoPlex de fábrica y sin reloj.**
 SoPlex 4.0.2 leía `times()`, una llamada al sistema, en cada FTRAN/BTRAN de su
