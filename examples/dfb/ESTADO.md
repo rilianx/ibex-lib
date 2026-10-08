@@ -156,6 +156,26 @@ celdas pagando LPs por nodo (×1.03–1.05).
 
 Producción = `--filtering=acidhc4` + `CtcPolytopeHull` + linearizador afín.
 
+**Comparación contra producción fuerte (2026-10-08).** DFB con la
+estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
+revisado, primal en los de tableau) contra la producción más fuerte de cada
+programa: en el solver, SoPlex con representación por columnas
+(`IBEX_LP_REP=col`); en `ibexopt`, la de fábrica (allí las columnas son
+×1.03 de cpu). Todo sin reloj de SoPlex. En `ibexopt` se excluyen `alkyl`,
+`alkylbis` y `bearing` (caóticas por semilla; resueltas 4/4 iguales con y
+sin ellas). `results/produccion_fuerte_2026-10-08.csv`:
+
+| programa | > 0.1 s | > 1 s | > 5 s | terminan |
+|---|---|---|---|---|
+| solver, contra producción con columnas | celdas ×0.77, **cpu ×0.92** | ×0.73, **×0.95** | ×0.70, **×0.89** | **354 contra 323** |
+| solver, contra producción de fábrica (como upstream) | ×0.53, ×0.76 | ×0.48, ×0.74 | ×0.46, ×0.71 | 354 contra 320 |
+| `ibexopt`, contra producción de fábrica | celdas ×0.99, **cpu ×0.82** | ×1.03, **×0.86** | ×1.02, **×0.79** | 131 contra 131 |
+| `ibexopt`, contra producción con columnas | ×1.02, ×0.79 | ×1.07, ×0.83 | ×1.03, ×0.77 | 131 contra 131 |
+
+La estrategia por nodo contra la omisión dual: solver cpu ×0.97–0.98 con
+celdas iguales (Bellido ×0.77, `Katsura-16…18` ×0.78–0.83, ninguna pierde);
+`ibexopt` neutro.
+
 **Línea de base vigente (2026-10-06, tarde): SoPlex de fábrica y sin reloj.**
 SoPlex 4.0.2 leía `times()`, una llamada al sistema, en cada FTRAN/BTRAN de su
 LU y en cada `optimize`, aun con `TIMER_OFF`, porque el parámetro no llegaba a
@@ -390,6 +410,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
+| `DFB_SX_PIVOTEO=por_motor` | dual puro en los nodos revisados, primal en los de tableau (§4, §9) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
