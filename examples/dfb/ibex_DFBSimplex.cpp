@@ -286,7 +286,12 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
     nc = na + m;
     /* Motor de este nodo: `revisado` siempre, `auto` segun el tamano de la
      * relajacion (DFB_SX_MOTOR_M, omision 30 filas), tableau si no. */
-    rev = motor_revisado || (motor_auto && m > motor_umbral);
+    /* El motor revisado no tiene pasos primales (`primal_step` lee el
+     * tableau): con una estrategia que no reubica (`primal`, `mixta`) el LP
+     * terminaba con una base dual-infactible, declarada OPTIMAL, y el
+     * certificado salia valido pero flojo (solver: celdas x1.6-2.1). Esas
+     * estrategias se quedan en el tableau. */
+    rev = pivoteo_dual && (motor_revisado || (motor_auto && m > motor_umbral));
     if (rev) ++n_nodos_rev; else ++n_nodos_tab;
 
     calcular_escalas(Abar);

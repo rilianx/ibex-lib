@@ -3044,6 +3044,22 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
                         const double bd = lado ? box[i].ub() : box[i].lb();
                         const double bp = lado ? copia[i].ub() : copia[i].lb();
                         const bool dfb_mejor = lado ? (bd < bp - 1e-9*w) : (bd > bp + 1e-9*w);
+                        const bool ph_mejor  = lado ? (bp < bd - 1e-9*w) : (bp > bd + 1e-9*w);
+                        static long hp_n = 0, hp_dfb_hull = 0, hp_ph_hull = 0;
+                        if (ph_mejor) {
+                            lp.set_cost(i, lado ? -1.0 : 1.0);
+                            const LPSolver::Status st2 = lp.minimize();
+                            lp.set_cost(i, 0.0);
+                            if (st2 == LPSolver::Status::OptimalProved || st2 == LPSolver::Status::Optimal) {
+                                const double h2 = lado ? -lp.minimum().mid() : lp.minimum().mid();
+                                ++hp_n;
+                                if (std::fabs(bd - h2) <= 1e-6*w) ++hp_dfb_hull;
+                                if (std::fabs(bp - h2) <= 1e-6*w) ++hp_ph_hull;
+                                if ((hp_n % 500) == 0)
+                                    fprintf(stderr, "[abhull-ph] cotas donde produccion gana=%ld | produccion en el hull=%ld  DFB en el hull=%ld\n", hp_n, hp_ph_hull, hp_dfb_hull);
+                            }
+                            continue;
+                        }
                         if (!dfb_mejor) continue;
                         lp.set_cost(i, lado ? -1.0 : 1.0);
                         const LPSolver::Status st = lp.minimize();

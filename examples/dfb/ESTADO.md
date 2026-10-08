@@ -680,6 +680,40 @@ queda sin probar y con la expectativa bajada por esto mismo.
    (`ibex_LPLibWrapper.cpp`, commit `b59a201f`), así que el brazo de
    producción no usa la configuración de fábrica de SoPlex.
 
+   **Ablación (2026-10-08).** Sobre la omisión vigente, un brazo por pieza
+   quitada, solver (264 sistemas, 2 semillas) e `ibexopt` (139 instancias, 4
+   semillas) (`results/ablacion_2026-10-08.csv`). En `ibexopt` se excluyen
+   `alkyl`, `alkylbis` y `bearing`, que explotan o no según la semilla y el
+   brazo (`alkylbis` de 148 a 32 416 celdas en el mismo brazo) y dominan el
+   corte > 5 s.
+
+   | brazo contra DFB completo | solver: celdas, cpu > 0.1 / > 1 / > 5 s | `ibexopt`: cpu > 0.1 / > 1 / > 5 s |
+   |---|---|---|
+   | primal con el motor híbrido (defecto, ver abajo) | ×1.59–2.15, ×1.07 / ×1.14 / ×1.22; 325 contra 354 terminan | ×1.01 / ×1.04 / ×1.00 |
+   | primal sobre tableau | ×1.00, ×0.96 / ×0.97 / ×1.01; 350 contra 354 | ×1.00 / ×1.00 / ×1.00 |
+   | sin paso largo | ×1.01, ×0.99 / ×0.99 / ×1.01 | ×1.02 / ×1.00 / ×0.97 |
+   | sin tolerancia a escala de la caja | ×1.00, ×1.00 / ×1.00 / ×1.00 | ×1.00 / ×0.99 / ×1.00 |
+   | sin devex | ×1.00, ×1.03 / ×1.03 / ×1.05 | ×1.01 / ×1.01 / ×1.00 |
+   | sólo tableau (sin motor híbrido) | ×1.00, **×1.13 / ×1.19 / ×1.25**; 350 contra 354 | ×1.01 / ×1.02 / ×1.00 |
+   | primal contra dual, los dos sobre tableau | ×1.01, **×0.85 / ×0.82 / ×0.80** | ×0.99 / ×0.98 / ×1.00 |
+
+   Lectura: ninguna pieza cambia la poda (celdas ×1.00); todas son costo. La
+   que pesa es el **motor híbrido** (solver ×0.80–0.88), y el motor revisado
+   exige el dual. Con el mismo motor (tableau) el **primal es más rápido que
+   el dual** en el solver (×0.80–0.85): el valor del dual es habilitar el
+   revisado en las relajaciones grandes, no la poda ni el costo por pivote en
+   las chicas. Paso largo, τ y devex son de segundo orden ahora (±5 %); en el
+   solver devex ayuda un 3–5 %. En `ibexopt` todo es neutro (±3 %).
+
+   **Defecto encontrado y arreglado.** `primal_step` lee el tableau, así que en
+   los nodos revisados una estrategia que no reubica (`primal`, `mixta`) no
+   daba ningún paso primal: terminaba con una base dual-infactible declarada
+   OPTIMAL y un certificado válido pero flojo (sonda `DFBH_ABHULL`: en 8000
+   cotas donde producción ganaba, producción en el hull exacto siempre, DFB
+   nunca). Ahora esas estrategias se quedan en el tableau
+   (`rev = pivoteo_dual && ...`). La nota de §1 «la poda es la misma en las
+   tres» se midió en `ibexopt`, donde casi no hay nodos revisados.
+
    **Por qué DFB contrae más que `CtcPolytopeHull` con la misma relajación
    (2026-10-07).** Sonda `DFBH_AB` (misma caja de entrada, mismo poliedro
    afín, determinista) más `IBEX_PH_STATS` y `DFBH_ABHULL`. **Rigor:** en 973
