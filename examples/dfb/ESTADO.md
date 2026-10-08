@@ -44,7 +44,11 @@ Por nodo se linealiza, `load` reinicia la base, y se recorre una pasada de hasta
 `B = −I`, dual-factible y primal-infactible. Las estrategias difieren en las
 cotas `1 … 2n−1`, donde cambia el objetivo y la caja no se mueve:
 
-- **`dual`** (omisión desde 2026-09-30): reubica **todas** las no básicas por
+- **`por_motor`** (omisión desde 2026-10-08): `dual` en los nodos que van al
+  motor revisado (que no tiene pasos primales) y `primal` en los de tableau,
+  donde el primal es más rápido (ablación, §9). El certificado se calcula igual
+  en los dos; se pierde sólo la cota anytime monótona en los nodos de tableau.
+- **`dual`** (omisión del 2026-09-30 al 2026-10-08): reubica **todas** las no básicas por
   el signo de su costo reducido, `k` incluida. La base es dual-factible en cada
   iteración y la cota certificada sube monótonamente durante el LP. Si `k`
   termina no básica, el óptimo es su cota y no había nada que contraer. Medido:
@@ -82,6 +86,7 @@ nulas (§8).
 | **Ratio test de paso largo**, con el arreglo del último quiebre (§9) | cpu ×0.97 contra el dual sin él |
 | **Tolerancia primal a escala de la caja**, τ = 1e-3 (§9) | neutra para el primal; sin ella el dual puro declaraba factibles poliedros vacíos en cajas angostas |
 | **Devex en la fila que sale** (§9) | cpu ×0.98–0.99 con el dual puro |
+| **Estrategia por nodo y umbral 80** (`por_motor`: dual en los nodos revisados, primal en los de tableau) (§4, §9) | solver cpu ×0.97 por la estrategia y ×0.97–0.98 por el umbral, celdas iguales; `ibexopt` neutro |
 | **Motor híbrido**: simplex revisado sin tableau en relajaciones de más de 40 filas (§9) | `ibexsolve` cpu ×0.75–0.93 con las mismas celdas; neutro en `ibexopt` |
 | **LU sin el reloj de SoPlex** (`SLUFactor` leía `times()` en cada FTRAN/BTRAN) (§9) | `ibexsolve` cpu ×0.92–0.93 con el afín y ×0.83 con `compo`, mismas celdas; `launch` ×0.85 |
 | **Sondas leídas una vez y `mid()` directo** (más de 20 `getenv` por LP en `una_pasada`; el `mid()` de gaol guarda y restaura el redondeo aun en intervalos de un punto, en `Af = mid(A)` cada pasada; también los `getenv` de `CtcPolytopeHull`, `LSmear` y el optimizador) | mismas celdas, DFB ~×0.97 en `ex6_1_3` y `ex7_2_3` (corridas sueltas, sin banco) |
@@ -414,12 +419,12 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
-| `DFB_SX_PIVOTEO=por_motor` | dual puro en los nodos revisados, primal en los de tableau (§4, §9) |
+| `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
-| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (umbral 40) (§9). **Omisión `auto`** |
+| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (**umbral 80** desde 2026-10-08; antes 40) (§9). **Omisión `auto`** |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |

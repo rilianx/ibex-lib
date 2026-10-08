@@ -247,7 +247,7 @@ public:
     /** \brief `DFB_SX_MOTOR=revisado`: simplex dual revisado, sin tableau. */
     static bool motor_revisado;
     static bool motor_auto;     //!< `DFB_SX_MOTOR=auto`: revisado si m > motor_umbral
-    static int  motor_umbral;   //!< `DFB_SX_MOTOR_M`, omision 40
+    static int  motor_umbral;   //!< `DFB_SX_MOTOR_M`, omision 80
     static long n_nodos_rev, n_nodos_tab;
     /** \brief El motor del nodo actual es el revisado (el tableau no esta al dia). */
     bool es_revisado() const { return rev; }

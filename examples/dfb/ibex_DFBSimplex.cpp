@@ -95,7 +95,8 @@ static bool leer_motor_auto() {
 }
 bool DFBSimplex::motor_revisado = leer_motor_revisado();
 bool DFBSimplex::motor_auto = leer_motor_auto();
-int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 40;
+/* Umbral 80 desde 2026-10-08: con el primal el tableau es mas barato. */
+int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 80;
 long DFBSimplex::n_nodos_rev = 0, DFBSimplex::n_nodos_tab = 0;
 static bool leer_lu_diferida() {
     if (leer_motor_revisado()) return false;
@@ -146,7 +147,9 @@ bool leer_dual_puro() {
 }
 bool DFBSimplex::pivoteo_dual = leer_pivoteo_dual();
 bool DFBSimplex::dual_puro = leer_dual_puro();
-bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
+/* Omision `por_motor` desde 2026-10-08 (dual en los nodos revisados, primal
+ * en los de tableau); `DFB_SX_PIVOTEO=dual` vuelve al dual puro en todos. */
+bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") == NULL || std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_verif      = 0;
 long DFBSimplex::n_verif_pinf = 0;
