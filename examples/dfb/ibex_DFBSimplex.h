@@ -323,6 +323,11 @@ public:
      * `DFB_SX_MONO`: 38-83 % de los LPs con algun paso primal).
      */
     static bool dual_puro;
+    /** `DFB_SX_PIVOTEO=por_motor`: dual puro en los nodos del motor revisado
+     *  (que no tiene pasos primales) y primal en los de tableau, donde el
+     *  primal es mas rapido (ablacion del 2026-10-08: x0.80-0.85 en el solver). */
+    static bool pivoteo_por_motor;
+    bool dual_nodo, puro_nodo;   //!< estrategia de este nodo, fijada en `load`
     static long n_entrak;   //!< pivotes de entrada explicita de `k` (`DFB_SX_ENTRAK=1`)
     static long n_verif;             //!< optimos verificados
     static long n_verif_pinf;        //!< de esos, con violacion primal relativa > 1e-6

@@ -146,6 +146,7 @@ bool leer_dual_puro() {
 }
 bool DFBSimplex::pivoteo_dual = leer_pivoteo_dual();
 bool DFBSimplex::dual_puro = leer_dual_puro();
+bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_verif      = 0;
 long DFBSimplex::n_verif_pinf = 0;
@@ -211,7 +212,7 @@ long DFBSimplex::n_base_rechazada = 0;
 DFBSimplex::DFBSimplex() : traza_y(NULL), tope_anytime(std::numeric_limits<double>::quiet_NaN()),
                            obs_tope(std::numeric_limits<double>::quiet_NaN()), obs_pivote(-1), xb_sucio(true), m(0), nx(0), na(0), nc(0), zs(1),
                            bnd(0.0), iters(0),
-                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false),
+                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false), dual_nodo(true), puro_nodo(true),
                            perturbado(false), pert_eps(0.0), pert_estado(12345u) {
 }
 
@@ -291,7 +292,13 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
      * terminaba con una base dual-infactible, declarada OPTIMAL, y el
      * certificado salia valido pero flojo (solver: celdas x1.6-2.1). Esas
      * estrategias se quedan en el tableau. */
-    rev = pivoteo_dual && (motor_revisado || (motor_auto && m > motor_umbral));
+    if (pivoteo_por_motor) {
+        rev = motor_revisado || (motor_auto && m > motor_umbral);
+        dual_nodo = puro_nodo = rev;
+    } else {
+        rev = pivoteo_dual && (motor_revisado || (motor_auto && m > motor_umbral));
+        dual_nodo = pivoteo_dual; puro_nodo = dual_puro;
+    }
     if (rev) ++n_nodos_rev; else ++n_nodos_tab;
 
     calcular_escalas(Abar);
@@ -1401,7 +1408,7 @@ int DFBSimplex::reubicar_minima(int k, int& n_k) {
      * no basica en su cota, y los pasos duales la meten si hace falta. La
      * mixta la excluye (ver `refrescar_desde_factorizacion`). */
     static const bool reub_k_viejo = (getenv("DFB_SX_REUBK") != NULL);
-    const bool no_reub_k = !(dual_puro || reub_k_viejo);
+    const bool no_reub_k = !(puro_nodo || reub_k_viejo);
     int n_mov = 0; n_k = 0;
     for (int c = 0; c < na; ++c) {
         if (rowof[c] >= 0) continue;
@@ -1728,7 +1735,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
      * —cuesta mas pivotes y el barrido lo midio peor—, pero entonces solo la
      * cota 0 es dual y en las demas el estado `INFEASIBLE` no esta respaldado.
      * `DFB_SX_PIVOTEO=dual` para medir ese eje. */
-    const bool reubicar = pivoteo_dual;
+    const bool reubicar = dual_nodo;
     if (!tibio || !refrescar(k, maximize, zz, reubicar)) {
         set_objective(k, maximize, !tibio);
         /* Respaldo en tibio: si la estrategia reubica, se reubica aca tambien,
@@ -1743,7 +1750,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
      * o sea que el certificado ya es una cota util desde el primer paso. Es el
      * `interchange` del DFB original. */
     static const bool entrak = (getenv("DFB_SX_ENTRAK") != NULL);
-    if (dual_puro && entrak && rowof[k] < 0) {
+    if (puro_nodo && entrak && rowof[k] < 0) {
         tab_column(k, colq);
         int r_k = -1; double amax = 0.0;
         for (int r = 1; r <= m; ++r)
@@ -1767,8 +1774,8 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
      * infactibilidad primal, paso primal mientras haya dual. */
         /* Respaldo sin factorizacion: bucle compuesto sobre el tableau. */
         perf::Cron _b(&perf::t_bucle);
-        const bool tope_activo = pivoteo_dual && tope_anytime == tope_anytime;
-        const bool obs_activo  = pivoteo_dual && obs_tope == obs_tope;
+        const bool tope_activo = dual_nodo && tope_anytime == tope_anytime;
+        const bool obs_activo  = dual_nodo && obs_tope == obs_tope;
         obs_pivote = -1;
         /* SONDA DE MONOTONIA (`DFB_SX_MONO=1`): bajo la estrategia dual, cuantos
          * LPs dan algun paso primal, y si el valor basico de `z_k` —la cota
