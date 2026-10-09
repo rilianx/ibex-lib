@@ -189,9 +189,20 @@ robusto en los `Brown` (la caja negra deja de terminar `Brown-30`; ×15–20 en
 `Brown-18…20`) y en `CountercurrentReactors2-9` (×25); SoPlex gana en las
 relajaciones grandes (`Bratu-0175…0200`, que DFB no termina;
 `Discrete-Integralf2-19…21`, ×3–5), donde su LU es mejor que el motor revisado.
-Por qué DFB poda más en el solver con el mismo certificado: sin aislar todavía
-(candidatos: precisión del dual de SoPlex en LPs casi degenerados, el salto
-de Achterberg con puntos x* de SoPlex levemente infactibles). La diferencia
+Por qué DFB poda más en el solver con el mismo certificado (sonda
+`DFBH_ABCAJA`: los dos motores sobre la misma caja y la misma relajación):
+(1) **fallas numéricas de SoPlex** en relajaciones con casi-igualdades
+angostas: en Geneig-icse declara infactibles 18 838 LPs factibles (el
+certificado prueba vacío en 148; las demás cotas se pierden), más ~6500
+desconocidos y ~1000 topes de iteraciones; DFB deja sin óptimo 211 de 75 446.
+Contracción media 0.303 contra 0.248. (2) **precisión del dual** con
+tolerancia 1e-6: diferencias chicas y sistemáticas (CountercurrentReactors2-9:
+DFB gana 253 nodos contra 0; con 1e-9, 47 contra 1). Se probó darle a SoPlex
+su mejor configuración: presolve, escalado y representación no cambian; el
+primal baja los infactibles espurios (18 838 → 2549) pero en el banco
+empeora (solver: termina 345–346 contra 356, pierde `Geneig-icse` y
+`Brown-15…20`; `ibexopt` igual). Mejor caja negra: la de fábrica con
+tolerancia 1e-6 (solver) o 1e-9 (`ibexopt`). La diferencia
 de poda contra `CtcPolytopeHull` de Ibex venía sobre todo del marco: abandonar
 la pasada y certificar a posteriori con un rayo que puede faltar. En
 DiscreteBoundary-0200 DFB da 3 cajas solución y la caja negra 4: se solapan
