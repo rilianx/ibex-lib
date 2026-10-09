@@ -566,6 +566,7 @@ private:
     bool xb_sucio;
     int piv_desde_refresco;   //!< pivotes revisados desde el ultimo recalculo de x_B
     int col_primal_lista;     //!< columna que el paso primal acaba de preparar para el pivote que sigue (-1 si ninguna)
+    std::vector<double> wp;   //!< pesos devex del paso primal revisado, por columna (`DFB_SX_DEVEXP=1`)
     bool pivote_fallido;  //!< un pivote no se pudo aplicar: no confundir con optimo
     std::vector<double> alpha_piv;   //!< columna entrante antes del pivote
 };

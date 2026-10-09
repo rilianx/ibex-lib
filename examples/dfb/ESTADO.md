@@ -251,6 +251,29 @@ caja negra, umbral 40: solver celdas ×0.81–0.89, cpu ×0.96 / ×0.97 / ×0.90
 `ibexopt` cpu ×0.77 / ×0.82 / ×0.78. Siguen sin terminar Bratu-0175…0200
 (costo por pivote en relajaciones de ese tamaño).
 
+**Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
+los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
+25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
+en el motor revisado (`DFB_SX_DEVEXP=1`, **apagado por omisión**, falta banco):
+Bratu-0150 pivotes 897k → 811k (34.8 → 33.1 por LP), 30.8 → 29.5 s;
+Discrete-Integralf2-19/21 ×0.88; BroydenTri-0100 ×1.02; Bratu-0175 sigue en
+el límite. Test unitario sin discrepancias.
+
+*Mecanismo de lo que queda* (Bratu-0150, caja negra 18.2 s, 721k pivotes;
+DFB+devex 29.4 s, 811k): la diferencia es sobre todo de costo por pivote, no
+de pivotes. `vSolveUright` (FTRAN de la entrante, todo desde
+`preparar_cambio` del paso primal) cuesta 2.46 s en DFB contra 0.45 s en
+SoPlex. La relajación compo tiene m = 300 filas para n = 150 (dos
+linealizaciones por ecuación), la base de DFB es de dimensión m y la FTRAN
+sale densa (164 de 300 no ceros de media). SoPlex elige **solo** la
+representación por filas (base de dimensión n): forzándole columnas
+(`DFBH_CAJA_REP=col`, base de dimensión n + m con las filas de cota) sube a
+24.8 s; con `DFBH_CAJA_REP=row`, 18.2 s, idéntico a la omisión. O sea, ~2/3
+de la brecha es la representación. El período de refactorización no influye
+(10/25/50/100: 30.4/29.0/29.3/31.3 s). Cerrarla pediría que el motor
+revisado trabaje con la base de dimensión ≤ n (núcleo de columnas
+estructurales básicas, o representación por filas) cuando m > n.
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
@@ -509,6 +532,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
+| `DFB_SX_DEVEXP=1` | precio devex en los pasos primales del motor revisado (por omisión Dantzig; sin banco aún) (§4) |
 | `DFB_SX_REVPRIMAL=0` | apaga los pasos primales en el motor revisado (**por omisión encendidos** desde 2026-10-10; con `por_motor`, nodos revisados en primal) (§4) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
 | `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |

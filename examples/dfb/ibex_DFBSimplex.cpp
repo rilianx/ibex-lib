@@ -1142,12 +1142,20 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
 bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) {
     perf::Cron _c(&perf::t_primal);
     unbounded = false;
+    /* Precio: Dantzig, o devex primal (`DFB_SX_DEVEXP=1`): d_j^2 / w_j, con
+     * pesos de referencia que se actualizan con la fila del pivote. */
+    static const bool devexp = getenv("DFB_SX_DEVEXP") && std::string(getenv("DFB_SX_DEVEXP")) == "1";
+    if (devexp && (int)wp.size() != na) wp.assign(na, 1.0);
     int q = -1; double bestd = 0.0;
     for (int c = 0; c < na; ++c) {
         if (rowof[c] >= 0) continue;
         const double dc = d[c];
-        if (!atupper[c] && dc < -DUAL_TOL) { if (-dc > bestd) { bestd = -dc; q = c; } }
-        else if (atupper[c] && dc > DUAL_TOL) { if (dc > bestd) { bestd = dc; q = c; } }
+        double v;
+        if (!atupper[c] && dc < -DUAL_TOL) v = -dc;
+        else if (atupper[c] && dc > DUAL_TOL) v = dc;
+        else continue;
+        if (devexp) v = v * v / wp[c];
+        if (v > bestd) { bestd = v; q = c; }
     }
     if (q < 0) return false;   /* factible dual: optimo */
     /* La LU tiene que estar al dia antes de pedirle a SoPlex una FTRAN o un
@@ -1203,6 +1211,24 @@ bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) 
     fila_revisada(r_out);
     const int c_out = basic[r_out];
     const double v_out = sale_arriba ? z[c_out].ub() : z[c_out].lb();
+    if (devexp && (int)wp.size() == na) {
+        const double arq = filaA_buf[q];
+        if (arq != 0.0) {
+            const double wq = wp[q];
+            const std::vector<int>& ix = tidx[r_out]; const std::vector<double>& vl = tval[r_out];
+            double wmax = 0.0;
+            for (size_t t = 0; t < ix.size(); ++t) {
+                const int c = ix[t];
+                if (c == q || c >= na || rowof[c] >= 0) continue;
+                const double f = vl[t] / arq;
+                const double cand = f * f * wq;
+                if (cand > wp[c]) wp[c] = cand;
+                if (wp[c] > wmax) wmax = wp[c];
+            }
+            if (c_out < na) { const double nw = wq / (arq * arq); wp[c_out] = nw > 1.0 ? nw : 1.0; }
+            if (!(wmax <= 1e8)) std::fill(wp.begin(), wp.end(), 1.0);   /* reinicio del marco */
+        }
+    }
     col_primal_lista = q;
     std::vector<double>& alfa = colq_buf;
     /* copia: pivot_revisado reutiliza `colq_buf` y no lo cambia, pero se lee
