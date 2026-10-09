@@ -1154,6 +1154,8 @@ bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) 
      * cambio de base: con la factorizacion pendiente (`fact_sucia`) las
      * resoluciones usaban una LU de otra base. */
     if (!asegurar_fact()) { pivote_fallido = true; return false; }
+    static const int XB_REFRESCO_P = getenv("DFB_SX_XBREFRESCO") ? atoi(getenv("DFB_SX_XBREFRESCO")) : 32;
+    if (piv_desde_refresco >= XB_REFRESCO_P) xb_sucio = true;
     if (xb_sucio) compute_basics(z);
     if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
     /* La FTRAN de la entrante se prepara para el Forrest-Tomlin: el test de
@@ -1180,19 +1182,46 @@ bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) 
         if (r_out < 0 || cota < lim*(1.0 - 1e-9)) { lim = cota; r_out = r; sale_arriba = arriba; piv_out = av; }
         else if (cota <= lim*(1.0 + 1e-9) && av > piv_out) { r_out = r; sale_arriba = arriba; piv_out = av; if (cota < lim) lim = cota; }
     }
+    /* Actualizacion incremental de x_B, como en el paso dual: la entrante se
+     * mueve `paso` en la direccion `sgn` y cada basica cambia `-a*sgn*paso`.
+     * Sin esto x_B se recalculaba entero tras cada pivote primal (13 % del
+     * total en Bratu-0150). `DFB_SX_XBINC_REV=0` lo apaga. */
+    static const bool inc_rev_p = !(getenv("DFB_SX_XBINC_REV") && std::string(getenv("DFB_SX_XBINC_REV")) == "0");
+    const double x_q = xN[q];
+    const bool fin_q = (x_q == x_q) && x_q != POS_INFINITY && x_q != NEG_INFINITY;
     const double rango = z[q].diam();
     if (rango < lim) {               /* la entrante cruza su caja: cambio de cota */
         atupper[q] = atupper[q] ? 0 : 1;
-        xb_sucio = true;
+        if (inc_rev_p && fin_q && rango == rango && rango < POS_INFINITY) {
+            for (int r = 1; r <= m; ++r) { const double a = colq_buf[r-1]; if (a != 0.0) xB[r] -= a * sgn * rango; }
+            xN[q] = x_q + sgn * rango;
+            xb_sucio = false;
+        } else xb_sucio = true;
         return true;
     }
     if (r_out < 0) { unbounded = true; return false; }
     fila_revisada(r_out);
     const int c_out = basic[r_out];
+    const double v_out = sale_arriba ? z[c_out].ub() : z[c_out].lb();
     col_primal_lista = q;
+    std::vector<double>& alfa = colq_buf;
+    /* copia: pivot_revisado reutiliza `colq_buf` y no lo cambia, pero se lee
+     * despues de el por claridad del orden */
     if (!pivot_revisado(r_out, q)) { pivote_fallido = true; return false; }
     atupper[c_out] = sale_arriba ? 1 : 0;
-    xb_sucio = true;
+    if (inc_rev_p && fin_q && lim == lim && lim < POS_INFINITY &&
+        v_out == v_out && v_out != POS_INFINITY && v_out != NEG_INFINITY) {
+        for (int r = 1; r <= m; ++r) {
+            if (r == r_out) continue;
+            const double a = alfa[r-1];
+            if (a != 0.0) xB[r] -= a * sgn * lim;
+        }
+        xB[r_out] = x_q + sgn * lim;
+        xN[c_out] = v_out;
+        xN[q] = 0.0;
+        reparar_cotas_infinitas(z);
+        xb_sucio = false;
+    } else xb_sucio = true;
     return true;
 }
 
