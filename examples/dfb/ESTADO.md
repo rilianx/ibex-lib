@@ -209,6 +209,24 @@ DiscreteBoundary-0200 DFB da 3 cajas solución y la caja negra 4: se solapan
 en cadena y cada una interseca alguna del otro brazo, no es pérdida de
 soluciones.
 
+**Motor revisado más barato (2026-10-09).** `perf` en Bratu-0150: el
+recálculo de `x_B` en cada pivote (producto por `Abar` y FTRAN densa) era el
+16 % del total, y la columna entrante se resolvía dos veces (devex y
+Forrest–Tomlin). Ahora `preparar_cambio`/`aplicar_cambio` reutilizan el eta de
+`solveRight4update`, y `x_B` se actualiza de forma incremental en los nodos
+revisados con recálculo cada 32 pivotes (`DFB_SX_XBINC_REV=0`,
+`DFB_SX_XBREFRESCO`). Solver (`results/revisado_ftran_xbinc_2026-10-09.csv`):
+cpu ×0.97 / ×0.96 / ×0.95 contra sin incremental (Bratu-0210 ×0.40, 0120
+×0.65, Discrete-Integralf2-21 ×0.83), celdas ×1.00; el incremental redondea
+distinto y cambia algunos árboles (BroydenBanded-200: 55 → 89 celdas, al tope;
+no es deriva acumulada, refrescar cada 8 pivotes da lo mismo). `ibexopt`
+neutro. Contra la caja negra con el mismo binario: solver celdas ×0.81–0.89,
+cpu ×1.01 / ×1.04 / ×0.93 (antes ×1.03 / ×1.08 / ×0.98); `ibexopt` ×0.77 /
+×0.82 / ×0.77. Lo que queda en el solver son las relajaciones más grandes
+(Bratu-0175…0200, Discrete-Integralf2-18…19 ×3): DFB hace ~2 veces más
+pivotes por LP que SoPlex, que reoptimiza en primal; el revisado no tiene pasos
+primales (opción B).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
