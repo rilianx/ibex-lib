@@ -149,6 +149,7 @@ bool DFBSimplex::pivoteo_dual = leer_pivoteo_dual();
 bool DFBSimplex::dual_puro = leer_dual_puro();
 /* Omision `por_motor` desde 2026-10-08 (dual en los nodos revisados, primal
  * en los de tableau); `DFB_SX_PIVOTEO=dual` vuelve al dual puro en todos. */
+bool DFBSimplex::rev_primal = getenv("DFB_SX_REVPRIMAL") && std::string(getenv("DFB_SX_REVPRIMAL")) == "1";
 bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") == NULL || std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_verif      = 0;
@@ -297,9 +298,9 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
      * estrategias se quedan en el tableau. */
     if (pivoteo_por_motor) {
         rev = motor_revisado || (motor_auto && m > motor_umbral);
-        dual_nodo = puro_nodo = rev;
+        dual_nodo = puro_nodo = rev && !rev_primal;
     } else {
-        rev = pivoteo_dual && (motor_revisado || (motor_auto && m > motor_umbral));
+        rev = (pivoteo_dual || rev_primal) && (motor_revisado || (motor_auto && m > motor_umbral));
         dual_nodo = pivoteo_dual; puro_nodo = dual_puro;
     }
     if (rev) ++n_nodos_rev; else ++n_nodos_tab;
@@ -682,7 +683,8 @@ bool DFBSimplex::pivot_revisado(int r, int col) {
     /* La columna entrante transformada se calcula UNA vez: sirve a devex, a la
      * actualizacion incremental de x_B (`alpha_piv`) y al Forrest-Tomlin. */
     if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
-    const bool col_ok = fact.preparar_cambio(col, &colq_buf[0]);
+    /* El paso primal revisado ya la preparo (y dejo en `colq_buf`). */
+    const bool col_ok = (fact.columna_preparada() == col) ? true : fact.preparar_cambio(col, &colq_buf[0]);
     if ((int)alpha_piv.size() != m+1) alpha_piv.assign(m+1, 0.0);
     alpha_piv[0] = 0.0;
     for (int i = 1; i <= m; ++i) alpha_piv[i] = col_ok ? colq_buf[i-1] : 0.0;
@@ -1126,6 +1128,66 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
  * cota, sale la basica que primero toca una cota. Si lo que primero se agota es
  * el rango de la entrante, es un *bound flip*: no hay pivote, solo cambia de
  * cota. */
+/* Paso primal del motor revisado: el mismo precio (Dantzig sobre `d`) y el
+ * mismo test de razon que `primal_step`, con la columna entrante de una FTRAN
+ * (`preparar_cambio`, que deja listo el Forrest-Tomlin) y la fila del pivote de
+ * una BTRAN (`fila_revisada`), que `pivot_revisado` usa para actualizar `d`. */
+bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) {
+    perf::Cron _c(&perf::t_primal);
+    unbounded = false;
+    int q = -1; double bestd = 0.0;
+    for (int c = 0; c < na; ++c) {
+        if (rowof[c] >= 0) continue;
+        const double dc = d[c];
+        if (!atupper[c] && dc < -DUAL_TOL) { if (-dc > bestd) { bestd = -dc; q = c; } }
+        else if (atupper[c] && dc > DUAL_TOL) { if (dc > bestd) { bestd = dc; q = c; } }
+    }
+    if (q < 0) return false;   /* factible dual: optimo */
+    /* La LU tiene que estar al dia antes de pedirle a SoPlex una FTRAN o un
+     * cambio de base: con la factorizacion pendiente (`fact_sucia`) las
+     * resoluciones usaban una LU de otra base. */
+    if (!asegurar_fact()) { pivote_fallido = true; return false; }
+    if (xb_sucio) compute_basics(z);
+    if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
+    /* La FTRAN de la entrante se prepara para el Forrest-Tomlin: el test de
+     * razon la usa y `pivot_revisado` la reutiliza. */
+    if (!fact.preparar_cambio(q, &colq_buf[0])) { pivote_fallido = true; return false; }
+
+    const double sgn = atupper[q] ? -1.0 : 1.0;
+    double amax = 0.0;
+    for (int r = 1; r <= m; ++r) { const double av = std::fabs(colq_buf[r-1]); if (av > amax) amax = av; }
+    const double piv_min = (amax > 0.0) ? amax*1e-11 : PIV_TOL;
+    double lim = POS_INFINITY; int r_out = -1; bool sale_arriba = false; double piv_out = 0.0;
+    for (int r = 1; r <= m; ++r) {
+        const double a = colq_buf[r-1];
+        if (a == 0.0) continue;
+        const double av = std::fabs(a);
+        if (av < piv_min || av < PIV_TOL) continue;
+        const int c = basic[r];
+        const double lo = z[c].lb(), hi = z[c].ub();
+        const double der = -a * sgn;
+        double cota; bool arriba;
+        if (der > 0.0) { cota = (hi - xB[r]) / der; arriba = true; }
+        else           { cota = (lo - xB[r]) / der; arriba = false; }
+        if (cota < 0.0) cota = 0.0;
+        if (r_out < 0 || cota < lim*(1.0 - 1e-9)) { lim = cota; r_out = r; sale_arriba = arriba; piv_out = av; }
+        else if (cota <= lim*(1.0 + 1e-9) && av > piv_out) { r_out = r; sale_arriba = arriba; piv_out = av; if (cota < lim) lim = cota; }
+    }
+    const double rango = z[q].diam();
+    if (rango < lim) {               /* la entrante cruza su caja: cambio de cota */
+        atupper[q] = atupper[q] ? 0 : 1;
+        xb_sucio = true;
+        return true;
+    }
+    if (r_out < 0) { unbounded = true; return false; }
+    fila_revisada(r_out);
+    const int c_out = basic[r_out];
+    if (!pivot_revisado(r_out, q)) { pivote_fallido = true; return false; }
+    atupper[c_out] = sale_arriba ? 1 : 0;
+    xb_sucio = true;
+    return true;
+}
+
 bool DFBSimplex::primal_step(const IntervalVector& z, bool& unbounded) {
     perf::Cron _c(&perf::t_primal);
     unbounded = false;
@@ -1870,7 +1932,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
                 }
             }
             const int iters_antes = iters;
-            if (!rev && primal_step(zz, unbounded)) {
+            if (rev ? (rev_primal && primal_step_revisado(zz, unbounded)) : primal_step(zz, unbounded)) {
                 if (sonda_mono && dual_puro) {
                     static long n_ini = 0, n_desp = 0, b[5] = {0,0,0,0,0}, n_k = 0, n_inf = 0;
                     if (iters_antes == 0) ++n_ini; else ++n_desp;

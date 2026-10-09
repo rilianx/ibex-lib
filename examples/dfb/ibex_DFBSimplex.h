@@ -328,6 +328,11 @@ public:
      *  primal es mas rapido (ablacion del 2026-10-08: x0.80-0.85 en el solver). */
     static bool pivoteo_por_motor;
     bool dual_nodo, puro_nodo;   //!< estrategia de este nodo, fijada en `load`
+    /** `DFB_SX_REVPRIMAL=1`: el motor revisado tambien da pasos primales
+     *  (`primal_step_revisado`), y con `por_motor` los nodos revisados se
+     *  resuelven en primal como los de tableau. */
+    static bool rev_primal;
+    bool primal_step_revisado(const IntervalVector& z, bool& unbounded);
     static long n_entrak;   //!< pivotes de entrada explicita de `k` (`DFB_SX_ENTRAK=1`)
     static long n_verif;             //!< optimos verificados
     static long n_verif_pinf;        //!< de esos, con violacion primal relativa > 1e-6

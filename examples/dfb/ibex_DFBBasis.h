@@ -85,6 +85,7 @@ public:
      *  densa en `out`; `aplicar_cambio` actualiza la LU con ese mismo eta. */
     bool preparar_cambio(int col, double* out);
     bool aplicar_cambio(int j, int col);
+    int columna_preparada() const { return col_preparada; }
 
     /** \brief Fija la base a `cols` (una columna por fila) y factoriza. */
     bool set_basis(const std::vector<int>& cols);
