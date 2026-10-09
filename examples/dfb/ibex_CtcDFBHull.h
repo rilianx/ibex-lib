@@ -372,6 +372,15 @@ private:
 
     /** \brief Una pasada sobre las `2n` cotas, con salteo y orden. */
     void una_pasada(IntervalVector& box);
+    /* MOTOR DE CAJA NEGRA (`DFBH_MOTOR=caja`): la misma pasada, pero cada LP lo
+     * resuelve SoPlex (el `LPSolver` donde ya escribe el linearizador) y sus
+     * multiplicadores (dual, o rayo de Farkas) pasan por el MISMO certificado
+     * en intervalos gamma = lambda^T Abar. Es Neumaier-Shcherbina escrito en la
+     * forma homogenea; la unica diferencia con DFB es quien produce lambda. */
+    static bool motor_caja;
+    std::vector<double> lam_caja, x_caja;
+    int it_caja;
+    DFBSimplex::Status resolver_caja(int k, bool maximizar, const IntervalVector& z);
     /** \brief Pasada que reusa la relajacion y las bases del punto fijo. */
     void una_pasada_reusada(IntervalVector& box);
     bool sin_recarga;

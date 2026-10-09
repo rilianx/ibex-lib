@@ -1088,7 +1088,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
     int est_previos[8] = {0,0,0,0,0,0,0,0};   /* estados de las cotas ya resueltas */
 
     Af.resize(m, na);
-    for (int i = 0; i < m; ++i)
+    if (!motor_caja) for (int i = 0; i < m; ++i)
         for (int j = 0; j < na; ++j) {
             /* `mid()` de gaol guarda y restaura el modo de redondeo aun en un
              * intervalo degenerado; la mayoria lo son (ceros, la parte -I). */
@@ -1148,7 +1148,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         /* Los `2n` ejemplares cargan la MISMA `Af`: se construye una vez y los
          * demas copian lo ya armado. `load` se llevaba del 16 % al 45 % del
          * tiempo del simplex (§43). */
-        sx.load(Af, nb_var);
+        if (!motor_caja) sx.load(Af, nb_var);
         t_carga = cronometro ? ahora_s() : 0.0;
 
     } else {
@@ -1511,7 +1511,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         static long lps_pasada = 0; ++lps_pasada;
         if (lp_largo2 && (lps_pasada % 1000) == 0)
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
-        const DFBSimplex::Status st = sk.solve(k, lado == 1, z, tope_paso, true);
+        const DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
+                                                 : sk.solve(k, lado == 1, z, tope_paso, true);
         if (techo) {
             const std::vector<double>& lam0 = sk.lambda();
             std::vector<char> act(m, 0);
@@ -1573,8 +1574,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * quedaria apuntando a un vector destruido y la proxima iteracion
          * escribiria en memoria liberada. */
         if (sonda_v) sk_traza(sk, NULL);
-        n_pivots += sk.iterations();
-        piv_nodo += sk.iterations();
+        n_pivots += motor_caja ? it_caja : sk.iterations();
+        piv_nodo += motor_caja ? it_caja : sk.iterations();
 
         /* LOS DOS PREDICTORES CONTRA LA REALIDAD.
          *
@@ -1674,7 +1675,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * factorizacion pase lo que pase, y sirve igual para el test de vacio. */
         const double tc0 = cronometro ? ahora_s() : 0.0;
         for (int c = 0; c < na; ++c) gamma[c] = Interval(0.0);
-        const std::vector<double>& lam = sk.lambda();
+        const std::vector<double>& lam = motor_caja ? lam_caja : sk.lambda();
         for (int j = 0; j < m; ++j) {
             if (lam[j] == 0.0) continue;
             const Interval lj(lam[j]);
@@ -2010,6 +2011,10 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
 
             Interval suma(0.0);
             for (int c = 0; c < na; ++c) suma += gamma[c] * z[c];
+            if (motor_caja && st == DFBSimplex::INFEASIBLE && getenv("DFBH_CAJA_DBG")) {
+                static int dbg2 = 0;
+                if (dbg2++ < 3) fprintf(stderr, "[caja] suma=[%.6g,%.6g]\n", suma.lb(), suma.ub());
+            }
 
             /* CUANTO FALTA para certificar, en los casos donde el simplex YA
              * probo infactibilidad pero el certificado en intervalos no
@@ -2164,7 +2169,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             continue;
         }
         hubo_optimo = true;
-        sk.primal_solution(z, xstar);
+        if (motor_caja) { for (int i = 0; i < nb_var && i < (int)x_caja.size(); ++i) xstar[i] = x_caja[i]; }
+        else sk.primal_solution(z, xstar);
         if (modo_cortes > 0) generar_cortes(xstar);
         /* H |= x*, con el punto de ESTE ejemplar, no solo del ultimo. */
         if (hull_vacio) {
@@ -2746,6 +2752,62 @@ Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) co
         return h;
     }
     return new BxpDFBCortes();
+}
+
+bool CtcDFBHull::motor_caja = getenv("DFBH_MOTOR") && std::string(getenv("DFBH_MOTOR")) == "caja";
+
+DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const IntervalVector& z) {
+    it_caja = 0;
+    /* Tolerancias de SoPlex en la caja negra (`DFBH_CAJA_TOL`, omision 1e-6, la
+     * de fabrica de SoPlex). Con la de Ibex (1e-9) SoPlex declara infactibles
+     * LPs factibles cuando la relajacion afin tiene casi-igualdades de ancho
+     * ~1e-14 en cajas grandes (Brown); el rigor lo pone el certificado. */
+    static const double tol_caja = getenv("DFBH_CAJA_TOL") ? atof(getenv("DFBH_CAJA_TOL")) : 1e-6;
+    static bool tol_puesta = false;
+    if (!tol_puesta) { mylinearsolver.set_tolerance(tol_caja); tol_puesta = true; }
+
+    IntervalVector xb(nb_var);
+    for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
+    mylinearsolver.set_bounds(xb);
+    mylinearsolver.set_cost(k, maximizar ? -1.0 : 1.0);
+    const LPSolver::Status st = mylinearsolver.minimize();
+    it_caja = mylinearsolver.mysoplex->numIterations();
+    const int m = A.nb_rows();
+    lam_caja.assign(m, 0.0);
+    DFBSimplex::Status res = DFBSimplex::SINGULAR;
+
+    /* OJO: los multiplicadores se leen ANTES de devolver el costo a cero.
+     * Cambiar el objetivo invalida la solucion de SoPlex, rayo de Farkas
+     * incluido (el dual lo copia el LPSolver dentro de `minimize`, el rayo no
+     * se pedia desde aca). El LPSolver de Ibex pone las cotas de las variables
+     * como las primeras `nb_var` filas (ver `linearize_fresca`): los
+     * multiplicadores de la relajacion son las componentes siguientes. */
+    if (st == LPSolver::Status::Optimal || st == LPSolver::Status::OptimalProved) {
+        const Vector y = mylinearsolver.not_proved_dual_sol();
+        if (y.size() >= nb_var + m) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = y[nb_var + j];
+            const Vector x = mylinearsolver.not_proved_primal_sol();
+            x_caja.assign(x.size(), 0.0);
+            for (int i = 0; i < x.size(); ++i) x_caja[i] = x[i];
+            res = DFBSimplex::OPTIMAL;
+        }
+    } else if (st == LPSolver::Status::Infeasible || st == LPSolver::Status::InfeasibleProved) {
+        soplex::DVectorReal f(mylinearsolver.mysoplex->numRowsReal());
+        f.clear();
+        if (mylinearsolver.mysoplex->getDualFarkasReal(f) && f.dim() >= nb_var + m) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = f[nb_var + j];
+            res = DFBSimplex::INFEASIBLE;
+        }
+    }
+    mylinearsolver.set_cost(k, 0.0);
+    if (getenv("DFBH_CAJA_DBG")) {
+        static long cnt[8] = {0,0,0,0,0,0,0,0}, tot = 0, rayo = 0;
+        ++cnt[(int)st]; ++tot; if (res == DFBSimplex::INFEASIBLE) ++rayo;
+        if (tot % 2000 == 0)
+            fprintf(stderr, "[caja] estados: Opt=%ld Inf=%ld (con rayo %ld) Unb=%ld MaxIt=%ld Unk=%ld\n",
+                    cnt[0]+cnt[1], cnt[2]+cnt[3], rayo, cnt[4], cnt[6], cnt[7]);
+    }
+    return res;
 }
 
 /* CORTES EN X* (`DFBH_CORTES`).

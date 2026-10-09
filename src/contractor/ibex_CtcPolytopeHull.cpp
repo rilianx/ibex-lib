@@ -63,6 +63,7 @@ static double ph_pot = 0.0, ph_real = 0.0; static long ph_nopt = 0, ph_perdida =
 /* Destino de las 2n cotas de cada llamada: resueltas con un LP, saltadas por
  * Achterberg (el punto del LP anterior ya estaba en la cota), o sin resolver
  * porque la pasada se corto (vacio sin prueba, desconocido, tope). */
+static long ph_reint = 0, ph_reint_ok = 0;   /* reintentos con la otra representacion, y cuantos quedaron probados */
 static long ph_cotas = 0, ph_resueltas = 0, ph_achterberg = 0, ph_sin_resolver = 0, ph_llamadas = 0;
 static void ph_holgura(double flot, double cert, const Interval& xi) {
 	const double w = xi.diam();
@@ -87,6 +88,8 @@ CtcPolytopeHull::~CtcPolytopeHull() {
 	if (getenv("IBEX_PH_STATS"))
 		fprintf(stderr, "[phull] estados: optimo=%ld vacio_probado=%ld vacio_sin_prueba=%ld desconocido=%ld otro=%ld\n",
 		        ph_st[0], ph_st[1], ph_st[2], ph_st[3], ph_st[4]);
+	if (getenv("IBEX_PH_STATS") && ph_reint)
+		fprintf(stderr, "[phull] reintentos con la otra representacion: %ld, probados %ld\n", ph_reint, ph_reint_ok);
 	if (getenv("IBEX_PH_STATS") && ph_cotas)
 		fprintf(stderr, "[phull] cotas: %ld en %ld llamadas | resueltas %.1f%%  saltadas por Achterberg %.1f%%  sin resolver (pasada cortada) %.1f%%\n",
 		        ph_cotas, ph_llamadas, 100.0*ph_resueltas/ph_cotas, 100.0*ph_achterberg/ph_cotas, 100.0*ph_sin_resolver/ph_cotas);
@@ -154,6 +157,37 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 	int* sup_bound = new int[nb_var]; // indicator sup_bound = 1 means the sup bound is feasible or already contracted, call to simplex useless
 	long ph_lps_esta = 0, ph_fijas = 0;
 
+	/* PRODUCCION FUERTE (opciones para la comparacion justa con DFB).
+	 *
+	 * `IBEX_PH_REINTENTO=1`: si SoPlex declara el LP vacio sin prueba de
+	 * Neumaier-Shcherbina, o devuelve un estado desconocido, se vuelve a
+	 * resolver con la otra representacion (columnas si estaba en filas o en
+	 * automatico, filas si estaba en columnas) y se restaura la anterior. Con la
+	 * de fabrica SoPlex elige filas en muchos LPs del solver y ahi el rayo no se
+	 * certifica; forzar columnas para todo arregla eso pero rompe otros sistemas.
+	 *
+	 * `IBEX_PH_SIGUE=1`: un LP vacio sin prueba no abandona la pasada; se trata
+	 * como un estado desconocido y se sigue con las cotas pendientes. */
+	static const bool reintento = (getenv("IBEX_PH_REINTENTO") != NULL);
+	static const bool sigue     = (getenv("IBEX_PH_SIGUE") != NULL);
+	auto resolver = [&]() -> LPSolver::Status {
+		LPSolver::Status st = mylinearsolver.minimize();
+		if (reintento && (st == LPSolver::Status::Infeasible || st == LPSolver::Status::Unknown)) {
+			soplex::SoPlex* sp = mylinearsolver.mysoplex;
+			const int rep = sp->intParam(soplex::SoPlex::REPRESENTATION);
+			const int otra = (rep == soplex::SoPlex::REPRESENTATION_COLUMN)
+			               ? soplex::SoPlex::REPRESENTATION_ROW : soplex::SoPlex::REPRESENTATION_COLUMN;
+			sp->setIntParam(soplex::SoPlex::REPRESENTATION, otra);
+			const LPSolver::Status st2 = mylinearsolver.minimize();
+			sp->setIntParam(soplex::SoPlex::REPRESENTATION, rep);
+			++ph_reint;
+			if (st2 == LPSolver::Status::OptimalProved || st2 == LPSolver::Status::InfeasibleProved) ++ph_reint_ok;
+			st = st2;
+		}
+		if (sigue && st == LPSolver::Status::Infeasible) st = LPSolver::Status::Unknown;
+		return st;
+	};
+
 	for (int i=0; i<nb_var; i++) {
 
 		if (contracted_vars[i]) {
@@ -199,7 +233,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 		{
 			inf_bound[i]=1;
 			mylinearsolver.set_cost(i, 1.0);
-			stat = mylinearsolver.minimize();
+			stat = resolver();
 			ph_cuenta(stat); ++ph_resueltas; ++ph_lps_esta;
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
@@ -260,7 +294,7 @@ void CtcPolytopeHull::optimizer(IntervalVector& box) {
 		else if (infnexti==1 && sup_bound[i]==0) { // computing the right bound :  maximizing x_i
 			sup_bound[i]=1;
 			mylinearsolver.set_cost(i, -1.0);
-			stat= mylinearsolver.minimize();
+			stat = resolver();
 			ph_cuenta(stat); ++ph_resueltas; ++ph_lps_esta;
 			n_soplex_iterations += mylinearsolver.mysoplex->numIterations();
 			n_soplex_calls++;
