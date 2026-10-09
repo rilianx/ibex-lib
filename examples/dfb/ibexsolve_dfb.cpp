@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     s.report();
     if (lr == "dfbhull" && getenv("DFBH_CUENTAS"))
         cerr << "[cuentas] celdas=" << s.get_nb_cells() << " llamadas=" << CtcDFBHull::n_nodes
-             << " LPs=" << CtcDFBHull::n_lps << " pivotes=" << CtcDFBHull::n_pivots << endl;
+             << " LPs=" << CtcDFBHull::n_lps << " pivotes=" << CtcDFBHull::n_pivots << " fusionadas=" << CtcDFBHull::n_filas_fusionadas << endl;
     if (CtcDFBHull::modo_cortes > 0)
         cerr << "[cortes] generados=" << CtcDFBHull::n_cortes_gen << " filas agregadas=" << CtcDFBHull::n_cortes_filas
              << " en " << CtcDFBHull::n_cortes_llam << " llamadas" << endl;

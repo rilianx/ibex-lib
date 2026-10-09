@@ -93,6 +93,7 @@ static double ab_accF = 0.0, ab_accC = 0.0;
 long CtcDFBHull::n_nodes = 0;
 long CtcDFBHull::n_goal_lp = 0;
 long CtcDFBHull::n_sens_extra = 0;
+long CtcDFBHull::n_filas_fusionadas = 0;
 long CtcDFBHull::n_inf_falso = 0;
 long CtcDFBHull::n_bounds = 0;
 long CtcDFBHull::n_empty = 0;
@@ -475,11 +476,57 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
     mylinearsolver.clear_constraints();
     if (box.is_unbounded()) return 0;
 
-    const int m = lr.linearize(box, mylinearsolver, context.prop);
-    if (m <= 0) return m;
+    const int m0 = lr.linearize(box, mylinearsolver, context.prop);
+    if (m0 <= 0) return m0;
 
-    const Matrix rows = mylinearsolver.rows();
-    const IntervalVector lhs_rhs = mylinearsolver.lhs_rhs();
+    const Matrix rows0 = mylinearsolver.rows();
+    const IntervalVector lhs_rhs0 = mylinearsolver.lhs_rhs();
+
+    /* FUSION DE FILAS GEMELAS. `linearize` parte cada ecuacion en dos filas
+     * unilateras con la MISMA normal (una por lado). En la forma homogenea
+     * basta una fila con rango [lhs, rhs]: el poliedro es el mismo y `m` baja
+     * a la mitad en los sistemas cuadrados (Bratu-0150: 300 -> 150), lo que
+     * achica la base del motor revisado. Se fusionan solo filas CONSECUTIVAS
+     * identicas, que es lo que emite el linearizador. La caja negra recibe la
+     * misma relajacion fusionada (`DFBH_FUSIONA=0` lo apaga). */
+    static const bool fusiona = !(getenv("DFBH_FUSIONA") && std::string(getenv("DFBH_FUSIONA")) == "0");
+    int m = m0;
+    std::vector<int> fuente;   /* fila del LPSolver que da los coeficientes de cada fila fusionada */
+    IntervalVector lados(m0);
+    for (int i = 0; i < m0; ++i) lados[i] = lhs_rhs0[nb_var+i];
+    if (fusiona) {
+        int k = 0;
+        for (int i = 0; i < m0; ++i) {
+            if (k > 0) {
+                const int p = fuente[k-1];
+                bool igual = true;
+                for (int j = 0; j < nb_var && igual; ++j) igual = (rows0[nb_var+i][j] == rows0[nb_var+p][j]);
+                const Interval& a = lados[k-1]; const Interval& b = lhs_rhs0[nb_var+i];
+                const double lo = std::max(a.lb(), b.lb()), hi = std::min(a.ub(), b.ub());
+                /* lados cruzados: se dejan las dos filas, que el LP pruebe el vacio */
+                if (igual && lo <= hi) {
+                    lados[k-1] = Interval(lo, hi);
+                    ++n_filas_fusionadas;
+                    continue;
+                }
+            }
+            fuente.push_back(i); lados[k] = lhs_rhs0[nb_var+i]; ++k;
+        }
+        m = k;
+    } else {
+        for (int i = 0; i < m0; ++i) fuente.push_back(i);
+    }
+    if (m < m0 && motor_caja) {
+        /* La caja negra resuelve sobre `mylinearsolver`: se recarga con las
+         * filas fusionadas para que los multiplicadores sigan siendo fila a
+         * fila los de `A`. */
+        mylinearsolver.clear_constraints();
+        for (int i = 0; i < m; ++i) {
+            Vector row(nb_var);
+            for (int j = 0; j < nb_var; ++j) row[j] = rows0[nb_var+fuente[i]][j];
+            mylinearsolver.add_constraint(lados[i].lb(), row, lados[i].ub());
+        }
+    }
 
     caja_lin = box;          /* la caja para la que valen esta relajacion y sus gamma */
     lin_valida = false;      /* recien es valida cuando haya gamma calculados */
@@ -512,13 +559,13 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
     for (int i = 0; i < m; ++i) {
         Interval enclosure(0.0);
         for (int j = 0; j < nb_var; ++j)
-            enclosure += Interval(rows[nb_var+i][j]) * box[j];
+            enclosure += Interval(rows0[nb_var+fuente[i]][j]) * box[j];
         /* SoPlex representa el lado infinito de una fila como +-1e100
          * (`soplex::infinity`). Hay que leerlo como infinito: tomado como cota
          * finita, con coeficientes del orden de 1e113 (`Brown-15`, cajas de
          * 1e8 con productos de muchas variables) corta soluciones reales, y DFB
          * certificaba contracciones y vacios falsos (2026-10-05). */
-        Interval ladob = lhs_rhs[nb_var+i];
+        Interval ladob = lados[i];
         if ((ladob.lb() <= -1e100 && enclosure.lb() < -1e100) || (ladob.ub() >= 1e100 && enclosure.ub() > 1e100)) ++n_inf_falso;
         if (ladob.lb() <= -1e100) ladob = Interval(NEG_INFINITY, ladob.ub());
         if (ladob.ub() >=  1e100) ladob = Interval(ladob.lb(), POS_INFINITY);
@@ -526,7 +573,7 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         z[nb_var+i] = bi.is_empty() ? enclosure : bi;
     }
     for (int i = 0; i < m; ++i) {
-        for (int j = 0; j < nb_var; ++j) A[i][j] = rows[nb_var+i][j];
+        for (int j = 0; j < nb_var; ++j) A[i][j] = rows0[nb_var+fuente[i]][j];
         A[i][nb_var+i] = Interval(-1.0);   /* la parte b de Abar es -I */
     }
     for (int r = 0; r < (int)vc.size(); ++r) {
