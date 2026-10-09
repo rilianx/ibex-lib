@@ -301,8 +301,26 @@ vacíos espurios de SoPlex** (casi-igualdades: dos semiespacios con la misma
 normal y lados a ~1e-14): CountercurrentReactors2-9 20 083 → 985 celdas,
 Brown-15 175 → 65. La ventaja de DFB por certificación en esas familias era
 en parte un artefacto de la relajación; con la fusión la comparación es más
-justa. Banco con los defaults finales en curso (`rc`, brazos dfb, dfbl
-(orden lejos), dev, caja, y sin fusión dfb0/caja0).
+justa. Banco con los defaults finales
+(`results/defaults_finales_fusion_2026-10-09.csv`, 2 semillas solver, 4
+`ibexopt` sin alkyl/alkylbis/bearing; caja con tolerancia 1e-6 / 1e-9):
+
+| comparación | solver cpu > 0.1 / > 1 / > 5 s | celdas | terminan | `ibexopt` cpu |
+|---|---|---|---|---|
+| **DFB orden lejos contra caja (controlada)** | **×0.88 / ×0.87 / ×0.93** | ×0.93 / ×0.90 / ×0.95 | 360 contra 356 | **×0.78 / ×0.79 / ×0.70** |
+| DFB orden propio (costo) contra caja | ×0.84 / ×0.83 / ×0.89 | ×0.93 / ×0.90 / ×0.95 | 360 contra 356 | ×0.75 / ×0.77 / ×0.71 |
+| DFB fusión contra sin fusión | ×0.80 / ×0.81 / ×0.84 | ×0.99 | 360 contra 354 | ×0.97 |
+| caja fusión contra sin fusión | ×0.89 / ×0.90 / ×0.87 | ×0.95 / ×0.95 / ×0.91 | 356 = 356 | ×1.02 / ×1.04 / ×1.08 |
+| devex primal contra Dantzig | ×0.99 / ×0.98 / ×0.98 | ×1.00 | 360 = 360 | ×1.00 |
+| (antes) DFB sin fusión contra caja sin fusión | ×0.92 / ×0.93 / ×0.87 | ×0.89 / ×0.85 / ×0.81 | 354 contra 356 | ×0.77 / ×0.82 / ×0.78 |
+
+Sin soluciones distintas contra la caja. Por familia (orden lejos contra
+caja): Bratu queda neutro (ya no hace falta apartarla), gana Brown ×0.31,
+Geneig-icse ×0.61, Bellido ×0.68, Geneig ×0.71; pierden sólo
+Discrete-Integralf2 ×1.12 y Katsurabis-14 ×1.43. Con el orden propio
+Discrete-Integralf2 pasa a ×0.86. Devex: gana sólo Bratu-0210 ×0.62 y
+DiscreteBoundary-0200 ×0.67, nada pierde; queda opcional (no cambia la
+historia y obligaría a remedir el brazo lejos).
 
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
