@@ -41,29 +41,27 @@ Polytope-hull contractors are a key component of interval branch-and-bound
 solvers: at every node they bound each variable over a linear relaxation of the
 constraints by solving $2n$ linear programs. Current implementations delegate
 these programs to a floating-point LP solver and recover rigor afterwards, by
-Neumaier--Shcherbina safe bounds and Farkas-ray verification. When the
-verification fails, the bound is lost, the pass is abandoned and nodes that
-could be discarded survive. We present Dual Feasible Bounding (DFB), a
-contractor that computes its own multipliers. The rigor principle is the
-classical one: writing the relaxation as $\Abar z = 0$ with interval-bounded
-slacks, any multiplier vector $\lambda$ yields an interval certificate
-$\lambda^T\Abar$ that bounds a variable, or proves emptiness, over the current
-box and every sub-box, whatever the numerical quality of $\lambda$. The
-contribution is a simplex built around this certificate, so that a usable
-certificate exists for every one of the $2n$ bounds: a free dual-feasible start,
-one tableau shared by the $2n$ problems, and a hybrid engine that solves small
-relaxations on an explicit tableau and large ones with a tableau-free revised
-dual simplex. Integrated in Ibex, DFB never exceeds the exact LP hull, and on
-identical boxes it attains that hull in 97\% of the bounds where it differs
-from the standard contractor, against 3\% for the latter. On 264 systems of
-equations, against the strongest production configuration, DFB explores
-23--30\% fewer cells, is 5--11\% faster and solves 31 more runs; against Ibex
-as distributed it explores half the cells and is 24--29\% faster. On 138
-constrained global optimization problems it is 14--21\% faster with the same
-search trees. An ablation shows that the gains come from the robustness of the
-certificate and from the hybrid engine, not from tighter relaxations.
-\todo{actualizar las cifras con el banco de confirmacion (omision final:
-estrategia por nodo, umbral 80)}
+Neumaier--Shcherbina safe bounds and Farkas-ray verification. We present Dual
+Feasible Bounding (DFB), a contractor built around a simplex that computes its
+own multipliers. The rigor principle is the classical one: writing the
+relaxation as $\Abar z = 0$ with interval-bounded slacks, any multiplier vector
+$\lambda$ yields an interval certificate $\lambda^T\Abar$ that bounds a
+variable, or proves emptiness, over the current box and every sub-box. The
+contribution is a simplex designed for this certificate: a free dual-feasible
+start for every bound, one tableau shared by the $2n$ problems, and a hybrid
+engine that solves small relaxations on an explicit tableau with the primal
+method and large ones with a tableau-free revised dual simplex. We compare it in
+a controlled setting: the same contractor, with the same pass, the same
+certificate and the same policy for uncertified bounds, using either DFB or a
+state-of-the-art LP solver (SoPlex) as a black box, tuned to its best
+configuration. On 139 constrained global optimization problems, DFB is 17--23\%
+faster with the same search trees. On 264 systems of equations it explores
+11--19\% fewer cells at the same CPU time: on relaxations with nearly-equal
+rows the black-box solver reports spurious infeasibility or fails to converge,
+and the corresponding bounds are lost, whereas DFB solves them; the black box
+remains faster on the largest relaxations. DFB never exceeds the exact LP
+hull.
+\todo{revisar las cifras finales}
 \end{abstract}
 
 % =====================================================================
@@ -149,10 +147,11 @@ tableau/revised engine (Section~\ref{sec:simplex}).
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
 (Section~\ref{sec:properties}).
-\item An evaluation in Ibex on 264 systems of equations and 138 optimization
-problems, with a rigor check against the exact LP hull, a same-box analysis of
-why the standard contractor loses bounds, and an ablation
-(Section~\ref{sec:experiments}).
+\item A controlled evaluation in Ibex, on 264 systems of equations and 139
+optimization problems, in which the same contractor runs either DFB or a
+black-box LP solver feeding the same certificate; a rigor check against the
+exact LP hull; a same-box analysis of where the black box loses bounds; and an
+ablation (Section~\ref{sec:experiments}).
 \end{itemize}
 
 % =====================================================================
@@ -437,155 +436,182 @@ post-processing. Both compute a product of the transposed constraint matrix by
 the multipliers, restricted to the rows with $\lambda_i\neq 0$, plus $O(n+m)$
 operations: $\iv{\gamma}=\Abar^T\lambda$ and $\iv{C}_k$ in DFB, and the
 residual $A^T\lambda-c$ and the bound $\lambda^T\iv{b}-(A^T\lambda-c)^T\iv{x}$
-in Neumaier--Shcherbina. The difference is not the cost of a certificate but its
-availability. DFB reads $\lambda$ from its own basis, whereas the
-post-processing first extracts the dual and primal solutions from the external
-solver, and its infeasibility test depends on the solver returning a ray.
-
-We measured both in Ibex on three optimization problems (ex6\_1\_3, ex7\_2\_3,
-chem). The DFB certificate costs 1.3--3.1\,$\mu$s per LP, and the
-Neumaier--Shcherbina post-processing 1.9--3.0\,$\mu$s, plus 1.2--1.5\,$\mu$s to
-extract the solution from SoPlex. The implementation distributed with Ibex
-builds the dense matrix of the relaxation and its transpose at every LP, which
-raises the post-processing to 5.6--11.3\,$\mu$s; we replaced it by a sparse
-accumulation over the nonzero multipliers for all the comparisons of
-Section~\ref{sec:experiments}. That implementation also accumulates the
-residual $A^T\lambda-c$ in floating point, so its rounding error, multiplied by
-the width of the box, is not covered. Evaluating the residual in interval
-arithmetic, as DFB does for $\iv{\gamma}$, closes this gap at no measurable
-cost (same 1.9--3.0\,$\mu$s).
-\todo{mover las cifras a una tabla en la Seccion~\ref{sec:experiments} y
-medir mas instancias; usar la version rigurosa del residuo en produccion para
-la comparacion final}
+in Neumaier--Shcherbina. On three optimization problems (ex6\_1\_3, ex7\_2\_3,
+chem) the DFB certificate costs 1.3--3.1\,$\mu$s per LP, and the
+post-processing 1.9--3.0\,$\mu$s plus 1.2--1.5\,$\mu$s to extract the solution
+from the external solver. The difference between the two approaches is
+therefore not the cost of a certificate but where $\lambda$ comes from, which is
+what Section~\ref{sec:experiments} isolates.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
 
+\paragraph{A controlled comparison.}
+To measure the contribution of the simplex, and not of the rest of the
+contractor, we compare two engines inside the \emph{same} contractor. Both run
+the same pass over the $2n$ bounds, with the same skipping rule, the same
+certificate and the same policy when an LP yields no certificate: that bound
+is not contracted and the pass continues. They differ only in where the
+multipliers come from:
+\begin{itemize}
+\item \emph{DFB}: the multipliers of the final basis of our simplex;
+\item \emph{black box}: SoPlex~4.0.2 solves each LP on the same relaxation
+(warm-started from the previous bound, as in the polytope-hull contractor), and
+its dual solution, or its Farkas ray if it reports infeasibility, is passed to
+the same interval certificate $\iv{\gamma}=\Abar^T\lambda$, which is the
+Neumaier--Shcherbina bound written in the homogeneous form.
+\end{itemize}
+The black box was given its best configuration. Its feasibility and optimality
+tolerance matters: $10^{-9}$ makes SoPlex report spurious infeasibility on
+relaxations with nearly-equal rows, while $10^{-6}$ weakens the dual on
+optimization problems; we use $10^{-6}$ for systems of equations and $10^{-9}$
+for optimization, the best value in each case. Turning off presolving or
+scaling, or forcing the row or column representation, did not help; forcing the
+primal algorithm reduced the spurious infeasibility but made the overall
+results worse. Both engines use the bound order that only needs the last primal
+point (farthest bound first); DFB can also order the bounds with information of
+its tableau, which we report separately.
+
 \paragraph{Setting.}
-DFB is implemented in C++ inside Ibex, in place of the polytope-hull
-contractor. Both contractors share the same linearizer (affine
-relaxation~\cite{ninin2015affine}), the same search and the same other
-contractors. For systems of equations we use the solver composition of Ibex
-(HC4, ACID, interval Newton when the system is square, and the linear
-contractor within a fixed point with HC4) with the LSmear bisector, on the 264
-systems of the Ibex solver benchmark, 2 seeds, 60\,s per run. For optimization
-we use IbexOpt with the same linear relaxation on 139 problems, 4 seeds, 60\,s
-per run. The production contractor uses SoPlex~4.0.2 with the default
-configuration of Ibex and with the solver timers disabled (see
-\emph{Fair evaluation} below). Runs were executed 15 at a time on a 16-core
-machine. We report geometric means of ratios over the pairs of runs in which
-both methods finish, for runs whose reference time exceeds 0.1, 1 and 5\,s, and
-the number of runs that finish within the time limit.
+Contractor and solvers are implemented in Ibex with the affine
+relaxation~\cite{ninin2015affine}. For systems of equations we use the solver
+composition of Ibex (HC4, ACID, interval Newton when the system is square, and
+the linear contractor within a fixed point with HC4) with the LSmear bisector,
+on the 264 systems of the Ibex solver benchmark, 2 seeds, 60\,s per run. For
+optimization we use IbexOpt on 139 problems, 4 seeds, 60\,s per run; three
+problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
+magnitude between seeds of the same configuration are excluded from the means.
+We report geometric means of ratios over the pairs of runs in which both
+methods finish, for runs whose reference time exceeds 0.1, 1 and 5\,s, and the
+number of runs that finish within the time limit.
 \todo{CPU, compilador, version de Ibex; publicar el codigo y los scripts}
 
 \subsection{Rigor}
 
-DFB is rigorous by Proposition~\ref{prop:valid}; we checked it empirically
+DFB is rigorous by Proposition~\ref{prop:valid}; we also checked it empirically
 against the exact LP hull. On identical boxes and with the same polytope, for
-every bound where DFB and the production contractor give different results, we
-solved the bound LP of the polytope over the input box with a fresh LP solver.
-No valid contraction can go beyond this hull. Over 973 such bounds in four
-systems (Table~\ref{tab:hull}), DFB never went beyond the hull and attained it
-in 97\% of the cases; the production contractor attained it in 3\%.
+every bound where DFB and the polytope-hull contractor of Ibex give different
+results, we solved the bound LP of the polytope over the input box with a fresh
+LP solver. No valid contraction can go beyond this hull. Over 973 such bounds in
+four systems (Table~\ref{tab:hull}), DFB never went beyond the hull and attained
+it in 97\% of the cases.
 
 \begin{table}[t]
 \centering
-\caption{Bounds where DFB contracts more than the production contractor on the
+\caption{Bounds where DFB and the polytope-hull contractor of Ibex differ on the
 same box, compared with the exact hull of the polytope over the input box.}
 \label{tab:hull}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrr}
 \toprule
-system & bounds & DFB beyond hull & DFB at hull & production at hull\\
+system & bounds & DFB beyond hull & DFB at hull\\
 \midrule
-Bratu-0060             &  84 & 0 &  84 & 25\\
-Discrete-Integralf2-13 &  22 & 0 &  22 &  0\\
-Geneig                 & 617 & 0 & 584 &  0\\
-Bellido                & 250 & 0 & 249 &  1\\
+Bratu-0060             &  84 & 0 &  84\\
+Discrete-Integralf2-13 &  22 & 0 &  22\\
+Geneig                 & 617 & 0 & 584\\
+Bellido                & 250 & 0 & 249\\
 \midrule
-total                  & 973 & 0 & 939 & 26\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Why DFB contracts more with the same relaxation}
-
-Both contractors work on the same polytope, so the exact LP hull is the same
-for both. Table~\ref{tab:samebox} measures, on the same input boxes, the mean
-relative contraction of each contractor and where the production contractor
-loses bounds. Three mechanisms appear, with different weights in different
-systems.
-\begin{enumerate}
-\item \emph{Skipped bounds.} The heuristic of Baharev et
-al.~\cite{baharev2009distillation} declares a bound done when the primal point
-of a previous LP lies on it within $10^{-8}$ relative to the magnitude of the
-bound, not to the width of the box. In narrow boxes far from zero this skips
-bounds that could still be contracted: 22\% of the bounds in
-Discrete-Integralf2-13 and Bellido. Without the skip, the production
-contractor contracts slightly more than DFB on these two systems (0.282 against
-0.251, and 0.283 against 0.280). DFB uses the same rule.
-\item \emph{Abandoned passes.} When SoPlex reports an infeasible LP without a
-verifiable ray, or an unknown status, the production contractor stops the pass
-and the remaining bounds are not computed (9--11\% of the bounds in Bratu-0060
-and Geneig); the node also survives when it was in fact empty.
-\item \emph{Neumaier--Shcherbina slack.} The safe bound loses a fraction of the
-contraction that the floating-point optimum would give: 2--6\% in most
-systems, 20--28\% in Discrete-Integralf2-13.
-\end{enumerate}
-Changing the skipping rule in both contractors to a tolerance relative to the
-box width raises the contraction of both on the same boxes but leaves the
-search-tree advantage of DFB on systems of equations unchanged (cells
-$\times0.48$--$0.53$ with either rule). The advantage in the tree comes from the
-second mechanism: the certificate of DFB is always usable, and a pass is never
-abandoned.
-
-\begin{table}[t]
-\centering
-\caption{Same input boxes, same polytope. Mean relative contraction of the
-perimeter, and fate of the $2n$ bounds of the production contractor: solved by
-an LP, skipped by the heuristic, or left unsolved because the pass was
-abandoned. Last column: contraction lost by the Neumaier--Shcherbina bound with
-respect to the floating-point optimum of the same LPs.}
-\label{tab:samebox}
-\begin{tabular}{lcccccc}
-\toprule
-& \multicolumn{2}{c}{contraction} & \multicolumn{3}{c}{production bounds (\%)} & NS slack\\
-\cmidrule(lr){2-3}\cmidrule(lr){4-6}
-system & production & DFB & solved & skipped & unsolved & (\%)\\
-\midrule
-Bratu-0060             & 0.156 & 0.236 & 55 & 36 &  9 &  1.7\\
-Discrete-Integralf2-13 & 0.209 & 0.251 & 78 & 22 &  0 & 28\\
-Geneig                 & 0.314 & 0.345 & 78 & 11 & 11 &  3.0\\
-Bellido                & 0.277 & 0.280 & 79 & 22 &  0 &  1.9\\
+total                  & 973 & 0 & 939\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Main comparison}
 
-\todo{Tabla con el banco de confirmacion (omision final): solver contra
-produccion de fabrica y con representacion por columnas, contra el oficial;
-IbexOpt contra produccion de fabrica. Celdas, cpu, corridas terminadas;
-perfiles de desempeno~\cite{dolan2002benchmarking}; donde gana y donde pierde.}
+Table~\ref{tab:main} compares DFB with the black box. On optimization problems,
+whose relaxations are small, DFB is 17--23\% faster with the same search trees.
+On systems of equations both engines take about the same time, but DFB explores
+11--19\% fewer cells. The black box finishes two more runs: it is faster on the
+largest relaxations (Bratu-0175 to 0200, which DFB does not finish, and
+Discrete-Integralf2-19 to 21, $\times$3--5), where SoPlex's LU factorization
+outperforms our revised engine; DFB is much faster on systems with
+nearly-equal rows (Brown-18 to 30, which the black box solves 15--20 times
+slower or not at all; CountercurrentReactors2-9, $\times$25).
+
+\begin{table}[t]
+\centering
+\caption{DFB against the best black-box configuration, inside the same
+contractor. Ratios DFB/black box (cells and CPU) for runs whose reference time
+exceeds 0.1, 1 and 5\,s, and runs finished. The last rows use the same bound
+order in both engines.}
+\label{tab:main}
+\begin{tabular}{llccccc}
+\toprule
+& & & \multicolumn{3}{c}{CPU} & \\
+\cmidrule(lr){4-6}
+benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
+\midrule
+optimization & best of each      & 1.00--1.05 & 0.77 & 0.83 & 0.78 & 129 / 129\\
+systems      & best of each      & 0.81--0.89 & 1.03 & 1.08 & 0.98 & 354 / 356\\
+\midrule
+optimization & same bound order  & 1.01--1.04 & 0.82 & 0.85 & 0.77 & 129 / 129\\
+systems      & same bound order  & 0.81--0.89 & 1.18 & 1.24 & 1.14 & 354 / 356\\
+\bottomrule
+\end{tabular}
+\end{table}
+\todo{anadir perfiles de desempeno~\cite{dolan2002benchmarking}}
+
+\subsection{Where the black box loses bounds}
+
+With the same certificate, the two engines can only differ in the multipliers
+they produce. We ran both engines on the same input boxes and the same polytope
+at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
+\begin{enumerate}
+\item \emph{Numerical failures.} On relaxations with nearly-equal rows,
+SoPlex reports infeasibility for LPs that are feasible. On Geneig-icse it does so
+for 18\,838 LPs, of which the certificate proves emptiness for 148; for the
+others, the ray proves nothing and the bound is lost. Together with about 6\,500
+LPs of unknown status and 1\,000 that reach the iteration limit, a third of the
+LPs of the black box yield no certificate, against 0.3\% for DFB. We verified on
+an extracted LP that SoPlex declares it infeasible with tolerance $10^{-9}$ and
+solves it with $10^{-6}$; DFB, whose primal tolerance is scaled to the width of
+the box, solves these relaxations.
+\item \emph{Dual accuracy.} With tolerance $10^{-6}$ the dual of the black box
+is slightly less accurate, and the certificate slightly weaker. On
+CountercurrentReactors2-9, DFB contracts more in 253 nodes out of 1\,061 and
+the black box in none; the difference is small per node but compounds along the
+search. With tolerance $10^{-9}$ it nearly vanishes (47 against 1), at the price
+of more numerical failures elsewhere.
+\end{enumerate}
+
+\begin{table}[t]
+\centering
+\caption{Both engines on the same input boxes and the same polytope. Mean
+relative contraction of the perimeter, nodes where each engine contracts more,
+and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
+\label{tab:samebox}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{contraction} & \multicolumn{2}{c}{nodes won} & \multicolumn{2}{c}{LPs not optimal}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+system & DFB & black box & DFB & black box & DFB & black box\\
+\midrule
+Geneig-icse               & 0.303 & 0.248 & 1241 &  4 &  211 & 26\,069\\
+CountercurrentReactors2-9 & 0.041 & 0.040 &  253 &  0 &   96 &     168\\
+Brown-18                  & 0.320 & 0.308 &   45 & 30 &  179 &     204\\
+Bellido                   & 0.281 & 0.281 &  137 &  7 &  134 &       0\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Ablation}
 
-Table~\ref{tab:ablation} removes one component of DFB at a time. In IbexOpt we
-exclude three problems (alkyl, alkylbis, bearing) whose search trees change by
-two orders of magnitude between seeds within the same configuration and
-dominate the $>5$\,s cut. No component changes the pruning: all cell ratios are
-within 1\%. The components differ in cost, and only on systems of equations,
-where relaxations are larger. The hybrid engine is the one that matters
-(without it, CPU time $\times1.13$--$1.25$). With the same engine (tableau), the
-primal method is 15--20\% faster than the dual one; the value of the dual
-method is that it enables the tableau-free revised engine, which has no primal
-steps, on large relaxations. This is why DFB uses the dual method on revised
-nodes and the primal method on tableau nodes.
+Table~\ref{tab:ablation} removes one component of DFB at a time. No component
+changes the pruning: all cell ratios are within 1\%. The components differ in
+cost, and only on systems of equations, where relaxations are larger. The hybrid
+engine is the one that matters (without it, CPU time $\times1.13$--$1.25$).
+With the same engine (tableau), the primal method is 15--20\% faster than the
+dual one; the value of the dual method is that it enables the tableau-free
+revised engine, which has no primal steps, on large relaxations. This is why
+DFB uses the dual method on revised nodes and the primal method on tableau
+nodes. Ordering the bounds with information of the tableau, instead of the
+farthest-bound rule, gives a further $\times0.87$--$0.91$ on systems of
+equations.
 
 \begin{table}[t]
 \centering
 \caption{Ablation on systems of equations: each row removes one component
 from DFB. Cell and CPU ratios against full DFB for runs above 0.1, 1 and 5\,s.
-In IbexOpt all ratios are within $\pm3\%$.}
+On optimization problems all ratios are within $\pm3\%$.}
 \label{tab:ablation}
 \begin{tabular}{lcccc}
 \toprule
@@ -605,29 +631,12 @@ primal against dual, both on tableau        & 1.01 & 0.85 & 0.82 & 0.80\\
 \end{table}
 \todo{repetir la ablacion con la omision final (estrategia por nodo, umbral 80)}
 
-\subsection{Fair evaluation}
-
-Two issues of the LP solver configuration change the comparison and should be
-controlled in any evaluation of LP-based contractors.
-\begin{itemize}
-\item \emph{Solver timers.} SoPlex~4.0.2 reads the CPU clock, a system call,
-in every forward and backward solve of its LU factorization and in every call,
-even with its timer parameter turned off: the parameter does not reach the
-factorization nor the statistics. In IbexOpt this took about 30\% of the time of
-the production contractor and 6\% of DFB, which uses SoPlex only for upper
-bounding. We patched the bundled SoPlex so that the parameter disables all
-timers; all results above use the patched version. Before the patch, the
-advantage of DFB in IbexOpt appeared as a CPU ratio of 0.60 instead of
-0.81--0.89.
-\item \emph{LP representation.} With its default configuration, which is the
-one distributed with Ibex, SoPlex chooses the row representation for many LPs
-of the systems of equations, and there the production contractor accumulates
-LPs declared infeasible without a verifiable ray. For instance, on
-Discrete-Integralf2-15 it reports 2519 unproved infeasible LPs and explores 4641
-cells, against 2 and 19 with the column representation. Forcing the column
-representation helps on average (cells $\times0.70$) but makes other systems
-fail (Brown-15 to Brown-20). We report both configurations.
-\end{itemize}
+\paragraph{Relation to the polytope-hull contractor of Ibex.}
+Against the contractor distributed with Ibex, DFB explores about half the
+cells on systems of equations. Most of that gap comes from the contractor and
+not from the engine: when the LP solver reports infeasibility without a
+verifiable ray, the contractor of Ibex abandons the pass, and the node is not
+pruned. The black-box engine above, inside our contractor, recovers most of it.
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
