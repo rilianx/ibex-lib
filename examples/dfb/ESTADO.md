@@ -161,6 +161,43 @@ celdas pagando LPs por nodo (×1.03–1.05).
 
 Producción = `--filtering=acidhc4` + `CtcPolytopeHull` + linearizador afín.
 
+**Comparación controlada: el mismo contractor con dos motores (2026-10-09).**
+Para el paper, la comparación justa no es contra `CtcPolytopeHull` de Ibex sino
+el MISMO contractor (misma pasada, mismo salto, misma política ante un LP sin
+certificado: seguir con la cota siguiente) con dos motores de LP:
+DFB, o SoPlex como caja negra (`DFBH_MOTOR=caja`), cuyos multiplicadores (dual
+o rayo de Farkas) pasan por el MISMO certificado gamma en intervalos
+(Neumaier–Shcherbina en la forma homogénea). La tolerancia de SoPlex es un
+parámetro de la caja negra (`DFBH_CAJA_TOL`): con 1e-9 (la de Ibex) SoPlex
+declara infactibles LPs factibles en los `Brown` (casi-igualdades de ancho
+1e-14 en cajas de ±1e8; verificado resolviendo el LP aparte), y en `ibexopt`
+1e-6 es demasiado laxa. Mejor tolerancia: solver 1e-6 (≈ 1e-9), `ibexopt` 1e-9.
+`results/controlado_caja_negra_2026-10-09.csv` (264 sistemas × 2 semillas,
+139 problemas × 4; en `ibexopt` sin `alkyl`, `alkylbis`, `bearing`):
+
+| comparación | > 0.1 s | > 1 s | > 5 s | terminan |
+|---|---|---|---|---|
+| solver, DFB (orden propio) contra caja negra 1e-6 | celdas ×0.89, cpu ×1.03 | ×0.86, ×1.08 | ×0.81, ×0.98 | 354 contra 356 |
+| `ibexopt`, DFB (orden propio) contra caja negra 1e-9 | celdas ×1.00, **cpu ×0.77** | ×1.05, **×0.83** | ×1.04, **×0.78** | 129 = 129 (4/4) |
+| solver, mismo orden (lejos): caja negra 1e-6 contra DFB | celdas ×1.13, cpu ×0.85 | ×1.17, ×0.81 | ×1.23, ×0.88 | 356 contra 354 |
+| `ibexopt`, mismo orden: caja negra 1e-9 contra DFB | celdas ×0.97, cpu ×1.19 | ×0.94, ×1.15 | ×0.96, ×1.14 | |
+| DFB, orden propio (por costo, usa el tableau) contra lejos | solver ×1.00, cpu ×0.87 | ×1.00, ×0.88 | ×1.00, ×0.91 | igual |
+
+Lectura: en el optimizador (relajaciones chicas) DFB es 17–23 % más rápido con
+el mismo árbol. En el solver, cpu a la par, DFB poda 11–19 % más y es más
+robusto en los `Brown` (la caja negra deja de terminar `Brown-30`; ×15–20 en
+`Brown-18…20`) y en `CountercurrentReactors2-9` (×25); SoPlex gana en las
+relajaciones grandes (`Bratu-0175…0200`, que DFB no termina;
+`Discrete-Integralf2-19…21`, ×3–5), donde su LU es mejor que el motor revisado.
+Por qué DFB poda más en el solver con el mismo certificado: sin aislar todavía
+(candidatos: precisión del dual de SoPlex en LPs casi degenerados, el salto
+de Achterberg con puntos x* de SoPlex levemente infactibles). La diferencia
+de poda contra `CtcPolytopeHull` de Ibex venía sobre todo del marco: abandonar
+la pasada y certificar a posteriori con un rayo que puede faltar. En
+DiscreteBoundary-0200 DFB da 3 cajas solución y la caja negra 4: se solapan
+en cadena y cada una interseca alguna del otro brazo, no es pérdida de
+soluciones.
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
@@ -420,6 +457,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
+| `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
