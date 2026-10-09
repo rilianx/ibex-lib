@@ -274,6 +274,36 @@ de la brecha es la representación. El período de refactorización no influye
 revisado trabaje con la base de dimensión ≤ n (núcleo de columnas
 estructurales básicas, o representación por filas) cuando m > n.
 
+**Fusión de filas gemelas (2026-10-09, `DFBH_FUSIONA`, por omisión).** La
+causa de m = 2n no era la linealización compo: el linealizador afín
+(`linearize`, camino fresco) parte cada ecuación en dos filas unilateras con
+la MISMA normal. En la forma homogénea basta una fila con rango
+[lhs, rhs]; `linearize_fresca` fusiona filas consecutivas idénticas (si los
+lados se cruzan las deja, para que el LP pruebe el vacío) y la caja negra
+recibe la misma relajación fusionada (se recarga `mylinearsolver`). Prueba
+puntual (`--lin=art`, `-t 100`), tiempo en s (celdas):
+
+| instancia | DFB sin fusión | DFB | DFB devex | caja sin fusión | caja |
+|---|---|---|---|---|---|
+| Bratu-0120 | 21.0 (33) | 9.9 (33) | 9.6 | 12.4 (35) | 10.7 (35) |
+| Bratu-0175 | 88.1 (55) | 44.0 (55) | 42.4 | 47.0 (59) | 41.8 (59) |
+| Bratu-0200 | 71.6 (31) | 34.4 (31) | 32.3 | 43.3 (37) | 37.7 (37) |
+| Discrete-Integralf2-21 | 3.14 (11) | 1.30 (11) | 1.20 | 2.03 (15) | 1.74 (13) |
+| DiscreteBoundary-0200 | 17.3 (5) | 16.4 (7) | 11.0 (5) | 19.2 (7) | 18.0 (7) |
+| Brown-15 | 0.28 (73) | 0.24 (65) | 0.24 | 0.94 (175) | 0.27 (65) |
+| CountercurrentReactors2-9 | 1.39 (955) | 1.22 (957) | 1.24 | 38.0 (20 083) | 1.43 (985) |
+| Geneig-icse | 18.6 (559) | 8.2 (431) | 8.2 | 35.9 (1779) | 17.3 (455) |
+
+Dos consecuencias. (1) La brecha de Bratu/Discrete se cierra: con base de
+dimensión m = n el motor revisado queda a la par o mejor que SoPlex por
+filas. (2) **Las filas gemelas eran también la causa de buena parte de los
+vacíos espurios de SoPlex** (casi-igualdades: dos semiespacios con la misma
+normal y lados a ~1e-14): CountercurrentReactors2-9 20 083 → 985 celdas,
+Brown-15 175 → 65. La ventaja de DFB por certificación en esas familias era
+en parte un artefacto de la relajación; con la fusión la comparación es más
+justa. Banco con los defaults finales en curso (`rc`, brazos dfb, dfbl
+(orden lejos), dev, caja, y sin fusión dfb0/caja0).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
@@ -532,6 +562,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
+| `DFBH_FUSIONA=0` | no fusiona las filas gemelas (misma normal, un lado cada una) de la linealización fresca (por omisión las fusiona desde 2026-10-09) (§4) |
 | `DFB_SX_DEVEXP=1` | precio devex en los pasos primales del motor revisado (por omisión Dantzig; sin banco aún) (§4) |
 | `DFB_SX_REVPRIMAL=0` | apaga los pasos primales en el motor revisado (**por omisión encendidos** desde 2026-10-10; con `por_motor`, nodos revisados en primal) (§4) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
