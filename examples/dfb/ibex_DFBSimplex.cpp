@@ -216,7 +216,7 @@ long DFBSimplex::n_base_rechazada = 0;
 DFBSimplex::DFBSimplex() : traza_y(NULL), tope_anytime(std::numeric_limits<double>::quiet_NaN()),
                            obs_tope(std::numeric_limits<double>::quiet_NaN()), obs_pivote(-1), xb_sucio(true), m(0), nx(0), na(0), nc(0), zs(1),
                            bnd(0.0), iters(0),
-                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false), piv_desde_refresco(0), dual_nodo(true), puro_nodo(true),
+                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false), piv_desde_refresco(0), col_primal_lista(-1), dual_nodo(true), puro_nodo(true),
                            perturbado(false), pert_eps(0.0), pert_estado(12345u) {
 }
 
@@ -683,8 +683,13 @@ bool DFBSimplex::pivot_revisado(int r, int col) {
     /* La columna entrante transformada se calcula UNA vez: sirve a devex, a la
      * actualizacion incremental de x_B (`alpha_piv`) y al Forrest-Tomlin. */
     if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
-    /* El paso primal revisado ya la preparo (y dejo en `colq_buf`). */
-    const bool col_ok = (fact.columna_preparada() == col) ? true : fact.preparar_cambio(col, &colq_buf[0]);
+    /* El paso primal revisado ya la preparo (y dejo en `colq_buf`), pero SOLO
+     * vale para el pivote que la sigue inmediatamente: una preparacion que
+     * quedo sin usar (la entrante solo cambio de cota) es de otra LU, y
+     * reutilizarla en un pivote posterior corrompia la LU (Yamamura). */
+    const bool reusar = (col_primal_lista == col) && (fact.columna_preparada() == col);
+    col_primal_lista = -1;
+    const bool col_ok = reusar ? true : fact.preparar_cambio(col, &colq_buf[0]);
     if ((int)alpha_piv.size() != m+1) alpha_piv.assign(m+1, 0.0);
     alpha_piv[0] = 0.0;
     for (int i = 1; i <= m; ++i) alpha_piv[i] = col_ok ? colq_buf[i-1] : 0.0;
@@ -1182,6 +1187,7 @@ bool DFBSimplex::primal_step_revisado(const IntervalVector& z, bool& unbounded) 
     if (r_out < 0) { unbounded = true; return false; }
     fila_revisada(r_out);
     const int c_out = basic[r_out];
+    col_primal_lista = q;
     if (!pivot_revisado(r_out, q)) { pivote_fallido = true; return false; }
     atupper[c_out] = sale_arriba ? 1 : 0;
     xb_sucio = true;
