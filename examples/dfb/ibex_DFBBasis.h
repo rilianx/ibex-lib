@@ -79,6 +79,12 @@ public:
 
     /** \brief Cambia la columna basica de la fila `j` por `col`. */
     bool change_basis(int j, int col);
+    /** Cambio de base en dos pasos, para no hacer dos veces la FTRAN de la
+     *  columna entrante: `preparar_cambio` la resuelve con la base vieja
+     *  (`solveRight4update`, que deja el eta para Forrest-Tomlin) y la copia
+     *  densa en `out`; `aplicar_cambio` actualiza la LU con ese mismo eta. */
+    bool preparar_cambio(int col, double* out);
+    bool aplicar_cambio(int j, int col);
 
     /** \brief Fija la base a `cols` (una columna por fila) y factoriza. */
     bool set_basis(const std::vector<int>& cols);
@@ -155,6 +161,7 @@ private:
     soplex::DVector   rhs, sol;
     soplex::SSVector* eta;   //!< se recrea en load_matrix con la dimension m
     int updates_since_factor;
+    int col_preparada;   //!< columna cuyo eta dejo `preparar_cambio` (-1 si ninguna)
 
     const soplex::SVector& column(int c) const {
         return (c < na) ? (const soplex::SVector&)col_nz[c]

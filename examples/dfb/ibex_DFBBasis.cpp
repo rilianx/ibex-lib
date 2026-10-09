@@ -21,7 +21,7 @@ void DFBBasis::reset_counters() {
 }
 
 DFBBasis::DFBBasis() : m(0), na(0), obj_row(0), rhs(1), sol(1), eta(NULL),
-                       updates_since_factor(0) {
+                       updates_since_factor(0), col_preparada(-1) {
 }
 
 DFBBasis::~DFBBasis() {
@@ -136,6 +136,43 @@ bool DFBBasis::change_basis(int j, int col) {
     try {
         lu.solveRight4update(*eta, newcol);
         SLinSolver::Status st = lu.change(j, newcol, eta);
+        ++n_updates; ++updates_since_factor;
+        if (st != SLinSolver::OK) return factorize();
+    } catch (...) {
+        return factorize();
+    }
+    return true;
+}
+
+bool DFBBasis::preparar_cambio(int col, double* out) {
+    col_preparada = -1;
+    if (col < 0 || col >= na + m) return false;
+    try {
+        const SVector& newcol = column(col);
+        lu.solveRight4update(*eta, newcol);
+        ++n_ftran;
+        for (int r = 0; r < m; ++r) out[r] = (*eta)[r];
+        col_preparada = col;
+        return true;
+    } catch (...) {
+        for (int r = 0; r < m; ++r) out[r] = 0.0;
+        return false;
+    }
+}
+
+bool DFBBasis::aplicar_cambio(int j, int col) {
+    if (col_preparada != col) { col_preparada = -1; return change_basis(j, col); }
+    col_preparada = -1;
+    if (j < 0 || j >= m || col < 0 || col >= na + m) return false;
+    const int out = basic[j];
+    if (out == col) return true;
+    where_basic[out] = -1;
+    basic[j] = col;
+    where_basic[col] = j;
+    if (refactor_always || updates_since_factor >= refactor_period)
+        return factorize();
+    try {
+        SLinSolver::Status st = lu.change(j, column(col), eta);
         ++n_updates; ++updates_since_factor;
         if (st != SLinSolver::OK) return factorize();
     } catch (...) {

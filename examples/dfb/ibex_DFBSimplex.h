@@ -559,6 +559,7 @@ private:
      * al refrescar desde la factorizacion, o tras cambiar cotas de no basicas.
      */
     bool xb_sucio;
+    int piv_desde_refresco;   //!< pivotes revisados desde el ultimo recalculo de x_B
     bool pivote_fallido;  //!< un pivote no se pudo aplicar: no confundir con optimo
     std::vector<double> alpha_piv;   //!< columna entrante antes del pivote
 };

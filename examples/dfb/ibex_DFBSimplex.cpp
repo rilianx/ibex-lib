@@ -215,7 +215,7 @@ long DFBSimplex::n_base_rechazada = 0;
 DFBSimplex::DFBSimplex() : traza_y(NULL), tope_anytime(std::numeric_limits<double>::quiet_NaN()),
                            obs_tope(std::numeric_limits<double>::quiet_NaN()), obs_pivote(-1), xb_sucio(true), m(0), nx(0), na(0), nc(0), zs(1),
                            bnd(0.0), iters(0),
-                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false), dual_nodo(true), puro_nodo(true),
+                           base_lista(false), fact_ok(false), fact_sucia(false), rev(false), piv_desde_refresco(0), dual_nodo(true), puro_nodo(true),
                            perturbado(false), pert_eps(0.0), pert_estado(12345u) {
 }
 
@@ -679,9 +679,15 @@ bool DFBSimplex::pivot_revisado(int r, int col) {
      * la base vieja. Sin esto el revisado elige por Dantzig y hace 1.5-1.9
      * veces mas pivotes por LP (medido en las Katsura). */
     static const bool devex_rev = !(getenv("DFB_SX_DEVEX") && std::string(getenv("DFB_SX_DEVEX")) == "0");
-    if (devex_rev && (int)dw.size() == m+1) {
-        if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
-        fact.ftran_col(col, &colq_buf[0]);
+    /* La columna entrante transformada se calcula UNA vez: sirve a devex, a la
+     * actualizacion incremental de x_B (`alpha_piv`) y al Forrest-Tomlin. */
+    if ((int)colq_buf.size() != m) colq_buf.assign(m, 0.0);
+    const bool col_ok = fact.preparar_cambio(col, &colq_buf[0]);
+    if ((int)alpha_piv.size() != m+1) alpha_piv.assign(m+1, 0.0);
+    alpha_piv[0] = 0.0;
+    for (int i = 1; i <= m; ++i) alpha_piv[i] = col_ok ? colq_buf[i-1] : 0.0;
+    if (!col_ok) alpha_piv[r] = 0.0;
+    if (devex_rev && (int)dw.size() == m+1 && col_ok) {
         const double ap = colq_buf[r-1];
         if (ap != 0.0) {
             const double wr = dw[r];
@@ -702,11 +708,11 @@ bool DFBSimplex::pivot_revisado(int r, int col) {
     basic[r] = col;
     rowof[col] = r;
     for (int rr = 1; rr <= m; ++rr) { const int b = basic[rr]; if (b != out) d[b] = 0.0; }
-    if (!fact.change_basis(r - 1, col)) {
+    if (!fact.aplicar_cambio(r - 1, col)) {
         for (int rr = 1; rr <= m; ++rr) cols_buf[rr-1] = basic[rr];
         fact_ok = fact.set_basis(cols_buf);
     }
-    ++n_pivots;
+    ++n_pivots; ++piv_desde_refresco;
     return fact_ok;
 }
 
@@ -714,6 +720,7 @@ void DFBSimplex::compute_basics_revisado(const IntervalVector& z) {
     perf::Cron _c(&perf::t_basics);
     ++n_basics;
     xb_sucio = false;
+    piv_desde_refresco = 0;
     for (int c = 0; c < na; ++c) {
         if (rowof[c] >= 0) { xN[c] = 0.0; xhat[c] = 0.0; continue; }
         double v = atupper[c] ? z[c].ub() : z[c].lb();
@@ -754,6 +761,8 @@ bool DFBSimplex::dual_step(const IntervalVector& z, bool& infeasible) {
     /* `inc` esta apagado, asi que `xb_sucio` es true siempre que se llega aca:
      * la condicion es equivalente a la anterior y deja que el bucle de `solve`
      * comparta el recalculo cuando hace la comprobacion anytime. */
+    static const int XB_REFRESCO = getenv("DFB_SX_XBREFRESCO") ? atoi(getenv("DFB_SX_XBREFRESCO")) : 32;
+    if (rev && piv_desde_refresco >= XB_REFRESCO) xb_sucio = true;
     if (xb_sucio) compute_basics(z);
     return dual_step_comun(z, infeasible);
 }
@@ -761,6 +770,10 @@ bool DFBSimplex::dual_step(const IntervalVector& z, bool& infeasible) {
 bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
     perf::Cron _c(&perf::t_dual);
     infeasible = false;
+    /* Los cambios de cota del paso largo mueven x_B, pero se recalcula ahi
+     * mismo (`compute_basics` tras aplicarlos), asi que el incremental del
+     * pivote que sigue parte de un x_B al dia. */
+    const bool hubo_flip = false;
     /* DFB_SX_DEVEX=1: eleccion de la fila que sale por devex en vez de Dantzig.
      * Ver el comentario de `dw` en la cabecera. Estuvo forzado a false; se
      * reabre porque el camino dual con el arreglo de `k` paga ~2.4 veces mas
@@ -1080,8 +1093,14 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
     }
     atupper[c_out] = below ? 0 : 1;
 
-    /* Actualizacion incremental de `x_B`, `O(m)` en vez de `O(m*nnz)`. */
-    const bool inc = false;
+    /* Actualizacion incremental de `x_B`, `O(m)` en vez de `O(m*nnz)`.
+     * Encendida en el motor revisado (`DFB_SX_XBINC_REV=0` la apaga), donde el
+     * recalculo cuesta un producto por `Abar` y una FTRAN densa por pivote
+     * (16 % del tiempo total en Bratu-0150); cada `XB_REFRESCO` pivotes, o tras
+     * cambios de cota del paso largo, se recalcula desde la LU. En el tableau
+     * sigue apagada (§44). */
+    static const bool inc_rev = !(getenv("DFB_SX_XBINC_REV") && std::string(getenv("DFB_SX_XBINC_REV")) == "0");
+    const bool inc = rev && inc_rev && !hubo_flip;
     if (inc && (int)alpha_piv.size() == m+1) {
         const double ar = alpha_piv[r_out];
         if (ar != 0.0 && v_out == v_out && x_in == x_in &&
