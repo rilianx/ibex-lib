@@ -245,7 +245,7 @@ Banco (`results/revisado_primal_2026-10-10.csv`), contra la omisión dual:
 | **40** | **×0.95 / ×0.94 / ×0.97** | 354 = 354 | ×0.99–1.00 |
 | 20 | ×0.95 / ×0.93 / ×0.96 | 353 contra 354 | ×0.98–0.99 |
 
-Celdas iguales en todos. Gana BroydenTri-0090…0100 (×0.45–0.64),
+Celdas iguales en todos. **Por omisión desde 2026-10-10 con umbral 40.** Gana BroydenTri-0090…0100 (×0.45–0.64),
 Discrete-Integralf2-17…19 (×0.57–0.62); pierde Bratu-0120 (×1.25). Contra la
 caja negra, umbral 40: solver celdas ×0.81–0.89, cpu ×0.96 / ×0.97 / ×0.90;
 `ibexopt` cpu ×0.77 / ×0.82 / ×0.78. Siguen sin terminar Bratu-0175…0200
@@ -509,14 +509,14 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
-| `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado; con `por_motor`, nodos revisados en primal (§4) |
+| `DFB_SX_REVPRIMAL=0` | apaga los pasos primales en el motor revisado (**por omisión encendidos** desde 2026-10-10; con `por_motor`, nodos revisados en primal) (§4) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
 | `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
-| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (**umbral 80** desde 2026-10-08; antes 40) (§9). **Omisión `auto`** |
+| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (**umbral 40** desde 2026-10-10; 80 entre el 08 y el 10) (§9). **Omisión `auto`** |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
