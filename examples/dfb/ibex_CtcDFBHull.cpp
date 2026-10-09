@@ -73,6 +73,22 @@ static void ph_resumen() {
             ph_vac_prod, ph_vac_dfb, ph_vac_prod ? (double)ph_vac_dfb/ph_vac_prod : 0.0);
 }
 static long   ab_LF = 0, ab_LC = 0, ab_PF = 0, ab_PC = 0;
+/* Sonda `DFBH_ABCAJA`: contadores por motor (0 = DFB, 1 = caja negra):
+ * LPs, optimos con cota certificada, optimos sin certificado (gamma_k
+ * contiene al cero), vacios probados por el certificado, LPs no optimos,
+ * cotas saltadas por Achterberg. */
+static long abc_cnt[2][6] = {{0,0,0,0,0,0},{0,0,0,0,0,0}};
+static long abc_n = 0, abc_vac[2] = {0,0}, abc_gana[2] = {0,0};
+static double abc_contr[2] = {0.0, 0.0};
+static void abc_resumen() {
+    if (!abc_n) return;
+    for (int e = 0; e < 2; ++e)
+        fprintf(stderr, "[abcaja] %s: LPs=%ld | optimo certificado=%ld  optimo sin certificado=%ld  vacio probado=%ld  no optimo=%ld | saltadas=%ld\n",
+                e ? "caja " : "DFB  ", abc_cnt[e][0], abc_cnt[e][1], abc_cnt[e][2], abc_cnt[e][3], abc_cnt[e][4], abc_cnt[e][5]);
+    fprintf(stderr, "[abcaja] nodos=%ld | contraccion media DFB=%.5f caja=%.5f | nodos vaciados DFB=%ld caja=%ld | gana DFB=%ld caja=%ld\n",
+            abc_n, abc_contr[0]/abc_n, abc_contr[1]/abc_n, abc_vac[0], abc_vac[1], abc_gana[0], abc_gana[1]);
+}
+
 static double ab_accF = 0.0, ab_accC = 0.0;
 long CtcDFBHull::n_nodes = 0;
 long CtcDFBHull::n_goal_lp = 0;
@@ -363,6 +379,7 @@ CtcDFBHull::~CtcDFBHull() {
     if (DFB_ENV("DFBH_LINPERF")) lin_perf_volcar();
     pf_resumen();
     ph_resumen();
+    abc_resumen();
     if (ab_n)
         fprintf(stderr, "[abcong] nodos=%ld | contraccion media fresca=%.6f congelada=%.6f "
                 "razon=%.4f | gana fresca=%ld congelada=%ld iguales=%ld | vacios F=%ld C=%ld | "
@@ -1310,7 +1327,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     const double rel = (salteo_ancho && wj > 0.0 && wj < POS_INFINITY) ? dj / wj
                                      : (std::fabs(bd) < 1.0) ? dj
                                                              : std::fabs(dj/bd);
-                    if (!no_salteo && rel < PREC) { hecho[q] = 1; continue; }
+                    if (!no_salteo && rel < PREC) { hecho[q] = 1; ++abc_cnt[motor_caja][5]; continue; }
                     /* Con el motor revisado el tableau no esta al dia: orden de
                      * la mas lejana (`orden == 1`). */
                     if (orden == 3 && !sx.es_revisado()) {
@@ -1513,6 +1530,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
         const DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
                                                  : sk.solve(k, lado == 1, z, tope_paso, true);
+        ++abc_cnt[motor_caja][0];
         if (techo) {
             const std::vector<double>& lam0 = sk.lambda();
             std::vector<char> act(m, 0);
@@ -2122,7 +2140,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                             "suma=[%.6g,%.6g] gamma_x.x*=[%.6g,%.6g] gamma_b.b=[%.6g,%.6g]\n",
                             paso, k, lado, (int)st, suma.lb(), suma.ub(), gz.lb(), gz.ub(), gb.lb(), gb.ub());
                 }
-                ++n_empty;
+                ++n_empty; ++abc_cnt[motor_caja][3];
                 if (traza_cotas)
                     fprintf(stderr, "    paso=%-3d x%-3d %s  estado=%d piv=%-3d | VACIO por Farkas, suma=[%.6g,%.6g]\n",
                             paso, k, lado ? "max" : "min", (int)st, sk.iterations(), suma.lb(), suma.ub());
@@ -2163,6 +2181,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         }
 
         if (st != DFBSimplex::OPTIMAL) {
+            ++abc_cnt[motor_caja][4];
             if (traza_cotas)
                 fprintf(stderr, "    paso=%-3d x%-3d %s  estado=%d piv=%-3d | sin aplicar (no OPTIMAL)\n",
                         paso, k, lado ? "max" : "min", (int)st, sk.iterations());
@@ -2183,6 +2202,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         gs[idx] = gamma; gs_ok[idx] = 1;
 
         Interval nb = cota_desde_gamma(gamma, z, k);
+        if (lado ? (nb.ub() >= POS_INFINITY) : (nb.lb() <= NEG_INFINITY)) ++abc_cnt[motor_caja][2];
+        else ++abc_cnt[motor_caja][1];
 
         /* COTA LAGRANGIANA CON MONOTONIA (`DFBH_LAGRC=1|2`), ver la cabecera. */
         static const int lagrc = getenv("DFBH_LAGRC") ? atoi(getenv("DFBH_LAGRC")) : 0;
@@ -2764,7 +2785,22 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
      * ~1e-14 en cajas grandes (Brown); el rigor lo pone el certificado. */
     static const double tol_caja = getenv("DFBH_CAJA_TOL") ? atof(getenv("DFBH_CAJA_TOL")) : 1e-6;
     static bool tol_puesta = false;
-    if (!tol_puesta) { mylinearsolver.set_tolerance(tol_caja); tol_puesta = true; }
+    if (!tol_puesta) {
+        mylinearsolver.set_tolerance(tol_caja); tol_puesta = true;
+        /* `DFBH_CAJA_SIMP=0` apaga el presolve de SoPlex, `DFBH_CAJA_SCALER=0`
+         * el escalado: parametros del solver de caja negra, para elegir su
+         * mejor configuracion. */
+        if (getenv("DFBH_CAJA_SIMP") && std::string(getenv("DFBH_CAJA_SIMP")) == "0")
+            mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::SIMPLIFIER, soplex::SoPlex::SIMPLIFIER_OFF);
+        if (getenv("DFBH_CAJA_SCALER") && std::string(getenv("DFBH_CAJA_SCALER")) == "0")
+            mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::SCALER, soplex::SoPlex::SCALER_OFF);
+        if (getenv("DFBH_CAJA_REP") && std::string(getenv("DFBH_CAJA_REP")) == "col")
+            mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::REPRESENTATION, soplex::SoPlex::REPRESENTATION_COLUMN);
+        if (getenv("DFBH_CAJA_REP") && std::string(getenv("DFBH_CAJA_REP")) == "row")
+            mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::REPRESENTATION, soplex::SoPlex::REPRESENTATION_ROW);
+        if (getenv("DFBH_CAJA_ALG") && std::string(getenv("DFBH_CAJA_ALG")) == "primal")
+            mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::ALGORITHM, soplex::SoPlex::ALGORITHM_PRIMAL);
+    }
 
     IntervalVector xb(nb_var);
     for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
@@ -3358,7 +3394,35 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
         sin_recarga = reusa_A;
         const IntervalVector antes_fp(box);
         const double pf_t1 = perfil ? ahora_s() : 0.0;
+        /* SONDA `DFBH_ABCAJA`: la misma relajacion y la misma caja de entrada
+         * con los dos motores. La caja negra corre sobre una copia; la busqueda
+         * sigue a DFB. */
+        static const bool abcaja = DFB_ENV("DFBH_ABCAJA");
+        IntervalVector caja_ab(1);
+        const IntervalVector entrada_ab(box);
+        if (abcaja && !motor_caja) {
+            const IntervalVector zsave(z);
+            caja_ab = box;
+            motor_caja = true;
+            una_pasada(caja_ab);
+            motor_caja = false;
+            z = zsave;
+        }
         una_pasada(box);
+        if (abcaja && caja_ab.size() == box.size()) {
+            double per0 = 0.0, p[2] = {0.0, 0.0};
+            const IntervalVector* r[2] = {&box, &caja_ab};
+            for (int i = 0; i < nb_var; ++i) if (entrada_ab[i].diam() < 1e18) per0 += entrada_ab[i].diam();
+            if (per0 > 0) {
+                ++abc_n;
+                for (int e = 0; e < 2; ++e) {
+                    if (r[e]->is_empty()) { ++abc_vac[e]; abc_contr[e] += 1.0; p[e] = -1.0; continue; }
+                    for (int i = 0; i < nb_var; ++i) if (entrada_ab[i].diam() < 1e18) p[e] += (*r[e])[i].diam();
+                    abc_contr[e] += 1.0 - p[e]/per0;
+                }
+                if (p[0] < p[1] * (1 - 1e-9)) ++abc_gana[0]; else if (p[1] < p[0] * (1 - 1e-9)) ++abc_gana[1];
+            }
+        }
         if (perfil) { const double t2 = ahora_s(); pf_pas += t2 - pf_t1; pf_tot += t2 - pf_t0; }
         sin_recarga = false;
         /* FRONTERA DE NODO, con el mismo criterio que usa el punto fijo.
