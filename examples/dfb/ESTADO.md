@@ -227,6 +227,30 @@ cpu ×1.01 / ×1.04 / ×0.93 (antes ×1.03 / ×1.08 / ×0.98); `ibexopt` ×0.77 
 pivotes por LP que SoPlex, que reoptimiza en primal; el revisado no tiene pasos
 primales (opción B).
 
+**Pasos primales en el motor revisado (2026-10-10, `DFB_SX_REVPRIMAL=1`).**
+`primal_step_revisado`: Dantzig sobre `d`, FTRAN preparada de la entrante
+(reutilizada por el pivote inmediato), test de razón sobre `x_B`, BTRAN de la
+fila y `pivot_revisado`; con `por_motor` los nodos revisados se resuelven en
+primal (el dual queda para la primera cota, en frío). Dos defectos corregidos
+en el camino: la LU tiene que asegurarse antes de pedir resoluciones a SoPlex
+(con `fact_sucia` se corrompía el heap), y una columna preparada que quedó sin
+usar (la entrante sólo cambió de cota) no puede reutilizarse en un pivote
+posterior (segfault en `SLUFactor::change`, Yamamura). Pivotes por LP:
+BroydenTri-0090 33 → 6, Discrete-Integralf2-21 78 → 39, Bratu-0150 51 → 35.
+Banco (`results/revisado_primal_2026-10-10.csv`), contra la omisión dual:
+
+| umbral | solver cpu > 0.1 / > 1 / > 5 s | terminan | `ibexopt` cpu |
+|---|---|---|---|
+| 80 | ×0.98 / ×0.98 / ×0.99 | 354 = 354 | ×1.00 |
+| **40** | **×0.95 / ×0.94 / ×0.97** | 354 = 354 | ×0.99–1.00 |
+| 20 | ×0.95 / ×0.93 / ×0.96 | 353 contra 354 | ×0.98–0.99 |
+
+Celdas iguales en todos. Gana BroydenTri-0090…0100 (×0.45–0.64),
+Discrete-Integralf2-17…19 (×0.57–0.62); pierde Bratu-0120 (×1.25). Contra la
+caja negra, umbral 40: solver celdas ×0.81–0.89, cpu ×0.96 / ×0.97 / ×0.90;
+`ibexopt` cpu ×0.77 / ×0.82 / ×0.78. Siguen sin terminar Bratu-0175…0200
+(costo por pivote en relajaciones de ese tamaño).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
@@ -485,6 +509,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_CORTES=1\|2\|3`, `DFBH_CORTES_TOPE=f` | cortes en `x*`: en el nodo, heredados, sólo en las hijas; tope del pozo en veces las filas afines (§9, cerrado) |
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
+| `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado; con `por_motor`, nodos revisados en primal (§4) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
 | `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
