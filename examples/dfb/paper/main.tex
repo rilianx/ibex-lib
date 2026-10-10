@@ -5,6 +5,10 @@
 \usepackage{booktabs}
 \usepackage[margin=2.6cm]{geometry}
 \usepackage{xcolor}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\definecolor{serieA}{HTML}{2A78D6}
+\definecolor{serieB}{HTML}{EB6834}
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
 
 % Notas de trabajo: se apagan cambiando \todo por un comando vacio.
@@ -773,6 +777,57 @@ systems      & same bound order  & 0.90--0.95 & 0.83 & 0.82 & 0.88 & 360 / 356\\
 \end{tabular}
 \end{table}
 \todo{anadir perfiles de desempeno~\cite{dolan2002benchmarking}}
+
+\subsection{Cost per LP}
+
+Table~\ref{tab:main} mixes two effects: how many cells are explored and what
+each LP costs. To separate them we ran both engines on the same LPs: at every
+node the black box first solves the pass on a copy of the box, and SC then
+solves it on the same box and polytope, with the search following SC.
+Figure~\ref{fig:costlp} compares the time per LP, including the whole pass
+(ordering and certificate, which are common to both). SC solves an LP in
+$0.56$ times the time of the black box on systems of equations (geometric mean
+over the 220 systems with at least 100 LPs; median 27 against 53\,$\mu$s) and
+in $0.38$ times on optimization problems (94 problems; median 11 against
+30\,$\mu$s), and is cheaper on 84\% and 95\% of the instances. Both factors
+contribute: SC needs fewer pivots per LP ($\times0.74$ and $\times0.80$), from
+the shared basis and the dual-feasible restart, and less time per pivot
+($\times0.78$ and $\times0.50$), which for the black box includes the cost of
+each call (setting bounds and objective, reading the solution). Since the LPs
+are only part of the cost of a node, with the linearization, propagation, ACID
+and interval Newton, halving the cost of an LP yields the 17--20\% of
+Table~\ref{tab:main}. SC is slower per LP on a few systems where the dual
+method needs many more pivots than the black box: Virasoro (87 against 18
+pivots per LP) and Katsura-30 and 40 (67 against 17).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{loglogaxis}[
+  width=0.62\textwidth, height=0.62\textwidth,
+  xmin=2, xmax=5000, ymin=2, ymax=5000,
+  xlabel={black box, $\mu$s per LP}, ylabel={SC, $\mu$s per LP},
+  axis line style={gray!70}, tick style={gray!70},
+  grid=major, major grid style={gray!20},
+  legend style={draw=none, fill=none, font=\footnotesize, at={(0.03,0.97)}, anchor=north west},
+  legend cell align=left, label style={font=\small}, tick label style={font=\footnotesize}]
+\addplot[only marks, mark=*, mark size=1.4pt, color=serieA, fill opacity=0.8, draw=white, line width=0.2pt]
+  table[x=bb, y=sc] {costo_lp_sol.dat};
+\addlegendentry{systems of equations (220)}
+\addplot[only marks, mark=triangle*, mark size=1.8pt, color=serieB, fill opacity=0.8, draw=white, line width=0.2pt]
+  table[x=bb, y=sc] {costo_lp_opt.dat};
+\addlegendentry{optimization (94)}
+\addplot[gray, thin, domain=2:5000] {x};
+\addplot[gray!50, thin, dashed, domain=2:5000] {x/2};
+\node[font=\scriptsize, text=gray, rotate=45, anchor=south] at (axis cs:1500,1650) {equal cost};
+\node[font=\scriptsize, text=gray!80, rotate=45, anchor=north] at (axis cs:1800,800) {SC twice as fast};
+\end{loglogaxis}
+\end{tikzpicture}
+\caption{Time per LP of both engines on the same LPs (same boxes and polytope
+at every node), one point per instance with at least 100 LPs. Points below the
+diagonal are instances where SC is cheaper per LP.}
+\label{fig:costlp}
+\end{figure}
 
 \subsection{Where the black box loses bounds}
 

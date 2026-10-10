@@ -383,6 +383,15 @@ Celdas del solver iguales (±0.5 %). Con el dual, el paso largo pasa a
 importar (era neutro con la omisión primal). chembis y ship-1 están al borde
 del límite: se pierden con varios brazos.
 
+**Costo por LP sobre los mismos LPs (2026-10-10, sonda `DFBH_ABCAJA` con
+tiempo y pivotes por motor; una semilla, instancias con ≥ 100 LPs).** SC
+contra caja: solver µs/LP ×0.56 (220 sistemas, mediana 27 contra 53 µs),
+piv/LP ×0.74, µs/piv ×0.78, más barato en el 84 %; `ibexopt` µs/LP ×0.38
+(94 problemas, mediana 11 contra 30 µs), piv/LP ×0.80, µs/piv ×0.50, más
+barato en el 95 %. Peores: Virasoro-prod ×9 (87 contra 18 piv/LP con el
+dual puro), Katsura-30/40 ×2.5 (67 contra 17). Figura en el paper
+(`paper/costo_lp_*.dat`).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
