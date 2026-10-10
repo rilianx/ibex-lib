@@ -80,6 +80,8 @@ static long   ab_LF = 0, ab_LC = 0, ab_PF = 0, ab_PC = 0;
 static long abc_cnt[2][6] = {{0,0,0,0,0,0},{0,0,0,0,0,0}};
 static long abc_n = 0, abc_vac[2] = {0,0}, abc_gana[2] = {0,0};
 static double abc_contr[2] = {0.0, 0.0};
+static double abc_t[2] = {0.0, 0.0};   /* segundos en la pasada, por motor */
+static long abc_piv[2] = {0, 0};        /* pivotes (iteraciones de SoPlex en la caja) */
 static void abc_resumen() {
     if (!abc_n) return;
     for (int e = 0; e < 2; ++e)
@@ -87,6 +89,10 @@ static void abc_resumen() {
                 e ? "caja " : "DFB  ", abc_cnt[e][0], abc_cnt[e][1], abc_cnt[e][2], abc_cnt[e][3], abc_cnt[e][4], abc_cnt[e][5]);
     fprintf(stderr, "[abcaja] nodos=%ld | contraccion media DFB=%.5f caja=%.5f | nodos vaciados DFB=%ld caja=%ld | gana DFB=%ld caja=%ld\n",
             abc_n, abc_contr[0]/abc_n, abc_contr[1]/abc_n, abc_vac[0], abc_vac[1], abc_gana[0], abc_gana[1]);
+    for (int e = 0; e < 2; ++e)
+        fprintf(stderr, "[abcaja] costo %s: pasada %.3f s  pivotes=%ld  us/LP=%.2f  piv/LP=%.2f  us/piv=%.3f\n",
+                e ? "caja " : "DFB  ", abc_t[e], abc_piv[e], 1e6*abc_t[e]/std::max(1L, abc_cnt[e][0]),
+                (double)abc_piv[e]/std::max(1L, abc_cnt[e][0]), 1e6*abc_t[e]/std::max(1L, abc_piv[e]));
 }
 
 static double ab_accF = 0.0, ab_accC = 0.0;
@@ -3451,11 +3457,17 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
             const IntervalVector zsave(z);
             caja_ab = box;
             motor_caja = true;
+            const long p0 = n_pivots; const double t0 = ahora_s();
             una_pasada(caja_ab);
+            abc_t[1] += ahora_s() - t0; abc_piv[1] += n_pivots - p0;
             motor_caja = false;
             z = zsave;
         }
-        una_pasada(box);
+        {
+            const long p0 = n_pivots; const double t0 = ahora_s();
+            una_pasada(box);
+            if (abcaja) { abc_t[0] += ahora_s() - t0; abc_piv[0] += n_pivots - p0; }
+        }
         if (abcaja && caja_ab.size() == box.size()) {
             double per0 = 0.0, p[2] = {0.0, 0.0};
             const IntervalVector* r[2] = {&box, &caja_ab};
