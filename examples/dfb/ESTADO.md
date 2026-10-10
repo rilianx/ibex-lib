@@ -322,6 +322,14 @@ Discrete-Integralf2 pasa a ×0.86. Devex: gana sólo Bratu-0210 ×0.62 y
 DiscreteBoundary-0200 ×0.67, nada pierde; queda opcional (no cambia la
 historia y obligaría a remedir el brazo lejos).
 
+Sonda misma caja (`DFBH_ABCAJA`) con filas fusionadas (2026-10-10; la sonda
+ahora también recarga la caja negra con la relajación fusionada). LPs sin
+óptimo DFB / caja: Geneig-icse 187 / 743 (antes ~26 000 en la caja), Brown-18
+34 / 286, CountercurrentReactors2-9 116 / 151, Bellido 151 / 0. Nodos donde
+cada uno contrae más: Geneig-icse 470 / 0, CCR2-9 117 / 5, Bellido 138 / 5,
+Brown-18 32 / 10. Con la caja en 1e-9 persiste (Geneig-icse 544 / 1, CCR2-9
+49 / 5): la ventaja de precisión del dual no es la tolerancia, sin aislar.
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
