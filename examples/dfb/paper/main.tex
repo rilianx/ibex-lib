@@ -138,9 +138,9 @@ made dual feasible by relocating nonbasic variables, so that each of the $2n$
 bound problems starts dual feasible without a phase~1
 (Section~\ref{sec:properties}).
 \item A specialized simplex for the $2n$ problems: shared tableau, long-step
-dual ratio test, devex pricing, box-scaled tolerances, a per-node choice of
-strategy (dual on revised nodes, primal on tableau nodes) and a hybrid
-tableau/revised engine (Section~\ref{sec:simplex}).
+dual ratio test, devex pricing, box-scaled tolerances, a dual cold start and
+primal warm starts between bounds, and a hybrid tableau/revised engine
+(Section~\ref{sec:simplex}).
 \item Properties of the certificate: validity for any multipliers and any
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
@@ -244,24 +244,133 @@ faster with essentially the same contraction (mean 24.0\% against 24.6\%).
 % =====================================================================
 \section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
 
-\todo{Escribir. Contenido (ver ESTADO.md \S1--2):
-(i) el problema de la cota $k$: $\min / \max\, z_k$ sujeto a~\eqref{eq:homog};
-(ii) arranque en frio con la base de holguras $B=-I$, dual-factible para todo
-$k$ (Proposicion~\ref{prop:start});
-(iii) una pasada de hasta $2n$ cotas con un solo tableau, orden de las cotas y
-salto de Achterberg;
-(iv) estrategias: dual puro (reubica todas las no basicas, $k$ incluida), primal
-(conserva la factibilidad primal), y la estrategia por nodo de la omision;
-(v) test de razon de paso largo, Harris relativo, devex, tolerancia primal a
-escala de la caja $\min(10^{-9}(1+|v|),\,\tau\,\wid)$ con $\tau=10^{-3}$;
-(vi) motor hibrido: tableau explicito con LU diferida y guarda de deriva, o
-simplex revisado sin tableau (BTRAN/FTRAN, Forrest--Tomlin, x$_B$ incremental)
-cuando la relajacion pasa de 40 filas; en ambos, pasos primales desde la base de
-la cota anterior, y el dual solo para el arranque en frio; el dual da la cota
-anytime monotona (Seccion~\ref{sec:properties}), disponible como opcion;
-(vii) filas gemelas de la linealizacion (misma normal, un lado cada una)
-fusionadas en una fila con holgura de rango;
-(viii) el certificado se calcula una vez por cota con los $\lambda$ de la base final.}
+For each structural variable $x_k$ the contractor needs the two bounds of
+\begin{equation}\label{eq:lpk}
+\mathrm{LP}_k:\quad \min\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
+\end{equation}
+and of its maximization, obtained with $-z_k$. A basis is a set of $m$ columns
+of $\Abar$ forming a nonsingular matrix $B$; with cost vector $c=\pm e_k$, the
+multipliers are $\lambda^T = c_B^T B^{-1}$ and the reduced costs
+$d = c - \Abar^T\lambda$. For the bounded-variable simplex, a basis with each
+nonbasic variable at one of its bounds is \emph{dual feasible} if $d_j\ge 0$ for
+nonbasic variables at their lower bound and $d_j\le 0$ for those at their upper
+bound, and \emph{primal feasible} if the basic variables lie within their
+bounds. This section describes how the simplex solves the $2n$ problems of a
+node; the design choices are evaluated in Section~\ref{sec:experiments}.
+
+\subsection{One pass over the bounds}
+
+At each node the relaxation is computed, written in the
+form~\eqref{eq:homog}, and loaded once. The affine linearizer writes an
+equation as two one-sided rows with the same normal; in the homogeneous form
+they are merged into one row whose slack has the interval of both sides, which
+halves $m$ on square systems. The contractor then makes one pass over the up
+to $2n$ bounds with a single simplex: each LP starts from the final basis of
+the previous one. Every bound is contracted as soon as it is certified, so the
+next LP already sees the smaller box.
+
+Two rules, both from the polytope-hull contractor of
+Ibex~\cite{baharev2009distillation}, decide which LPs are solved. A bound is
+\emph{skipped} when a primal point obtained earlier in the pass already
+attains it, since its LP would return that value. Among the remaining bounds,
+the next one is the farthest from the last primal point. The tableau suggests a
+better order: for $x_k$ basic in row $r$, the number of nonbasic columns whose
+reduced cost for the objective $\pm z_k$ would have the wrong sign is the
+number of primal infeasibilities to repair, and can be counted in
+$O(\mathrm{nnz}(\text{row } r))$ without pivoting. Ordering by this count
+saves about 5\% of CPU time on both benchmarks
+(Section~\ref{sec:experiments}); since the black box has no tableau, the
+controlled comparison uses the farthest-bound rule in both engines.
+
+If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
+empty and the pass stops. If an LP ends without an optimal basis (iteration
+limit or numerical failure), its bound is not contracted and the pass goes on.
+
+\subsection{Starting and warm-starting}
+
+The first LP of a pass has no previous basis. It starts from the slack basis
+$B=-I_m$, which is dual feasible for every $\mathrm{LP}_k$
+(Proposition~\ref{prop:start}), and is solved by the dual method, with no
+phase~1.
+
+Between two consecutive LPs of the pass the objective changes, and the
+contracted bound changes the box. Two warm starts are possible from the
+previous optimal basis:
+\begin{itemize}
+\item \emph{dual}: relocate every nonbasic variable to the bound indicated by
+the sign of its new reduced cost, $z_k$ included, which restores dual
+feasibility (Proposition~\ref{prop:start}), and continue with the dual method;
+the certified bound is then available, and nondecreasing, at every iteration
+(Proposition~\ref{prop:mono});
+\item \emph{primal}: keep the nonbasic variables where they are; the basis
+remains primal feasible, up to the contracted bound, and is reoptimized with
+primal steps, which is the usual warm start of an LP solver.
+\end{itemize}
+Both reach an optimal basis, so the certificate at termination is exact
+(Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
+empty is decided in the first LP, common to both. They differ only in cost. SC uses the primal warm start, and keeps the dual method
+for the cold start and as an option when the anytime bound is wanted
+\todo{cifras de la ablacion}.
+
+\subsection{Pivoting rules}
+
+\paragraph{Dual steps.} The leaving row is chosen by devex
+weights~\cite{harris1973devex}. The ratio test is the long-step (bound
+flipping) test~\cite{maros2003generalized,koberstein2005dual}: it passes the
+breakpoints of the piecewise-linear dual function along the ray while its
+slope stays positive, flipping the corresponding boxed nonbasic variables
+between their bounds, and among the candidates at the chosen breakpoint it
+takes the largest pivot within a relative Harris band.
+
+\paragraph{Primal steps.} The entering column is chosen by Dantzig's rule
+(devex is available and gives about 1\% on our benchmark). The ratio test
+filters out pivots smaller than a stability threshold before choosing the
+leaving row; without this filter a rejected pivot was indistinguishable from
+optimality, and 40\% of the reported optima were not dual feasible.
+
+\paragraph{Tolerances and infinite bounds.} The primal feasibility tolerance
+of $z_j$ is $\min\{10^{-9}(1+|v|),\;\tau\,\wid\iv{z}_j\}$, where $v$ is the
+bound being tested and $\tau=10^{-3}$. On narrow boxes a fixed tolerance can be
+wider than the box itself, and the simplex then accepts as feasible a polytope
+that is empty. Slacks may have an infinite side; a nonbasic variable always
+sits at a finite bound, the other one if the bound indicated by its reduced
+cost is infinite, and at zero if it is free.
+
+\subsection{Two engines}
+
+The cost of a pivot depends on the size of the relaxation, and SC has two
+implementations of the same steps.
+
+\paragraph{Tableau engine.} For $m\le 40$ the simplex keeps the rows of the
+tableau $B^{-1}\Abar$ explicitly, in sparse form, together with $\lambda$, $d$
+and $x_B$, all updated by row operations at each pivot. The rows are not
+refactorized on a schedule: a guard monitors the drift of the updated values,
+and the basis is refactorized from $\Abar$ only when it is detected.
+
+\paragraph{Revised engine.} For larger relaxations, where the tableau would
+cost $O(m\,(n+m))$ per pivot, SC keeps an LU factorization of $B$ (that of
+SoPlex, with Forrest--Tomlin updates~\cite{forrest1972updated} and a
+refactorization every 50 pivots), and computes per pivot only the row of the
+leaving variable, by one BTRAN and a product with $\Abar$, and the column of
+the entering one, by one FTRAN. The FTRAN is computed once and serves the
+devex weights, the Forrest--Tomlin update and an incremental update of $x_B$,
+which is recomputed from scratch every 32 pivots. The reduced costs and
+$\lambda$ are updated with the pivot row, as in the tableau engine.
+
+The threshold of 40 rows was chosen on the benchmark; below it the explicit
+tableau is cheaper, above it the revised engine is
+\todo{cifras de la ablacion: solo tableau, solo revisado, umbral 20}.
+
+\subsection{Certification}
+
+When an LP terminates, $\lambda$ is read from the final basis: in the tableau
+engine it is maintained explicitly, and in the revised engine it is updated
+with the pivot row. The certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
+once per bound in outward-rounded interval arithmetic, over the rows with
+$\lambda_i\neq 0$, and $\iv{C}_k$ and $\iv{R}$ follow in $O(n+m)$
+(Definition~\ref{def:cert}). The simplex itself never needs to be correct:
+a wrong pivot or an inaccurate $\lambda$ yields a weaker bound, never an
+invalid one (Proposition~\ref{prop:valid}).
 
 % =====================================================================
 \section{Properties of the certificate}\label{sec:properties}
@@ -317,16 +426,8 @@ certificate costs one LP, we measured such reuse and it does not pay
 
 \subsection{Tightness}
 
-Consider the bound problem
-\begin{equation}\label{eq:lpk}
-\mathrm{LP}_k:\quad \min\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
-\end{equation}
-with $\iv{z}$ bounded; maximization is obtained with $-z_k$. A basis is a set
-of $m$ columns of $\Abar$ forming a nonsingular matrix $B$; the multipliers are
-$\lambda^T = c_B^T B^{-1}$ and the reduced costs $d = e_k - \Abar^T\lambda$.
-For the bounded-variable simplex, a basis with each nonbasic variable at one of
-its bounds is \emph{dual feasible} if $d_j\ge 0$ for nonbasic variables at their
-lower bound and $d_j\le 0$ for those at their upper bound.
+Consider the bound problem $\mathrm{LP}_k$~\eqref{eq:lpk} with $\iv{z}$
+bounded, and the notation of Section~\ref{sec:simplex}.
 
 \begin{lemma}\label{lem:dualfun}
 For any $\lambda$ with $d = e_k - \Abar^T\lambda$ and $d_k=0$, the exact
@@ -440,11 +541,10 @@ nondecreasing, strictly so on nondegenerate iterations.
 
 The certificate can thus be read at any point of the dual method, and an LP
 can be truncated with a valid bound. We measured such truncation and it does
-not pay (Section~\ref{sec:discussion}). The per-node strategy keeps the dual
-method on revised nodes and uses the primal method on tableau nodes, where it
-is faster; the primal method reaches an optimal basis too, so
+not pay (Section~\ref{sec:discussion}). SC uses the primal warm start by default, which is faster
+(Section~\ref{sec:simplex}); the primal method reaches an optimal basis too, so
 Proposition~\ref{prop:exact} still applies at termination, and only the anytime
-property is lost on those nodes.
+property is given up between bounds.
 
 \paragraph{Cost.}
 Certifying a bound costs the same in SC as the Neumaier--Shcherbina
