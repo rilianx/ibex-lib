@@ -462,6 +462,12 @@ its dual solution, or its Farkas ray if it reports infeasibility, is passed to
 the same interval certificate $\iv{\gamma}=\Abar^T\lambda$, which is the
 Neumaier--Shcherbina bound written in the homogeneous form.
 \end{itemize}
+The homogeneous form is therefore not what separates the two engines: the
+certificate, its evaluation over the box and its validity on sub-boxes are
+common to both, and SoPlex itself solves ranged rows in the same form, with
+one bounded logical variable per row. What differs is a simplex designed for
+that certificate: the free dual-feasible start, one basis shared by the $2n$
+bounds, and a primal tolerance scaled to the width of the box.
 The black box was given its best configuration. Its feasibility and optimality
 tolerance matters: $10^{-9}$ makes SoPlex report spurious infeasibility on
 relaxations with nearly-equal rows, while $10^{-6}$ weakens the dual on
