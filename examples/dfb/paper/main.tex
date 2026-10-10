@@ -166,8 +166,7 @@ tibio tras la biseccion~\cite{yamamura2001dual,yamamura2006dual}.}
 
 \paragraph{Rigorous bounds for linear programs.}
 \todo{Neumaier--Shcherbina~\cite{neumaier2004safe}; Jansson~\cite{jansson2004rigorous};
-LP exacto o con refinamiento iterativo (QSopt\_ex, SoPlex; verificar
-referencias). Linear bounding de Domes y Neumaier~\cite{domes2012rigorous}, \S5:
+LP exacto o con refinamiento iterativo~\cite{applegate2007exact,gleixner2016iterative}. Linear bounding de Domes y Neumaier~\cite{domes2012rigorous}, \S5:
 la formula del certificado, aplicada a posteriori y a pocas variables.}
 
 \paragraph{Optimization-based bound tightening.}
@@ -225,6 +224,22 @@ A contraction step replaces $\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$
 an emptiness test checks $0\notin\iv{R}(\lambda,\iv{z})$.
 Section~\ref{sec:simplex} explains how the simplex produces $\lambda$, and
 Section~\ref{sec:properties} why these steps are valid and when they are tight.
+
+\paragraph{Why not a rigorous simplex.}
+Validity does not depend on how $\lambda$ was computed: any multiplier vector
+gives a valid bound, and a poor one only gives a weaker bound. Rigor is
+therefore needed only in the final evaluation of $\iv{\gamma}$ and
+$\iv{C}_k$, not in the pivoting. Carrying intervals through the pivots
+instead pays the overestimation of interval Gaussian
+elimination~\cite{neumaier1990interval}, whose widths grow with the number of
+pivots, and solving each LP exactly in rational arithmetic, or to high
+precision by iterative refinement~\cite{applegate2007exact,gleixner2016iterative},
+buys an exactness that the bound does not need, at a cost that $2n$ LPs per
+node cannot afford. An early version of our contractor pivoted in interval
+arithmetic: on a one-box benchmark it had to rebuild the tableau from the
+original relaxation 731 times to control the width growth, and pivoting in
+floating point with certification of the final multipliers only was 2.8 times
+faster with essentially the same contraction (mean 24.0\% against 24.6\%).
 
 % =====================================================================
 \section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
