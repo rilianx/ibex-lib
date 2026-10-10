@@ -28,7 +28,7 @@
 \theoremstyle{remark}
 \newtheorem{remark}[proposition]{Remark}
 
-\title{Dual Feasible Bounding: a certified simplex for\\ polytope-hull contraction in interval branch and bound}
+\title{A self-certifying simplex for rigorous\\ polytope-hull contraction in interval branch and bound}
 \author{Ignacio Araya \and \todo{coautores}}
 \date{\todo{borrador del 2026-10-10}}
 
@@ -41,9 +41,9 @@ Polytope-hull contractors are a key component of interval branch-and-bound
 solvers: at every node they bound each variable over a linear relaxation of the
 constraints by solving $2n$ linear programs. Current implementations delegate
 these programs to a floating-point LP solver and recover rigor afterwards, by
-Neumaier--Shcherbina safe bounds and Farkas-ray verification. We present Dual
-Feasible Bounding (DFB), a contractor built around a simplex that computes its
-own multipliers. The rigor principle is the classical one: writing the
+Neumaier--Shcherbina safe bounds and Farkas-ray verification. We present a
+self-certifying simplex (SC): a simplex that computes its own multipliers, so
+that the contractor no longer depends on an external solver. The rigor principle is the classical one: writing the
 relaxation as $\Abar z = 0$ with interval-bounded slacks, any multiplier vector
 $\lambda$ yields an interval certificate $\lambda^T\Abar$ that bounds a
 variable, or proves emptiness, over the current box and every sub-box. The
@@ -53,12 +53,12 @@ engine that solves small relaxations on an explicit tableau and large ones with
 a tableau-free revised simplex, both with primal steps from the previous
 bound's basis. We compare it in a controlled setting: the same contractor, with
 the same relaxation, the same pass, the same certificate and the same policy
-for uncertified bounds, using either DFB or a state-of-the-art LP solver
+for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 139 constrained
-global optimization problems, DFB is 21--30\% faster with similar search trees.
+global optimization problems, SC is 21--30\% faster with similar search trees.
 On 264 systems of equations it is 7--13\% faster, explores 5--10\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
-box reports no optimum, and slightly tighter ones elsewhere. DFB never exceeds
+box reports no optimum, and slightly tighter ones elsewhere. SC never exceeds
 the exact LP hull.
 \end{abstract}
 
@@ -113,7 +113,7 @@ bisection, the optimal tableau of the parent remains dual feasible for the
 child, so that an LP emptiness test can be resumed by the dual simplex method
 with few or no pivots per box.
 
-What changes in DFB is \emph{where the multipliers come from and how often a
+What changes with a self-certifying simplex is \emph{where the multipliers come from and how often a
 usable certificate is available}. In the approaches above, multipliers are a
 by-product of an external solver and certification is a post-processing step;
 its cost and fragility lead to applying it to a few promising
@@ -121,7 +121,7 @@ variables~\cite{domes2012rigorous}, to recomputing it only periodically and
 reusing it in between~\cite{reyes2023preconditioning}, or to abandoning the pass
 when it fails (Ibex). The dual-simplex warm start of Yamamura et al.\ concerns a
 single feasibility LP on a fixed relaxation, without rigorous certification.
-DFB is a simplex designed for the certificate: in the homogeneous form every
+The self-certifying simplex is designed for the certificate: in the homogeneous form every
 basis can be made dual feasible by relocating nonbasic variables, so each of the
 $2n$ bound problems, and each problem after the box contracts, starts dual
 feasible; the $2n$ problems share one tableau; and the multipliers of the
@@ -146,7 +146,7 @@ sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
 (Section~\ref{sec:properties}).
 \item A controlled evaluation in Ibex, on 264 systems of equations and 139
-optimization problems, in which the same contractor runs either DFB or a
+optimization problems, in which the same contractor runs either SC or a
 black-box LP solver feeding the same certificate; a rigor check against the
 exact LP hull; a same-box analysis of where the black box loses bounds; and an
 ablation (Section~\ref{sec:experiments}).
@@ -183,7 +183,7 @@ devex~\cite{harris1973devex}; dual steepest edge~\cite{forrest1992steepest};
 Forrest--Tomlin; arranque tibio.}
 
 % =====================================================================
-\section{The DFB relaxation and its certificate}\label{sec:dfb}
+\section{The homogeneous relaxation and its certificate}\label{sec:dfb}
 
 Let $\iv{x}\in\IR^n$ be the current box. A linearizer returns a matrix
 $A\in\R^{m\times n}$ of floating-point numbers and an interval vector
@@ -223,7 +223,7 @@ and the \emph{residual} is $\iv{R}(\lambda,\iv{z}) := \sum_{j}\iv{\gamma}_j\,\iv
 
 A contraction step replaces $\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$;
 an emptiness test checks $0\notin\iv{R}(\lambda,\iv{z})$.
-Section~\ref{sec:simplex} explains how DFB produces $\lambda$, and
+Section~\ref{sec:simplex} explains how the simplex produces $\lambda$, and
 Section~\ref{sec:properties} why these steps are valid and when they are tight.
 
 % =====================================================================
@@ -296,7 +296,7 @@ A certificate computed at a node can thus be reused in all its descendants,
 as we did with the preconditioner of~\cite{reyes2023preconditioning}
 and Gleixner et al.\ with their dual-derived
 inequalities~\cite{gleixner2017three}. It stays valid, but it was optimized for
-the parent box and is usually weak in a child; in DFB, where a fresh
+the parent box and is usually weak in a child; with SC, where a fresh
 certificate costs one LP, we measured such reuse and it does not pay
 (Section~\ref{sec:discussion}).
 
@@ -358,7 +358,7 @@ certificate is exact as well.
 In floating point, the computed enclosure exceeds the LP bound by at most
 $\sum_j \wid(\iv{\gamma}_j)\,\magn(\iv{z}_j)$ plus the effect of the inaccuracy of
 $\lambda$, the same slack as in the Neumaier--Shcherbina
-bound~\cite{neumaier2004safe}. On identical boxes, DFB attains the exact hull in
+bound~\cite{neumaier2004safe}. On identical boxes, SC attains the exact hull in
 97\% of the bounds where it differs from the standard contractor
 (Section~\ref{sec:experiments}).
 
@@ -432,13 +432,13 @@ Proposition~\ref{prop:exact} still applies at termination, and only the anytime
 property is lost on those nodes.
 
 \paragraph{Cost.}
-Certifying a bound costs the same in DFB as the Neumaier--Shcherbina
+Certifying a bound costs the same in SC as the Neumaier--Shcherbina
 post-processing. Both compute a product of the transposed constraint matrix by
 the multipliers, restricted to the rows with $\lambda_i\neq 0$, plus $O(n+m)$
-operations: $\iv{\gamma}=\Abar^T\lambda$ and $\iv{C}_k$ in DFB, and the
+operations: $\iv{\gamma}=\Abar^T\lambda$ and $\iv{C}_k$ in SC, and the
 residual $A^T\lambda-c$ and the bound $\lambda^T\iv{b}-(A^T\lambda-c)^T\iv{x}$
 in Neumaier--Shcherbina. On three optimization problems (ex6\_1\_3, ex7\_2\_3,
-chem) the DFB certificate costs 1.3--3.1\,$\mu$s per LP, and the
+chem) the SC certificate costs 1.3--3.1\,$\mu$s per LP, and the
 post-processing 1.9--3.0\,$\mu$s plus 1.2--1.5\,$\mu$s to extract the solution
 from the external solver. The difference between the two approaches is
 therefore not the cost of a certificate but where $\lambda$ comes from, which is
@@ -455,8 +455,8 @@ certificate and the same policy when an LP yields no certificate: that bound
 is not contracted and the pass continues. They differ only in where the
 multipliers come from:
 \begin{itemize}
-\item \emph{DFB}: the multipliers of the final basis of our simplex;
-\item \emph{black box}: SoPlex~4.0.2 solves each LP on the same relaxation
+\item \emph{SC}: the multipliers of the final basis of the self-certifying simplex;
+\item \emph{BB} (black box): SoPlex~4.0.2 solves each LP on the same relaxation
 (warm-started from the previous bound, as in the polytope-hull contractor), and
 its dual solution, or its Farkas ray if it reports infeasibility, is passed to
 the same interval certificate $\iv{\gamma}=\Abar^T\lambda$, which is the
@@ -470,7 +470,7 @@ for optimization, the best value in each case. Turning off presolving or
 scaling, or forcing the row or column representation, did not help; forcing the
 primal algorithm reduced the spurious infeasibility but made the overall
 results worse. Both engines use the bound order that only needs the last primal
-point (farthest bound first); DFB can also order the bounds with information of
+point (farthest bound first); SC can also order the bounds with information of
 its tableau, which we report separately.
 
 \paragraph{Setting.}
@@ -495,22 +495,22 @@ number of runs that finish within the time limit.
 
 \subsection{Rigor}
 
-DFB is rigorous by Proposition~\ref{prop:valid}; we also checked it empirically
+SC is rigorous by Proposition~\ref{prop:valid}; we also checked it empirically
 against the exact LP hull. On identical boxes and with the same polytope, for
-every bound where DFB and the polytope-hull contractor of Ibex give different
+every bound where SC and the polytope-hull contractor of Ibex give different
 results, we solved the bound LP of the polytope over the input box with a fresh
 LP solver. No valid contraction can go beyond this hull. Over 973 such bounds in
-four systems (Table~\ref{tab:hull}), DFB never went beyond the hull and attained
+four systems (Table~\ref{tab:hull}), SC never went beyond the hull and attained
 it in 97\% of the cases.
 
 \begin{table}[t]
 \centering
-\caption{Bounds where DFB and the polytope-hull contractor of Ibex differ on the
+\caption{Bounds where SC and the polytope-hull contractor of Ibex differ on the
 same box, compared with the exact hull of the polytope over the input box.}
 \label{tab:hull}
 \begin{tabular}{lrrr}
 \toprule
-system & bounds & DFB beyond hull & DFB at hull\\
+system & bounds & SC beyond hull & SC at hull\\
 \midrule
 Bratu-0060             &  84 & 0 &  84\\
 Discrete-Integralf2-13 &  22 & 0 &  22\\
@@ -524,11 +524,11 @@ total                  & 973 & 0 & 939\\
 
 \subsection{Main comparison}
 
-Table~\ref{tab:main} compares DFB with the black box. On optimization problems,
-whose relaxations are small, DFB is 21--30\% faster with similar search trees
-(2--8\% fewer cells). On systems of equations DFB is 7--13\% faster and explores
+Table~\ref{tab:main} compares SC with the black box. On optimization problems,
+whose relaxations are small, SC is 21--30\% faster with similar search trees
+(2--8\% fewer cells). On systems of equations SC is 7--13\% faster and explores
 5--10\% fewer cells; it finishes 360 runs against 356. With the same bound
-order, DFB loses only on Discrete-Integralf2 ($\times1.12$ in CPU time on the
+order, SC loses only on Discrete-Integralf2 ($\times1.12$ in CPU time on the
 family) and Katsurabis-14 ($\times1.43$); with its own order it loses on no
 family by more than 15\%. The largest gains are on systems where the black box
 reports no optimum for many LPs (Brown-18 to 30, $\times0.31$ on the family,
@@ -538,8 +538,8 @@ merging) the two engines are within 10\%, in both directions.
 
 \begin{table}[t]
 \centering
-\caption{DFB against the best black-box configuration, inside the same
-contractor. Ratios DFB/black box (cells and CPU) for runs whose reference time
+\caption{SC against the best black-box (BB) configuration, inside the same
+contractor. Ratios SC/BB (cells and CPU) for runs whose reference time
 exceeds 0.1, 1 and 5\,s, and runs finished. The last rows use the same bound
 order in both engines.}
 \label{tab:main}
@@ -568,13 +568,13 @@ at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
 \item \emph{No optimum.} On some relaxations SoPlex ends without an optimal
 basis (infeasibility it cannot prove, unknown status or iteration limit), and
 the bound is lost. On Brown-18 this happens for 286 of 1\,710 LPs, against 34
-for DFB, whose primal tolerance is scaled to the width of the box; on
+for SC, whose primal tolerance is scaled to the width of the box; on
 Geneig-icse, 743 against 187. With the twin rows unmerged this mechanism was
 dominant (a third of the LPs of the black box on Geneig-icse); merging them
 removes most of it.
 \item \emph{Dual accuracy.} When both engines reach an optimum, the
-certificate built from the multipliers of DFB is often slightly tighter. On
-Geneig-icse, DFB contracts more in 470 of 2\,117 nodes and the black box in
+certificate built from the multipliers of SC is often slightly tighter. On
+Geneig-icse, SC contracts more in 470 of 2\,117 nodes and the black box in
 none; on CountercurrentReactors2-9, 117 against 5; on Bellido, 138 against 5.
 The difference per node is small but compounds along the search. It persists
 with tolerance $10^{-9}$ for the black box (544 against 1 on Geneig-icse); we
@@ -591,7 +591,7 @@ and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \toprule
 & \multicolumn{2}{c}{contraction} & \multicolumn{2}{c}{nodes won} & \multicolumn{2}{c}{LPs not optimal}\\
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
-system & DFB & black box & DFB & black box & DFB & black box\\
+system & SC & BB & SC & BB & SC & BB\\
 \midrule
 Geneig-icse               & 0.307 & 0.306 &  470 &  0 &  187 & 743\\
 CountercurrentReactors2-9 & 0.042 & 0.042 &  117 &  5 &  116 & 151\\
@@ -603,12 +603,12 @@ Bellido                   & 0.281 & 0.281 &  138 &  5 &  151 &   0\\
 
 \subsection{Ablation}
 
-Table~\ref{tab:ablation} removes one component of DFB at a time. No component
+Table~\ref{tab:ablation} removes one component of SC at a time. No component
 changes the pruning: all cell ratios are within 1\%. The components differ in
 cost, and only on systems of equations, where relaxations are larger. The hybrid
 engine is the one that matters (without it, CPU time $\times1.13$--$1.25$).
 With the same engine (tableau), the primal method is 15--20\% faster than the
-dual one; DFB now uses primal steps in both engines and the dual method only for
+dual one; SC now uses primal steps in both engines and the dual method only for
 cold starts, where the free dual-feasible basis is the natural one. Ordering the bounds with information of the tableau, instead of the
 farthest-bound rule, gives a further $\times0.87$--$0.91$ on systems of
 equations.
@@ -616,7 +616,7 @@ equations.
 \begin{table}[t]
 \centering
 \caption{Ablation on systems of equations: each row removes one component
-from DFB. Cell and CPU ratios against full DFB for runs above 0.1, 1 and 5\,s.
+from SC. Cell and CPU ratios against full SC for runs above 0.1, 1 and 5\,s.
 On optimization problems all ratios are within $\pm3\%$.}
 \label{tab:ablation}
 \begin{tabular}{lcccc}
@@ -638,7 +638,7 @@ primal against dual, both on tableau        & 1.01 & 0.85 & 0.82 & 0.80\\
 \todo{repetir la ablacion con la omision final (pasos primales en ambos motores, umbral 40, filas gemelas fusionadas)}
 
 \paragraph{Relation to the polytope-hull contractor of Ibex.}
-Against the contractor distributed with Ibex, DFB explores about half the
+Against the contractor distributed with Ibex, SC explores about half the
 cells on systems of equations. Most of that gap comes from the contractor and
 not from the engine: when the LP solver reports infeasibility without a
 verifiable ray, the contractor of Ibex abandons the pass, and the node is not
@@ -647,7 +647,7 @@ pruned. The black-box engine above, inside our contractor, recovers most of it.
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
 
-\todo{Por que gana DFB (robustez del certificado, no un poliedro mejor); donde
+\todo{Por que gana SC (robustez del certificado, no un poliedro mejor); donde
 pierde (Bratu-0050, BroydenTri, Katsurabis-14); lo que no funciono y por que:
 reuso de certificados en subcajas, truncamiento anytime, cortes en $x^*$,
 cota lagrangiana; limites: igualdades estrechas (bearing) y el buscador de
