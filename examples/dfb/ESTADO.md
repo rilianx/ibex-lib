@@ -366,7 +366,22 @@ controlada con la omisión nueva (`results/controlado_dual_puro_2026-10-10.csv`)
 Por familia (lejos contra caja): Brown ×0.29, Geneig-icse ×0.41, Bellido
 ×0.70, Bratu ×0.80; pierden BroydenTri ×1.11 y Katsurabis-14 ×1.55. El
 umbral 20 gana ~2 %: queda en 40 (no compensa remedir). Ablación contra la
-omisión nueva en curso (`abl3`).
+omisión nueva (`results/ablacion_dual_puro_2026-10-10.csv`), contra SC
+completo (dual puro, umbral 40, fusión):
+
+| brazo | solver cpu > 0.1 / > 1 / > 5 s | terminan (361) | `ibexopt` cpu > 0.1 s | resueltas (131) |
+|---|---|---|---|---|
+| arranque tibio primal | ×1.04 / ×1.04 / ×1.02 | 360 | ×0.98 | 129 |
+| sin paso largo | ×1.08 / ×1.08 / ×1.05 | 360 | ×1.00 | 130 |
+| sin devex | ×1.02 / ×1.03 / ×1.02 | 362 | ×1.00 | 131 |
+| sin τ | ×1.01 / ×1.02 / ×0.99 | 360 | ×0.99 | 130 |
+| sólo tableau | ×1.12 / ×1.18 / ×1.20 | 353 | ×1.01 | 131 |
+| sólo revisado | ×0.98 / ×0.99 / ×0.96 | 363 | ×1.05 | 129 |
+| sin fusión | ×1.46 / ×1.47 / ×1.35 | 354 | ×1.01 | 129 |
+
+Celdas del solver iguales (±0.5 %). Con el dual, el paso largo pasa a
+importar (era neutro con la omisión primal). chembis y ship-1 están al borde
+del límite: se pierden con varios brazos.
 
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor

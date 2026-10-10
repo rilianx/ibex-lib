@@ -309,8 +309,8 @@ primal steps, which is the usual warm start of an LP solver.
 Both reach an optimal basis, so the certificate at termination is exact
 (Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
 empty is decided in the first LP, common to both. They differ only in cost,
-and the dual warm start is the cheaper one on our benchmarks
-\todo{cifras de la ablacion}: SC uses the dual method throughout, so every
+and the dual warm start is the cheaper one on systems of equations
+(Table~\ref{tab:ablation}): SC uses the dual method throughout, so every
 basis it visits is dual feasible and the certified bound is valid at every
 iteration. Primal steps remain as a fallback, when relocation is impossible
 because the bound indicated by a reduced cost is infinite.
@@ -361,9 +361,9 @@ devex weights, the Forrest--Tomlin update and an incremental update of $x_B$,
 which is recomputed from scratch every 32 pivots. The reduced costs and
 $\lambda$ are updated with the pivot row, as in the tableau engine.
 
-The threshold of 40 rows was chosen on the benchmark; below it the explicit
-tableau is cheaper, above it the revised engine is
-\todo{cifras de la ablacion: solo tableau, solo revisado, umbral 20}.
+The threshold of 40 rows was chosen on the benchmark: the tableau alone is
+12--20\% slower on systems of equations, and the revised engine alone 5\%
+slower on optimization problems (Table~\ref{tab:ablation}).
 
 \subsection{Certification}
 
@@ -727,38 +727,49 @@ Bellido                   & 0.281 & 0.281 &  138 &  5 &  151 &   0\\
 \subsection{Ablation}
 
 Table~\ref{tab:ablation} removes one component of SC at a time. No component
-changes the pruning: all cell ratios are within 1\%. The components differ in
-cost, and only on systems of equations, where relaxations are larger. The hybrid
-engine is the one that matters (without it, CPU time $\times1.13$--$1.25$).
-With the same engine (tableau), the primal method is 15--20\% faster than the
-dual one; SC now uses primal steps in both engines and the dual method only for
-cold starts, where the free dual-feasible basis is the natural one. Ordering the bounds with information of the tableau, instead of the
-farthest-bound rule, gives a further $\times0.87$--$0.91$ on systems of
-equations.
+changes the pruning on systems of equations: all cell ratios are within 1\%.
+The components differ in cost, mostly on systems of equations, whose
+relaxations are larger. Merging the twin rows is the largest saving (without
+it, CPU time $\times1.35$--$1.47$ and seven fewer runs finished), followed by
+the hybrid engine (with the tableau alone, $\times1.12$--$1.20$ and eight fewer
+runs). The revised engine alone is about as fast on systems of equations, but
+slower on the small relaxations of optimization problems; the threshold of 40
+rows keeps the best of both. Among the pivoting rules, the long-step ratio
+test matters for the dual method ($\times1.05$--$1.08$ without it), devex gives
+2--3\%, and the box-scaled tolerance is neutral in time: it is there for
+correctness on narrow boxes (Section~\ref{sec:simplex}). The primal warm start
+is 2--4\% slower on systems of equations and 2--5\% faster on optimization
+problems, where it fails to solve two problems that the dual method solves
+(chembis and ship-1, both close to the time limit). Ordering the bounds with
+information of the tableau instead of the farthest-bound rule saves 3\% on
+systems of equations and 0--7\% on optimization problems.
 
 \begin{table}[t]
 \centering
-\caption{Ablation on systems of equations: each row removes one component
-from SC. Cell and CPU ratios against full SC for runs above 0.1, 1 and 5\,s.
-On optimization problems all ratios are within $\pm3\%$.}
+\caption{Ablation: each row changes one component of SC. Ratios against full
+SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
+runs finished out of 528 (full SC: 361), CPU on optimization problems above
+0.1\,s and problems solved in all seeds (full SC: 131). The last row comes
+from the bank of Table~\ref{tab:main}.}
 \label{tab:ablation}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccccccc}
 \toprule
-& cells & \multicolumn{3}{c}{CPU}\\
-\cmidrule(lr){3-5}
-configuration & & $>0.1$\,s & $>1$\,s & $>5$\,s\\
+& \multicolumn{5}{c}{systems of equations} & \multicolumn{2}{c}{optimization}\\
+\cmidrule(lr){2-6}\cmidrule(lr){7-8}
+configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-primal method, tableau only                 & 1.00 & 0.96 & 0.97 & 1.01\\
-without long-step ratio test                & 1.01 & 0.99 & 0.99 & 1.01\\
-without box-scaled tolerance                & 1.00 & 1.00 & 1.00 & 1.00\\
-without devex                               & 1.00 & 1.03 & 1.03 & 1.05\\
-tableau only (no hybrid engine)             & 1.00 & 1.13 & 1.19 & 1.25\\
+primal warm start                 & 1.00 & 1.04 & 1.04 & 1.02 & 360 & 0.98 & 129\\
+without long-step ratio test      & 1.00 & 1.08 & 1.08 & 1.05 & 360 & 1.00 & 130\\
+without devex                     & 1.00 & 1.02 & 1.03 & 1.02 & 362 & 1.00 & 131\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.02 & 0.99 & 360 & 0.99 & 130\\
+tableau engine only               & 1.00 & 1.12 & 1.18 & 1.20 & 353 & 1.01 & 131\\
+revised engine only               & 1.00 & 0.98 & 0.99 & 0.96 & 363 & 1.05 & 129\\
+without merging twin rows         & 1.00 & 1.46 & 1.47 & 1.35 & 354 & 1.01 & 129\\
 \midrule
-primal against dual, both on tableau        & 1.01 & 0.85 & 0.82 & 0.80\\
+farthest-bound order              & 1.00 & 1.03 & 1.03 & 1.00 & 360 & 1.07 & 129\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{repetir la ablacion con la omision final (pasos primales en ambos motores, umbral 40, filas gemelas fusionadas)}
 
 \paragraph{Relation to the polytope-hull contractor of Ibex.}
 Against the contractor distributed with Ibex, SC explores about half the
