@@ -50,13 +50,13 @@ variable, or proves emptiness, over the current box and every sub-box. The
 contribution is a simplex designed for this certificate: a free dual-feasible
 start for every bound, one tableau shared by the $2n$ problems, and a hybrid
 engine that solves small relaxations on an explicit tableau and large ones with
-a tableau-free revised simplex, both with primal steps from the previous
-bound's basis. We compare it in a controlled setting: the same contractor, with
+a tableau-free revised simplex, both with the dual method, so that a valid
+certified bound is available at every iteration. We compare it in a controlled setting: the same contractor, with
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 139 constrained
-global optimization problems, SC is 21--30\% faster with similar search trees.
-On 264 systems of equations it is 7--13\% faster, explores 5--10\% fewer cells
+global optimization problems, SC is 20--28\% faster with similar search trees.
+On 264 systems of equations it is 12--18\% faster, explores 5--10\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. SC never exceeds
 the exact LP hull.
@@ -138,8 +138,8 @@ made dual feasible by relocating nonbasic variables, so that each of the $2n$
 bound problems starts dual feasible without a phase~1
 (Section~\ref{sec:properties}).
 \item A specialized simplex for the $2n$ problems: shared tableau, long-step
-dual ratio test, devex pricing, box-scaled tolerances, a dual cold start and
-primal warm starts between bounds, and a hybrid tableau/revised engine
+dual ratio test, devex pricing, box-scaled tolerances, dual warm starts between
+bounds, and a hybrid tableau/revised engine
 (Section~\ref{sec:simplex}).
 \item Properties of the certificate: validity for any multipliers and any
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
@@ -308,9 +308,12 @@ primal steps, which is the usual warm start of an LP solver.
 \end{itemize}
 Both reach an optimal basis, so the certificate at termination is exact
 (Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
-empty is decided in the first LP, common to both. They differ only in cost. SC uses the primal warm start, and keeps the dual method
-for the cold start and as an option when the anytime bound is wanted
-\todo{cifras de la ablacion}.
+empty is decided in the first LP, common to both. They differ only in cost,
+and the dual warm start is the cheaper one on our benchmarks
+\todo{cifras de la ablacion}: SC uses the dual method throughout, so every
+basis it visits is dual feasible and the certified bound is valid at every
+iteration. Primal steps remain as a fallback, when relocation is impossible
+because the bound indicated by a reduced cost is infinite.
 
 \subsection{Pivoting rules}
 
@@ -322,8 +325,9 @@ slope stays positive, flipping the corresponding boxed nonbasic variables
 between their bounds, and among the candidates at the chosen breakpoint it
 takes the largest pivot within a relative Harris band.
 
-\paragraph{Primal steps.} The entering column is chosen by Dantzig's rule
-(devex is available and gives about 1\% on our benchmark). The ratio test
+\paragraph{Primal steps.} They are needed only when a nonbasic variable
+cannot be relocated, and in the primal warm start, which we keep for
+comparison. The entering column is chosen by Dantzig's rule. The ratio test
 filters out pivots smaller than a stability threshold before choosing the
 leaving row; without this filter a rejected pivot was indistinguishable from
 optimality, and 40\% of the reported optima were not dual feasible.
@@ -541,10 +545,8 @@ nondecreasing, strictly so on nondegenerate iterations.
 
 The certificate can thus be read at any point of the dual method, and an LP
 can be truncated with a valid bound. We measured such truncation and it does
-not pay (Section~\ref{sec:discussion}). SC uses the primal warm start by default, which is faster
-(Section~\ref{sec:simplex}); the primal method reaches an optimal basis too, so
-Proposition~\ref{prop:exact} still applies at termination, and only the anytime
-property is given up between bounds.
+not pay (Section~\ref{sec:discussion}). Since SC uses the dual method throughout (Section~\ref{sec:simplex}), the
+property holds in every LP of the pass.
 
 \paragraph{Cost.}
 Certifying a bound costs the same in SC as the Neumaier--Shcherbina
@@ -646,16 +648,16 @@ total                  & 973 & 0 & 939\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
-whose relaxations are small, SC is 21--30\% faster with similar search trees
-(2--8\% fewer cells). On systems of equations SC is 7--13\% faster and explores
-5--10\% fewer cells; it finishes 360 runs against 356. With the same bound
-order, SC loses only on Discrete-Integralf2 ($\times1.12$ in CPU time on the
-family) and Katsurabis-14 ($\times1.43$); with its own order it loses on no
-family by more than 15\%. The largest gains are on systems where the black box
-reports no optimum for many LPs (Brown-18 to 30, $\times0.31$ on the family,
-where it fails to finish four runs) and on Geneig ($\times0.61$--$0.71$).
-On the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after
-merging) the two engines are within 10\%, in both directions.
+whose relaxations are small, SC is 20--28\% faster with similar search trees
+(2--6\% fewer cells); with its own bound order it also solves two more
+problems within the time limit. On systems of equations SC is 12--18\% faster
+and explores 5--10\% fewer cells; it finishes 360 runs against 356. The largest
+gains are on systems where the black box reports no optimum for many LPs
+(Brown-18 to 30, $\times0.29$ in CPU time on the family, where it fails to
+finish four runs) and on Geneig ($\times0.41$ on Geneig-icse). SC loses on two
+families, BroydenTri ($\times1.11$) and Katsurabis-14 ($\times1.55$). On the
+largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC is
+faster as well ($\times0.80$ on the family).
 
 \begin{table}[t]
 \centering
@@ -670,11 +672,11 @@ order in both engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 0.94--0.98 & 0.75 & 0.77 & 0.71 & 129 / 129\\
-systems      & best of each      & 0.90--0.95 & 0.84 & 0.83 & 0.89 & 360 / 356\\
+optimization & best of each      & 0.97--1.00 & 0.75 & 0.79 & 0.73 & 131 / 129\\
+systems      & best of each      & 0.90--0.96 & 0.81 & 0.81 & 0.88 & 361 / 356\\
 \midrule
-optimization & same bound order  & 0.92--0.98 & 0.78 & 0.79 & 0.70 & 129 / 129\\
-systems      & same bound order  & 0.90--0.95 & 0.88 & 0.87 & 0.93 & 360 / 356\\
+optimization & same bound order  & 0.94--0.98 & 0.80 & 0.80 & 0.72 & 129 / 129\\
+systems      & same bound order  & 0.90--0.95 & 0.83 & 0.82 & 0.88 & 360 / 356\\
 \bottomrule
 \end{tabular}
 \end{table}

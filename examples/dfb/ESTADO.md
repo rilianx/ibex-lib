@@ -44,11 +44,11 @@ Por nodo se linealiza, `load` reinicia la base, y se recorre una pasada de hasta
 `B = −I`, dual-factible y primal-infactible. Las estrategias difieren en las
 cotas `1 … 2n−1`, donde cambia el objetivo y la caja no se mueve:
 
-- **`por_motor`** (omisión desde 2026-10-08): `dual` en los nodos que van al
+- **`por_motor`** (omisión 2026-10-08…10; desde 2026-10-10 la omisión volvió a `dual`, §4): `dual` en los nodos que van al
   motor revisado (que no tiene pasos primales) y `primal` en los de tableau,
   donde el primal es más rápido (ablación, §9). El certificado se calcula igual
   en los dos; se pierde sólo la cota anytime monótona en los nodos de tableau.
-- **`dual`** (omisión del 2026-09-30 al 2026-10-08): reubica **todas** las no básicas por
+- **`dual`** (omisión 2026-09-30…10-08 y de nuevo desde 2026-10-10): reubica **todas** las no básicas por
   el signo de su costo reducido, `k` incluida. La base es dual-factible en cada
   iteración y la cota certificada sube monótonamente durante el LP. Si `k`
   termina no básica, el óptimo es su cota y no había nada que contraer. Medido:
@@ -354,6 +354,20 @@ puro gana en el solver y resuelve dos problemas más en `ibexopt`, pagando
 Pendiente decidir la omisión (dual puro, o dual en revisado + umbral 20) y
 remedir el brazo controlado.
 
+**Decidido: dual puro como omisión** (commit 8918195f). Comparación
+controlada con la omisión nueva (`results/controlado_dual_puro_2026-10-10.csv`):
+
+| comparación | solver cpu > 0.1 / > 1 / > 5 s | celdas | terminan | `ibexopt` cpu | resueltas |
+|---|---|---|---|---|---|
+| **SC orden lejos contra caja** | **×0.83 / ×0.82 / ×0.88** | ×0.93 / ×0.90 / ×0.95 | 360 / 356 | **×0.80 / ×0.80 / ×0.72** | 129 / 129 |
+| SC orden propio contra caja | ×0.81 / ×0.81 / ×0.88 | ×0.93 / ×0.90 / ×0.96 | 361 / 356 | ×0.75 / ×0.79 / ×0.73 | 131 / 129 |
+| umbral 20 contra 40 (orden propio) | ×0.98 / ×0.99 / ×0.98 | ×1.00 | 362 / 361 | ×0.99 | 131 = 131 |
+
+Por familia (lejos contra caja): Brown ×0.29, Geneig-icse ×0.41, Bellido
+×0.70, Bratu ×0.80; pierden BroydenTri ×1.11 y Katsurabis-14 ×1.55. El
+umbral 20 gana ~2 %: queda en 40 (no compensa remedir). Ablación contra la
+omisión nueva en curso (`abl3`).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
@@ -614,8 +628,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
 | `DFBH_FUSIONA=0` | no fusiona las filas gemelas (misma normal, un lado cada una) de la linealización fresca (por omisión las fusiona desde 2026-10-09) (§4) |
 | `DFB_SX_DEVEXP=1` | precio devex en los pasos primales del motor revisado (por omisión Dantzig; sin banco aún) (§4) |
-| `DFB_SX_REVPRIMAL=0` | apaga los pasos primales en el motor revisado (**por omisión encendidos** desde 2026-10-10; con `por_motor`, nodos revisados en primal) (§4) |
-| `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `por_motor`**: dual puro en los nodos revisados, primal en los de tableau; `dual` vuelve al dual puro en todos (§1, §9) |
+| `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado (omisión sólo el 2026-10-10 antes de la fusión; hoy apagados, la omisión es dual puro) (§4) |
+| `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `dual` (puro, en los dos motores) desde 2026-10-10**; `por_motor` (dual en revisados, primal en tableau) fue omisión 2026-10-08…10 (§1, §4, §9) |
 | `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
