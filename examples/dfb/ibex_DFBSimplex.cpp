@@ -148,11 +148,14 @@ bool leer_dual_puro() {
 }
 bool DFBSimplex::pivoteo_dual = leer_pivoteo_dual();
 bool DFBSimplex::dual_puro = leer_dual_puro();
-/* Omision `por_motor` desde 2026-10-08 (dual en los nodos revisados, primal
- * en los de tableau); `DFB_SX_PIVOTEO=dual` vuelve al dual puro en todos. */
-/* Omision desde 2026-10-10: pasos primales en el motor revisado; `DFB_SX_REVPRIMAL=0` los apaga. */
-bool DFBSimplex::rev_primal = !(getenv("DFB_SX_REVPRIMAL") && std::string(getenv("DFB_SX_REVPRIMAL")) == "0");
-bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") == NULL || std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
+/* Omision: dual puro en los dos motores (de nuevo desde 2026-10-10: con las
+ * filas gemelas fusionadas gana en el solver y resuelve dos problemas mas en
+ * `ibexopt`, ver ESTADO §4). `DFB_SX_PIVOTEO=por_motor` (dual en los nodos
+ * revisados, primal en los de tableau; omision 2026-10-08) y
+ * `DFB_SX_REVPRIMAL=1` (pasos primales tambien en el revisado; omision del
+ * 2026-10-10 hasta la fusion) quedan para medir. */
+bool DFBSimplex::rev_primal = getenv("DFB_SX_REVPRIMAL") && std::string(getenv("DFB_SX_REVPRIMAL")) == "1";
+bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_verif      = 0;
 long DFBSimplex::n_verif_pinf = 0;
