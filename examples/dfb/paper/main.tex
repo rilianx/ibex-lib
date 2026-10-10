@@ -30,7 +30,7 @@
 
 \title{Dual Feasible Bounding: a certified simplex for\\ polytope-hull contraction in interval branch and bound}
 \author{Ignacio Araya \and \todo{coautores}}
-\date{\todo{borrador del 2026-10-08}}
+\date{\todo{borrador del 2026-10-10}}
 
 \begin{document}
 \maketitle
@@ -49,19 +49,17 @@ $\lambda$ yields an interval certificate $\lambda^T\Abar$ that bounds a
 variable, or proves emptiness, over the current box and every sub-box. The
 contribution is a simplex designed for this certificate: a free dual-feasible
 start for every bound, one tableau shared by the $2n$ problems, and a hybrid
-engine that solves small relaxations on an explicit tableau with the primal
-method and large ones with a tableau-free revised dual simplex. We compare it in
-a controlled setting: the same contractor, with the same pass, the same
-certificate and the same policy for uncertified bounds, using either DFB or a
-state-of-the-art LP solver (SoPlex) as a black box, tuned to its best
-configuration. On 139 constrained global optimization problems, DFB is 17--23\%
-faster with the same search trees. On 264 systems of equations it explores
-11--19\% fewer cells at the same CPU time: on relaxations with nearly-equal
-rows the black-box solver reports spurious infeasibility or fails to converge,
-and the corresponding bounds are lost, whereas DFB solves them; the black box
-remains faster on the largest relaxations. DFB never exceeds the exact LP
-hull.
-\todo{revisar las cifras finales}
+engine that solves small relaxations on an explicit tableau and large ones with
+a tableau-free revised simplex, both with primal steps from the previous
+bound's basis. We compare it in a controlled setting: the same contractor, with
+the same relaxation, the same pass, the same certificate and the same policy
+for uncertified bounds, using either DFB or a state-of-the-art LP solver
+(SoPlex) as a black box, tuned to its best configuration. On 139 constrained
+global optimization problems, DFB is 21--30\% faster with similar search trees.
+On 264 systems of equations it is 7--13\% faster, explores 5--10\% fewer cells
+and finishes more runs; its multipliers yield certified bounds where the black
+box reports no optimum, and slightly tighter ones elsewhere. DFB never exceeds
+the exact LP hull.
 \end{abstract}
 
 % =====================================================================
@@ -242,10 +240,13 @@ salto de Achterberg;
 (v) test de razon de paso largo, Harris relativo, devex, tolerancia primal a
 escala de la caja $\min(10^{-9}(1+|v|),\,\tau\,\wid)$ con $\tau=10^{-3}$;
 (vi) motor hibrido: tableau explicito con LU diferida y guarda de deriva, o
-simplex dual revisado sin tableau (BTRAN/FTRAN, Forrest--Tomlin) cuando la
-relajacion pasa de 80 filas; el revisado exige el dual porque no tiene pasos
-primales;
-(vii) el certificado se calcula una vez por cota con los $\lambda$ de la base final.}
+simplex revisado sin tableau (BTRAN/FTRAN, Forrest--Tomlin, x$_B$ incremental)
+cuando la relajacion pasa de 40 filas; en ambos, pasos primales desde la base de
+la cota anterior, y el dual solo para el arranque en frio; el dual da la cota
+anytime monotona (Seccion~\ref{sec:properties}), disponible como opcion;
+(vii) filas gemelas de la linealizacion (misma normal, un lado cada una)
+fusionadas en una fila con holgura de rango;
+(viii) el certificado se calcula una vez por cota con los $\lambda$ de la base final.}
 
 % =====================================================================
 \section{Properties of the certificate}\label{sec:properties}
@@ -474,7 +475,13 @@ its tableau, which we report separately.
 
 \paragraph{Setting.}
 Contractor and solvers are implemented in Ibex with the affine
-relaxation~\cite{ninin2015affine}. For systems of equations we use the solver
+relaxation~\cite{ninin2015affine}. The affine linearizer writes each equation
+as two one-sided rows with the same normal. In the homogeneous form they are a
+single row whose slack has the interval of both sides, so we merge them, for
+both engines. This halves $m$ on square systems, and it matters for the black
+box: two half-spaces with the same normal and right-hand sides $10^{-14}$ apart
+are a source of spurious infeasibility for SoPlex (without merging, the black
+box explores 20 times more cells on CountercurrentReactors2-9). For systems of equations we use the solver
 composition of Ibex (HC4, ACID, interval Newton when the system is square, and
 the linear contractor within a fixed point with HC4) with the LSmear bisector,
 on the 264 systems of the Ibex solver benchmark, 2 seeds, 60\,s per run. For
@@ -518,14 +525,16 @@ total                  & 973 & 0 & 939\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares DFB with the black box. On optimization problems,
-whose relaxations are small, DFB is 17--23\% faster with the same search trees.
-On systems of equations both engines take about the same time, but DFB explores
-11--19\% fewer cells. The black box finishes two more runs: it is faster on the
-largest relaxations (Bratu-0175 to 0200, which DFB does not finish, and
-Discrete-Integralf2-19 to 21, $\times$3--5), where SoPlex's LU factorization
-outperforms our revised engine; DFB is much faster on systems with
-nearly-equal rows (Brown-18 to 30, which the black box solves 15--20 times
-slower or not at all; CountercurrentReactors2-9, $\times$25).
+whose relaxations are small, DFB is 21--30\% faster with similar search trees
+(2--8\% fewer cells). On systems of equations DFB is 7--13\% faster and explores
+5--10\% fewer cells; it finishes 360 runs against 356. With the same bound
+order, DFB loses only on Discrete-Integralf2 ($\times1.12$ in CPU time on the
+family) and Katsurabis-14 ($\times1.43$); with its own order it loses on no
+family by more than 15\%. The largest gains are on systems where the black box
+reports no optimum for many LPs (Brown-18 to 30, $\times0.31$ on the family,
+where it fails to finish four runs) and on Geneig ($\times0.61$--$0.71$).
+On the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after
+merging) the two engines are within 10\%, in both directions.
 
 \begin{table}[t]
 \centering
@@ -540,11 +549,11 @@ order in both engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 1.00--1.05 & 0.77 & 0.83 & 0.78 & 129 / 129\\
-systems      & best of each      & 0.81--0.89 & 1.03 & 1.08 & 0.98 & 354 / 356\\
+optimization & best of each      & 0.94--0.98 & 0.75 & 0.77 & 0.71 & 129 / 129\\
+systems      & best of each      & 0.90--0.95 & 0.84 & 0.83 & 0.89 & 360 / 356\\
 \midrule
-optimization & same bound order  & 1.01--1.04 & 0.82 & 0.85 & 0.77 & 129 / 129\\
-systems      & same bound order  & 0.81--0.89 & 1.18 & 1.24 & 1.14 & 354 / 356\\
+optimization & same bound order  & 0.92--0.98 & 0.78 & 0.79 & 0.70 & 129 / 129\\
+systems      & same bound order  & 0.90--0.95 & 0.88 & 0.87 & 0.93 & 360 / 356\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -556,21 +565,20 @@ With the same certificate, the two engines can only differ in the multipliers
 they produce. We ran both engines on the same input boxes and the same polytope
 at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
 \begin{enumerate}
-\item \emph{Numerical failures.} On relaxations with nearly-equal rows,
-SoPlex reports infeasibility for LPs that are feasible. On Geneig-icse it does so
-for 18\,838 LPs, of which the certificate proves emptiness for 148; for the
-others, the ray proves nothing and the bound is lost. Together with about 6\,500
-LPs of unknown status and 1\,000 that reach the iteration limit, a third of the
-LPs of the black box yield no certificate, against 0.3\% for DFB. We verified on
-an extracted LP that SoPlex declares it infeasible with tolerance $10^{-9}$ and
-solves it with $10^{-6}$; DFB, whose primal tolerance is scaled to the width of
-the box, solves these relaxations.
-\item \emph{Dual accuracy.} With tolerance $10^{-6}$ the dual of the black box
-is slightly less accurate, and the certificate slightly weaker. On
-CountercurrentReactors2-9, DFB contracts more in 253 nodes out of 1\,061 and
-the black box in none; the difference is small per node but compounds along the
-search. With tolerance $10^{-9}$ it nearly vanishes (47 against 1), at the price
-of more numerical failures elsewhere.
+\item \emph{No optimum.} On some relaxations SoPlex ends without an optimal
+basis (infeasibility it cannot prove, unknown status or iteration limit), and
+the bound is lost. On Brown-18 this happens for 286 of 1\,710 LPs, against 34
+for DFB, whose primal tolerance is scaled to the width of the box; on
+Geneig-icse, 743 against 187. With the twin rows unmerged this mechanism was
+dominant (a third of the LPs of the black box on Geneig-icse); merging them
+removes most of it.
+\item \emph{Dual accuracy.} When both engines reach an optimum, the
+certificate built from the multipliers of DFB is often slightly tighter. On
+Geneig-icse, DFB contracts more in 470 of 2\,117 nodes and the black box in
+none; on CountercurrentReactors2-9, 117 against 5; on Bellido, 138 against 5.
+The difference per node is small but compounds along the search. It persists
+with tolerance $10^{-9}$ for the black box (544 against 1 on Geneig-icse); we
+have not isolated its cause.
 \end{enumerate}
 
 \begin{table}[t]
@@ -585,10 +593,10 @@ and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
 system & DFB & black box & DFB & black box & DFB & black box\\
 \midrule
-Geneig-icse               & 0.303 & 0.248 & 1241 &  4 &  211 & 26\,069\\
-CountercurrentReactors2-9 & 0.041 & 0.040 &  253 &  0 &   96 &     168\\
-Brown-18                  & 0.320 & 0.308 &   45 & 30 &  179 &     204\\
-Bellido                   & 0.281 & 0.281 &  137 &  7 &  134 &       0\\
+Geneig-icse               & 0.307 & 0.306 &  470 &  0 &  187 & 743\\
+CountercurrentReactors2-9 & 0.042 & 0.042 &  117 &  5 &  116 & 151\\
+Brown-18                  & 0.348 & 0.315 &   32 & 10 &   34 & 286\\
+Bellido                   & 0.281 & 0.281 &  138 &  5 &  151 &   0\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -600,10 +608,8 @@ changes the pruning: all cell ratios are within 1\%. The components differ in
 cost, and only on systems of equations, where relaxations are larger. The hybrid
 engine is the one that matters (without it, CPU time $\times1.13$--$1.25$).
 With the same engine (tableau), the primal method is 15--20\% faster than the
-dual one; the value of the dual method is that it enables the tableau-free
-revised engine, which has no primal steps, on large relaxations. This is why
-DFB uses the dual method on revised nodes and the primal method on tableau
-nodes. Ordering the bounds with information of the tableau, instead of the
+dual one; DFB now uses primal steps in both engines and the dual method only for
+cold starts, where the free dual-feasible basis is the natural one. Ordering the bounds with information of the tableau, instead of the
 farthest-bound rule, gives a further $\times0.87$--$0.91$ on systems of
 equations.
 
@@ -629,7 +635,7 @@ primal against dual, both on tableau        & 1.01 & 0.85 & 0.82 & 0.80\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{repetir la ablacion con la omision final (estrategia por nodo, umbral 80)}
+\todo{repetir la ablacion con la omision final (pasos primales en ambos motores, umbral 40, filas gemelas fusionadas)}
 
 \paragraph{Relation to the polytope-hull contractor of Ibex.}
 Against the contractor distributed with Ibex, DFB explores about half the

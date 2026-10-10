@@ -516,7 +516,7 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
     } else {
         for (int i = 0; i < m0; ++i) fuente.push_back(i);
     }
-    if (m < m0 && motor_caja) {
+    if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA"))) {
         /* La caja negra resuelve sobre `mylinearsolver`: se recarga con las
          * filas fusionadas para que los multiplicadores sigan siendo fila a
          * fila los de `A`. */
