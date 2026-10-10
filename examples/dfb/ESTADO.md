@@ -330,6 +330,30 @@ cada uno contrae más: Geneig-icse 470 / 0, CCR2-9 117 / 5, Bellido 138 / 5,
 Brown-18 32 / 10. Con la caja en 1e-9 persiste (Geneig-icse 544 / 1, CCR2-9
 49 / 5): la ventaja de precisión del dual no es la tolerancia, sin aislar.
 
+**Ablación con los defaults finales y filas fusionadas (2026-10-10,
+`results/ablacion_fusion_2026-10-10.csv`).** Contra el completo (orden por
+costo, umbral 40, primal en ambos motores, dual sólo en frío):
+
+| brazo | solver cpu > 0.1 / > 1 / > 5 s | terminan | `ibexopt` cpu | `ibexopt` resueltas |
+|---|---|---|---|---|
+| dual puro (`DFB_SX_PIVOTEO=dual DFB_SX_REVPRIMAL=0`) | **×0.96 / ×0.96 / ×0.98** | 361 / 360 | ×1.02 / ×1.03 / ×1.05 (celdas ×1.01–1.06) | **131** / 129 (chembis, ship-1) |
+| revisado en dual, tableau en primal (`DFB_SX_REVPRIMAL=0`) | ×0.98 / ×0.97 / ×0.98 | 360 | ×1.00 | 129 |
+| umbral 20 | ×0.97 / ×0.98 / ×0.99 | 360 | ×0.99 | 129 |
+| sólo revisado | ×0.97 / ×0.97 / ×0.97 | 361 | ×1.04 / ×1.02 / ×1.00 | 129 |
+| sólo tableau | ×1.08 / ×1.11 / ×1.13 | 352 | ×1.01 | 129 |
+| sin fusión | ×1.25 / ×1.23 / ×1.19 | 354 | ×1.02–1.04 | 129 |
+| sin paso largo | ×1.00 | 360 | ×1.02–1.03 | 129 |
+| sin devex | ×1.01 | 360 | ×1.02–1.06 | 129 |
+| sin τ | ×1.00 | 360 | ×1.00–1.02 | 129 |
+
+Celdas del solver iguales en todos (±1 %). **Con la fusión cambió el
+balance**: el primal revisado, que ganaba con m = 2n, ahora pierde contra el
+dual en los nodos revisados (Bratu-0150…0210 ×0.47–0.81 en dual); el dual
+puro gana en el solver y resuelve dos problemas más en `ibexopt`, pagando
+×1.02–1.05 de cpu allí. Pierde BroydenTri-0100 ×1.36 y Katsurabis-14 ×1.25.
+Pendiente decidir la omisión (dual puro, o dual en revisado + umbral 20) y
+remedir el brazo controlado.
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
