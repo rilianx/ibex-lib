@@ -383,9 +383,12 @@ private:
 
     /* Perturbacion de costos (ver `perturbar_costos`). */
     bool     perturbado;   //!< `d` lleva perturbacion en esta resolucion
+    int      racha_degen = 0;    //!< pivotes duales degenerados seguidos en el LP actual
+    bool     pert_hecha = false; //!< ya se perturbo en este LP (`DFB_SX_PERTURB_TRAS`)
     double   pert_eps;     //!< magnitud base de la perturbacion vigente
     unsigned pert_estado;  //!< generador congruencial propio: determinista
-    void perturbar_costos();
+    void perturbar_costos(bool por_racha = false);
+    static int perturb_tras();
 
     /**
      * \brief Pesos de referencia DEVEX para la eleccion de la fila que sale.

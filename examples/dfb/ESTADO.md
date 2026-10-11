@@ -403,6 +403,23 @@ Virasoro-prod 107 → 323 celdas, 84 → 21 piv/LP, degenerados 95 → 29 %;
 Katsura-40 125 → 163 celdas, 47 → 24 piv/LP; Bellido 4.9 → 4.4 piv/LP. ε
 entre 1e-7 y 1e-5 da lo mismo. Banco en curso (`re`: dfb, pert, pertl, caja).
 
+Banco `re` (completo): perturbación contra dual sin perturbar, solver
+×0.985 / ×0.98 / ×0.96, 360 / 361; `ibexopt` ×1.02 / ×1.02 / ×0.99, 130 /
+131 (ship-1). Contra la caja, orden lejos: ×0.81 / ×0.80 / ×0.85, 361 / 356,
+`ibexopt` ×0.81 / ×0.83 / ×0.72; orden propio: ninguna instancia pierde más
+de ×1.1. En las que llegan al límite, celdas en 60 s ×2 (Virasoro, Katsura).
+
+Barridos sobre las 26 instancias donde la perturbación cambia celdas/s más de
+15 % (4 semillas, celdas/s contra el dual sin perturbar): **ε** 1e-9…1e-5
+×1.19–1.21, 1e-4 ×1.15 (plano; queda 1e-7). **Cuándo perturbar**
+(`DFB_SX_PERTURB_TRAS=K`, sólo tras K pivotes duales degenerados seguidos,
+una vez por LP): K = 2 / 3 / 5 / 10 ×1.18 / 1.19 / 1.21 / 1.13 contra ×1.21
+perturbando siempre. K = 2 gana más en Katsura (×2.4 contra ×2.15 en
+Katsura-30) pero pierde en las CountercurrentReactors (ruido por semilla) y no
+cambia las pérdidas sistemáticas: BroydenBanded-200 ×0.73 y Brown-30
+×0.5–0.8 con cualquier K y cualquier ε (efecto de trayectoria: en Brown-30
+basta perturbar 136 LPs). Conclusión: perturbar siempre, ε = 1e-7.
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada

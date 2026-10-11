@@ -1085,7 +1085,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
     }
     if (j_in < 0) { infeasible = true; return false; }
 
-    if (std::fabs(d[j_in]) < DUAL_TOL) ++n_piv_degen;
+    if (std::fabs(d[j_in]) < DUAL_TOL) { ++n_piv_degen; ++racha_degen; } else racha_degen = 0;
     if (perturbado && std::fabs(d[j_in]) <= 3.0*pert_eps) ++n_piv_degen_pert;
     const int c_out = basic[r_out];
 
@@ -1681,10 +1681,20 @@ bool DFBSimplex::refrescar(int k, bool maximize, const IntervalVector& z, bool r
  * costo verdadero. Al llegar al optimo perturbado, `solve` rehace `d` exacto
  * y, si quedo alguna columna dual-infactible, la arreglan pasos primales; esos
  * pivotes se cuentan en `n_pert_limpieza`. */
-void DFBSimplex::perturbar_costos() {
+/* CUANDO PERTURBAR (`DFB_SX_PERTURB_TRAS=K`). Con K = 0 (omision) se perturba
+ * al reubicar, en cada LP. Con K > 0 se perturba solo si el LP encadena K
+ * pivotes duales degenerados, como SoPlex y HiGHS ante el estancamiento: los
+ * LPs que no se estancan no ven la perturbacion. Una vez por LP. */
+int DFBSimplex::perturb_tras() {
+    static const int k = getenv("DFB_SX_PERTURB_TRAS") ? atoi(getenv("DFB_SX_PERTURB_TRAS")) : 0;
+    return k;
+}
+
+void DFBSimplex::perturbar_costos(bool por_racha) {
     static const double eps = getenv("DFB_SX_PERTURB")
                             ? atof(getenv("DFB_SX_PERTURB")) : 0.0;
     if (eps <= 0.0) return;
+    if (perturb_tras() > 0 && !por_racha) return;
     int n = 0;
     for (int c = 0; c < na; ++c) {
         if (rowof[c] >= 0) continue;
@@ -1799,6 +1809,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
     if (perf::on()) ++perf::n_solve;
     ++n_solves;
     perturbado = false;
+    racha_degen = 0; pert_hecha = false;
     /* Cada resolucion arranca con `x_B` sucio: el objetivo cambio y la
      * ubicacion de las no basicas pudo moverse, asi que el `x_B` que quedo del
      * solve anterior no sirve. Sin esto la resolucion devolvia la respuesta de
@@ -1966,6 +1977,9 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
                 if (maximize ? (v <= tope_anytime) : (v >= tope_anytime)) {
                     ++n_anytime; st = ITER_LIMIT; break;
                 }
+            }
+            if (racha_degen > 0 && !pert_hecha && perturb_tras() > 0 && racha_degen >= perturb_tras()) {
+                perturbar_costos(true); pert_hecha = true; racha_degen = 0;
             }
             bool infeasible = false, unbounded = false;
             if (dual_step(zz, infeasible)) {
