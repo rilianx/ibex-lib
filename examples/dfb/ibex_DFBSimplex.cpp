@@ -1690,9 +1690,11 @@ int DFBSimplex::perturb_tras() {
     return k;
 }
 
+/* Omision eps = 1e-7 desde 2026-10-11 (Virasoro, Katsura: el dual puro se
+ * estancaba en pivotes degenerados); `DFB_SX_PERTURB=0` la apaga. */
 void DFBSimplex::perturbar_costos(bool por_racha) {
     static const double eps = getenv("DFB_SX_PERTURB")
-                            ? atof(getenv("DFB_SX_PERTURB")) : 0.0;
+                            ? atof(getenv("DFB_SX_PERTURB")) : 1e-7;
     if (eps <= 0.0) return;
     if (perturb_tras() > 0 && !por_racha) return;
     int n = 0;
