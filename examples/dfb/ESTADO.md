@@ -392,6 +392,17 @@ barato en el 95 %. Peores: Virasoro-prod ×9 (87 contra 18 piv/LP con el
 dual puro), Katsura-30/40 ×2.5 (67 contra 17). Figura en el paper
 (`paper/costo_lp_*.dat`).
 
+**Virasoro: degeneración dual del dual puro (2026-10-10).** Virasoro-prod
+hace 84–90 piv/LP con el dual puro contra 18 de SoPlex y 22 del primal; el
+95 % de los pivotes duales son degenerados. Es el empate ya descrito en
+`perturbar_costos`: con objetivo ±e_k y x_k básica en la fila r, tras
+reubicar `d = −ā_r`, nulo en toda columna que no toca la fila r, y el ratio
+test dual las hace entrar con paso cero. La perturbación de costos
+(`DFB_SX_PERTURB=eps`), medida antes sólo en ex5_3_2, lo arregla (20 s):
+Virasoro-prod 107 → 323 celdas, 84 → 21 piv/LP, degenerados 95 → 29 %;
+Katsura-40 125 → 163 celdas, 47 → 24 piv/LP; Bellido 4.9 → 4.4 piv/LP. ε
+entre 1e-7 y 1e-5 da lo mismo. Banco en curso (`re`: dfb, pert, pertl, caja).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
