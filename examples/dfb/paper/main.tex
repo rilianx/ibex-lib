@@ -477,8 +477,8 @@ A revised iteration costs one FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and
 the update, all proportional to the number of nonzeros involved, instead of a
 pass over the tableau. Below 40 rows the tableau is cheaper; above it the
 revised engine is. The ablation (Table~\ref{tab:ablation}) shows that the
-tableau alone is 12--20\% slower on systems of equations, and the revised
-engine alone 5\% slower on optimization problems.
+tableau alone is 13--25\% slower on systems of equations, and the revised
+engine alone 6\% slower on optimization problems.
 
 \subsection{Certification}
 
@@ -875,15 +875,15 @@ at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
 \begin{enumerate}
 \item \emph{No optimum.} On some relaxations SoPlex ends without an optimal
 basis (infeasibility it cannot prove, unknown status or iteration limit), and
-the bound is lost. On Brown-18 this happens for 169 of 1\,739 LPs, against 2
+the bound is lost. On Brown-18 this happens for 176 of 1\,735 LPs, against 2
 for SC, whose primal tolerance is scaled to the width of the box; on
-Geneig-icse, 595 against 109. With the twin rows unmerged this mechanism was
+Geneig-icse, 499 against 70. With the twin rows unmerged this mechanism was
 dominant (a third of the LPs of the black box on Geneig-icse); merging them
 removes most of it.
 \item \emph{Dual accuracy.} When both engines reach an optimum, the
 certificate built from the multipliers of SC is often slightly tighter. On
-Geneig-icse, SC contracts more in 379 of 2\,012 nodes and the black box in
-one; on CountercurrentReactors2-9, 117 against 3; on Bellido, 139 against 4.
+Geneig-icse, SC contracts more in 277 of 1\,710 nodes and the black box in
+none; on CountercurrentReactors2-9, 126 against 4; on Bellido, 141 against 3.
 The difference per node is small but compounds along the search. It persists
 with tolerance $10^{-9}$ for the black box; we have not isolated its cause.
 \end{enumerate}
@@ -900,40 +900,43 @@ and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
 system & SC & BB & SC & BB & SC & BB\\
 \midrule
-Geneig-icse               & 0.313 & 0.312 &  379 &  1 &  109 & 595\\
-CountercurrentReactors2-9 & 0.045 & 0.047 &  117 &  3 &  153 & 147\\
-Brown-18                  & 0.314 & 0.293 &   18 &  0 &    2 & 169\\
-Bellido                   & 0.281 & 0.281 &  139 &  4 &  149 &   0\\
+Geneig-icse               & 0.323 & 0.322 &  277 &  0 &   70 & 499\\
+CountercurrentReactors2-9 & 0.046 & 0.047 &  126 &  4 &  116 & 142\\
+Brown-18                  & 0.314 & 0.292 &   21 &  0 &    2 & 176\\
+Bellido                   & 0.281 & 0.281 &  141 &  3 &  152 &   0\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Ablation}
 
-Table~\ref{tab:ablation} removes one component of SC at a time. No component
-changes the pruning on systems of equations: all cell ratios are within 1\%.
-The components differ in cost, mostly on systems of equations, whose
+Table~\ref{tab:ablation} changes one component of SC at a time. The pruning
+changes little: cell ratios are within 2\% on runs above 0.1\,s and within 5\%
+on the longest runs, where the perturbation of the costs changes the search
+path. The components differ in cost, mostly on systems of equations, whose
 relaxations are larger. Merging the twin rows is the largest saving (without
-it, CPU time $\times1.35$--$1.47$ and seven fewer runs finished), followed by
-the hybrid engine (with the tableau alone, $\times1.12$--$1.20$ and eight fewer
+it, CPU time $\times1.40$--$1.45$ and eight fewer runs finished), followed by
+the hybrid engine (with the tableau alone, $\times1.13$--$1.25$ and six fewer
 runs). The revised engine alone is about as fast on systems of equations, but
 slower on the small relaxations of optimization problems; the threshold of 40
 rows keeps the best of both. Among the pivoting rules, the long-step ratio
-test matters for the dual method ($\times1.05$--$1.08$ without it), devex gives
-2--3\%, and the box-scaled tolerance is neutral in time: it is there for
-correctness on narrow boxes (Section~\ref{sec:simplex}). The primal warm start
-is 2--4\% slower on systems of equations and 2--5\% faster on optimization
-problems, where it fails to solve two problems that the dual method solves
-(chembis and ship-1, both close to the time limit). Ordering the bounds with
-information of the tableau instead of the farthest-bound rule saves 3\% on
-systems of equations and 0--7\% on optimization problems.
+test gives 10--11\%, the cost perturbation 3--8\% (and two more runs
+finished), devex 1--4\%, and the box-scaled tolerance is neutral in time: it is
+there for correctness on narrow boxes (Section~\ref{sec:simplex}). The primal
+warm start is 7--10\% slower on systems of equations. On optimization problems,
+whose relaxations are small and rarely degenerate, the primal warm start and
+the unperturbed dual are 3--5\% faster; the two problems they solve and SC
+does not, chembis and ship-1, are close to the time limit and come and go with
+most changes. Ordering the bounds with information of the tableau instead of
+the farthest-bound rule saves 2--3\% on systems of equations and 2--6\% on
+optimization problems.
 
 \begin{table}[t]
 \centering
 \caption{Ablation: each row changes one component of SC. Ratios against full
 SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
-runs finished out of 528 (full SC: 361), CPU on optimization problems above
-0.1\,s and problems solved in all seeds (full SC: 131). The last row comes
+runs finished out of 528 (full SC: 362), CPU on optimization problems above
+0.1\,s and problems solved in all seeds (full SC: 129). The last row comes
 from the bank of Table~\ref{tab:main}.}
 \label{tab:ablation}
 \begin{tabular}{lccccccc}
@@ -942,15 +945,16 @@ from the bank of Table~\ref{tab:main}.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-primal warm start                 & 1.00 & 1.04 & 1.04 & 1.02 & 360 & 0.98 & 129\\
-without long-step ratio test      & 1.00 & 1.08 & 1.08 & 1.05 & 360 & 1.00 & 130\\
-without devex                     & 1.00 & 1.02 & 1.03 & 1.02 & 362 & 1.00 & 131\\
-without box-scaled tolerance      & 1.00 & 1.01 & 1.02 & 0.99 & 360 & 0.99 & 130\\
-tableau engine only               & 1.00 & 1.12 & 1.18 & 1.20 & 353 & 1.01 & 131\\
-revised engine only               & 1.00 & 0.98 & 0.99 & 0.96 & 363 & 1.05 & 129\\
-without merging twin rows         & 1.00 & 1.46 & 1.47 & 1.35 & 354 & 1.01 & 129\\
+without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.08 & 360 & 0.97 & 131\\
+primal warm start                 & 1.02 & 1.07 & 1.08 & 1.10 & 360 & 0.95 & 129\\
+without long-step ratio test      & 1.01 & 1.10 & 1.11 & 1.11 & 360 & 1.00 & 129\\
+without devex                     & 1.01 & 1.01 & 1.03 & 1.04 & 361 & 0.99 & 130\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.01 & 1.00 & 361 & 1.01 & 130\\
+tableau engine only               & 1.02 & 1.13 & 1.19 & 1.25 & 356 & 1.01 & 129\\
+revised engine only               & 1.00 & 0.98 & 0.99 & 0.99 & 364 & 1.06 & 129\\
+without merging twin rows         & 1.02 & 1.45 & 1.45 & 1.40 & 354 & 1.00 & 129\\
 \midrule
-farthest-bound order              & 1.00 & 1.03 & 1.03 & 1.00 & 360 & 1.07 & 129\\
+farthest-bound order              & 1.00 & 1.03 & 1.02 & 1.02 & 361 & 1.06 & 129\\
 \bottomrule
 \end{tabular}
 \end{table}

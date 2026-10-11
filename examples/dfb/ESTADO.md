@@ -426,6 +426,17 @@ certificada en ≤ 2ε Σ mag z_j) y figura de costo por pasada (tres paneles,
 sonda con perturbación). Pendiente: ablación contra la omisión nueva (`abl4`)
 y sonda misma caja (Tabla 3).
 
+Ablación contra la omisión con perturbación
+(`results/ablacion_perturbacion_2026-10-11.csv`; controlado en
+`results/controlado_perturbacion_2026-10-11.csv`): sin perturbación ×1.03 /
+×1.04 / ×1.08 (360 / 362), `ibexopt` ×0.97 y 131 / 129; primal ×1.07–1.10,
+`ibexopt` ×0.95; sin paso largo ×1.10–1.11; sin devex ×1.01–1.04; sin τ
+×1.00; sólo tableau ×1.13–1.25 (356); sólo revisado ×0.98–0.99 (364),
+`ibexopt` ×1.06; sin fusión ×1.40–1.45 (354). Celdas ±2 % (hasta 5 % en > 5 s).
+Sonda misma caja con la omisión final: LPs sin óptimo SC / caja Geneig-icse
+70 / 499, Brown-18 2 / 176; nodos donde contrae más Geneig-icse 277 / 0,
+CCR2-9 126 / 4, Bellido 141 / 3. Paper al día (Tablas 2–4, figura).
+
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
 revisado, primal en los de tableau) contra la producción más fuerte de cada
