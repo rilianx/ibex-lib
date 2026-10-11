@@ -6,6 +6,7 @@
 \usepackage[margin=2.6cm]{geometry}
 \usepackage{xcolor}
 \usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
 \pgfplotsset{compat=1.16}
 \definecolor{serieA}{HTML}{2A78D6}
 \definecolor{serieB}{HTML}{EB6834}
@@ -59,8 +60,8 @@ certified bound is available at every iteration. We compare it in a controlled s
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 139 constrained
-global optimization problems, SC is 20--28\% faster with similar search trees.
-On 264 systems of equations it is 12--18\% faster, explores 5--10\% fewer cells
+global optimization problems, SC is 17--28\% faster with similar search trees.
+On 264 systems of equations it is 15--20\% faster, explores 5--10\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. SC never exceeds
 the exact LP hull.
@@ -401,6 +402,24 @@ of several short steps. Among the candidates at the chosen breakpoint we take
 the largest $|\alpha_{rj}|$ within a relative band (Harris' rule), which
 avoids tiny pivots.
 
+\paragraph{Dual degeneracy.} The bound problems are highly dual degenerate.
+With objective $\pm z_k$ and $z_k$ basic in row $r$, the reduced costs after
+relocation are $d = \mp\alpha_r$ on the nonbasic variables: exactly zero on
+every column that does not meet row $r$. Those columns give ratio zero in the
+dual ratio test, so they enter first and the dual objective does not move. On
+some systems (Virasoro, Katsura) 80--95\% of the dual pivots were degenerate,
+with up to five times more pivots per LP than the black box. SC uses the
+standard remedy~\cite{koberstein2005dual}: after relocation, each zero
+reduced cost is replaced by a random value in $[\varepsilon,2\varepsilon)$,
+$\varepsilon=10^{-7}$, with the sign that its current bound already
+satisfies. The basis stays dual feasible for the perturbed costs and the ties
+disappear; at the optimum of the perturbed problem the exact reduced costs are
+recomputed, and the few columns that are then dual infeasible are fixed by
+primal steps. The multipliers, and hence the certificate, always come from the
+true costs. The value of $\varepsilon$ is not critical: between $10^{-9}$ and
+$10^{-5}$ the results are the same, and perturbing only after a run of
+degenerate pivots, as LP solvers do on stalling, gives no further gain.
+
 \paragraph{Primal steps.} In a primal iteration the basis is primal feasible
 and some nonbasic variable has a reduced cost of the wrong sign; it enters
 (Dantzig's rule: largest $|d_j|$), and the ratio test over the pivot column
@@ -642,7 +661,12 @@ nondecreasing, strictly so on nondegenerate iterations.
 The certificate can thus be read at any point of the dual method, and an LP
 can be truncated with a valid bound. We measured such truncation and it does
 not pay (Section~\ref{sec:discussion}). Since SC uses the dual method throughout (Section~\ref{sec:simplex}), the
-property holds in every LP of the pass.
+property holds in every LP of the pass. With the cost perturbation of
+Section~\ref{sec:simplex}, what is nondecreasing is the dual objective of the
+perturbed problem; the certified bound, computed with the true costs, differs
+from it by at most $2\varepsilon\sum_j\magn\iv{z}_j$, where
+$\magn\iv{z}_j=\max(|\inff\iv{z}_j|,|\supp\iv{z}_j|)$: about $10^{-7}$ times the
+magnitude of the box.
 
 \paragraph{Cost.}
 Certifying a bound costs the same in SC as the Neumaier--Shcherbina
@@ -744,16 +768,16 @@ total                  & 973 & 0 & 939\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
-whose relaxations are small, SC is 20--28\% faster with similar search trees
-(2--6\% fewer cells); with its own bound order it also solves two more
-problems within the time limit. On systems of equations SC is 12--18\% faster
-and explores 5--10\% fewer cells; it finishes 360 runs against 356. The largest
-gains are on systems where the black box reports no optimum for many LPs
-(Brown-18 to 30, $\times0.29$ in CPU time on the family, where it fails to
-finish four runs) and on Geneig ($\times0.41$ on Geneig-icse). SC loses on two
-families, BroydenTri ($\times1.11$) and Katsurabis-14 ($\times1.55$). On the
-largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC is
-faster as well ($\times0.80$ on the family).
+whose relaxations are small, SC is 17--28\% faster with similar search trees.
+On systems of equations SC is 15--20\% faster and explores 5--10\% fewer
+cells; it finishes 361 runs against 356. The largest gains are on systems
+where the black box reports no optimum for many LPs (Brown-18 to 30,
+$\times0.29$ in CPU time on the family, where it fails to finish four runs)
+and on Geneig ($\times0.36$ on Geneig-icse); on the largest relaxations
+(Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC is also faster
+($\times0.75$ on the family). With the same bound order SC loses only on
+Katsurabis-14 ($\times1.21$); with its own order, it loses by more than 10\% on
+no instance.
 
 \begin{table}[t]
 \centering
@@ -768,65 +792,79 @@ order in both engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 0.97--1.00 & 0.75 & 0.79 & 0.73 & 131 / 129\\
-systems      & best of each      & 0.90--0.96 & 0.81 & 0.81 & 0.88 & 361 / 356\\
+optimization & best of each      & 0.93--1.00 & 0.77 & 0.80 & 0.71 & 130 / 129\\
+systems      & best of each      & 0.90--0.95 & 0.79 & 0.78 & 0.84 & 360 / 356\\
 \midrule
-optimization & same bound order  & 0.94--0.98 & 0.80 & 0.80 & 0.72 & 129 / 129\\
-systems      & same bound order  & 0.90--0.95 & 0.83 & 0.82 & 0.88 & 360 / 356\\
+optimization & same bound order  & 0.93--1.01 & 0.81 & 0.83 & 0.72 & 129 / 129\\
+systems      & same bound order  & 0.90--0.95 & 0.81 & 0.80 & 0.85 & 361 / 356\\
 \bottomrule
 \end{tabular}
 \end{table}
 \todo{anadir perfiles de desempeno~\cite{dolan2002benchmarking}}
 
-\subsection{Cost per LP}
+\subsection{Cost of a pass}
 
 Table~\ref{tab:main} mixes two effects: how many cells are explored and what
-each LP costs. To separate them we ran both engines on the same LPs: at every
-node the black box first solves the pass on a copy of the box, and SC then
-solves it on the same box and polytope, with the search following SC.
-Figure~\ref{fig:costlp} compares the time per LP, including the whole pass
-(ordering and certificate, which are common to both). SC solves an LP in
-$0.56$ times the time of the black box on systems of equations (geometric mean
-over the 220 systems with at least 100 LPs; median 27 against 53\,$\mu$s) and
-in $0.38$ times on optimization problems (94 problems; median 11 against
-30\,$\mu$s), and is cheaper on 84\% and 95\% of the instances. Both factors
-contribute: SC needs fewer pivots per LP ($\times0.74$ and $\times0.80$), from
-the shared basis and the dual-feasible restart, and less time per pivot
-($\times0.78$ and $\times0.50$), which for the black box includes the cost of
-each call (setting bounds and objective, reading the solution). Since the LPs
-are only part of the cost of a node, with the linearization, propagation, ACID
-and interval Newton, halving the cost of an LP yields the 17--20\% of
-Table~\ref{tab:main}. SC is slower per LP on a few systems where the dual
-method needs many more pivots than the black box: Virasoro (87 against 18
-pivots per LP) and Katsura-30 and 40 (67 against 17).
+each pass of the contractor costs. To separate them we ran both engines on the
+same LPs: at every node the black box first runs the pass on a copy of the box,
+and SC then runs it on the same box and polytope, with the search following
+SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
+including ordering, skipping and certification, which are common to both. A
+pass of SC costs $0.53$ times that of the black box on systems of equations
+(geometric mean over the 204 systems with at least 20 nodes and 100 LPs;
+median 455 against 917\,$\mu$s) and $0.42$ times on optimization problems (87
+problems; median 95 against 238\,$\mu$s), and is cheaper on 91\% and 95\% of
+the instances.
+
+The two other panels split this ratio into pivots per pass and time per pivot.
+On systems of equations the gain comes from pivoting less ($\times0.62$), owing
+to the basis shared by the $2n$ bounds and the dual-feasible restart; a pivot
+of SC costs about as much as one of SoPlex ($\times0.94$, over the 138 systems
+with at least two pivots per LP in both engines). On optimization problems
+LPs need few pivots ($\times0.80$), and what dominates is the fixed cost of
+each call to the black box (setting bounds and objective, starting the
+simplex, reading the solution): the time per pivot of SC is $\times0.58$.
+Since the pass is only part of the cost of a node, with the linearization,
+propagation, ACID and interval Newton, halving its cost yields the 17--28\% of
+Table~\ref{tab:main}.
 
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}
-\begin{loglogaxis}[
-  width=0.62\textwidth, height=0.62\textwidth,
-  xmin=2, xmax=5000, ymin=2, ymax=5000,
-  xlabel={black box, $\mu$s per LP}, ylabel={SC, $\mu$s per LP},
-  axis line style={gray!70}, tick style={gray!70},
-  grid=major, major grid style={gray!20},
-  legend style={draw=none, fill=none, font=\footnotesize, at={(0.03,0.97)}, anchor=north west},
-  legend cell align=left, label style={font=\small}, tick label style={font=\footnotesize}]
-\addplot[only marks, mark=*, mark size=1.4pt, color=serieA, fill opacity=0.8, draw=white, line width=0.2pt]
-  table[x=bb, y=sc] {costo_lp_sol.dat};
-\addlegendentry{systems of equations (220)}
-\addplot[only marks, mark=triangle*, mark size=1.8pt, color=serieB, fill opacity=0.8, draw=white, line width=0.2pt]
-  table[x=bb, y=sc] {costo_lp_opt.dat};
-\addlegendentry{optimization (94)}
-\addplot[gray, thin, domain=2:5000] {x};
-\addplot[gray!50, thin, dashed, domain=2:5000] {x/2};
-\node[font=\scriptsize, text=gray, rotate=45, anchor=south] at (axis cs:1500,1650) {equal cost};
-\node[font=\scriptsize, text=gray!80, rotate=45, anchor=north] at (axis cs:1800,800) {SC twice as fast};
-\end{loglogaxis}
+\begin{groupplot}[group style={group size=3 by 1, horizontal sep=1.15cm},
+  xmode=log, ymode=log, width=0.38\textwidth, height=0.38\textwidth,
+  axis line style={gray!70}, tick style={gray!70}, grid=major, major grid style={gray!20},
+  legend style={draw=none, fill=none, font=\tiny, at={(0.03,0.97)}, anchor=north west},
+  legend cell align=left, label style={font=\footnotesize}, tick label style={font=\scriptsize},
+  title style={font=\footnotesize}]
+\nextgroupplot[title={time per pass}, xmin=5, xmax=2000000, ymin=5, ymax=2000000,
+  xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
+\addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
+\addlegendentry{systems: $\times0.53$}
+\addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
+\addlegendentry{optimization: $\times0.42$}
+\addplot[gray, thin, domain=5:2000000]{x};
+\nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
+  xlabel={black box}, ylabel={SC}]
+\addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
+\addlegendentry{systems: $\times0.62$}
+\addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
+\addlegendentry{optimization: $\times0.80$}
+\addplot[gray, thin, domain=0.005:100000]{x};
+\nextgroupplot[title={time per pivot}, xmin=2, xmax=200, ymin=2, ymax=200,
+  xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
+\addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_sol.dat};
+\addlegendentry{systems: $\times0.94$}
+\addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_opt.dat};
+\addlegendentry{optimization: $\times0.58$}
+\addplot[gray, thin, domain=2:200]{x};
+\end{groupplot}
 \end{tikzpicture}
-\caption{Time per LP of both engines on the same LPs (same boxes and polytope
-at every node), one point per instance with at least 100 LPs. Points below the
-diagonal are instances where SC is cheaper per LP.}
-\label{fig:costlp}
+\caption{Cost of a polytope-hull pass with both engines on the same LPs (same
+boxes and polytope at every node), one point per instance; points below the
+diagonal favour SC. Left: time per pass. Middle: pivots per pass. Right: time
+per pivot, for instances with at least two pivots per LP in both engines.}
+\label{fig:cost}
 \end{figure}
 
 \subsection{Where the black box loses bounds}

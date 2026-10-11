@@ -419,6 +419,12 @@ Katsura-30) pero pierde en las CountercurrentReactors (ruido por semilla) y no
 cambia las pérdidas sistemáticas: BroydenBanded-200 ×0.73 y Brown-30
 ×0.5–0.8 con cualquier K y cualquier ε (efecto de trayectoria: en Brown-30
 basta perturbar 136 LPs). Conclusión: perturbar siempre, ε = 1e-7.
+**Adoptada como omisión** (commit ab0c6e3e; `DFB_SX_PERTURB=0` la apaga).
+Paper actualizado con el banco `re` (Tabla 2, abstract, §4 «Dual degeneracy»,
+nota en la proposición anytime: el objetivo perturbado difiere de la cota
+certificada en ≤ 2ε Σ mag z_j) y figura de costo por pasada (tres paneles,
+sonda con perturbación). Pendiente: ablación contra la omisión nueva (`abl4`)
+y sonda misma caja (Tabla 3).
 
 **Comparación contra producción fuerte (2026-10-08).** DFB con la
 estrategia por nodo (`DFB_SX_PIVOTEO=por_motor`: dual en los nodos del motor
@@ -679,6 +685,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_SALTEO=ancho`, `IBEX_PH_SALTEO=ancho` | salto de Achterberg relativo al ancho de la caja en DFB / producción (§9) |
 | `IBEX_PH_NOACH=1`, `DFBH_AB=1`, `DFBH_ABHULL=1` | sin salto en producción; misma caja con los dos contractores; cotas de DFB contra el hull exacto (§9) |
 | `DFBH_FUSIONA=0` | no fusiona las filas gemelas (misma normal, un lado cada una) de la linealización fresca (por omisión las fusiona desde 2026-10-09) (§4) |
+| `DFB_SX_PERTURB=eps`, `DFB_SX_PERTURB_TRAS=K` | perturbación de costos al reubicar, **omisión ε = 1e-7** desde 2026-10-11 (0 la apaga); con K > 0, sólo tras K pivotes duales degenerados seguidos (§4) |
 | `DFB_SX_DEVEXP=1` | precio devex en los pasos primales del motor revisado (por omisión Dantzig; sin banco aún) (§4) |
 | `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado (omisión sólo el 2026-10-10 antes de la fusión; hoy apagados, la omisión es dual puro) (§4) |
 | `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `dual` (puro, en los dos motores) desde 2026-10-10**; `por_motor` (dual en revisados, primal en tableau) fue omisión 2026-10-08…10 (§1, §4, §9) |
