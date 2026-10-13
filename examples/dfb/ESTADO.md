@@ -87,7 +87,7 @@ nulas (§8).
 | **Tolerancia primal a escala de la caja**, τ = 1e-3 (§9) | neutra para el primal; sin ella el dual puro declaraba factibles poliedros vacíos en cajas angostas |
 | **Devex en la fila que sale** (§9) | cpu ×0.98–0.99 con el dual puro |
 | **Estrategia por nodo y umbral 80** (`por_motor`: dual en los nodos revisados, primal en los de tableau) (§4, §9) | solver cpu ×0.97 por la estrategia y ×0.97–0.98 por el umbral, celdas iguales; `ibexopt` neutro |
-| **Motor híbrido**: simplex revisado sin tableau en relajaciones de más de 40 filas (§9) | `ibexsolve` cpu ×0.75–0.93 con las mismas celdas; neutro en `ibexopt` |
+| **Motor híbrido**: simplex revisado sin tableau en relajaciones de más de 30 filas (§9) | `ibexsolve` cpu ×0.75–0.93 con las mismas celdas; neutro en `ibexopt` |
 | **LU sin el reloj de SoPlex** (`SLUFactor` leía `times()` en cada FTRAN/BTRAN) (§9) | `ibexsolve` cpu ×0.92–0.93 con el afín y ×0.83 con `compo`, mismas celdas; `launch` ×0.85 |
 | **Sondas leídas una vez y `mid()` directo** (más de 20 `getenv` por LP en `una_pasada`; el `mid()` de gaol guarda y restaura el redondeo aun en intervalos de un punto, en `Af = mid(A)` cada pasada; también los `getenv` de `CtcPolytopeHull`, `LSmear` y el optimizador) | mismas celdas, DFB ~×0.97 en `ex6_1_3` y `ex7_2_3` (corridas sueltas, sin banco) |
 | **Un solo simplex secuencial** | 6.8–12.3 % más rápido que `2n` ejemplares sembrados |
@@ -250,6 +250,24 @@ Discrete-Integralf2-17…19 (×0.57–0.62); pierde Bratu-0120 (×1.25). Contra 
 caja negra, umbral 40: solver celdas ×0.81–0.89, cpu ×0.96 / ×0.97 / ×0.90;
 `ibexopt` cpu ×0.77 / ×0.82 / ×0.78. Siguen sin terminar Bratu-0175…0200
 (costo por pivote en relajaciones de ese tamaño).
+
+**Umbral 30 desde 2026-10-13.** Las dos pérdidas de SC en `all` a 3600 s
+(ex5_4_4 ×3.72, hhfair ×1.80; 28 variables, relajaciones de 39 y ~40–41 filas)
+eran el motor: la sonda `DFBH_ABCAJA` da la misma contracción que SoPlex, pero
+cada LP en tableau cuesta ×4.4 / ×2.6; el revisado hace los mismos pivotes más
+baratos. Barrido en el banco de la ablación (132 sistemas + 139 opt, 4 semillas,
+60 s): 35 y 30 empatan con 40 (±0.5 %, terminan 362 = 362, 519 = 519); ganan
+Discrete-Integralf2-18/20 (×0.72–0.78) y ex5_3_2 (×0.93). En las dos instancias
+(120 s, 4 semillas, orden lejos):
+
+| | umbral 40 | 35 | 30 | caja |
+|---|---|---|---|---|
+| ex5_4_4, celdas en 120 s | 4760 | 9660 | 9560 | 14400 |
+| hhfair, tiempo total | no termina (10100 celdas) | 107 s | 109 s | 106 s |
+
+hhfair empata con la caja (20 % menos celdas); en ex5_4_4 queda ×1.5 por el
+costo por LP del revisado (≈20 pivotes por LP contra 12 de SoPlex). Protocolo:
+elegido en el banco del paper, se valida sin cambios en los 162 de `all`.
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
@@ -705,7 +723,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |
 | `DFBH_TESTIGO=archivo`, `DFBH_INFSTATS=1` | verifica un punto solución conocido contra la relajación y las cotas; cuenta filas donde el ±1e100 de SoPlex habría cortado (§9) |
 | `DFBH_LATIDO=1`, `DFBH_LPLARGO=1` | latido del contractor cada 200 llamadas; LPs de más de 5000 vueltas y progreso de la pasada |
-| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (**umbral 40** desde 2026-10-10; 80 entre el 08 y el 10) (§9). **Omisión `auto`** |
+| `DFB_SX_MOTOR=tableau\|revisado\|auto`, `DFB_SX_MOTOR_M=m` | motor del simplex: tableau explícito, revisado sin tableau, o revisado por encima de `m` filas (**umbral 30** desde 2026-10-13; 40 entre el 10 y el 13, 80 entre el 08 y el 10) (§9). **Omisión `auto`** |
 | `DFBH_LUSTATS=1` | cuenta factorizaciones, updates, BTRAN y FTRAN de la LU (§9) |
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
@@ -949,7 +967,7 @@ queda sin probar y con la expectativa bajada por esto mismo.
    por LP.
 
    **Híbrido por nodo (2026-10-05), `DFB_SX_MOTOR=auto`**: revisado si la
-   relajación tiene más de `DFB_SX_MOTOR_M` filas (umbral 40), tableau si no.
+   relajación tiene más de `DFB_SX_MOTOR_M` filas (umbral 30 desde 2026-10-13), tableau si no.
    En los nodos revisados el refresco y el certificado usan la LU y el orden de
    cotas pasa a `lejos`. Con umbral 30 `ex5_3_2` (32 filas) empeoraba 1.75 →
    2.62 s por perder el orden por costo; con 40 el revisado entra sólo donde su

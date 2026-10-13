@@ -88,16 +88,17 @@ static bool leer_motor_revisado() {
     const char* v = getenv("DFB_SX_MOTOR");
     return v != NULL && std::string(v) == "revisado";
 }
-/* Omision `auto` (umbral 40) desde 2026-10-05; `DFB_SX_MOTOR=tableau` lo apaga. */
+/* Omision `auto` (umbral 30) desde 2026-10-05; `DFB_SX_MOTOR=tableau` lo apaga. */
 static bool leer_motor_auto() {
     const char* v = getenv("DFB_SX_MOTOR");
     return v == NULL || std::string(v) == "auto";
 }
 bool DFBSimplex::motor_revisado = leer_motor_revisado();
 bool DFBSimplex::motor_auto = leer_motor_auto();
-/* Umbral 40 desde 2026-10-10: con pasos primales el revisado es mas barato
- * (fue 80 entre el 2026-10-08 y el 10). */
-int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 40;
+/* Umbral 30 desde 2026-10-13: en relajaciones de 30-40 filas (ex5_4_4,
+ * hhfair) el revisado hace los mismos pivotes mas baratos; en el banco del
+ * paper 30 empata con 40. Fue 40 entre el 10 y el 13, 80 entre el 08 y el 10. */
+int  DFBSimplex::motor_umbral = getenv("DFB_SX_MOTOR_M") ? atoi(getenv("DFB_SX_MOTOR_M")) : 30;
 long DFBSimplex::n_nodos_rev = 0, DFBSimplex::n_nodos_tab = 0;
 static bool leer_lu_diferida() {
     if (leer_motor_revisado()) return false;
