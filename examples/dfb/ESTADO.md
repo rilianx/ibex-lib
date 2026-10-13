@@ -276,6 +276,26 @@ pierde más de ×1.01. Caja repetida contra all60: ×1.00 (piso de ruido).
 Siguen perdiendo con ambos umbrales hs099 ×2.4, linear ×1.8 (más celdas que
 la caja) y ex8_4_4 ×1.5–1.8 (+8 % celdas, costo por LP).
 
+**NA a 3600 s con 12 GB (2026-10-13, corridas de 600 s con `/usr/bin/time`)**:
+loadbal crece ~12 MB/s (7.1 GB a 600 s, ~42 GB a 3600) y orthrege con SC
+~5 MB/s (3.2 GB; la caja 1.8 GB porque hace la mitad de celdas): excluidas por
+memoria como avion2. hs089 y hs091 usan < 300 MB pero `ibexopt` se pasa del
+`-t` un 4–8 % (623 y 649 s con `-t600`) y a 3600 s el `timeout 3750` los mata;
+no encuentran punto factible (`inf`), quedan como tope. matrix2 aborta en los
+dos brazos (semillas 1–3, a los ~120 s) por el `assert(is_actif())` de
+`AffineMain<AF_fAF2>::val` (`affine/ibex_Affine2_fAF2.cpp:225`): falla de la
+linealización afín de Ibex, no de SC; con la semilla 4 termina en 0.1 s.
+
+**Pérdidas que quedan en `all` (sonda `DFBH_ABCAJA`, 60 s, semilla 1)**: la
+contracción en la misma caja es igual o mejor con DFB (hs099 0.341 contra
+0.336, gana DFB 3934 nodos contra 70; linear 0.333 contra 0.326; ex8_4_4 0.330
+contra 0.327); las celdas de más en la corrida completa son de trayectoria. Es
+costo por LP: DFB hace ~2× pivotes por LP (hs099 20 contra 12, linear 31
+contra 15, ex8_4_4 10 contra 5.5). hs099 (29 filas) y ex8_4_4 (25) van al
+tableau con umbral 30, pero el revisado es más barato también ahí: µs/LP 277 →
+150 y 120 → 78 (SoPlex 98 y 54). El umbral sólo por filas no captura el
+cruce.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
