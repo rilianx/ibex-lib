@@ -268,6 +268,13 @@ Discrete-Integralf2-18/20 (×0.72–0.78) y ex5_3_2 (×0.93). En las dos instanc
 hhfair empata con la caja (20 % menos celdas); en ex5_4_4 queda ×1.5 por el
 costo por LP del revisado (≈20 pivotes por LP contra 12 de SoPlex). Protocolo:
 elegido en el banco del paper, se valida sin cambios en los 162 de `all`.
+**Validación (2026-10-13, `results/all60_umbral30_2026-10-13.csv`)**: los 162
+de `all` menos los 58 excluidos (104 opt, 4 semillas, 60 s), SC umbral 30
+contra caja: cpu ×0.95 / ×0.95 / ×1.07 (> 0.1 / 1 / 5 s), resueltas 309
+contra 305; contra umbral 40: ×0.98, 309 = 309, gana hhfair1 ×0.47, ninguna
+pierde más de ×1.01. Caja repetida contra all60: ×1.00 (piso de ruido).
+Siguen perdiendo con ambos umbrales hs099 ×2.4, linear ×1.8 (más celdas que
+la caja) y ex8_4_4 ×1.5–1.8 (+8 % celdas, costo por LP).
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
