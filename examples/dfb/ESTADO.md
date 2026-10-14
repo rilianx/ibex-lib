@@ -428,7 +428,17 @@ natural sistemas ×1.04, opt ×1.00. Etapa 2 (242 sistemas × 2 semillas, `cerca
 camino). Gana en los Bratu grandes (×0.62–0.81 con las mismas celdas: menos
 costo por LP con el arranque en caliente de SoPlex). Con SoPlex en `cerca`, SC
 (su orden) queda ×0.84 / ×0.85 / ×0.83 (antes ×0.78 / ×0.76 / ×0.81). En opt
-SoPlex sigue en «lejos» (empate).
+SoPlex sigue en «lejos» (empate). **Paper pasado a SoPlex `cerca` en sistemas
+(fila best of each)**: ×0.84 / ×0.85 / ×0.83, celdas 0.87–0.95, 364 / 352;
+resumen 15–23 % y 5–13 %; Brown ×0.15 (la caja termina 4 de 12), Geneig-icse
+×0.39, Bratu grandes ×0.92 (×0.72 con lejos en los dos), pierde Katsurabis-14
+×1.20 (mismas celdas) y dos dentro del ruido. Perfiles: 271 corridas, SC el más
+rápido en 92 %, la caja no termina 4 %. Interruptor nuevo `DFBH_ORDEN_CAJA`
+(orden propio de la caja; sin él, la caja usa lejos cuando DFB usa el orden por
+costo: la sonda vieja daba lo mismo que lejos, verificado en Bratu-0120,
+ex5_3_2 y launch). En Bratu-0120 la caja con `cerca` hace 8.75 piv/LP contra
+30.1 con lejos (165 contra 364 µs/LP): la figura de costo de sistemas se rehace
+con `DFBH_ORDEN_CAJA=cerca` (en cola, `$M/costo2.sh`, binarios `*_oc`).
 
 **Banco a 3600 s (2026-10-14, `results/l3600_2026-10-14/`).** SC con orden
 lejos (binario final, 6 GB) contra la caja «lejos» de `l3600`/`all3600`

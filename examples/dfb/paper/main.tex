@@ -63,7 +63,7 @@ the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 139 constrained
 global optimization problems, SC is 23--30\% faster with similar search trees.
-On 242 systems of equations it is 19--24\% faster, explores 8--12\% fewer cells
+On 242 systems of equations it is 15--23\% faster, explores 5--13\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. Checked against an LP
 oracle, SC never goes beyond the LP hull by more than the tolerance of the oracle.
@@ -322,9 +322,10 @@ better order: for $x_k$ basic in row $r$, the number of nonbasic columns whose
 reduced cost for the objective $\pm z_k$ would have the wrong sign is the
 number of primal infeasibilities to repair, and can be counted in
 $O(\mathrm{nnz}(\text{row } r))$ without pivoting. Ordering by this count
-saves about 5\% of CPU time on both benchmarks
-(Section~\ref{sec:experiments}); since the black box has no tableau, the
-controlled comparison uses the farthest-bound rule in both engines.
+saves a few percent of CPU time (Section~\ref{sec:experiments}). The black box
+has no tableau and can only order by distance; we give it the better of the
+farthest and the nearest bound first, and also compare both engines with the
+farthest-bound rule.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
 empty and the pass stops. If an LP ends without an optimal basis (iteration
@@ -780,9 +781,15 @@ optimization problems; we use $10^{-6}$ for systems of equations and $10^{-9}$
 for optimization, the best value in each case. Turning off presolving or
 scaling, or forcing the row or column representation, did not help; forcing the
 primal algorithm reduced the spurious infeasibility but made the overall
-results worse. Both engines use the bound order that only needs the last primal
-point (farthest bound first); SC can also order the bounds with information of
-its tableau, which we report separately.
+results worse. The bound order matters for the black box too: on systems of
+equations, the nearest bound first makes its warm starts cheaper (on the
+Bratu systems, 9 pivots per LP instead of 30) and saves 4--6\% of CPU time with
+the same cells, although it fails four runs of Brown-19 and Brown-20-1 that
+the farthest bound first finishes; on optimization problems both orders tie
+($\times1.00$ on the 19 problems with runs between 1 and 60\,s). The black box
+therefore uses the nearest bound first on systems and the farthest bound first
+on optimization problems, and SC its own order. We also compare both engines
+with the farthest bound first.
 
 \paragraph{Setting.}
 Contractor and solvers are implemented in Ibex with the affine
@@ -849,22 +856,26 @@ total                  & 3\,090 & 2\,980 & 125 & 27\\
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
 whose relaxations are small, SC is 23--30\% faster with similar search trees.
-On systems of equations SC is 19--24\% faster and explores 8--12\% fewer
-cells; it finishes 364 runs against 356. The largest gains are on systems
-where the black box reports no optimum for many LPs (Brown-18 to 30,
-$\times0.15$ in CPU time on the runs both finish, the black box failing to
-finish four runs of Brown-30) and on Geneig ($\times0.33$ on Geneig-icse); on
-the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC
-is also faster ($\times0.72$ on the family). With the same bound order SC
-loses only on Katsurabis-14 ($\times1.24$); with its own order, it loses by
-more than 5\% on no instance.
+On systems of equations SC is 15--23\% faster and explores 5--13\% fewer
+cells; it finishes 364 runs against 352 (356 with the farthest bound first).
+The largest gains are on systems where the black box reports no optimum for
+many LPs (Brown-18 to 30, $\times0.15$ in CPU time on the runs both finish,
+the black box finishing 4 of the 12 runs) and on Geneig ($\times0.39$ on
+Geneig-icse); on the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200
+after merging) SC is still faster ($\times0.92$ on the family against the
+nearest bound first of the black box, $\times0.72$ with the farthest bound
+first in both). SC loses by more than 5\% on three systems (Katsurabis-14
+$\times1.20$, CountercurrentReactors2-18 $\times1.08$, ponts-geo $\times1.06$);
+with the same bound order it loses only on Katsurabis-14 ($\times1.24$).
 
 \begin{table}[t]
 \centering
 \caption{SC against the best black-box (BB) configuration, inside the same
 contractor. Ratios SC/BB (cells and CPU) for runs whose reference time
-exceeds 0.1, 1 and 5\,s, and runs finished. The last rows use the same bound
-order in both engines.}
+exceeds 0.1, 1 and 5\,s, and runs finished. Best of each: SC with its own
+bound order, the black box with the nearest bound first on systems and the
+farthest on optimization. The last rows use the farthest bound first in both
+engines.}
 \label{tab:main}
 \begin{tabular}{llccccc}
 \toprule
@@ -873,7 +884,7 @@ order in both engines.}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
 optimization & best of each      & 0.96--0.99 & 0.75 & 0.77 & 0.72 & 131 / 130\\
-systems      & best of each      & 0.88--0.92 & 0.78 & 0.76 & 0.81 & 364 / 356\\
+systems      & best of each      & 0.87--0.95 & 0.84 & 0.85 & 0.83 & 364 / 352\\
 \midrule
 optimization & same bound order  & 0.93--0.99 & 0.77 & 0.77 & 0.70 & 131 / 130\\
 systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
@@ -882,9 +893,9 @@ systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
 \end{table}
 Figure~\ref{fig:profiles} shows the same comparison as performance
 profiles~\cite{dolan2002benchmarking} over the runs above 0.1\,s that at least
-one engine finishes: SC is the faster engine in 96\% of the runs on systems of
+one engine finishes: SC is the faster engine in 92\% of the runs on systems of
 equations and in 95\% on optimization problems; within a factor of 2 the black
-box reaches 93\% and 97\% of the runs, and it does not finish 3\% and 0.5\% of
+box reaches 93\% and 97\% of the runs, and it does not finish 4\% and 0.5\% of
 them, all of which SC finishes.
 
 \begin{figure}[t]
@@ -897,7 +908,7 @@ them, all of which SC finishes.
   legend style={draw=none, fill=none, font=\tiny, at={(0.97,0.03)}, anchor=south east},
   legend cell align=left, label style={font=\footnotesize}, tick label style={font=\scriptsize},
   title style={font=\footnotesize}, xlabel={$\tau$}]
-\nextgroupplot[title={systems of equations (270 runs)}, ylabel={fraction of runs}]
+\nextgroupplot[title={systems of equations (271 runs)}, ylabel={fraction of runs}]
 \addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_sol.dat};
 \addlegendentry{SC}
 \addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_sol.dat};
@@ -1096,12 +1107,14 @@ where the largest gains are (Brown, Geneig-icse). The slightly tighter
 certificates of SC on the remaining LPs compound along the search but are a
 second-order effect.
 
-\paragraph{Where it loses.} With its own bound order, SC is slower than the
-black box by more than 5\% on no system of equations. On optimization problems
+\paragraph{Where it loses.} On systems of equations, SC is slower than the
+black box by more than 5\% on three systems: Katsurabis-14 ($\times1.20$),
+which explores the same cells with costlier nodes, and two within the
+variation between seeds (CountercurrentReactors2-18, whose cells change with the
+seed, and ponts-geo, $\times1.06$--$1.08$). On optimization problems
 the largest loss is launch ($\times1.32$): SC explores 168--182 cells against
-88--150, and its cheaper nodes do not make up for it. With the same bound
-order, Katsurabis-14 explores the same cells but each node costs more
-($\times1.24$; $\times1.03$ with the order of SC).
+88--150, and its cheaper nodes do not make up for it. With the farthest bound
+first in both engines, SC loses only on Katsurabis-14 ($\times1.24$).
 
 \paragraph{What did not pay.} We also measured on the whole benchmark several
 ideas that use the certificate or the tableau beyond the pass, and none paid.
