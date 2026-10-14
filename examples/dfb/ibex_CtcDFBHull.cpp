@@ -1121,6 +1121,15 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
     static const int   orden = (ord_env && std::string(ord_env)=="cerca") ? 0 :
                                (ord_env && std::string(ord_env)=="lejos") ? 1 :
                                (ord_env && std::string(ord_env)=="nat")   ? 2 : 3;
+    /* La caja negra no tiene tableau: el orden 3 lee el de DFB, que en la sonda
+     * `DFBH_ABCAJA` es el de la pasada anterior. Por omision usa el de la mas
+     * lejana; `DFBH_ORDEN_CAJA=cerca|lejos|nat` le da un orden propio sin
+     * tocar el de DFB (los brazos del banco fijan `DFBH_ORDEN` y no cambian). */
+    static const char* ordc_env = getenv("DFBH_ORDEN_CAJA");
+    static const int   orden_caja = !ordc_env ? (orden == 3 ? 1 : orden)
+                               : std::string(ordc_env)=="cerca" ? 0
+                               : std::string(ordc_env)=="nat"   ? 2 : 1;
+    const int ord = motor_caja ? orden_caja : orden;
     static const bool  no_salteo = (getenv("DFBH_NOSKIP") != NULL);
 
     /* --- CORTE TEMPRANO (anytime) ---
@@ -1377,7 +1386,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                          * ganancia relativa fuera despreciable, y en instancias
                          * con escalas dispares eso desordenaba la pasada
                          * —`alkylbis` se iba de 70 a 700 celdas—. */
-                        if (orden == 3 && !sx.es_revisado()) {
+                        if (ord == 3 && !sx.es_revisado()) {
                             const int cnt = sx.dual_infeasibilities(j, lado == 1);
                             if (idx < 0 || cnt < mejor_cnt
                                 || (cnt == mejor_cnt && rel > mejor_gan)) {
@@ -1412,7 +1421,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     if (!no_salteo && rel < PREC) { hecho[q] = 1; ++abc_cnt[motor_caja][5]; continue; }
                     /* Con el motor revisado el tableau no esta al dia: orden de
                      * la mas lejana (`orden == 1`). */
-                    if (orden == 3 && !sx.es_revisado()) {
+                    if (ord == 3 && !sx.es_revisado()) {
                         const int cnt = sx.dual_infeasibilities(j, lado == 1);
                         if (idx < 0 || cnt < mejor_cnt
                             || (cnt == mejor_cnt && -dj < mejor)) {
@@ -1421,8 +1430,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                         }
                         continue;
                     }
-                    const double key = (orden == 0) ? dj
-                                     : (orden == 1 || orden == 3) ? -dj
+                    const double key = (ord == 0) ? dj
+                                     : (ord == 1 || ord == 3) ? -dj
                                                     : (double)q;
                     if (key < mejor) { mejor = key; idx = q; }
                 }
