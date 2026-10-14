@@ -65,8 +65,8 @@ for uncertified bounds, using either SC or a state-of-the-art LP solver
 global optimization problems, SC is 23--30\% faster with similar search trees.
 On 242 systems of equations it is 19--24\% faster, explores 8--12\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
-box reports no optimum, and slightly tighter ones elsewhere. SC never exceeds
-the exact LP hull.
+box reports no optimum, and slightly tighter ones elsewhere. Checked against an LP
+oracle, SC never goes beyond the LP hull by more than the tolerance of the oracle.
 \end{abstract}
 
 % =====================================================================
@@ -156,7 +156,7 @@ lower bound that is nondecreasing along the iterations
 \item A controlled evaluation in Ibex, on 242 systems of equations and 139
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver feeding the same certificate; a rigor check against the
-exact LP hull; a same-box analysis of where the black box loses bounds; and an
+LP hull; a same-box analysis of where the black box loses bounds; and an
 ablation (Section~\ref{sec:experiments}).
 \end{itemize}
 
@@ -355,18 +355,43 @@ Both reach an optimal basis, so the certificate at termination is exact
 empty is decided in the first LP, common to both. They differ only in cost,
 and which one is cheaper depends on how the optima of consecutive bounds are
 related. An optimal vertex is given by a basis and by the bound on which each
-nonbasic variable rests. Between two consecutive bounds of a pass, 3--19\% of
-the basis changes, on systems of equations and on optimization problems alike;
-what differs is the side of the nonbasic variables. On systems of equations,
-8--37\% of the nonbasic variables that stay nonbasic move to their opposite
-bound, against 1--7\% on optimization problems
-\todo{tabla o figura con la sonda DFBH\_BASECOMP; aislar por que los lados cambian mas en sistemas}.
-The dual warm start moves them for free, since relocation is not a pivot; the
-primal warm start pays one iteration for each, and its pivots are close to
-those of the dual plus the number of side changes (Bratu-0120: 35.5 against
-$9.9+19.4$). When few sides change, the relocation of the dual warm start moves
-variables that the next optimum leaves in place, and the dual method spends
-pivots undoing it (problem linear: 28.6 pivots per LP against 7.6). SC
+nonbasic variable rests. Table~\ref{tab:sides} compares the optima of
+consecutive bounds over the benchmarks of Section~\ref{sec:experiments}: the
+basis changes by 10--17\% in both programs, but on systems of equations a
+median of 1.9 nonbasic variables per LP move to their opposite bound, against
+0.5 on optimization problems. The dual warm start moves them for free, since
+relocation is not a pivot; the primal warm start pays one iteration for each,
+and its iterations exceed those of the dual by about the number of side
+changes (medians 1.9 and 0.4 per LP). On systems of equations this makes the
+primal warm start pivot 2.5 times more. On optimization problems it pivots
+about 30\% more on relaxations up to 40 rows, and less above, but each LP is
+cheaper: relocation changes the values of the nonbasic variables, so the dual
+warm start recomputes the basic values from the factorization, which the
+primal warm start keeps (on ex5\_3\_2 and launch, 2.5 times fewer such
+recomputations, and 10--20\% less CPU time).
+\todo{aislar el costo por LP en optimizacion (cronometro por componente) y por que los lados cambian mas en sistemas}
+
+\begin{table}[t]
+\centering
+\caption{Optima of consecutive bounds of a pass (seed 1, 20\,s per run, 162
+systems and 60 optimization problems with at least 1\,000 warm LPs in both
+warm starts). Medians, with quartiles in parentheses, of the rows of the
+relaxation, the basic variables that change, the nonbasic variables that move
+to their opposite bound, and the iterations per warm LP with each warm start.}
+\label{tab:sides}
+\begin{tabular}{lcccccc}
+\toprule
+& & basis & \multicolumn{2}{c}{side changes} & \multicolumn{2}{c}{iterations per LP}\\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+benchmark & rows & changed & per LP & \% nonbasic & dual & primal\\
+\midrule
+systems      & 18 (10--31) & 10\% & 1.9 (1.1--2.8) & 15\% & 3.1 & 4.9\\
+optimization & 8.5 (5--11) & 17\% & 0.5 (0.3--0.7) & 8\% & 1.8 & 1.9\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SC
 therefore uses the dual warm start in the solver of systems of equations, where
 the certified bound is valid and nondecreasing at every iteration of every LP,
 and the primal warm start in the optimizer, where the first LP of each pass is
@@ -612,8 +637,8 @@ certificate is exact as well.
 In floating point, the computed enclosure exceeds the LP bound by at most
 $\sum_j \wid(\iv{\gamma}_j)\,\magn(\iv{z}_j)$ plus the effect of the inaccuracy of
 $\lambda$, the same slack as in the Neumaier--Shcherbina
-bound~\cite{neumaier2004safe}. On identical boxes, SC attains the exact hull in
-97\% of the bounds where it differs from the standard contractor
+bound~\cite{neumaier2004safe}. On identical boxes, SC attains the LP hull in
+96\% of the bounds where it contracts more than the standard contractor
 (Section~\ref{sec:experiments}).
 
 \begin{remark}[Relation to Neumaier--Shcherbina and Domes--Neumaier]
@@ -761,28 +786,34 @@ number of runs that finish within the time limit.
 \subsection{Rigor}
 
 SC is rigorous by Proposition~\ref{prop:valid}; we also checked it empirically
-against the exact LP hull. On identical boxes and with the same polytope, for
-every bound where SC and the polytope-hull contractor of Ibex give different
-results, we solved the bound LP of the polytope over the input box with a fresh
-LP solver. No valid contraction can go beyond this hull. Over 973 such bounds in
-four systems (Table~\ref{tab:hull}), SC never went beyond the hull and attained
-it in 97\% of the cases.
+against the LP hull. On identical boxes and with the same polytope, for every
+bound where SC contracts more than the polytope-hull contractor of Ibex, we
+solved the bound LP of the polytope over the input box with a fresh instance
+of SoPlex, used as an oracle. No valid contraction can go beyond this hull. Over
+3\,090 such bounds in four systems (Table~\ref{tab:hull}), SC attained the hull
+in 96\% of the cases and went beyond it in 27, all on boxes narrower than
+$2\cdot10^{-5}$ and by at most $3.4\cdot10^{-9}$ in absolute value
+($2.8\cdot10^{-10}$ relative to the bound): below the feasibility tolerance of
+the oracle, $10^{-9}$, whose own optimal point lay outside the input box in 21
+of these 27 bounds. No bound went beyond the hull by more than that tolerance.
 
 \begin{table}[t]
 \centering
-\caption{Bounds where SC and the polytope-hull contractor of Ibex differ on the
-same box, compared with the exact hull of the polytope over the input box.}
+\caption{Bounds where SC contracts more than the polytope-hull contractor of
+Ibex on the same box, compared with the LP hull of the polytope over the input
+box computed by SoPlex. ``Beyond'' counts bounds beyond the hull, all within
+the $10^{-9}$ tolerance of the oracle.}
 \label{tab:hull}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-system & bounds & SC beyond hull & SC at hull\\
+system & bounds & SC at hull & PH at hull & SC beyond\\
 \midrule
-Bratu-0060             &  84 & 0 &  84\\
-Discrete-Integralf2-13 &  22 & 0 &  22\\
-Geneig                 & 617 & 0 & 584\\
-Bellido                & 250 & 0 & 249\\
+Bratu-0060             &   892 &   870 &  40 &  0\\
+Discrete-Integralf2-13 & 1\,048 & 1\,025 &  59 & 22\\
+Geneig                 &   860 &   803 &   5 &  0\\
+Bellido                &   290 &   282 &  21 &  5\\
 \midrule
-total                  & 973 & 0 & 939\\
+total                  & 3\,090 & 2\,980 & 125 & 27\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -822,7 +853,40 @@ systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
 \bottomrule
 \end{tabular}
 \end{table}
-\todo{anadir perfiles de desempeno~\cite{dolan2002benchmarking}}
+Figure~\ref{fig:profiles} shows the same comparison as performance
+profiles~\cite{dolan2002benchmarking} over the runs above 0.1\,s that at least
+one engine finishes: SC is the faster engine in 96\% of the runs on systems of
+equations and in 95\% on optimization problems; within a factor of 2 the black
+box reaches 93\% and 97\% of the runs, and it does not finish 3\% and 0.5\% of
+them, all of which SC finishes.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}
+\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.3cm},
+  xmode=log, xmin=1, xmax=10, ymin=0, ymax=1.02, width=0.46\textwidth, height=0.36\textwidth,
+  axis line style={gray!70}, tick style={gray!70}, grid=major, major grid style={gray!20},
+  xtick={1,1.5,2,3,5,10}, xticklabels={1,1.5,2,3,5,10},
+  legend style={draw=none, fill=none, font=\tiny, at={(0.97,0.03)}, anchor=south east},
+  legend cell align=left, label style={font=\footnotesize}, tick label style={font=\scriptsize},
+  title style={font=\footnotesize}, xlabel={$\tau$}]
+\nextgroupplot[title={systems of equations (270 runs)}, ylabel={fraction of runs}]
+\addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_sol.dat};
+\addlegendentry{SC}
+\addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_sol.dat};
+\addlegendentry{black box}
+\nextgroupplot[title={optimization (212 runs)}]
+\addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_opt.dat};
+\addlegendentry{SC}
+\addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_opt.dat};
+\addlegendentry{black box}
+\end{groupplot}
+\end{tikzpicture}
+\caption{Performance profiles of CPU time, SC (own bound order) against the
+black box, over the runs above 0.1\,s that at least one engine finishes: fraction
+of runs solved within a factor $\tau$ of the faster engine.}
+\label{fig:profiles}
+\end{figure}
 
 \subsection{Cost of a pass}
 

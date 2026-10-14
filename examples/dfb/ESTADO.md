@@ -367,6 +367,30 @@ en `ibexopt` (búsqueda idéntica). Costo por pasada: sistemas ×0.50, opt ×0.3
 pivotes opt ×0.98 (con el dual era ×0.80), µs/pivote opt ×0.49. Paper al día
 (Tablas 2 y 4, figura, resumen); la Tabla 3 no cambia.
 
+**Sonda de lados sobre el banco del paper (2026-10-14, semilla 1, 20 s,
+`DFBH_BASECOMP=200`, ≥ 1000 LPs tibios).** 162 sistemas: base cambiada 10 %,
+cambios de lado 1.9 por LP (15 % de las no básicas), pivotes por LP tibio dual
+3.1 / primal 4.9, primal − dual = 1.90 ≈ lados 1.87. 60 opt: base 17 %, lados
+0.5 por LP (8 %), pivotes dual 1.8 / primal 1.9, primal − dual = 0.42 ≈ lados
+0.49. **Corrige la nota anterior**: en el banco del paper el primal pivotea
+~30 % MÁS que el dual en opt hasta 40 filas (menos arriba); lo de linear/hs099
+(dual 2–4× más pivotes) es de relajaciones grandes de `all`. La ventaja del
+primal en opt viene del costo por LP: la reubicación cambia las no básicas y
+obliga a recalcular `x_B` desde la factorización (`compute_basics`, umbral 30
+en ambos: ex5_3_2 61963 → 23365, launch 28760 → 11753; cpu −10–20 %;
+ex8_4_4bis 0.67 → 1.26 piv/LP con cpu igual). Sin cronómetro por componente
+todavía. Tabla `tab:sides` en el paper.
+
+**Rigor rehecho (2026-10-14, `DFBH_AB=1 DFBH_ABHULL=1`, semilla 1).** 3090
+cotas donde SC contrae más que `CtcPolytopeHull` (antes 973: el resumen se
+imprimía cada 100 nodos y contaba de menos): SC en el hull 2980 (96 %), lo
+pasa en 27 (Discrete-Integralf2-13 22, Bellido 5), todas con cajas < 2e-5 de
+ancho y exceso ≤ 3.4e-9 absoluto (2.8e-10 relativo), bajo la tolerancia 1e-9
+del oráculo SoPlex, cuyo x* está fuera de la caja en 21 de las 27. Contador
+`mas alla de la tolerancia del oraculo` = 0 en las cuatro. Diagnóstico
+`[abhull-pasa]` en la sonda. Perfiles de desempeño (`fig:profiles`,
+`paper/perfil_*.dat`): SC el más rápido en 96 % (sistemas) y 95 % (opt).
+
 **Arranque tibio adaptativo (2026-10-14, `DFBH_ADAPT=u`).** Promedio móvil
 de cambios de lado por LP tibio; al cargar cada nodo, dual (umbral de motor 30)
 si supera `u`, primal (15) si no. Etapa de diagnóstico (7 sistemas + 9 opt, 2

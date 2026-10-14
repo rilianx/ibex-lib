@@ -1796,7 +1796,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 ++nlp; sum_dif += dif; sum_m += nb; sum_piv += sk.iterations();
                 sum_lado += lado; sum_nb += nnb;
                 if (dif == 0) ++iguales;
-                if ((nlp % 2000) == 0)
+                static const long cada = atol(getenv("DFBH_BASECOMP")) > 1 ? atol(getenv("DFBH_BASECOMP")) : 2000;
+                if ((nlp % cada) == 0)
                     fprintf(stderr, "[basecomp] LPs tibios=%ld  m=%.1f  columnas basicas nuevas=%.2f "
                             "(%.1f%% de la base)  base identica en el %.1f%%  pivotes=%.2f  | no basicas que siguen: %.1f, "
                             "cambian de lado: %.2f (%.1f%%)\n",
@@ -3273,7 +3274,7 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
          * la tolerancia), corto puntos factibles de la relajacion. Tambien
          * cuenta cuanto se acerca produccion a ese hull. */
         static const bool abhull = DFB_ENV("DFBH_ABHULL");
-        static long hv_n = 0, hv_pasa = 0, hv_dfb_al_hull = 0, hv_ph_al_hull = 0;
+        static long hv_n = 0, hv_pasa = 0, hv_pasa_tol = 0, hv_dfb_al_hull = 0, hv_ph_al_hull = 0;
         static double hv_peor = 0.0;
         if (abhull && !vph && !vdf) {
             LPSolver lp(nb_var, LPSolver::Mode::NotCertified);
@@ -3311,15 +3312,38 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
                         const double h = lado ? -lp.minimum().mid() : lp.minimum().mid();
                         ++hv_n;
                         const double exceso = (lado ? (h - bd) : (bd - h)) / w;   /* > 0: DFB paso el hull */
-                        if (exceso > 1e-7) { ++hv_pasa; if (exceso > hv_peor) hv_peor = exceso; }
+                        if (exceso > 1e-7) {
+                            ++hv_pasa; if (exceso > hv_peor) hv_peor = exceso;
+                            /* Mas alla de la tolerancia del oraculo: SoPlex resuelve con
+                             * tolerancia absoluta 1e-9; por debajo de eso su hull no es exacto. */
+                            if (exceso*w > 1e-9*std::max(1.0, std::fabs(h))) ++hv_pasa_tol;
+                            /* Diagnostico: el x* de SoPlex, cumple las filas y la caja? */
+                            const Vector xs = lp.not_proved_primal_sol();
+                            const Matrix R = lp.rows(); const Vector L = lp.lhs(), U = lp.rhs();
+                            double vf = 0.0, vc = 0.0; int rf = -1;
+                            for (int r = 0; r < R.nb_rows(); ++r) {
+                                double ax = 0.0, sc = 0.0;
+                                for (int c = 0; c < nb_var; ++c) { ax += R[r][c]*xs[c]; sc += std::fabs(R[r][c]*xs[c]); }
+                                const double v = std::max(std::max(L[r] - ax, ax - U[r]), 0.0) / std::max(1.0, sc);
+                                if (v > vf) { vf = v; rf = r; }
+                            }
+                            for (int c = 0; c < nb_var; ++c) {
+                                const double wc = std::max(entrada[c].diam(), 1e-300);
+                                vc = std::max(vc, std::max(entrada[c].lb() - xs[c], xs[c] - entrada[c].ub()) / wc);
+                            }
+                            fprintf(stderr, "[abhull-pasa] var=%d lado=%d ancho=%.3g dfb=%.17g prod=%.17g hull=%.17g "
+                                    "exceso=%.3g | x*: viol. fila max=%.3g (fila %d de %d) viol. caja=%.3g\n",
+                                    i, lado, w, bd, bp, h, exceso, vf, rf, R.nb_rows(), vc);
+                        }
                         if (std::fabs(bd - h) <= 1e-6*w) ++hv_dfb_al_hull;
                         if (std::fabs(bp - h) <= 1e-6*w) ++hv_ph_al_hull;
                     }
                 }
             }
-            if (hv_n && (ph_n % 100) == 0)
-                fprintf(stderr, "[abhull] cotas donde DFB gana=%ld | DFB pasa el hull exacto=%ld (peor %.3g del ancho) | "
-                        "DFB en el hull=%ld  produccion en el hull=%ld\n", hv_n, hv_pasa, hv_peor, hv_dfb_al_hull, hv_ph_al_hull);
+            if (hv_n)
+                fprintf(stderr, "[abhull] cotas donde DFB gana=%ld | DFB pasa el hull exacto=%ld (peor %.3g del ancho; "
+                        "mas alla de la tolerancia del oraculo=%ld) | "
+                        "DFB en el hull=%ld  produccion en el hull=%ld\n", hv_n, hv_pasa, hv_peor, hv_pasa_tol, hv_dfb_al_hull, hv_ph_al_hull);
         }
         /* acumuladores a nivel de archivo: el resumen lo emite el destructor */
         if (per0 > 0) {
