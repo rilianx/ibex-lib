@@ -350,11 +350,26 @@ primal steps, which is the usual warm start of an LP solver.
 Both reach an optimal basis, so the certificate at termination is exact
 (Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
 empty is decided in the first LP, common to both. They differ only in cost,
-and the dual warm start is the cheaper one on systems of equations
-(Table~\ref{tab:ablation}): SC uses the dual method throughout, so every
-basis it visits is dual feasible and the certified bound is valid at every
-iteration. Primal steps remain as a fallback, when relocation is impossible
-because the bound indicated by a reduced cost is infinite.
+and which one is cheaper depends on how the optima of consecutive bounds are
+related. An optimal vertex is given by a basis and by the bound on which each
+nonbasic variable rests. Between two consecutive bounds of a pass, 3--19\% of
+the basis changes, on systems of equations and on optimization problems alike;
+what differs is the side of the nonbasic variables. On systems of equations,
+8--37\% of the nonbasic variables that stay nonbasic move to their opposite
+bound, against 1--7\% on optimization problems
+\todo{tabla o figura con la sonda DFBH\_BASECOMP; aislar por que los lados cambian mas en sistemas}.
+The dual warm start moves them for free, since relocation is not a pivot; the
+primal warm start pays one iteration for each, and its pivots are close to
+those of the dual plus the number of side changes (Bratu-0120: 35.5 against
+$9.9+19.4$). When few sides change, the relocation of the dual warm start moves
+variables that the next optimum leaves in place, and the dual method spends
+pivots undoing it (problem linear: 28.6 pivots per LP against 7.6). SC
+therefore uses the dual warm start in the solver of systems of equations, where
+the certified bound is valid and nondecreasing at every iteration of every LP,
+and the primal warm start in the optimizer, where the first LP of each pass is
+still solved by the dual method. Primal steps are also the fallback when
+relocation is impossible because the bound indicated by a reduced cost is
+infinite.
 
 \subsection{Simplex iterations}
 
@@ -427,9 +442,8 @@ $\alpha_q$ finds the first basic variable to reach a bound, or lets $z_q$ move
 to its own opposite bound. Pivots below a stability threshold are filtered
 out before choosing the leaving variable; without this filter a rejected
 pivot was indistinguishable from optimality, and 40\% of the reported optima
-were not dual feasible. SC needs primal steps only when a nonbasic variable
-cannot be relocated, and in the primal warm start, which we keep for
-comparison.
+were not dual feasible. SC takes primal steps in the primal warm start of the
+optimizer, and when a nonbasic variable cannot be relocated.
 
 \paragraph{Tolerances and infinite bounds.} The primal feasibility tolerance
 of $z_j$ is $\min\{10^{-9}(1+|v|),\;\tau\,\wid\iv{z}_j\}$, where $v$ is the
@@ -475,8 +489,10 @@ reduced costs and $\lambda$ are updated with the pivot row as above.
 
 A revised iteration costs one FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and
 the update, all proportional to the number of nonzeros involved, instead of a
-pass over the tableau. Below 40 rows the tableau is cheaper; above it the
-revised engine is. The ablation (Table~\ref{tab:ablation}) shows that the
+pass over the tableau. Below a threshold the tableau is cheaper; above it the
+revised engine is. The threshold is 30 rows in the solver of systems of
+equations, and 15 rows in the optimizer, where the warm start is primal; both
+were chosen on the bank of Table~\ref{tab:main}. The ablation (Table~\ref{tab:ablation}) shows that the
 tableau alone is 13--25\% slower on systems of equations, and the revised
 engine alone 6\% slower on optimization problems.
 
@@ -660,8 +676,10 @@ nondecreasing, strictly so on nondegenerate iterations.
 
 The certificate can thus be read at any point of the dual method, and an LP
 can be truncated with a valid bound. We measured such truncation and it does
-not pay (Section~\ref{sec:discussion}). Since SC uses the dual method throughout (Section~\ref{sec:simplex}), the
-property holds in every LP of the pass. With the cost perturbation of
+not pay (Section~\ref{sec:discussion}). In the solver of systems of equations,
+where SC uses the dual warm start (Section~\ref{sec:simplex}), the property
+holds in every LP of the pass; in the optimizer it holds in the first LP of
+each pass. With the cost perturbation of
 Section~\ref{sec:simplex}, what is nondecreasing is the dual objective of the
 perturbed problem; the certified bound, computed with the true costs, differs
 from it by at most $2\varepsilon\sum_j\magn\iv{z}_j$, where
@@ -918,16 +936,19 @@ relaxations are larger. Merging the twin rows is the largest saving (without
 it, CPU time $\times1.40$--$1.45$ and eight fewer runs finished), followed by
 the hybrid engine (with the tableau alone, $\times1.13$--$1.25$ and six fewer
 runs). The revised engine alone is about as fast on systems of equations, but
-slower on the small relaxations of optimization problems; the threshold of 40
-rows keeps the best of both. Among the pivoting rules, the long-step ratio
+slower on the small relaxations of optimization problems; the threshold keeps
+the best of both\todo{la ablacion es con umbral 40; la omision es 30 (sistemas) y 15 (optimizacion)}. Among the pivoting rules, the long-step ratio
 test gives 10--11\%, the cost perturbation 3--8\% (and two more runs
 finished), devex 1--4\%, and the box-scaled tolerance is neutral in time: it is
 there for correctness on narrow boxes (Section~\ref{sec:simplex}). The primal
-warm start is 7--10\% slower on systems of equations. On optimization problems,
-whose relaxations are small and rarely degenerate, the primal warm start and
-the unperturbed dual are 3--5\% faster; the two problems they solve and SC
-does not, chembis and ship-1, are close to the time limit and come and go with
-most changes. Ordering the bounds with information of the tableau instead of
+warm start is 7--10\% slower on systems of equations; on optimization problems
+it is the choice of SC, and the dual warm start is 3--12\% slower (4--6\% on
+the bank of Table~\ref{tab:main}, 9--12\% on a larger bank of 104 optimization
+problems\todo{presentar el banco all o sacar la cifra}) with the same number of problems solved
+\todo{remedir la ablacion de optimizacion con la omision primal y cambiar la fila a ``dual warm start'' en la columna de optimizacion; las tablas de optimizacion son con el dual}.
+Without the cost perturbation, optimization problems are 3\% faster; chembis
+and ship-1, which some configurations solve and SC does not, are close to the
+time limit and come and go with most changes. Ordering the bounds with information of the tableau instead of
 the farthest-bound rule saves 2--3\% on systems of equations and 2--6\% on
 optimization problems.
 
