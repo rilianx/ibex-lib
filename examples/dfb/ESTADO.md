@@ -334,7 +334,8 @@ el camino (commit bd15955b): `pivot_revisado` salía por pivote chico sin
 limpiar `col_primal_lista`; tras refactorizar, un pivote dual sobre esa
 columna aplicaba la eta de la LU vieja (segfault en ramsey, 2 de 4
 semillas; hallado con ASan). Los p15 repetidos tras el arreglo dan ×1.00
-contra los anteriores.
+contra los anteriores. **Adoptado como omisión de `ibexopt` (2026-10-13)**; la cota
+certificada monótona durante el LP queda sólo en `ibexsolve_dfb`.
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
@@ -763,7 +764,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 |---|---|
 | `DFBH_LR=xn\|art\|compo` | linearizador. Omisión `art` |
 | `DFBH_ORDEN=costo\|lejos\|cerca\|nat` | orden de la próxima cota. Omisión `costo` |
-| `DFB_SX_PIVOTEO=primal\|dual\|mixta`, `DFB_SX_ENTRAK=1`, `DFB_SX_MONO=1` | re-optimización al cambiar de objetivo: `dual` es el dual puro (reubica también `k`), `mixta` la anterior; entrada explícita de `k`; sonda de monotonía (§9). **Omisión `dual`** |
+| `DFB_SX_PIVOTEO=primal\|dual\|mixta`, `DFB_SX_ENTRAK=1`, `DFB_SX_MONO=1` | re-optimización al cambiar de objetivo: `dual` es el dual puro (reubica también `k`), `mixta` la anterior; entrada explícita de `k`; sonda de monotonía (§9). **Omisión: `dual` en `ibexsolve_dfb`; en `ibexopt` primal + revisado > 15 filas (2026-10-13)** |
 | `DFB_SX_LU=actualizada\|diferida\|tableau` | la LU se actualiza en cada pivote, se refactoriza al leerla, o no se usa salvo que la guardia de deriva falle (§9). Omisión `tableau`; `DFB_SX_GUARDIA=tol` |
 | `DFBH_HULL=1`, `DFBH_HULLTAU=τ` | selección por hull (§3) |
 | `DFBH_NOFIX=1` | sin `CtcFixPoint` en el contractor lineal |
@@ -783,8 +784,8 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `DFBH_FUSIONA=0` | no fusiona las filas gemelas (misma normal, un lado cada una) de la linealización fresca (por omisión las fusiona desde 2026-10-09) (§4) |
 | `DFB_SX_PERTURB=eps`, `DFB_SX_PERTURB_TRAS=K` | perturbación de costos al reubicar, **omisión ε = 1e-7** desde 2026-10-11 (0 la apaga); con K > 0, sólo tras K pivotes duales degenerados seguidos (§4) |
 | `DFB_SX_DEVEXP=1` | precio devex en los pasos primales del motor revisado (por omisión Dantzig; sin banco aún) (§4) |
-| `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado (omisión sólo el 2026-10-10 antes de la fusión; hoy apagados, la omisión es dual puro) (§4) |
-| `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **omisión `dual` (puro, en los dos motores) desde 2026-10-10**; `por_motor` (dual en revisados, primal en tableau) fue omisión 2026-10-08…10 (§1, §4, §9) |
+| `DFB_SX_REVPRIMAL=1` | pasos primales en el motor revisado (omisión sólo el 2026-10-10 antes de la fusión; desde 2026-10-13 encendidos por omisión en `ibexopt`) (§4) |
+| `DFB_SX_PIVOTEO=por_motor\|dual\|primal\|mixta` | **`ibexsolve_dfb`: omisión `dual` (puro) desde 2026-10-10. `ibexopt`: omisión primal con `REVPRIMAL=1` y umbral 15 desde 2026-10-13, fijada en `main` si `DFB_SX_PIVOTEO` no está definida (`DFB_SX_PIVOTEO=dual` vuelve al dual puro, umbral 30)**; `por_motor` (dual en revisados, primal en tableau) fue omisión 2026-10-08…10 (§1, §4, §9) |
 | `DFBH_MOTOR=caja`, `DFBH_CAJA_TOL=t` | mismo contractor con SoPlex como caja negra y el mismo certificado gamma; tolerancia de SoPlex (omisión 1e-6) (§4) |
 | `DFBH_CUENTAS=1` | `ibexsolve_dfb`: celdas, llamadas a DFB, LPs y pivotes al final |
 | `IBEX_PH_STATS=1` | `CtcPolytopeHull`: estados de SoPlex por LP (óptimo, vacío probado / sin prueba, desconocido) |

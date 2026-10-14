@@ -20,6 +20,7 @@
 #include "ibex_Optimizer05Config.h"
 #include "ibex_CtcDualFeasibleBounding.h"
 #include "ibex_CtcDFBPropag.h"
+#include "ibex_DFBSimplex.h"
 
 
 using namespace std;
@@ -70,6 +71,19 @@ IntervalVector parseIntervalVector(const std::string& box_str) {
 }
 
 int main(int argc, char** argv) {
+    /* Omision de `ibexopt` (2026-10-13, ESTADO §4): estrategia primal, con
+     * pasos primales tambien en el motor revisado y revisado por encima de 15
+     * filas. En los LPs tibios de la pasada el primal conserva el vertice
+     * anterior; el dual puro lo descarta al reubicar y hace ~2x pivotes.
+     * Elegido en el banco del paper (cpu x0.94) y validado en `all` (x0.91).
+     * `ibexsolve_dfb` queda en dual puro con umbral 30. Si `DFB_SX_PIVOTEO`
+     * esta definida, mandan las variables de entorno como antes. */
+    if (!getenv("DFB_SX_PIVOTEO")) {
+        DFBSimplex::pivoteo_dual = false;
+        DFBSimplex::dual_puro = false;
+        if (!getenv("DFB_SX_REVPRIMAL")) DFBSimplex::rev_primal = true;
+        if (!getenv("DFB_SX_MOTOR_M")) DFBSimplex::motor_umbral = 15;
+    }
     // Menú interactivo para configurar las opciones
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
