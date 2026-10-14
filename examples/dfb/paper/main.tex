@@ -362,14 +362,28 @@ median of 1.9 nonbasic variables per LP move to their opposite bound, against
 0.5 on optimization problems. The dual warm start moves them for free, since
 relocation is not a pivot; the primal warm start pays one iteration for each,
 and its iterations exceed those of the dual by about the number of side
-changes (medians 1.9 and 0.4 per LP). On systems of equations this makes the
-primal warm start pivot 2.5 times more. On optimization problems it pivots
-about 30\% more on relaxations up to 40 rows, and less above, but each LP is
-cheaper: relocation changes the values of the nonbasic variables, so the dual
-warm start recomputes the basic values from the factorization, which the
-primal warm start keeps (on ex5\_3\_2 and launch, 2.5 times fewer such
-recomputations, and 10--20\% less CPU time).
-\todo{aislar el costo por LP en optimizacion (cronometro por componente) y por que los lados cambian mas en sistemas}
+changes (medians 1.9 and 0.4 per LP). The two warm starts thus have different
+costs: the primal one pays one iteration per side change, the dual one a fixed
+cost per LP, since relocation changes the values of the nonbasic variables and
+the basic values must be recomputed from the factorization. On systems of
+equations side changes dominate: the primal warm start pivots 2.5 times more,
+and an LP costs about twice as much (Bratu-0120: 422 against 223\,$\mu$s, of
+which 224\,$\mu$s in primal steps). On optimization problems few sides change,
+and the fixed cost of relocation dominates: on launch and ex5\_3\_2 (about 40
+rows), an LP costs 143 against 158 and 128 against 168\,$\mu$s with the primal
+warm start, which pivots slightly less and recomputes the basic values for 6--7
+instead of 16--17\,$\mu$s per LP; on ex2\_1\_9, whose LPs need one or two
+pivots, the primal warm start pivots 25\% more and its LPs are still 6\%
+cheaper.
+The side changes differ because of the rows. The box bounds of the variables
+change side alike in both programs (14\% and 17\% of the nonbasic variables);
+the slacks of the rows change side in 14\% of the cases on systems of equations
+and in 0.4\% on optimization problems. On systems every row comes from an
+equation and is a narrow slab: the interval of its slack is, on average, 13\%
+of the range of the row over the box, so that the optima of consecutive bounds
+often rest on opposite faces of a slab. On optimization problems the slack
+intervals cover 48\% of the range on average, and the few rows whose slack
+changes side are the narrow ones (4\%).
 
 \begin{table}[t]
 \centering
@@ -680,9 +694,17 @@ case of a box change was exploited by Yamamura and
 coworkers~\cite{yamamura2001dual,yamamura2006dual} to resume an LP emptiness test
 after a bisection; Proposition~\ref{prop:start} extends it to a change of
 objective, which is what the $2n$ bound problems need.
-Slacks with an infinite side are relocated to their finite bound when the sign
-allows it; otherwise they are handled by a primal step
-\todo{precisar el tratamiento de las cotas infinitas en la implementacion}.
+Relocation needs the bound indicated by the sign of the reduced cost to be
+finite. Slacks of one-sided rows, and variables with an unbounded domain, may
+not have it. In the implementation such a nonbasic variable is placed on its
+finite bound, which leaves its reduced cost with the wrong sign, or at zero if
+it is free. The iteration loop removes these dual infeasibilities with primal
+steps, and uses dual steps while some basic variable is out of its bounds; the
+revised engine of the solver of systems of equations takes no primal steps, and
+an LP that ends with such a variable gives a valid, possibly weaker bound. The
+certificate is unaffected, since it is valid for any $\lambda$; only the
+monotonicity of Proposition~\ref{prop:mono} is lost in such an LP until the
+basis is dual feasible again.
 
 \subsection{An anytime certified bound under the dual method}
 
@@ -781,7 +803,12 @@ magnitude between seeds of the same configuration are excluded from the means.
 We report geometric means of ratios over the pairs of runs in which both
 methods finish, for runs whose reference time exceeds 0.1, 1 and 5\,s, and the
 number of runs that finish within the time limit.
-\todo{CPU, compilador, version de Ibex; publicar el codigo y los scripts}
+All runs were made on a machine with two Intel Xeon E5-2620 v4 processors
+(2.1\,GHz, 16 cores) and 64\,GB of memory, under Linux 6.17, eight runs at a
+time and a memory limit of 6\,GB per run; the code is compiled with GCC 13.3
+(\texttt{-O3}) against Ibex 2.8.9 with the GAOL~4.2.0 interval library and
+SoPlex~4.0.2. CPU times are process times.
+\todo{publicar el codigo y los scripts}
 
 \subsection{Rigor}
 
@@ -1057,11 +1084,54 @@ pruned. The black-box engine above, inside our contractor, recovers most of it.
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
 
-\todo{Por que gana SC (robustez del certificado, no un poliedro mejor); donde
-pierde (Bratu-0050, BroydenTri, Katsurabis-14); lo que no funciono y por que:
-reuso de certificados en subcajas, truncamiento anytime, cortes en $x^*$,
-cota lagrangiana; limites: igualdades estrechas (bearing) y el buscador de
-loup.}
+\paragraph{Why SC wins.} SC does not contract with a better polytope: both
+engines solve the same relaxation and feed the same certificate. Its advantage
+has two sources. The first is cost: a pass over the $2n$ bounds costs half that
+of the black box on systems of equations and 0.39 times on optimization problems
+(Figure~\ref{fig:cost}), thanks to the basis shared by the bounds, the restart
+without phase~1 and the absence of a per-call overhead. The second is
+robustness: where the black box ends without an optimum, the bound is lost,
+while the multipliers of SC still certify it (Table~\ref{tab:samebox}); this is
+where the largest gains are (Brown, Geneig-icse). The slightly tighter
+certificates of SC on the remaining LPs compound along the search but are a
+second-order effect.
+
+\paragraph{Where it loses.} With its own bound order, SC is slower than the
+black box by more than 5\% on no system of equations. On optimization problems
+the largest loss is launch ($\times1.32$): SC explores 168--182 cells against
+88--150, and its cheaper nodes do not make up for it. With the same bound
+order, Katsurabis-14 explores the same cells but each node costs more
+($\times1.24$; $\times1.03$ with the order of SC).
+
+\paragraph{What did not pay.} We also measured on the whole benchmark several
+ideas that use the certificate or the tableau beyond the pass, and none paid.
+Reusing certificates of an ancestor box keeps them valid, by
+Proposition~\ref{prop:valid}, but not strong: tested on the slices of ACID,
+the multipliers of the node itself almost never prune a slice, and those of an
+ancestor prune slices that the linear contractor of the node prunes anyway.
+Truncating the LPs with the anytime bound of Proposition~\ref{prop:mono} saves
+pivots ($\times0.84$) but weakens the contraction (cells $\times1.39$--$1.60$).
+Cuts at the LP optima reduce the cells ($\times0.80$--$0.88$) at a higher cost
+(CPU $\times1.18$--$1.31$). A Lagrangian bound improved by monotonicity tightens
+the LP bound in most applications, but costs more than it saves (CPU
+$\times1.08$ to $\times3.5$). Inheriting the basis between nodes saves pivots
+($\times0.78$--$0.96$) but rebuilding the tableau costs as much. Choosing the
+warm start of each node by the side changes observed in the previous LPs does
+not improve on the choice per program. The pattern is that doing more work
+inside a node does not change the search tree; what changed it was what is
+computed: the merged relaxation, the stability filter of the ratio test, the
+choice of the warm start.
+
+\paragraph{Limits.} SC removes the external LP solver from the contractor, not
+from the optimizer: the upper-bounding of IbexOpt still solves its LPs with
+SoPlex, in both engines. On problems with very narrow equalities the
+upper-bounding becomes the bottleneck: on bearing, whose eight equalities are
+relaxed to $|h|\le10^{-8}$, the lower bound of SC is good but feasible points
+are found only in boxes of width $10^{-4}$ to $10^{-3}$, and the search tree
+changes by two orders of magnitude between seeds; we excluded it, with alkyl
+and alkylbis, from the means. Relaxations of several hundred rows are still
+expensive for both engines: the systems of 400 to 1\,000 variables of the
+benchmark exceed the limits of 60\,s and 6\,GB with either.
 
 % =====================================================================
 \bibliographystyle{plain}

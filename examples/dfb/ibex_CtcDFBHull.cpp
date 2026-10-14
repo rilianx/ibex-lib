@@ -1796,6 +1796,35 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 ++nlp; sum_dif += dif; sum_m += nb; sum_piv += sk.iterations();
                 sum_lado += lado; sum_nb += nnb;
                 if (dif == 0) ++iguales;
+                /* Por tipo de columna: variable (cota de caja) u holgura de fila;
+                 * finita en las dos cotas o no; y lo angosta que es la franja de
+                 * cada fila: ancho de su holgura sobre el rango de la fila en la caja. */
+                static long fl_var = 0, fl_hol = 0, nb_var_c = 0, nb_hol = 0, nb_fin = 0, fl_inf = 0;
+                static double sum_rel = 0.0, sum_rel_fl = 0.0; static long n_rel = 0, n_rel_fl = 0;
+                for (int c = 0; c < na; ++c) {
+                    if (cur[c] == 1 || prev[c] == 1) continue;
+                    const bool flip = (prev[c] != cur[c]);
+                    const bool fin = z[c].lb() > -1e300 && z[c].ub() < 1e300;
+                    if (fin) ++nb_fin; else if (flip) ++fl_inf;
+                    if (c < nb_var) { ++nb_var_c; if (flip) ++fl_var; }
+                    else {
+                        ++nb_hol; if (flip) ++fl_hol;
+                        const int j = c - nb_var;
+                        if (fin && j < m) {
+                            Interval enc(0.0);
+                            for (int q = 0; q < nb_var; ++q) enc += A[j][q] * z[q];
+                            const double r = enc.diam() > 0 ? std::min(1.0, z[c].diam()/enc.diam()) : 1.0;
+                            sum_rel += r; ++n_rel; if (flip) { sum_rel_fl += r; ++n_rel_fl; }
+                        }
+                    }
+                }
+                if ((nlp % (atol(getenv("DFBH_BASECOMP")) > 1 ? atol(getenv("DFBH_BASECOMP")) : 2000)) == 0)
+                    fprintf(stderr, "[basecomp2] no basicas: variables %.1f (cambian %.2f), holguras %.1f (cambian %.2f) | "
+                            "finitas en las dos cotas %.0f%%, cambios en columnas con una cota infinita %ld | "
+                            "franja (ancho holgura / rango de la fila) media %.3g, en las que cambian %.3g\n",
+                            (double)nb_var_c/nlp, (double)fl_var/nlp, (double)nb_hol/nlp, (double)fl_hol/nlp,
+                            100.0*nb_fin/std::max(1L, nb_var_c+nb_hol), fl_inf,
+                            n_rel ? sum_rel/n_rel : 0.0, n_rel_fl ? sum_rel_fl/n_rel_fl : 0.0);
                 static const long cada = atol(getenv("DFBH_BASECOMP")) > 1 ? atol(getenv("DFBH_BASECOMP")) : 2000;
                 if ((nlp % cada) == 0)
                     fprintf(stderr, "[basecomp] LPs tibios=%ld  m=%.1f  columnas basicas nuevas=%.2f "

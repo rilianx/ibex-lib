@@ -381,6 +381,21 @@ en ambos: ex5_3_2 61963 → 23365, launch 28760 → 11753; cpu −10–20 %;
 ex8_4_4bis 0.67 → 1.26 piv/LP con cpu igual). Sin cronómetro por componente
 todavía. Tabla `tab:sides` en el paper.
 
+**Mecanismo completo de la regla por programa (2026-10-14).** Costo por LP
+(`DFB_SX_PERF=1`, umbral 30 en ambos, semilla 1): el primal paga una iteración
+por cambio de lado; el dual, un costo fijo por LP (reubicar cambia las no
+básicas y obliga a recalcular `x_B`). Sistemas: Bratu-0120 222.8 → 422.2 µs/LP
+con el primal (224 µs en pasos primales), Discrete-Integralf2-19 154 → 282.
+Opt: launch 158 → 143, ex5_3_2 168 → 128 (basics 16–17 → 6–7 µs/LP, menos
+pivotes), ex2_1_9 33.6 → 31.6 con 25 % más pivotes. **Por qué cambian más los
+lados en sistemas** (`[basecomp2]`, banco del paper, omisión SC): las cotas de
+caja cambian igual en los dos programas (14 % / 17 % de las no básicas); las
+holguras de fila, 14 % en sistemas y 0.4 % en opt. La franja de cada fila
+(ancho de la holgura / rango de la fila en la caja) es 0.13 en sistemas y 0.48
+en opt; las filas de opt que cambian de lado son las angostas (0.04). Todas
+las no básicas tienen las dos cotas finitas en ambos. Paper: §4 y Tabla
+`tab:sides`; §7 (discusión) escrita; cotas infinitas y máquina declaradas.
+
 **Rigor rehecho (2026-10-14, `DFBH_AB=1 DFBH_ABHULL=1`, semilla 1).** 3090
 cotas donde SC contrae más que `CtcPolytopeHull` (antes 973: el resumen se
 imprimía cada 100 nodos y contaba de menos): SC en el hull 2980 (96 %), lo
