@@ -296,6 +296,29 @@ tableau con umbral 30, pero el revisado es más barato también ahí: µs/LP 277
 150 y 120 → 78 (SoPlex 98 y 54). El umbral sólo por filas no captura el
 cruce.
 
+**Por qué DFB hace ~2× pivotes por LP (2026-10-13, `DFBH_PORPASO` por motor,
+`DFBH_CRONO`, 60 s, semillas 1–2).** No es la cota 0 (en frío: hs099 39
+contra 35 de SoPlex) sino las cotas tibias 1…2n−1 (hs099 20–25 contra 6–16;
+ex8_4_4 8–9 contra 4–5; linear 27 contra 13). Al cambiar el objetivo, el dual
+puro reubica todas las no básicas por el signo del costo reducido y tira la
+factibilidad primal del vértice anterior; SoPlex conserva ese vértice y
+re-optimiza en primal. Con `DFB_SX_PIVOTEO=primal` DFB baja a los pivotes de
+SoPlex. Ojo: sin `DFB_SX_REVPRIMAL=1` el primal manda todos los nodos al
+tableau (linear, 41 filas, no ganaba nada por eso). Corridas completas (cpu s,
+media de 2 semillas):
+
+| | dual (omisión) | primal + revisado > 30 filas | primal, todo revisado | caja |
+|---|---|---|---|---|
+| hs099 | 43.7 (19.8 piv/LP, 260 µs/LP) | 30.2 | **18.0** (10.9, 66) | 20.8 (11.9, 96) |
+| linear | 11.5 (30.5, 245) | **5.0** (10.2, 76) | 5.0 | 6.7 (9.6, 85) |
+| ex8_4_4 | 31.2 (10.0, 109) | 24.1 | 22.3 (5.8, 32; celdas ×1.3) | 18.5 (5.4, 48) |
+| hhfair1 | **6.4** (946 celdas) | 9.2 (1680 celdas) | 9.2 | 10.4 |
+
+Con primal y motor revisado el µs/LP queda por debajo de SoPlex en las
+cuatro. La ablación del banco del paper (primal en ambos motores, umbral 40)
+daba solver ×1.04 y `ibexopt` ×0.98: el dual gana en sistemas y el primal en
+optimización.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal

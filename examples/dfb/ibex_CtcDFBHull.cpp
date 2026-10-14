@@ -1699,13 +1699,18 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * esa primera. Si es asi, lo que hay que atacar es el arranque del
          * NODO, no el de cada cota. */
         if (DFB_ENV("DFBH_PORPASO")) {
-            static std::vector<long> piv, cnt;
-            if ((int)piv.size() < nc) { piv.assign(nc, 0); cnt.assign(nc, 0); }
-            piv[paso] += sk.iterations(); ++cnt[paso];
-            static long nn = 0;
+            /* Por motor (0 = DFB, 1 = caja negra), para compararlos con
+             * `DFBH_ABCAJA` sobre las mismas cajas. */
+            static std::vector<long> piv_m[2], cnt_m[2];
+            static long nn_m[2] = {0, 0};
+            const int e = motor_caja ? 1 : 0;
+            std::vector<long>& piv = piv_m[e]; std::vector<long>& cnt = cnt_m[e];
+            if ((int)piv.size() < nc) { piv.resize(nc, 0); cnt.resize(nc, 0); }
+            piv[paso] += motor_caja ? it_caja : sk.iterations(); ++cnt[paso];
+            long& nn = nn_m[e];
             if (++nn % 200 == 0) {
                 long tot = 0; for (int q = 0; q < nc; ++q) tot += piv[q];
-                fprintf(stderr, "[porpaso] nc=%d  pivotes por posicion:", nc);
+                fprintf(stderr, "[porpaso %s] nc=%d  pivotes por posicion:", e ? "caja" : "DFB ", nc);
                 for (int q = 0; q < nc && q < 10; ++q)
                     fprintf(stderr, " %d:%.2f", q, cnt[q] ? (double)piv[q]/cnt[q] : 0.0);
                 double resto = 0.0; long cr = 0;
