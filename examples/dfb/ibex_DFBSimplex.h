@@ -198,6 +198,9 @@ public:
     /** \brief Si la columna `c` esta en la base actual. */
     bool es_basica(int c) const { return c >= 0 && c < (int)rowof.size() && rowof[c] >= 0; }
 
+    /** \brief Si la no basica `c` se apoya en su cota superior. */
+    bool en_superior(int c) const { return c >= 0 && c < (int)atupper.size() && atupper[c]; }
+
     /** \brief Fila 1..m en que la columna `c` es basica, o -1. */
     int fila_de(int c) const { return (c >= 0 && c < (int)rowof.size()) ? rowof[c] : -1; }
 

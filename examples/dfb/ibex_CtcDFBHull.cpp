@@ -1721,6 +1721,43 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
         }
 
+        /* BASE COMPARTIDA ENTRE COTAS CONSECUTIVAS.
+         *
+         * El arranque tibio dual conserva la base y reubica lados; el primal
+         * conserva el vertice. Si el optimo de la cota `paso` tiene casi la
+         * misma base que el de `paso-1`, el dual llega sin pivotear. Se cuenta
+         * cuantas columnas basicas del optimo actual no lo eran en el anterior:
+         * es una cota inferior de los pivotes que necesita cualquier simplex. */
+        if (DFB_ENV("DFBH_BASECOMP") && !motor_caja) {
+            static std::vector<char> prev;
+            static bool prev_ok = false;
+            static long nlp = 0, sum_dif = 0, sum_m = 0, sum_piv = 0, iguales = 0;
+            static long sum_lado = 0, sum_nb = 0;
+            /* 1 = basica, 2 = no basica en la inferior, 3 = en la superior */
+            std::vector<char> cur(na, 0);
+            for (int c = 0; c < na; ++c)
+                cur[c] = sk.es_basica(c) ? 1 : (sk.en_superior(c) ? 3 : 2);
+            if (paso > 0 && prev_ok && (int)prev.size() == na) {
+                long dif = 0, nb = 0, lado = 0, nnb = 0;
+                for (int c = 0; c < na; ++c) {
+                    if (cur[c] == 1) { ++nb; if (prev[c] != 1) ++dif; }
+                    else if (prev[c] != 1) { ++nnb; if (prev[c] != cur[c]) ++lado; }
+                }
+                ++nlp; sum_dif += dif; sum_m += nb; sum_piv += sk.iterations();
+                sum_lado += lado; sum_nb += nnb;
+                if (dif == 0) ++iguales;
+                if ((nlp % 2000) == 0)
+                    fprintf(stderr, "[basecomp] LPs tibios=%ld  m=%.1f  columnas basicas nuevas=%.2f "
+                            "(%.1f%% de la base)  base identica en el %.1f%%  pivotes=%.2f  | no basicas que siguen: %.1f, "
+                            "cambian de lado: %.2f (%.1f%%)\n",
+                            nlp, (double)sum_m/nlp, (double)sum_dif/nlp,
+                            100.0*sum_dif/sum_m, 100.0*iguales/nlp, (double)sum_piv/nlp,
+                            (double)sum_nb/nlp, (double)sum_lado/nlp,
+                            sum_nb ? 100.0*sum_lado/sum_nb : 0.0);
+            }
+            prev.swap(cur); prev_ok = true;
+        }
+
         /* FILAS ACTIVAS POR ORIGEN.
          *
          * Una fila esta activa en el optimo si su multiplicador es no nulo. Si

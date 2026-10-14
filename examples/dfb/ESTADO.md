@@ -337,6 +337,23 @@ semillas; hallado con ASan). Los p15 repetidos tras el arreglo dan ×1.00
 contra los anteriores. **Adoptado como omisión de `ibexopt` (2026-10-13)**; la cota
 certificada monótona durante el LP queda sólo en `ibexsolve_dfb`.
 
+**Por qué el dual gana en sistemas y el primal en optimización (2026-10-14,
+`DFBH_BASECOMP=1`, semilla 1, 30 s).** La sonda compara el óptimo de cada cota
+tibia con el de la anterior: columnas básicas nuevas y no básicas que siguen
+siéndolo pero cambian de cota. La base cambia parecido en los dos programas
+(sistemas 3–15 % de la base, optimización 5–19 %); **lo que difiere son los
+lados**: en sistemas cambia de cota el 8–37 % de las no básicas (Bratu-0150 17
+por LP, Discrete-Integralf2-19 12, Geneig-icse 3.5), en optimización el 1.4–7 %
+(0.3–1.3 por LP). El dual reubica lados sin pivotear; el primal paga cada
+cambio de lado con una iteración: pivotes primal ≈ dual + cambios de lado
+(Bratu-0120 35.5 ≈ 9.9 + 19.4; Discrete-Integralf2-19 25 ≈ 7.5 + 12.4;
+Geneig-icse 6.9 ≈ 2.2 + 3.5). En optimización casi nada cambia de lado y la
+reubicación del dual por el signo del costo reducido mueve columnas que el
+óptimo no mueve (linear 28.6 piv/LP en dual contra 7.6 en primal). La hipótesis
+anterior («en sistemas la base es la misma») era falsa: es la base casi igual
+con muchos lados opuestos. No está aislado por qué los lados cambian más en
+sistemas.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
