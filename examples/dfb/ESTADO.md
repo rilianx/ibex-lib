@@ -419,6 +419,27 @@ nodos primales, celdas 295 → 469). launch tiene 3.5 cambios de lado y aun así
 gana con el primal: el predictor no es perfecto. No se pasó al banco completo;
 la opción queda apagada.
 
+**Orden de cotas para SoPlex (2026-10-14, `results/ordcaja_2026-10-14/`).**
+Etapa 1 (109 instancias con caja de 1–60 s, semilla 1, 60 s) contra «lejos»:
+`cerca` sistemas ×0.95 en tiempo con celdas ×1.02 (26 ganan > 10 %), opt ×1.00;
+natural sistemas ×1.04, opt ×1.00. Etapa 2 (242 sistemas × 2 semillas, `cerca`):
+×0.957 / ×0.949 / ×0.941 (> 0.1 / 1 / 5 s), celdas ×1.00–1.02, pero termina
+352 contra 356: pierde Brown-19 y Brown-20-1 (celdas ×6, el orden cambia el
+camino). Gana en los Bratu grandes (×0.62–0.81 con las mismas celdas: menos
+costo por LP con el arranque en caliente de SoPlex). Con SoPlex en `cerca`, SC
+(su orden) queda ×0.84 / ×0.85 / ×0.83 (antes ×0.78 / ×0.76 / ×0.81). En opt
+SoPlex sigue en «lejos» (empate).
+
+**Banco a 3600 s (2026-10-14, `results/l3600_2026-10-14/`).** SC con orden
+lejos (binario final, 6 GB) contra la caja «lejos» de `l3600`/`all3600`
+(2026-10-11/13, 5 GB), sin las excluidas; se emparejan las corridas que
+terminan las dos. Sistemas del paper (48, 96 corridas): tiempo ×0.74, celdas
+×0.76, 94 / 94 (CountercurrentReactors-30 no termina con ninguno). Opt del
+paper (7, 28): ×0.74, celdas ×0.94, 28 / 28. Opt de `all` (16, 36): ×0.77,
+celdas ×0.97, 33 / 25: SC termina ex6_2_13, hs101, hs112 y pollut (2400–3140 s)
+y la caja no; matrix2 no encuentra punto factible con ninguno en las semillas
+1–3 (NA). En cola: SC con su propio orden y SoPlex `cerca` en sistemas.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
