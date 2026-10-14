@@ -673,6 +673,13 @@ void DFBSimplex::fila_revisada(int r) {
 bool DFBSimplex::pivot_revisado(int r, int col) {
     perf::Cron _c(&perf::t_pivot);
     xb_sucio = true;
+    /* La columna que dejo preparada el paso primal vale SOLO para este
+     * pivote, y la marca se limpia antes de cualquier salida: si el pivote se
+     * rechaza abajo (pivote chico), el simplex refactoriza y un pivote dual
+     * posterior sobre la misma columna reutilizaba una eta de la LU vieja
+     * (segfault en `CLUFactor::updateNoClear`, ramsey con primal revisado). */
+    const bool reusar = (col_primal_lista == col) && (fact.columna_preparada() == col);
+    col_primal_lista = -1;
     if (col >= na) return false;
     const double p = filaA_buf[col];
     if (std::fabs(p) < PIV_TOL) return false;
@@ -693,8 +700,6 @@ bool DFBSimplex::pivot_revisado(int r, int col) {
      * vale para el pivote que la sigue inmediatamente: una preparacion que
      * quedo sin usar (la entrante solo cambio de cota) es de otra LU, y
      * reutilizarla en un pivote posterior corrompia la LU (Yamamura). */
-    const bool reusar = (col_primal_lista == col) && (fact.columna_preparada() == col);
-    col_primal_lista = -1;
     const bool col_ok = reusar ? true : fact.preparar_cambio(col, &colq_buf[0]);
     if ((int)alpha_piv.size() != m+1) alpha_piv.assign(m+1, 0.0);
     alpha_piv[0] = 0.0;

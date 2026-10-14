@@ -111,6 +111,8 @@ bool DFBBasis::factorize() {
     for (int j = 0; j < m; ++j) cols[j] = &column(basic[j]);
     ++n_factorizations;
     updates_since_factor = 0;
+    /* Una columna preparada contra la LU anterior ya no vale. */
+    col_preparada = -1;
     try {
         return lu.load(&cols[0], m) == SLinSolver::OK;
     } catch (...) {
