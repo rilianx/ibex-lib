@@ -354,6 +354,19 @@ anterior («en sistemas la base es la misma») era falsa: es la base casi igual
 con muchos lados opuestos. No está aislado por qué los lados cambian más en
 sistemas.
 
+**Banco final del paper (2026-10-14, `results/final_2026-10-14.csv`, resumen
+en `results/final_2026-10-14_resumen.txt`; sonda misma caja en
+`results/costo_2026-10-14/`).** Binario con todas las omisiones (solver: dual,
+umbral 30; `ibexopt`: primal, umbral 15). 242 sistemas (sin los 22 excluidos)
+× 2 semillas y 139 opt × 4, 60 s, 11 brazos. SC contra caja: opt ×0.75 / ×0.77
+/ ×0.72, 131 / 130 resueltos; sistemas ×0.78 / ×0.76 / ×0.81, celdas
+×0.88–0.92, 364 / 356 corridas. Ablación: arranque tibio del otro programa
+sistemas ×1.04–1.05 (361), opt ×1.01–1.05; sin fusión ×1.27–1.43 (354); sólo
+tableau ×1.08–1.15 (356); sin paso largo ×1.08–1.10; la perturbación no actúa
+en `ibexopt` (búsqueda idéntica). Costo por pasada: sistemas ×0.50, opt ×0.39;
+pivotes opt ×0.98 (con el dual era ×0.80), µs/pivote opt ×0.49. Paper al día
+(Tablas 2 y 4, figura, resumen); la Tabla 3 no cambia.
+
 **Arranque tibio adaptativo (2026-10-14, `DFBH_ADAPT=u`).** Promedio móvil
 de cambios de lado por LP tibio; al cargar cada nodo, dual (umbral de motor 30)
 si supera `u`, primal (15) si no. Etapa de diagnóstico (7 sistemas + 9 opt, 2

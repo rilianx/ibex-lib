@@ -55,13 +55,15 @@ variable, or proves emptiness, over the current box and every sub-box. The
 contribution is a simplex designed for this certificate: a free dual-feasible
 start for every bound, one tableau shared by the $2n$ problems, and a hybrid
 engine that solves small relaxations on an explicit tableau and large ones with
-a tableau-free revised simplex, both with the dual method, so that a valid
-certified bound is available at every iteration. We compare it in a controlled setting: the same contractor, with
+a tableau-free revised simplex, and a warm start between bounds that is dual on
+systems of equations, where it keeps a valid certified bound at every
+iteration, and primal on optimization problems, where few nonbasic variables
+change bound between consecutive LPs. We compare it in a controlled setting: the same contractor, with
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 139 constrained
-global optimization problems, SC is 17--28\% faster with similar search trees.
-On 264 systems of equations it is 15--20\% faster, explores 5--10\% fewer cells
+global optimization problems, SC is 23--30\% faster with similar search trees.
+On 242 systems of equations it is 19--24\% faster, explores 8--12\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. SC never exceeds
 the exact LP hull.
@@ -143,14 +145,15 @@ made dual feasible by relocating nonbasic variables, so that each of the $2n$
 bound problems starts dual feasible without a phase~1
 (Section~\ref{sec:properties}).
 \item A specialized simplex for the $2n$ problems: shared tableau, long-step
-dual ratio test, devex pricing, box-scaled tolerances, dual warm starts between
-bounds, and a hybrid tableau/revised engine
+dual ratio test, devex pricing, box-scaled tolerances, warm starts between
+bounds chosen by how many nonbasic variables change bound (dual on systems of
+equations, primal on optimization problems), and a hybrid tableau/revised engine
 (Section~\ref{sec:simplex}).
 \item Properties of the certificate: validity for any multipliers and any
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
 (Section~\ref{sec:properties}).
-\item A controlled evaluation in Ibex, on 264 systems of equations and 139
+\item A controlled evaluation in Ibex, on 242 systems of equations and 139
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver feeding the same certificate; a rigor check against the
 exact LP hull; a same-box analysis of where the black box loses bounds; and an
@@ -745,7 +748,8 @@ are a source of spurious infeasibility for SoPlex (without merging, the black
 box explores 20 times more cells on CountercurrentReactors2-9). For systems of equations we use the solver
 composition of Ibex (HC4, ACID, interval Newton when the system is square, and
 the linear contractor within a fixed point with HC4) with the LSmear bisector,
-on the 264 systems of the Ibex solver benchmark, 2 seeds, 60\,s per run. For
+on the 242 systems of the Ibex solver benchmark that some configuration solves
+within 3600\,s (22 are excluded), 2 seeds, 60\,s per run. For
 optimization we use IbexOpt on 139 problems, 4 seeds, 60\,s per run; three
 problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
 magnitude between seeds of the same configuration are excluded from the means.
@@ -786,16 +790,16 @@ total                  & 973 & 0 & 939\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
-whose relaxations are small, SC is 17--28\% faster with similar search trees.
-On systems of equations SC is 15--20\% faster and explores 5--10\% fewer
-cells; it finishes 361 runs against 356. The largest gains are on systems
+whose relaxations are small, SC is 23--30\% faster with similar search trees.
+On systems of equations SC is 19--24\% faster and explores 8--12\% fewer
+cells; it finishes 364 runs against 356. The largest gains are on systems
 where the black box reports no optimum for many LPs (Brown-18 to 30,
-$\times0.29$ in CPU time on the family, where it fails to finish four runs)
-and on Geneig ($\times0.36$ on Geneig-icse); on the largest relaxations
-(Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC is also faster
-($\times0.75$ on the family). With the same bound order SC loses only on
-Katsurabis-14 ($\times1.21$); with its own order, it loses by more than 10\% on
-no instance.
+$\times0.15$ in CPU time on the runs both finish, the black box failing to
+finish four runs of Brown-30) and on Geneig ($\times0.33$ on Geneig-icse); on
+the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after merging) SC
+is also faster ($\times0.72$ on the family). With the same bound order SC
+loses only on Katsurabis-14 ($\times1.24$); with its own order, it loses by
+more than 5\% on no instance.
 
 \begin{table}[t]
 \centering
@@ -810,11 +814,11 @@ order in both engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 0.93--1.00 & 0.77 & 0.80 & 0.71 & 130 / 129\\
-systems      & best of each      & 0.90--0.95 & 0.79 & 0.78 & 0.84 & 360 / 356\\
+optimization & best of each      & 0.96--0.99 & 0.75 & 0.77 & 0.72 & 131 / 130\\
+systems      & best of each      & 0.88--0.92 & 0.78 & 0.76 & 0.81 & 364 / 356\\
 \midrule
-optimization & same bound order  & 0.93--1.01 & 0.81 & 0.83 & 0.72 & 129 / 129\\
-systems      & same bound order  & 0.90--0.95 & 0.81 & 0.80 & 0.85 & 361 / 356\\
+optimization & same bound order  & 0.93--0.99 & 0.77 & 0.77 & 0.70 & 131 / 130\\
+systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -828,22 +832,23 @@ same LPs: at every node the black box first runs the pass on a copy of the box,
 and SC then runs it on the same box and polytope, with the search following
 SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
-pass of SC costs $0.53$ times that of the black box on systems of equations
-(geometric mean over the 204 systems with at least 20 nodes and 100 LPs;
-median 455 against 917\,$\mu$s) and $0.42$ times on optimization problems (87
-problems; median 95 against 238\,$\mu$s), and is cheaper on 91\% and 95\% of
+pass of SC costs $0.50$ times that of the black box on systems of equations
+(geometric mean over the 182 systems with at least 20 nodes and 100 LPs;
+median 431 against 847\,$\mu$s) and $0.39$ times on optimization problems (89
+problems; median 90 against 232\,$\mu$s), and is cheaper on 95\% and 100\% of
 the instances.
 
 The two other panels split this ratio into pivots per pass and time per pivot.
 On systems of equations the gain comes from pivoting less ($\times0.62$), owing
 to the basis shared by the $2n$ bounds and the dual-feasible restart; a pivot
-of SC costs about as much as one of SoPlex ($\times0.94$, over the 138 systems
-with at least two pivots per LP in both engines). On optimization problems
-LPs need few pivots ($\times0.80$), and what dominates is the fixed cost of
-each call to the black box (setting bounds and objective, starting the
-simplex, reading the solution): the time per pivot of SC is $\times0.58$.
+of SC costs a little less than one of SoPlex ($\times0.88$, over the 121
+systems with at least two pivots per LP in both engines). On optimization
+problems, with the primal warm start, SC pivots as much as the black box
+($\times0.98$), and what dominates is the fixed cost of each call to the black
+box (setting bounds and objective, starting the simplex, reading the
+solution): the time per pivot of SC is $\times0.49$.
 Since the pass is only part of the cost of a node, with the linearization,
-propagation, ACID and interval Newton, halving its cost yields the 17--28\% of
+propagation, ACID and interval Newton, halving its cost yields the 19--30\% of
 Table~\ref{tab:main}.
 
 \begin{figure}[t]
@@ -858,23 +863,23 @@ Table~\ref{tab:main}.
 \nextgroupplot[title={time per pass}, xmin=5, xmax=2000000, ymin=5, ymax=2000000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
-\addlegendentry{systems: $\times0.53$}
+\addlegendentry{systems: $\times0.50$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.42$}
+\addlegendentry{optimization: $\times0.39$}
 \addplot[gray, thin, domain=5:2000000]{x};
 \nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
   xlabel={black box}, ylabel={SC}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
 \addlegendentry{systems: $\times0.62$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.80$}
+\addlegendentry{optimization: $\times0.98$}
 \addplot[gray, thin, domain=0.005:100000]{x};
 \nextgroupplot[title={time per pivot}, xmin=2, xmax=200, ymin=2, ymax=200,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_sol.dat};
-\addlegendentry{systems: $\times0.94$}
+\addlegendentry{systems: $\times0.88$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_opt.dat};
-\addlegendentry{optimization: $\times0.58$}
+\addlegendentry{optimization: $\times0.49$}
 \addplot[gray, thin, domain=2:200]{x};
 \end{groupplot}
 \end{tikzpicture}
@@ -929,36 +934,35 @@ Bellido                   & 0.281 & 0.281 &  141 &  3 &  152 &   0\\
 \subsection{Ablation}
 
 Table~\ref{tab:ablation} changes one component of SC at a time. The pruning
-changes little: cell ratios are within 2\% on runs above 0.1\,s and within 5\%
-on the longest runs, where the perturbation of the costs changes the search
-path. The components differ in cost, mostly on systems of equations, whose
-relaxations are larger. Merging the twin rows is the largest saving (without
-it, CPU time $\times1.40$--$1.45$ and eight fewer runs finished), followed by
-the hybrid engine (with the tableau alone, $\times1.13$--$1.25$ and six fewer
-runs). The revised engine alone is about as fast on systems of equations, but
+changes little: cell ratios are within 3.5\% in every row. The components
+differ in cost, mostly on systems of equations, whose relaxations are larger.
+Merging the twin rows is the largest saving (without it, CPU time
+$\times1.27$--$1.43$ and ten fewer runs finished), followed by the hybrid
+engine (with the tableau alone, $\times1.08$--$1.15$ and eight fewer runs). The
+revised engine alone is about as fast on systems of equations, but 2--4\%
 slower on the small relaxations of optimization problems; the threshold keeps
-the best of both\todo{la ablacion es con umbral 40; la omision es 30 (sistemas) y 15 (optimizacion)}. Among the pivoting rules, the long-step ratio
-test gives 10--11\%, the cost perturbation 3--8\% (and two more runs
-finished), devex 1--4\%, and the box-scaled tolerance is neutral in time: it is
-there for correctness on narrow boxes (Section~\ref{sec:simplex}). The primal
-warm start is 7--10\% slower on systems of equations; on optimization problems
-it is the choice of SC, and the dual warm start is 3--12\% slower (4--6\% on
-the bank of Table~\ref{tab:main}, 9--12\% on a larger bank of 104 optimization
-problems\todo{presentar el banco all o sacar la cifra}) with the same number of problems solved
-\todo{remedir la ablacion de optimizacion con la omision primal y cambiar la fila a ``dual warm start'' en la columna de optimizacion; las tablas de optimizacion son con el dual}.
-Without the cost perturbation, optimization problems are 3\% faster; chembis
-and ship-1, which some configurations solve and SC does not, are close to the
-time limit and come and go with most changes. Ordering the bounds with information of the tableau instead of
-the farthest-bound rule saves 2--3\% on systems of equations and 2--6\% on
-optimization problems.
+the best of both. Among the pivoting rules, the long-step ratio test gives
+8--10\% on systems of equations, the cost perturbation 3--5\% (and two more
+runs finished), devex 1--2\%, and the box-scaled tolerance is neutral in time:
+it is there for correctness on narrow boxes (Section~\ref{sec:simplex}). On
+optimization problems these rules are within 3\%; the perturbation, applied
+when the dual warm start relocates the nonbasic variables, does not act there,
+and the search is identical without it. Each program loses with the warm start
+of the other (Section~\ref{sec:simplex}): the primal warm start is 4--5\%
+slower on systems of equations, with three fewer runs finished, and the dual
+warm start 1--5\% slower on optimization problems. Ordering the bounds with
+information of the tableau instead of the farthest-bound rule saves 1--2\% on
+systems of equations, and on optimization problems it is 3\% faster on runs
+above 0.1\,s and 3\% slower above 5\,s.
 
 \begin{table}[t]
 \centering
 \caption{Ablation: each row changes one component of SC. Ratios against full
 SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
-runs finished out of 528 (full SC: 362), CPU on optimization problems above
-0.1\,s and problems solved in all seeds (full SC: 129). The last row comes
-from the bank of Table~\ref{tab:main}.}
+runs finished out of 484 (full SC: 364), CPU on optimization problems above
+0.1\,s and problems solved in all seeds (full SC: 131). The warm-start row
+gives each program the warm start of the other: primal on systems of
+equations, dual on optimization problems.}
 \label{tab:ablation}
 \begin{tabular}{lccccccc}
 \toprule
@@ -966,16 +970,15 @@ from the bank of Table~\ref{tab:main}.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.08 & 360 & 0.97 & 131\\
-primal warm start                 & 1.02 & 1.07 & 1.08 & 1.10 & 360 & 0.95 & 129\\
-without long-step ratio test      & 1.01 & 1.10 & 1.11 & 1.11 & 360 & 1.00 & 129\\
-without devex                     & 1.01 & 1.01 & 1.03 & 1.04 & 361 & 0.99 & 130\\
-without box-scaled tolerance      & 1.00 & 1.01 & 1.01 & 1.00 & 361 & 1.01 & 130\\
-tableau engine only               & 1.02 & 1.13 & 1.19 & 1.25 & 356 & 1.01 & 129\\
-revised engine only               & 1.00 & 0.98 & 0.99 & 0.99 & 364 & 1.06 & 129\\
-without merging twin rows         & 1.02 & 1.45 & 1.45 & 1.40 & 354 & 1.00 & 129\\
-\midrule
-farthest-bound order              & 1.00 & 1.03 & 1.02 & 1.02 & 361 & 1.06 & 129\\
+without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.05 & 362 & 1.00 & 131\\
+warm start of the other program   & 1.02 & 1.05 & 1.05 & 1.04 & 361 & 1.04 & 131\\
+without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.08 & 360 & 1.01 & 131\\
+without devex                     & 1.01 & 1.01 & 1.02 & 1.01 & 361 & 1.01 & 130\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 362 & 1.01 & 131\\
+tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 356 & 1.01 & 131\\
+revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 363 & 1.04 & 131\\
+without merging twin rows         & 1.02 & 1.43 & 1.33 & 1.27 & 354 & 1.01 & 131\\
+farthest-bound order              & 1.00 & 1.02 & 1.01 & 1.02 & 361 & 1.03 & 131\\
 \bottomrule
 \end{tabular}
 \end{table}
