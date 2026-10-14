@@ -319,6 +319,23 @@ cuatro. La ablación del banco del paper (primal en ambos motores, umbral 40)
 daba solver ×1.04 y `ibexopt` ×0.98: el dual gana en sistemas y el primal en
 optimización.
 
+**Primal en `ibexopt` (2026-10-13; `results/primal_banco_opt_2026-10-13.csv`,
+`results/primal_all_2026-10-13.csv`; 4 semillas, 60 s, orden lejos).** Brazos:
+dual (omisión), primal (`DFB_SX_PIVOTEO=primal DFB_SX_REVPRIMAL=1`) con
+umbral 30 / 15 / siempre revisado, caja. **Elegido en el banco del paper**
+(139 opt), contra el dual: p30 ×0.94 / ×0.96 / ×0.97, **p15 ×0.94 / ×0.96 /
+×0.97** (peor ×1.03; launch ×0.75, himmel16 ×0.77, ex5_3_2 ×0.80), p0 ×0.95 /
+×0.97 / ×0.98 (peor ×1.11); contra la caja p15 ×0.79 (dual ×0.83).
+**Validado en `all`** (104 opt): p15 contra dual ×0.91 / ×0.90 / ×0.88, 309 =
+309; contra la caja ×0.85 / ×0.85 / ×0.91 (dual ×0.93 / ×0.93 / ×1.04).
+Ganan hs099 ×0.40, linear ×0.43, srcpm ×0.53, ex8_4_4-1/-2 ×0.54; pierden
+hhfair1 ×1.19 y ex7_2_9 ×1.25 (el dual hace menos celdas). Falla corregida en
+el camino (commit bd15955b): `pivot_revisado` salía por pivote chico sin
+limpiar `col_primal_lista`; tras refactorizar, un pivote dual sobre esa
+columna aplicaba la eta de la LU vieja (segfault en ramsey, 2 de 4
+semillas; hallado con ASan). Los p15 repetidos tras el arreglo dan ×1.00
+contra los anteriores.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
