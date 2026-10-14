@@ -354,6 +354,19 @@ anterior («en sistemas la base es la misma») era falsa: es la base casi igual
 con muchos lados opuestos. No está aislado por qué los lados cambian más en
 sistemas.
 
+**Arranque tibio adaptativo (2026-10-14, `DFBH_ADAPT=u`).** Promedio móvil
+de cambios de lado por LP tibio; al cargar cada nodo, dual (umbral de motor 30)
+si supera `u`, primal (15) si no. Etapa de diagnóstico (7 sistemas + 9 opt, 2
+semillas, 60 s), contra la omisión por programa: u = 1 sol ×1.02, opt ×1.16;
+**u = 2 sol ×1.05, opt ×1.01**; u = 4 sol ×1.02, opt ×1.02. No gana en
+ninguna: la elección por programa ya clasifica casi todo bien (en la ablación,
+2 de 127 sistemas ganan con el primal; las pérdidas del primal en opt, hhfair1
+y ex7_2_9, son de celdas y tienen pocos cambios de lado, 0.2), y unos pocos
+nodos en la estrategia contraria cambian el camino (Geneig-icse con u = 2: 9
+nodos primales, celdas 295 → 469). launch tiene 3.5 cambios de lado y aun así
+gana con el primal: el predictor no es perfecto. No se pasó al banco completo;
+la opción queda apagada.
+
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
 25 → 21 s, Discrete-Integralf2-19 2.38 → 1.88 s, celdas iguales. Devex primal
@@ -813,6 +826,7 @@ Barridos con 4 semillas en `results/*_4semillas.csv` con su `analiza_*.py`.
 | `-b lsmeardfb`, `DFBH_SENS=redcost\|abs\|jac`, `DFBH_BISEC_CMP=1`, `IBEX_LSMEAR_DUMP=1` | bisector `LSmear` con sensibilidades de DFB guardadas en la celda; comparación con `LSmear` sobre el mismo nodo; volcado de puntajes (§9). Fuera de la omisión |
 | `DFB_SX_DEVEXVIEJO=1`, `DFB_SX_DSE=1`, `DFB_SX_DSEABS=1`, `DFB_SX_HARRISABS=1` | restaura el defecto de devex (§9); dual steepest edge exacto y su variante con violación absoluta; Harris de dos pasadas. Apagados |
 | `DFB_SX_BFRT=0`, `DFB_SX_BFRTINF=1` | ratio test de paso largo, **encendido por omisión** (`=0` lo apaga); la segunda restaura el defecto de la infactibilidad espuria (§9) |
+| `DFBH_ADAPT=u`, `DFBH_ADAPT_TRAZA=1`, `DFBH_BASECOMP=1` | arranque tibio adaptativo por cambios de lado (apagado, no gana); sonda de base y lados entre cotas consecutivas (§4) |
 | `DFBH_LAGRC=1\|2`, `DFBH_LAGRR=r` | cota lagrangiana con monotonía como contracción, en el objetivo o en las `2n`; rondas de monotonía (omisión 2). Apagada (§9) |
 | `DFBH_ABDUAL=τ`, `DFBH_ABNODO=n`, `DFBH_ABPRIM=R`, `DFBH_ABCONG=1`, `DFBH_ABPURO=1` | comparan dos configuraciones sobre el mismo nodo (la última: primal contra dual puro) |
 

@@ -20,6 +20,17 @@
  * sola vez por punto de llamada. */
 #define DFB_ENV(n) ([]() { static const bool v_ = (getenv(n) != NULL); return v_; }())
 
+namespace {
+/* Estado de `DFBH_ADAPT`: umbral, promedio movil de cambios de lado por LP
+ * tibio (-1 = sin datos todavia) y nodos resueltos con cada estrategia. */
+double adapt_umbral() {
+    static const double u = getenv("DFBH_ADAPT") ? atof(getenv("DFBH_ADAPT")) : 0.0;
+    return u;
+}
+double& adapt_ema() { static double e = -1.0; return e; }
+long& adapt_nodos(bool dual) { static long n[2] = {0, 0}; return n[dual ? 1 : 0]; }
+}
+
 namespace ibex {
 
 long CtcDFBHull::n_lps = 0;
@@ -440,6 +451,9 @@ CtcDFBHull::~CtcDFBHull() {
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
     if (DFBSimplex::n_nodos_rev)
         fprintf(stderr, "[dfb] motor por nodo: revisado=%ld tableau=%ld\n", DFBSimplex::n_nodos_rev, DFBSimplex::n_nodos_tab);
+        if (adapt_umbral() > 0.0)
+            fprintf(stderr, "[dfb] adaptativo (umbral %.2f): nodos dual=%ld primal=%ld, cambios de lado por LP (prom. movil)=%.2f\n",
+                    adapt_umbral(), adapt_nodos(true), adapt_nodos(false), adapt_ema());
     if (DFB_ENV("DFBH_LUSTATS"))
         fprintf(stderr, "[lustats] factorizaciones=%ld updates=%ld btran=%ld ftran=%ld\n",
                 DFBBasis::n_factorizations, DFBBasis::n_updates, DFBBasis::n_btran, DFBBasis::n_ftran);
@@ -1218,6 +1232,21 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         /* Los `2n` ejemplares cargan la MISMA `Af`: se construye una vez y los
          * demas copian lo ya armado. `load` se llevaba del 16 % al 45 % del
          * tiempo del simplex (§43). */
+        /* ARRANQUE TIBIO ADAPTATIVO (`DFBH_ADAPT=u`). El dual reubica lados
+         * gratis y el primal paga una iteracion por cada no basica que cambia
+         * de cota entre cotas consecutivas (§ESTADO 2026-10-14). Se lleva un
+         * promedio movil de esos cambios por LP tibio y, al cargar cada nodo,
+         * se elige dual (umbral de motor 30) si superan `u`, primal (15) si no. */
+        if (adapt_umbral() > 0.0 && !motor_caja) {
+            static bool def_leido = false, def_rev_primal = false;
+            if (!def_leido) { def_rev_primal = DFBSimplex::rev_primal; def_leido = true; }
+            const bool dual = adapt_ema() < 0.0 || adapt_ema() > adapt_umbral();
+            DFBSimplex::pivoteo_dual = dual;
+            DFBSimplex::dual_puro = dual;
+            DFBSimplex::rev_primal = dual ? def_rev_primal : true;
+            DFBSimplex::motor_umbral = dual ? 30 : 15;
+            ++adapt_nodos(dual);
+        }
         if (!motor_caja) sx.load(Af, nb_var);
         t_carga = cronometro ? ahora_s() : 0.0;
 
@@ -1728,6 +1757,27 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * misma base que el de `paso-1`, el dual llega sin pivotear. Se cuenta
          * cuantas columnas basicas del optimo actual no lo eran en el anterior:
          * es una cota inferior de los pivotes que necesita cualquier simplex. */
+        if (adapt_umbral() > 0.0 && !motor_caja) {
+            static std::vector<char> prev_a;
+            static bool prev_a_ok = false;
+            static long n_a = 0;
+            std::vector<char> cur(na, 0);
+            for (int c = 0; c < na; ++c)
+                cur[c] = sk.es_basica(c) ? 1 : (sk.en_superior(c) ? 3 : 2);
+            if (paso > 0 && prev_a_ok && (int)prev_a.size() == na) {
+                long lado = 0;
+                for (int c = 0; c < na; ++c)
+                    if (cur[c] != 1 && prev_a[c] != 1 && prev_a[c] != cur[c]) ++lado;
+                double& e = adapt_ema();
+                e = (e < 0.0) ? (double)lado : 0.98 * e + 0.02 * (double)lado;
+                if ((++n_a % 20000) == 0 && getenv("DFBH_ADAPT_TRAZA"))
+                    fprintf(stderr, "[adapt] LPs=%ld  cambios de lado (prom. movil)=%.2f  "
+                            "nodos dual=%ld primal=%ld\n", n_a, e,
+                            adapt_nodos(true), adapt_nodos(false));
+            }
+            prev_a.swap(cur); prev_a_ok = true;
+        }
+
         if (DFB_ENV("DFBH_BASECOMP") && !motor_caja) {
             static std::vector<char> prev;
             static bool prev_ok = false;
