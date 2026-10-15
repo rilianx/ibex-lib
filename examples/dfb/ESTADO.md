@@ -466,8 +466,51 @@ nodo no se poda. La caja del fallo 20000 (`DFBH_DUMPFALLO=N`) resuelta aparte
 muere en 3 celdas con los dos órdenes: depende del estado heredado, no de la
 región (anchos de 1e-16 a 1e6). **`DFBH_REINTENTA=1`**: un INFEASIBLE que no
 certifica se resuelve otra vez en frío. Arregla los tres: 260 s / 18451
-celdas, 373 s / 25739, 780 s / 39645 (lejos: 191, 336, 728 s). En banco de
-60 s (en curso, `$M/reint`).
+celdas, 373 s / 25739, 780 s / 39645 (lejos: 191, 336, 728 s). Banco de 60 s
+(1040 corridas, contra el brazo sc de `results/final_2026-10-14.csv`):
+sistemas t ×0.999/0.998/1.004, celdas ×1.000, terminan 361/364 (las 3 que pierde
+estaban en 59.1–59.7 s); opt ×1.006/1.009/1.004, terminan 518/518; búsqueda
+idéntica en el 96 %. **Desde 2026-10-15 está encendido por omisión** con el nombre
+`DFBH_FRIO_SI_NO_CERTIFICA` (`=0` lo apaga); los binarios finales anteriores
+quedan en `$M/ibexopt.fin` e `$M/ibexsolve_dfb.fin`. Las tablas de 60 s del paper
+quedan con los binarios anteriores (el cambio es neutro ahí); el brazo propio
+de sistemas a 3600 s se rehace con el binario nuevo (`$M/l3600r`).
+Para comparar en igualdad, la caja negra recibe el mismo reintento (binarios
+`*_oc`, 2026-10-15): si SoPlex declara infactible y el rayo no certifica, o no
+entrega rayo, se borra su base (`clearBasis`) y se resuelve otra vez. Primeras
+pruebas (cerca, semilla 1, 60 s): Brown-18 idéntico (sus pérdidas son estado
+`Unknown`, 61730 de 71 mil LPs, no infactibles: el reintento no las toca);
+Geneig-icse 549 → 625 celdas. Etapa de 60 s en sistemas en `$M/fcaja`. Etapa de
+60 s (484 corridas, cerca): t ×1.002/1.003/1.003, celdas ×1.000, terminan 352/352,
+celdas idénticas en 347. Neutro; se rehace la caja «cerca» a 3600 s (`$M/l3600rc`).
+
+**SC propio a 3600 s con el reintento** (`$M/l3600r`, 96 corridas): arregla los
+tres estancamientos (CCR2-26 s2 257 s, CCR2-28 s2 372 s, CCR2-30 s1 777 s), pero
+CCR2-28 s1 pasa de 321 s / 21559 celdas a 1640 s / 337457 (reproducible), y
+CCR-30 s1 deja de terminar (antes 1138 s; s2 no termina con nadie). Mecanismo de
+CCR2-28 s1: **no es DFB, es el ajuste adaptativo de ACID**. Sonda
+`DFBH_DUMPNODO=N1,N2` (vuelca la caja de entrada de esas llamadas a CtcDFBHull) y
+`DFBH_SOLO=1` en `ibexsolve_dfb` (aplica cada contractor una vez a la caja): las
+cajas del estancamiento (llamadas 25k, 100k, 200k) las vacía ACID solo, no DFB
+(ni una pasada ni el punto fijo). `DFBH_ACIDTRACE=N` (subclase `AcidSonda`, misma
+conducta: 21559 celdas): sin reintento `nbcidvar` se mueve entre 18 y 103; con
+reintento cae a 0 en la llamada ~18000 y se queda en 0–3 hasta ~36000. ACID
+reajusta cada 1000 llamadas con 50 de ajuste sobre 2·nbcidvar variables (mínimo
+2): si una ventana de 50 cae en cajas donde recortar no rinde (ganancia < 0.002),
+deja de recortar y tarda en recuperarse. El reintento solo cambia el camino; la
+misma inestabilidad le puede pasar a cualquier configuración.
+
+**Tabla de 3600 s en igualdad (paper, `tab:long`, 2026-10-15;
+`results/frio_2026-10-15/`).** Sistemas: SC propio con reintento contra SoPlex
+`cerca` con reintento: tiempo ×0.96, celdas ×1.04, terminan 94 / 89 (SC termina
+Brown-30 y Brown-30-1 en 1–2 s y CCR2-24 s2); sin CCR2-28 s1 (×4.2, ACID) ×0.94 y
+celdas ×1.01. Opt (sin reintento en ninguno): paper ×0.74, celdas ×0.97, 28 / 28;
+`all` ×0.77, celdas ×0.97, 33 / 25. La caja con reintento a 3600 s cambia poco
+(CCR2-28 s2 466 → 349 s). Los binarios finales se recompilaron desde el fuente
+(reintento en los dos motores; respaldo `$M/*.fin2`); las tablas de 60 s del
+paper son de los binarios anteriores (`$M/*.fin`), el reintento es neutro ahí.
+Falta decidir si se rehacen las filas de orden igual («lejos» en los dos) a
+3600 s; el paper solo da la fila best of each.
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120

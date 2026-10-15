@@ -1621,30 +1621,41 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
         DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
                                            : sk.solve(k, lado == 1, z, tope_paso, true);
-        /* `DFBH_REINTENTA=1`: un INFEASIBLE cuyo rayo no certifica se vuelve a
-         * resolver EN FRIO. En CountercurrentReactors2-26 (semilla 2, orden
+        /* `DFBH_FRIO_SI_NO_CERTIFICA` (encendido por omision; `=0` lo apaga):
+         * un INFEASIBLE cuyo rayo no certifica se vuelve a resolver EN FRIO.
+         * En CountercurrentReactors2-26 (semilla 2, orden
          * propio) la busqueda se estanca en una zona donde el simplex en
          * caliente declara vacios espurios (rayos de 3 filas, el cero en medio
          * de la suma) que el certificado rechaza, y el nodo no se poda; la
-         * misma caja resuelta desde cero se prueba vacia. */
-        static const bool reintenta = DFB_ENV("DFBH_REINTENTA");
-        if (reintenta && !motor_caja && st == DFBSimplex::INFEASIBLE) {
-            const std::vector<double>& l0 = sk.lambda();
-            IntervalVector g0(na, Interval(0.0));
-            for (int j = 0; j < m; ++j) {
-                if (l0[j] == 0.0) continue;
-                const Interval lj(l0[j]);
-                for (int c = 0; c < na; ++c)
-                    if (A[j][c] != Interval(0.0)) g0[c] += lj * A[j][c];
+         * misma caja resuelta desde cero se prueba vacia. A 60 s es neutro
+         * (x1.00, celdas identicas en el 96 % de las corridas). Vale igual
+         * para la caja negra (se borra la base de SoPlex), que ademas reintenta
+         * cuando declara infactible sin entregar rayo. */
+        static const bool reintenta = []() {
+            const char* e = getenv("DFBH_FRIO_SI_NO_CERTIFICA");
+            return !(e && e[0] == '0'); }();
+        if (reintenta && (st == DFBSimplex::INFEASIBLE || (motor_caja && caja_inf_sin_rayo))) {
+            bool certifica = false;
+            if (st == DFBSimplex::INFEASIBLE) {
+                const std::vector<double>& l0 = motor_caja ? lam_caja : sk.lambda();
+                IntervalVector g0(na, Interval(0.0));
+                for (int j = 0; j < m; ++j) {
+                    if (l0[j] == 0.0) continue;
+                    const Interval lj(l0[j]);
+                    for (int c = 0; c < na; ++c)
+                        if (A[j][c] != Interval(0.0)) g0[c] += lj * A[j][c];
+                }
+                Interval s0(0.0);
+                for (int c = 0; c < na; ++c) s0 += g0[c] * z[c];
+                certifica = !s0.contains(0.0);
             }
-            Interval s0(0.0);
-            for (int c = 0; c < na; ++c) s0 += g0[c] * z[c];
-            if (s0.contains(0.0)) {
-                st = sk.solve(k, lado == 1, z, tope_paso, false);
+            if (!certifica) {
+                st = motor_caja ? resolver_caja(k, lado == 1, z, true)
+                                : sk.solve(k, lado == 1, z, tope_paso, false);
                 static long nr = 0, nopt = 0, ninf = 0;
                 ++nr; if (st == DFBSimplex::OPTIMAL) ++nopt; else if (st == DFBSimplex::INFEASIBLE) ++ninf;
                 if (nr % 1000 == 0)
-                    fprintf(stderr, "[reintenta] %ld en frio: OPTIMAL %ld, INFEASIBLE %ld, otros %ld\n",
+                    fprintf(stderr, "[frio_si_no_certifica] %ld en frio: OPTIMAL %ld, INFEASIBLE %ld, otros %ld\n",
                             nr, nopt, ninf, nr - nopt - ninf);
             }
         }
@@ -2996,8 +3007,9 @@ Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) co
 
 bool CtcDFBHull::motor_caja = getenv("DFBH_MOTOR") && std::string(getenv("DFBH_MOTOR")) == "caja";
 
-DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const IntervalVector& z) {
+DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const IntervalVector& z, bool frio) {
     it_caja = 0;
+    caja_inf_sin_rayo = false;
     /* Tolerancias de SoPlex en la caja negra (`DFBH_CAJA_TOL`, omision 1e-6, la
      * de fabrica de SoPlex). Con la de Ibex (1e-9) SoPlex declara infactibles
      * LPs factibles cuando la relajacion afin tiene casi-igualdades de ancho
@@ -3025,6 +3037,8 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
     for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
     mylinearsolver.set_bounds(xb);
     mylinearsolver.set_cost(k, maximizar ? -1.0 : 1.0);
+    /* en frio: se borra la base que SoPlex guarda del LP anterior */
+    if (frio) mylinearsolver.mysoplex->clearBasis();
     const LPSolver::Status st = mylinearsolver.minimize();
     it_caja = mylinearsolver.mysoplex->numIterations();
     const int m = A.nb_rows();
@@ -3052,7 +3066,7 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
         if (mylinearsolver.mysoplex->getDualFarkasReal(f) && f.dim() >= nb_var + m) {
             for (int j = 0; j < m; ++j) lam_caja[j] = f[nb_var + j];
             res = DFBSimplex::INFEASIBLE;
-        }
+        } else caja_inf_sin_rayo = true;
     }
     mylinearsolver.set_cost(k, 0.0);
     if (getenv("DFBH_CAJA_DBG")) {
@@ -3203,6 +3217,25 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
      *
      * `DFBH_RELIN=1` lo activa (por omision se re-linealiza, como antes). */
     static const bool reusar = (getenv("DFBH_RELIN") != NULL);
+    /* `DFBH_DUMPNODO=N1,N2,...`: vuelca la caja de entrada de esas llamadas al
+     * contractor, para resolverla aparte (estancamientos sin vacios espurios). */
+    {
+        static std::vector<long> dump_nodos;
+        static bool dn_ok = false;
+        if (!dn_ok) {
+            dn_ok = true;
+            if (const char* e = getenv("DFBH_DUMPNODO"))
+                for (const char* q = e; *q; ) { dump_nodos.push_back(atol(q)); while (*q && *q != ',') ++q; if (*q) ++q; }
+        }
+        static long n_llam = 0;
+        ++n_llam;
+        for (size_t q = 0; q < dump_nodos.size(); ++q)
+            if (dump_nodos[q] == n_llam) {
+                fprintf(stderr, "[dumpnodo] %ld", n_llam);
+                for (int c = 0; c < nb_var; ++c) fprintf(stderr, " %.17g %.17g", box[c].lb(), box[c].ub());
+                fprintf(stderr, "\n");
+            }
+    }
     bool reusado = false;
     if (reusar && lin_valida && caja_lin.size() == nb_var && A.nb_rows() > 0) {
         reusado = true;

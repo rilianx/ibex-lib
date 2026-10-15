@@ -1,0 +1,20 @@
+sistemas paper  inst 48 corr 96  terminan x 94 caja 89 (solo x 5, solo caja 0, NA x 0 caja 0)
+   >0.1 / >1 / >5 / >60 / >600 :  89 c1.04 t0.96 |  89 c1.04 t0.96 |  89 c1.04 t0.96 |  89 c1.04 t0.96 |  29 c1.03 t0.94
+   mejores: Trigexp2-3 x0.59, Virasoro x0.76, Fourbarbis x0.80, Trigo1-0034sp x0.80, Butcher8-a x0.82
+   peores : CountercurrentReactors2-24 x1.09, Fourbar-icse x1.11, Virasoro-prod0 x1.14, Katsura-30 x1.19, CountercurrentReactors2-28 x2.12
+opt paper       inst 0 corr 0  terminan x 0 caja 0 (solo x 0, solo caja 0, NA x 0 caja 0)
+   >0.1 / >1 / >5 / >60 / >600 :   0 cnan tnan |   0 cnan tnan |   0 cnan tnan |   0 cnan tnan |   0 cnan tnan
+   mejores: 
+   peores : 
+opt all         inst 0 corr 0  terminan x 0 caja 0 (solo x 0, solo caja 0, NA x 0 caja 0)
+   >0.1 / >1 / >5 / >60 / >600 :   0 cnan tnan |   0 cnan tnan |   0 cnan tnan |   0 cnan tnan |   0 cnan tnan
+   mejores: 
+   peores : 
+--- corridas no terminadas en algun brazo
+   ('l', 'sol', 'Brown-30') 1 x 2s caja 3600s*
+   ('l', 'sol', 'Brown-30') 2 x 1s caja 3600s*
+   ('l', 'sol', 'Brown-30-1') 1 x 2s caja 3600s*
+   ('l', 'sol', 'Brown-30-1') 2 x 1s caja 3600s*
+   ('l', 'sol', 'CountercurrentReactors-30') 1 x 3600s* caja 3600s*
+   ('l', 'sol', 'CountercurrentReactors-30') 2 x 3600s* caja 3600s*
+   ('l', 'sol', 'CountercurrentReactors2-24') 2 x 119s caja 3600s*

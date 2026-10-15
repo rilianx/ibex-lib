@@ -30,6 +30,22 @@
 using namespace std;
 using namespace ibex;
 
+/* `DFBH_ACIDTRACE=N`: cada N llamadas a ACID imprime cuantas variables recorta
+ * (`nbcidvar`, el valor que ACID aprende en sus fases de ajuste). */
+class AcidSonda : public CtcAcid {
+public:
+    AcidSonda(const System& sys, Ctc& c) : CtcAcid(sys, c) {}
+    long n = 0, vac = 0;
+    void contract(IntervalVector& box, ContractContext& context) {
+        static const long cada = getenv("DFBH_ACIDTRACE") ? atol(getenv("DFBH_ACIDTRACE")) : 0;
+        CtcAcid::contract(box, context);
+        ++n; if (box.is_empty()) ++vac;
+        if (cada > 0 && n % cada == 0)
+            fprintf(stderr, "[acid] llamadas=%ld nbcidvar=%d vacias=%ld\n", n, nbcidvar, vac);
+    }
+    void contract(IntervalVector& box) { ContractContext c(box); contract(box, c); }
+};
+
 int main(int argc, char** argv) {
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
     string lr = "xn", lin = "art", bis = "lsmear"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
@@ -60,7 +76,7 @@ int main(int argc, char** argv) {
 
     CtcHC4 hc4(sys.ctrs, 0.01);
     CtcHC4 hc4acid(sys.ctrs, 0.1, true);
-    CtcAcid acid(sys, hc4acid);
+    AcidSonda acid(sys, hc4acid);
     CtcNewton* newton = eqs ? new CtcNewton(eqs->f_ctrs, 5e8, eps, 1.e-4) : NULL;
     /* --lin=art (omision desde 2026-10-05: el linearizador afin, una fila por
      * lado de cada restriccion; mas rapido con los dos contractores) o --lin=xt
@@ -93,6 +109,21 @@ int main(int argc, char** argv) {
     else bsc = eqs ? (Bsc*) new SmearSumRelative(*eqs, eps) : (Bsc*) new RoundRobin(eps);
     CellBuffer* buf = bfs ? (CellBuffer*) new CellList() : (CellBuffer*) new CellStack();
 
+    /* `DFBH_SOLO=1`: aplica cada contractor UNA vez, por separado, a la caja
+     * inicial e informa si la vacia (para cajas volcadas con DFBH_DUMPNODO). */
+    if (getenv("DFBH_SOLO")) {
+        const char* nom[4] = {"hc4", "acid", "newton", "fix(dfb,hc4)"};
+        Ctc* cs[4] = {&hc4, &acid, newton, &fix};
+        for (int q = 0; q < 4; ++q) {
+            if (!cs[q]) continue;
+            IntervalVector b(sys.box);
+            cs[q]->contract(b);
+            cerr << "[solo] " << nom[q] << ": " << (b.is_empty() ? "VACIA" : "no vacia") << endl;
+        }
+        IntervalVector b(sys.box); clin->contract(b);
+        cerr << "[solo] dfb una vez: " << (b.is_empty() ? "VACIA" : "no vacia") << endl;
+        return 0;
+    }
     Solver s(sys, ctc, *bsc, *buf, Vector(sys.nb_var, eps), Vector(sys.nb_var, POS_INFINITY));
     if (timeout > 0) s.time_limit = timeout;
     /* `DFBH_SOLTRACE=1`: imprime cada solucion, incierta y pendiente al encontrarla. */
