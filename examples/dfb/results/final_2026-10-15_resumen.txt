@@ -1,0 +1,254 @@
+# Banco final 60 s, binarios con reintento en frio en los dos motores (2026-10-15). tab.py sobre f60
+== principal
+     mejores: ex7_2_3 x0.34, ex2_1_9fact x0.55, ex2_1_9 x0.56, ex8_4_4bis x0.65, ex8_5_1bis x0.69, ship-1 x0.70
+     peores : ex5_3_2 x0.87, ex7_3_4 x0.90, ex6_1_3 x0.91, himmel16 x0.96, ex14_2_7 x1.00, launch x1.43
+opt sc         / caja   cells 0.979/0.985/0.942  cpu 0.747/0.767/0.711  (n=211/79/45)  runs 528/526  solved 131/131
+     mejores: ex7_2_3 x0.32, ex2_1_9fact x0.53, ex2_1_9 x0.55, ex8_4_4bis x0.65, ex8_5_1bis x0.73, ex6_2_12 x0.75
+     peores : ex7_3_4 x0.90, ex6_1_3 x0.91, ship-1 x0.92, ex14_2_4 x0.96, himmel16 x1.10, launch x1.44
+opt lejos      / caja   cells 0.991/0.992/0.943  cpu 0.771/0.773/0.709  (n=211/79/45)  runs 528/526  solved 131/131
+== ablacion
+opt sinpert    / sc     cells 1.000/1.000/1.000  cpu 1.001/1.000/1.001  (n=182/76/30)  runs 528/528  solved 131/131
+opt tibio      / sc     cells 1.023/1.012/0.980  cpu 1.045/1.035/1.000  (n=180/74/28)  runs 529/528  solved 131/131
+opt sinlargo   / sc     cells 1.007/1.000/0.981  cpu 1.010/1.002/0.976  (n=182/76/30)  runs 530/528  solved 132/131
+opt sindevex   / sc     cells 1.014/1.027/0.996  cpu 1.004/1.013/0.985  (n=182/76/30)  runs 527/528  solved 131/131
+opt sintau     / sc     cells 1.007/0.997/0.998  cpu 1.007/1.000/1.002  (n=182/76/30)  runs 529/528  solved 131/131
+opt tableau    / sc     cells 1.002/1.004/0.969  cpu 1.014/1.028/0.993  (n=182/76/30)  runs 526/528  solved 131/131
+opt revisado   / sc     cells 1.012/0.996/0.976  cpu 1.042/1.017/0.988  (n=180/74/28)  runs 525/528  solved 131/131
+opt sinfusion  / sc     cells 1.006/1.004/0.977  cpu 1.016/1.016/0.990  (n=180/74/28)  runs 526/528  solved 131/131
+opt lejos      / sc     cells 1.017/0.996/0.988  cpu 1.032/0.997/0.990  (n=182/76/30)  runs 528/528  solved 131/131
+== principal
+     mejores: Brown-20-1 x0.05, Brown-19 x0.08, Brown-18 x0.13, DiscreteBoundary-0200 x0.14, Geneig-icse x0.33, Bratu-0210 x0.56
+     peores : Trigexp2-13 x0.98, BroydenBanded-120 x0.99, BroydenBanded-140 x0.99, Trigo1-0020sp x1.00, Katsurabis-14 x1.02, CountercurrentReactors2-18 x1.04
+sol sc         / caja   cells 0.916/0.880/0.913  cpu 0.776/0.761/0.812  (n=263/179/99)  runs 362/356  solved 180/178
+     mejores: Brown-20-1 x0.05, Brown-19 x0.08, Brown-18 x0.13, DiscreteBoundary-0200 x0.14, Geneig-icse x0.38, Bratu-0210 x0.57
+     peores : Trigexp2-13 x0.97, Yamamua1-0028sp x0.98, Designsp x1.00, Trigo1-0020sp x1.00, BroydenBanded-140 x1.01, Katsurabis-14 x1.21
+sol lejos      / caja   cells 0.916/0.881/0.914  cpu 0.788/0.771/0.822  (n=263/179/99)  runs 361/356  solved 180/178
+== ablacion
+sol sinpert    / sc     cells 1.016/1.026/1.005  cpu 1.029/1.040/1.038  (n=252/164/94)  runs 361/362  solved 180/180
+sol tibio      / sc     cells 1.014/1.023/0.999  cpu 1.047/1.050/1.036  (n=251/163/93)  runs 361/362  solved 180/180
+sol sinlargo   / sc     cells 1.012/1.018/0.996  cpu 1.102/1.082/1.073  (n=251/163/93)  runs 360/362  solved 180/180
+sol sindevex   / sc     cells 1.013/1.020/1.000  cpu 1.014/1.020/1.002  (n=252/164/94)  runs 361/362  solved 180/180
+sol sintau     / sc     cells 0.999/0.999/0.999  cpu 1.005/0.997/0.997  (n=252/164/94)  runs 362/362  solved 181/180
+sol tableau    / sc     cells 1.016/1.026/1.001  cpu 1.148/1.142/1.075  (n=246/158/88)  runs 355/362  solved 177/180
+sol revisado   / sc     cells 1.003/1.006/1.011  cpu 0.994/0.999/0.993  (n=253/165/95)  runs 362/362  solved 180/180
+sol sinfusion  / sc     cells 1.021/1.033/1.015  cpu 1.424/1.339/1.256  (n=245/157/87)  runs 354/362  solved 177/180
+sol lejos      / sc     cells 1.001/1.002/1.002  cpu 1.020/1.015/1.014  (n=251/163/93)  runs 361/362  solved 180/180
+
+# sc contra cajacerca (best of each, sistemas)
+     mejores: Brown-18 x0.03, DiscreteBoundary-0200 x0.21, Geneig-icse x0.37, Geneigbis x0.66, Fredtest x0.69, exnewton x0.71
+     peores : Trigo1-0020sp x1.00, transistor-icse x1.01, CountercurrentReactors2-16 x1.03, Bratu-0180 x1.06, CountercurrentReactors2-18 x1.10, Katsurabis-14 x1.18
+sol sc         / cajacerca cells 0.945/0.920/0.870  cpu 0.837/0.845/0.823  (n=258/169/100)  runs 362/352  solved 180/176
+
+# perfiles (modo bb)
+sol cajacerca runs 268 tau1 sc 0.9291 bb 0.0709  tau2 sc 1.000 bb 0.940  bb no termina 0.037 sc no termina 0.000
+opt caja runs 213 tau1 sc 0.9390 bb 0.0610  tau2 sc 0.995 bb 0.972  bb no termina 0.005 sc no termina 0.005
+
+# contra final_2026-10-14 por brazo
+opt caja       pares  556 terminan 525->526 celdas iguales 525/525 | >0.1: n=219 t x1.001 c x1.000 | >1: n=79 t x1.001 c x1.000 | >5: n=45 t x1.001 c x1.000
+   cambia termino ('opt', 'ex8_4_4bis', 'caja', '2') (59.9994440001, 115990.0, False) (57.3235450001, 116306.0, True)
+opt lejos      pares  556 terminan 526->528 celdas iguales 506/524 | >0.1: n=194 t x1.007 c x1.005 | >1: n=73 t x1.013 c x1.014 | >5: n=27 t x1.018 c x1.014
+   cambia termino ('opt', 'bearing', 'lejos', '2') (59.9973120001, 19568.0, False) (50.0969810001, 17034.0, True)
+   cambia termino ('opt', 'bearing', 'lejos', '4') (24.9955740001, 9258.0, True) (59.9957130001, 22516.0, False)
+   cambia termino ('opt', 'ship-1', 'lejos', '4') (59.9999800001, 164932.0, False) (48.9046430001, 143822.0, True)
+   cambia termino ('opt', 'ship-1', 'lejos', '3') (32.2409010001, 99130.0, True) (59.9995970001, 184062.0, False)
+   cambia termino ('opt', 'bearing', 'lejos', '3') (59.9996080001, 19718.0, False) (50.0569450001, 17034.0, True)
+   cambia termino ('opt', 'ship-1', 'lejos', '1') (59.9999170001, 162682.0, False) (40.6469600001, 114624.0, True)
+   celdas x0.85 ('opt', 'launch', 'lejos', '3') t 2.2->2.0
+   celdas x0.96 ('opt', 'ex5_3_2', 'lejos', '1') t 1.4->1.3
+   celdas x1.00 ('opt', 'himmel16', 'lejos', '1') t 16.6->16.7
+   celdas x1.12 ('opt', 'launch', 'lejos', '2') t 2.1->2.2
+   celdas x1.45 ('opt', 'himmel16', 'lejos', '4') t 13.3->19.9
+   celdas x1.70 ('opt', 'launch', 'lejos', '4') t 2.1->2.8
+opt revisado   pares  556 terminan 526->525 celdas iguales 505/525 | >0.1: n=194 t x1.033 c x1.034 | >1: n=78 t x1.014 c x1.014 | >5: n=31 t x1.019 c x1.016
+   cambia termino ('opt', 'bearing', 'revisado', '4') (16.5702930001, 6456.0, True) (59.9982400001, 20798.0, False)
+   celdas x0.48 ('opt', 'alkylbis', 'revisado', '1') t 20.9->10.2
+   celdas x0.85 ('opt', 'launch', 'revisado', '3') t 2.2->2.1
+   celdas x0.96 ('opt', 'ex5_3_2', 'revisado', '1') t 1.4->1.3
+   celdas x1.12 ('opt', 'launch', 'revisado', '2') t 2.1->2.3
+   celdas x1.70 ('opt', 'launch', 'revisado', '4') t 2.1->2.8
+   celdas x3.59 ('opt', 'alkylbis', 'revisado', '3') t 12.6->44.6
+opt sc         pares  556 terminan 526->528 celdas iguales 507/525 | >0.1: n=188 t x1.004 c x1.002 | >1: n=75 t x1.009 c x1.006 | >5: n=29 t x1.005 c x0.995
+   cambia termino ('opt', 'bearing', 'sc', '3') (59.9994680001, 19502.0, False) (4.76937200001, 1910.0, True)
+   cambia termino ('opt', 'ship-1', 'sc', '1') (59.9996960001, 153446.0, False) (57.7466960001, 171732.0, True)
+   cambia termino ('opt', 'bearing', 'sc', '2') (59.9969360001, 19444.0, False) (4.79311000001, 1910.0, True)
+   cambia termino ('opt', 'ship-1', 'sc', '3') (50.8498520001, 153348.0, True) (59.9999070001, 179396.0, False)
+   celdas x0.85 ('opt', 'launch', 'sc', '3') t 2.2->2.0
+   celdas x0.86 ('opt', 'ship-1', 'sc', '4') t 39.0->37.1
+   celdas x0.96 ('opt', 'ex5_3_2', 'sc', '1') t 1.4->1.3
+   celdas x1.12 ('opt', 'launch', 'sc', '1') t 2.1->2.2
+   celdas x1.12 ('opt', 'launch', 'sc', '2') t 2.1->2.2
+   celdas x1.70 ('opt', 'launch', 'sc', '4') t 2.1->2.8
+opt sindevex   pares  556 terminan 526->527 celdas iguales 503/526 | >0.1: n=194 t x0.992 c x0.990 | >1: n=78 t x0.974 c x0.978 | >5: n=34 t x0.928 c x0.928
+   cambia termino ('opt', 'ship-1', 'sindevex', '3') (59.9994430001, 166506.0, False) (47.5652330001, 141308.0, True)
+   celdas x0.12 ('opt', 'alkyl', 'sindevex', '1') t 50.7->6.2
+   celdas x0.22 ('opt', 'alkyl', 'sindevex', '3') t 18.0->4.1
+   celdas x0.54 ('opt', 'ship-1', 'sindevex', '4') t 57.7->31.3
+   celdas x1.52 ('opt', 'launch', 'sindevex', '3') t 2.1->2.6
+   celdas x1.82 ('opt', 'ship-1', 'sindevex', '2') t 26.9->49.0
+   celdas x3.04 ('opt', 'alkylbis', 'sindevex', '3') t 12.1->38.1
+opt sinfusion  pares  556 terminan 527->526 celdas iguales 499/524 | >0.1: n=190 t x1.011 c x1.008 | >1: n=77 t x1.013 c x1.011 | >5: n=28 t x1.015 c x1.010
+   cambia termino ('opt', 'bearing', 'sinfusion', '2') (59.9886830001, 21290.0, False) (2.84407300001, 1018.0, True)
+   cambia termino ('opt', 'bearing', 'sinfusion', '4') (59.9961150001, 22516.0, False) (6.93151200001, 2748.0, True)
+   cambia termino ('opt', 'ship-1', 'sinfusion', '3') (52.1836360001, 161606.0, True) (59.9994570001, 172644.0, False)
+   cambia termino ('opt', 'ship-1', 'sinfusion', '4') (52.2666440001, 143604.0, True) (59.9999640001, 142440.0, False)
+   cambia termino ('opt', 'ship-1', 'sinfusion', '2') (55.5482350001, 157434.0, True) (59.9998570001, 150894.0, False)
+   celdas x0.82 ('opt', 'ex5_3_2', 'sinfusion', '4') t 1.6->1.4
+   celdas x0.89 ('opt', 'ex5_3_2', 'sinfusion', '2') t 1.6->1.4
+   celdas x0.94 ('opt', 'ex5_3_2', 'sinfusion', '1') t 1.5->1.4
+   celdas x1.10 ('opt', 'himmel16', 'sinfusion', '3') t 15.0->16.7
+   celdas x1.57 ('opt', 'launch', 'sinfusion', '1') t 2.4->3.2
+   celdas x1.57 ('opt', 'launch', 'sinfusion', '4') t 2.4->3.2
+opt sinlargo   pares  556 terminan 529->530 celdas iguales 512/529 | >0.1: n=191 t x1.006 c x0.999 | >1: n=79 t x1.005 c x0.999 | >5: n=31 t x1.000 c x0.993
+   cambia termino ('opt', 'ship-1', 'sinlargo', '1') (59.9997010001, 177268.0, False) (54.4819060001, 160300.0, True)
+   celdas x0.80 ('opt', 'ship-1', 'sinlargo', '2') t 52.9->40.8
+   celdas x0.98 ('opt', 'ex5_3_2', 'sinlargo', '4') t 1.5->1.4
+   celdas x0.99 ('opt', 'ship-1', 'sinlargo', '3') t 57.3->58.4
+   celdas x1.03 ('opt', 'ship-1', 'sinlargo', '4') t 51.9->55.3
+   celdas x1.08 ('opt', 'ex5_3_2', 'sinlargo', '1') t 1.4->1.5
+   celdas x1.10 ('opt', 'ex5_3_2', 'sinlargo', '2') t 1.5->1.5
+opt sinpert    pares  556 terminan 526->528 celdas iguales 507/525 | >0.1: n=188 t x1.006 c x1.002 | >1: n=74 t x1.008 c x1.006 | >5: n=29 t x1.001 c x0.995
+   cambia termino ('opt', 'bearing', 'sinpert', '2') (59.9974960001, 19544.0, False) (4.75693800001, 1910.0, True)
+   cambia termino ('opt', 'ship-1', 'sinpert', '3') (50.7991510001, 153348.0, True) (59.9995480001, 181526.0, False)
+   cambia termino ('opt', 'ship-1', 'sinpert', '1') (59.9995920001, 154684.0, False) (58.5108810001, 171732.0, True)
+   cambia termino ('opt', 'bearing', 'sinpert', '3') (59.9976910001, 19262.0, False) (4.76813300001, 1910.0, True)
+   celdas x0.85 ('opt', 'launch', 'sinpert', '3') t 2.2->2.1
+   celdas x0.86 ('opt', 'ship-1', 'sinpert', '4') t 39.7->36.8
+   celdas x0.96 ('opt', 'ex5_3_2', 'sinpert', '1') t 1.4->1.4
+   celdas x1.12 ('opt', 'launch', 'sinpert', '1') t 2.1->2.2
+   celdas x1.12 ('opt', 'launch', 'sinpert', '2') t 2.1->2.2
+   celdas x1.70 ('opt', 'launch', 'sinpert', '4') t 2.1->2.8
+opt sintau     pares  556 terminan 527->529 celdas iguales 506/526 | >0.1: n=191 t x0.999 c x0.989 | >1: n=76 t x0.991 c x0.974 | >5: n=30 t x1.010 c x1.008
+   cambia termino ('opt', 'bearing', 'sintau', '3') (59.9998720001, 22520.0, False) (7.92145500001, 3302.0, True)
+   cambia termino ('opt', 'bearing', 'sintau', '2') (59.9981710001, 22200.0, False) (7.94955200001, 3302.0, True)
+   cambia termino ('opt', 'bearing', 'sintau', '1') (59.9997870001, 22376.0, False) (6.61027000001, 2364.0, True)
+   cambia termino ('opt', 'bearing', 'sintau', '4') (6.13924300001, 2390.0, True) (59.9937600001, 20830.0, False)
+   celdas x0.44 ('opt', 'launch', 'sintau', '4') t 2.5->1.5
+   celdas x0.57 ('opt', 'launch', 'sintau', '1') t 3.2->2.3
+   celdas x0.57 ('opt', 'launch', 'sintau', '2') t 3.2->2.3
+   celdas x1.09 ('opt', 'ship-1', 'sintau', '4') t 53.2->56.0
+   celdas x1.12 ('opt', 'ex5_3_2', 'sintau', '2') t 1.5->1.6
+   celdas x1.16 ('opt', 'ship-1', 'sintau', '1') t 46.0->54.1
+opt tableau    pares  556 terminan 528->526 celdas iguales 513/525 | >0.1: n=188 t x1.008 c x1.001 | >1: n=77 t x1.010 c x1.004 | >5: n=29 t x1.005 c x0.995
+   cambia termino ('opt', 'ship-1', 'tableau', '3') (51.2716040001, 153348.0, True) (59.9996470001, 179582.0, False)
+   cambia termino ('opt', 'bearing', 'tableau', '3') (48.2695800001, 15344.0, True) (59.9981990001, 19040.0, False)
+   cambia termino ('opt', 'ship-1', 'tableau', '1') (59.9998330001, 155056.0, False) (58.8356690001, 171732.0, True)
+   cambia termino ('opt', 'bearing', 'tableau', '1') (6.97695400001, 2750.0, True) (59.9976440001, 19412.0, False)
+   celdas x0.86 ('opt', 'ship-1', 'tableau', '4') t 39.1->37.5
+   celdas x1.06 ('opt', 'ex5_3_2', 'tableau', '1') t 1.6->1.8
+   celdas x1.07 ('opt', 'ex5_3_2', 'tableau', '2') t 1.7->1.8
+   celdas x1.07 ('opt', 'ex5_3_2', 'tableau', '2') t 1.7->1.8
+   celdas x1.09 ('opt', 'ex5_3_2', 'tableau', '4') t 1.6->1.7
+   celdas x1.26 ('opt', 'ex5_3_2', 'tableau', '3') t 1.3->1.7
+opt tibio      pares  556 terminan 532->529 celdas iguales 497/526 | >0.1: n=198 t x1.019 c x1.011 | >1: n=79 t x1.026 c x1.017 | >5: n=29 t x1.073 c x1.061
+   cambia termino ('opt', 'ship-1', 'tibio', '1') (53.6796900001, 146420.0, True) (59.9999910001, 172460.0, False)
+   cambia termino ('opt', 'ship-1', 'tibio', '3') (59.9995860001, 186020.0, False) (48.9661550001, 151756.0, True)
+   cambia termino ('opt', 'chembis', 'tibio', '4') (59.9324080001, 58328.0, True) (59.9989220001, 57180.0, False)
+   cambia termino ('opt', 'bearing', 'tibio', '1') (9.50057000001, 3166.0, True) (59.9952530001, 18898.0, False)
+   cambia termino ('opt', 'ship-1', 'tibio', '4') (54.1855910001, 167068.0, True) (59.9994540001, 179616.0, False)
+   cambia termino ('opt', 'bearing', 'tibio', '2') (59.9955440001, 19766.0, False) (59.1742640001, 19116.0, True)
+   cambia termino ('opt', 'bearing', 'tibio', '3') (59.9953370001, 19746.0, False) (58.8101010001, 19116.0, True)
+   cambia termino ('opt', 'chembis', 'tibio', '3') (59.9257770001, 58318.0, True) (59.9968160001, 57310.0, False)
+   cambia termino ('opt', 'chembis', 'tibio', '1') (59.9146510001, 58318.0, True) (59.9978130001, 57224.0, False)
+   celdas x0.68 ('opt', 'launch', 'tibio', '3') t 2.5->2.1
+   celdas x0.77 ('opt', 'ex14_2_4', 'tibio', '3') t 1.3->1.0
+   celdas x0.85 ('opt', 'launch', 'tibio', '2') t 3.2->2.9
+   celdas x1.25 ('opt', 'ex5_3_2', 'tibio', '1') t 1.8->2.2
+   celdas x1.25 ('opt', 'ex5_3_2', 'tibio', '4') t 1.8->2.2
+   celdas x6.04 ('opt', 'bearing', 'tibio', '4') t 9.5->58.8
+sol caja       pares  484 terminan 356->356 celdas iguales 351/356 | >0.1: n=262 t x0.997 c x1.001 | >1: n=179 t x0.997 c x1.001 | >5: n=99 t x0.996 c x1.002
+   celdas x0.95 ('sol', 'Geneig-icse', 'caja', '1') t 17.6->16.2
+   celdas x0.97 ('sol', 'CountercurrentReactors2-18', 'caja', '2') t 37.4->38.1
+   celdas x1.00 ('sol', 'Rose', 'caja', '1') t 1.4->1.4
+   celdas x1.00 ('sol', 'Rose', 'caja', '1') t 1.4->1.4
+   celdas x1.00 ('sol', 'Rose', 'caja', '2') t 1.3->1.3
+   celdas x1.28 ('sol', 'Geneig-icse', 'caja', '2') t 17.6->21.5
+sol cajacerca  pares  484 terminan 352->352 celdas iguales 347/352 | >0.1: n=259 t x1.002 c x1.000 | >1: n=167 t x1.003 c x1.001 | >5: n=100 t x1.005 c x1.001
+   celdas x0.88 ('sol', 'CountercurrentReactors2-18', 'cajacerca', '2') t 38.2->37.9
+   celdas x1.00 ('sol', 'Rose', 'cajacerca', '1') t 1.4->1.4
+   celdas x1.00 ('sol', 'Rose', 'cajacerca', '2') t 1.3->1.3
+   celdas x1.00 ('sol', 'Rose', 'cajacerca', '2') t 1.3->1.3
+   celdas x1.10 ('sol', 'Geneig-icse', 'cajacerca', '2') t 14.4->15.6
+   celdas x1.14 ('sol', 'Geneig-icse', 'cajacerca', '1') t 15.6->17.5
+sol lejos      pares  484 terminan 361->361 celdas iguales 349/361 | >0.1: n=252 t x0.996 c x1.000 | >1: n=165 t x0.998 c x1.000 | >5: n=94 t x0.995 c x1.000
+   celdas x0.88 ('sol', 'Geneig', 'lejos', '1') t 1.4->1.4
+   celdas x0.91 ('sol', 'CountercurrentReactors2-18', 'lejos', '2') t 40.6->37.5
+   celdas x0.97 ('sol', 'CountercurrentReactors2-14', 'lejos', '2') t 20.8->19.9
+   celdas x1.08 ('sol', 'CountercurrentReactors2-12', 'lejos', '1') t 6.7->6.9
+   celdas x1.11 ('sol', 'Geneig', 'lejos', '2') t 1.5->1.6
+   celdas x1.15 ('sol', 'Geneigbis', 'lejos', '1') t 1.1->1.4
+sol revisado   pares  484 terminan 363->362 celdas iguales 349/361 | >0.1: n=252 t x0.998 c x1.001 | >1: n=164 t x0.998 c x1.001 | >5: n=95 t x0.999 c x1.002
+   cambia termino ('sol', 'Yamamua1-0030sp', 'revisado', '1') (60.002, 9267.0, False) (59.6831, 9301.0, True)
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'revisado', '2') (56.5676, 7129.0, True) (60.0068, 7189.0, False)
+   cambia termino ('sol', 'Yamamua1-0030sp', 'revisado', '2') (59.5137, 9301.0, True) (60.0077, 9271.0, False)
+   celdas x0.98 ('sol', 'CountercurrentReactors2-18', 'revisado', '2') t 35.2->35.9
+   celdas x0.98 ('sol', 'CountercurrentReactors2-12', 'revisado', '1') t 6.3->6.1
+   celdas x1.00 ('sol', 'CountercurrentReactors2-16', 'revisado', '2') t 20.8->21.2
+   celdas x1.05 ('sol', 'CountercurrentReactors2-12', 'revisado', '2') t 6.0->6.5
+   celdas x1.06 ('sol', 'Geneigbis', 'revisado', '1') t 1.4->1.2
+   celdas x1.08 ('sol', 'CountercurrentReactors2-14', 'revisado', '2') t 17.4->18.9
+sol sc         pares  484 terminan 364->362 celdas iguales 348/362 | >0.1: n=253 t x0.996 c x1.000 | >1: n=164 t x0.996 c x1.000 | >5: n=94 t x1.000 c x0.999
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'sc', '2') (59.0596, 7357.0, True) (60.0019, 7143.0, False)
+   cambia termino ('sol', 'Yamamua1-0030sp', 'sc', '2') (59.729, 9301.0, True) (60.0034, 9273.0, False)
+   celdas x0.93 ('sol', 'CountercurrentReactors2-20', 'sc', '1') t 59.0->56.2
+   celdas x0.95 ('sol', 'CountercurrentReactors2-14', 'sc', '2') t 20.0->18.9
+   celdas x0.97 ('sol', 'CountercurrentReactors2-14', 'sc', '1') t 18.9->19.5
+   celdas x1.05 ('sol', 'Geneig-icse', 'sc', '2') t 6.4->7.0
+   celdas x1.06 ('sol', 'Geneigbis', 'sc', '1') t 1.6->1.1
+   celdas x1.08 ('sol', 'CountercurrentReactors2-12', 'sc', '2') t 6.2->7.0
+sol sindevex   pares  484 terminan 361->361 celdas iguales 350/360 | >0.1: n=251 t x0.997 c x0.999 | >1: n=164 t x0.995 c x0.999 | >5: n=95 t x0.994 c x0.998
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'sindevex', '1') (57.2479, 6831.0, True) (60.008, 7151.0, False)
+   cambia termino ('sol', 'Yamamua1-0030sp', 'sindevex', '1') (60.0006, 9287.0, False) (59.318, 9301.0, True)
+   celdas x0.89 ('sol', 'CountercurrentReactors2-18', 'sindevex', '2') t 42.1->40.2
+   celdas x0.96 ('sol', 'CountercurrentReactors2-18', 'sindevex', '1') t 41.9->40.8
+   celdas x0.97 ('sol', 'Geneigbis', 'sindevex', '1') t 1.5->1.2
+   celdas x1.02 ('sol', 'CountercurrentReactors2-14', 'sindevex', '2') t 18.9->19.4
+   celdas x1.02 ('sol', 'Geneig', 'sindevex', '1') t 1.4->1.5
+   celdas x1.02 ('sol', 'CountercurrentReactors2-14', 'sindevex', '1') t 18.7->19.1
+sol sinfusion  pares  484 terminan 354->354 celdas iguales 338/354 | >0.1: n=260 t x0.996 c x1.000 | >1: n=180 t x0.997 c x1.000 | >5: n=97 t x0.997 c x1.001
+   celdas x0.84 ('sol', 'Geneigbis', 'sinfusion', '1') t 2.1->1.6
+   celdas x0.90 ('sol', 'CountercurrentReactors2-12', 'sinfusion', '1') t 8.9->8.3
+   celdas x0.91 ('sol', 'CountercurrentReactors2-16', 'sinfusion', '2') t 28.6->25.0
+   celdas x1.08 ('sol', 'CountercurrentReactors2-18', 'sinfusion', '2') t 44.3->46.5
+   celdas x1.09 ('sol', 'Geneig-icse', 'sinfusion', '1') t 38.8->44.9
+   celdas x1.14 ('sol', 'CountercurrentReactors2-14', 'sinfusion', '2') t 26.1->29.3
+sol sinlargo   pares  484 terminan 360->360 celdas iguales 346/360 | >0.1: n=255 t x0.999 c x1.002 | >1: n=168 t x0.996 c x1.002 | >5: n=95 t x0.993 c x1.001
+   celdas x0.88 ('sol', 'Geneig', 'sinlargo', '2') t 1.6->1.4
+   celdas x0.97 ('sol', 'CountercurrentReactors2-18', 'sinlargo', '2') t 41.8->38.8
+   celdas x0.99 ('sol', 'CountercurrentReactors2-9', 'sinlargo', '1') t 1.3->1.2
+   celdas x1.11 ('sol', 'CountercurrentReactors2-9', 'sinlargo', '2') t 1.3->1.3
+   celdas x1.13 ('sol', 'Geneig', 'sinlargo', '1') t 1.4->1.4
+   celdas x1.24 ('sol', 'Geneigbis', 'sinlargo', '1') t 1.1->1.5
+sol sinpert    pares  484 terminan 362->361 celdas iguales 356/360 | >0.1: n=251 t x0.996 c x1.000 | >1: n=162 t x0.995 c x1.000 | >5: n=94 t x0.992 c x0.999
+   cambia termino ('sol', 'Yamamua1-0030sp', 'sinpert', '2') (59.3595, 9301.0, True) (60.0001, 9189.0, False)
+   cambia termino ('sol', 'Yamamua1-0030sp', 'sinpert', '1') (60.0118, 9267.0, False) (59.8052, 9301.0, True)
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'sinpert', '1') (58.3518, 7173.0, True) (60.0015, 7101.0, False)
+   celdas x0.92 ('sol', 'CountercurrentReactors2-14', 'sinpert', '2') t 22.2->19.1
+   celdas x0.98 ('sol', 'CountercurrentReactors2-18', 'sinpert', '2') t 48.9->48.5
+   celdas x1.00 ('sol', 'Rose', 'sinpert', '1') t 1.2->1.2
+   celdas x0.98 ('sol', 'CountercurrentReactors2-18', 'sinpert', '2') t 48.9->48.5
+   celdas x1.00 ('sol', 'Rose', 'sinpert', '1') t 1.2->1.2
+   celdas x1.03 ('sol', 'Geneig', 'sinpert', '2') t 1.3->1.4
+sol sintau     pares  484 terminan 362->362 celdas iguales 349/361 | >0.1: n=252 t x0.995 c x1.000 | >1: n=165 t x0.995 c x1.001 | >5: n=93 t x1.000 c x1.001
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'sintau', '1') (56.6953, 7423.0, True) (60.0005, 6901.0, False)
+   cambia termino ('sol', 'Yamamua1-0030sp', 'sintau', '1') (60.0095, 9259.0, False) (59.7238, 9301.0, True)
+   celdas x0.93 ('sol', 'CountercurrentReactors2-18', 'sintau', '2') t 39.3->40.2
+   celdas x0.98 ('sol', 'Geneig', 'sintau', '2') t 1.5->1.3
+   celdas x0.98 ('sol', 'CountercurrentReactors2-14', 'sintau', '1') t 19.5->19.0
+   celdas x1.05 ('sol', 'Geneig-icse', 'sintau', '2') t 6.4->7.0
+   celdas x1.06 ('sol', 'Geneigbis', 'sintau', '1') t 1.7->1.1
+   celdas x1.08 ('sol', 'CountercurrentReactors2-12', 'sintau', '2') t 6.1->7.2
+sol tableau    pares  484 terminan 356->355 celdas iguales 341/355 | >0.1: n=246 t x0.997 c x1.000 | >1: n=167 t x0.998 c x1.000 | >5: n=97 t x1.006 c x0.999
+   cambia termino ('sol', 'CountercurrentReactors2-20', 'tableau', '2') (59.0982, 7357.0, True) (60.0121, 7119.0, False)
+   celdas x0.93 ('sol', 'CountercurrentReactors2-20', 'tableau', '1') t 59.0->58.0
+   celdas x0.95 ('sol', 'CountercurrentReactors2-14', 'tableau', '2') t 20.1->18.2
+   celdas x0.97 ('sol', 'CountercurrentReactors2-14', 'tableau', '1') t 19.4->18.9
+   celdas x1.05 ('sol', 'Geneig-icse', 'tableau', '2') t 6.6->6.7
+   celdas x1.06 ('sol', 'Geneigbis', 'tableau', '1') t 1.6->1.1
+   celdas x1.08 ('sol', 'CountercurrentReactors2-12', 'tableau', '2') t 6.3->6.7
+sol tibio      pares  484 terminan 361->361 celdas iguales 343/361 | >0.1: n=253 t x0.993 c x0.999 | >1: n=167 t x0.995 c x1.000 | >5: n=97 t x0.995 c x1.001
+   celdas x0.99 ('sol', 'Geneig-icse', 'tibio', '1') t 7.1->6.3
+   celdas x1.00 ('sol', 'Rose', 'tibio', '1') t 1.2->1.2
+   celdas x1.00 ('sol', 'CountercurrentReactors2-18', 'tibio', '1') t 40.3->37.2
+   celdas x1.01 ('sol', 'CountercurrentReactors2-16', 'tibio', '1') t 21.1->21.6
+   celdas x1.01 ('sol', 'CountercurrentReactors2-20', 'tibio', '2') t 55.3->55.8
+   celdas x1.08 ('sol', 'Geneig-icse', 'tibio', '2') t 8.2->8.4

@@ -507,10 +507,22 @@ Brown-30 y Brown-30-1 en 1–2 s y CCR2-24 s2); sin CCR2-28 s1 (×4.2, ACID) ×0
 celdas ×1.01. Opt (sin reintento en ninguno): paper ×0.74, celdas ×0.97, 28 / 28;
 `all` ×0.77, celdas ×0.97, 33 / 25. La caja con reintento a 3600 s cambia poco
 (CCR2-28 s2 466 → 349 s). Los binarios finales se recompilaron desde el fuente
-(reintento en los dos motores; respaldo `$M/*.fin2`); las tablas de 60 s del
-paper son de los binarios anteriores (`$M/*.fin`), el reintento es neutro ahí.
-Falta decidir si se rehacen las filas de orden igual («lejos» en los dos) a
-3600 s; el paper solo da la fila best of each.
+(reintento en los dos motores; respaldo `$M/*.fin2`). Falta rehacer a 3600 s
+las filas de orden igual («lejos» en los dos) y opt con reintento.
+
+**Banco de 60 s rehecho con el reintento en los dos motores (2026-10-15,
+`results/final_2026-10-15.csv`, 11 924 corridas, 12 brazos con `cajacerca`;
+resumen en `results/final_2026-10-15_resumen.txt`).** El reintento es neutro:
+contra `final_2026-10-14` celdas idénticas en 96–99 % de las corridas, tiempo
+×0.996–1.013 por brazo; mismos NA (wall y los -1000/0400+ por memoria). Paper:
+opt best ×0.75 / 0.77 / 0.71, 131 / 131 (la caja ahora termina ex8_4_4bis s2);
+sistemas best ×0.84 / 0.85 / 0.82, 362 / 352 (SC pierde CCR2-20 s2 y
+Yamamua1-0030sp s2, ambas a <1 s del tope y con menos celdas). Pierde >5 %:
+Katsurabis-14 ×1.19, CCR2-18 ×1.10, Bratu-0180 ×1.06 (51 vs 47 celdas); launch
+opt ×1.43. Ablación: `sintau` en opt pasa de ×1.02 a ×1.00 (sin efecto en
+ningún banco; Ignacio decidió dejarla, es protección en cajas angostas).
+Perfiles (modo `bb`, `perfil2.py`): SC más rápido en 93 % / 94 %; SC no
+termina 1 corrida opt (ship-1 s3, tope).
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120
