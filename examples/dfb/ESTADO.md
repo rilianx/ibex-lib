@@ -448,7 +448,26 @@ terminan las dos. Sistemas del paper (48, 96 corridas): tiempo ×0.74, celdas
 paper (7, 28): ×0.74, celdas ×0.94, 28 / 28. Opt de `all` (16, 36): ×0.77,
 celdas ×0.97, 33 / 25: SC termina ex6_2_13, hs101, hs112 y pollut (2400–3140 s)
 y la caja no; matrix2 no encuentra punto factible con ninguno en las semillas
-1–3 (NA). En cola: SC con su propio orden y SoPlex `cerca` en sistemas.
+1–3 (NA). **SC con su propio orden** (best of each): sistemas contra SoPlex
+`cerca` ×0.91, celdas ×1.01, 92 / 89 (contra lejos era ×0.72 / 0.76: Brown-30,
+SC 1–2 s, SoPlex lejos 80 s y `cerca` no termina, pesaba ×0.85 en la media);
+opt paper ×0.74, 28 / 28; opt all ×0.77, 33 / 25. SoPlex `cerca` contra lejos
+a 3600 s: ×0.93, celdas ×0.95 (CountercurrentReactors2-24 ×0.03).
+
+**Vacíos espurios en caliente (2026-10-14).** Con su orden propio, SC no
+termina CountercurrentReactors2-26 (s2), -28 (s2) y -30 (s1) en 3600 s (600–800 mil
+celdas; con lejos 13–38 mil). Traza de soluciones (`DFBH_SOLTRACE=1`, en
+`ibexsolve_dfb`): mismo ritmo hasta ~147 s y 2200 soluciones, después nada.
+Estados: infeasible 10.9 % de los LPs (lejos 0.4 %), pero vacíos probados 0.6 %
+de los nodos; `DFBH_MARGEN`: 73311 rayos que no certifican, nnz 3.0 (los que
+certifican 15.6), el cero en medio de la suma en el 99 %: el simplex en caliente
+declara vacíos espurios, el certificado los rechaza (la cota es válida) y el
+nodo no se poda. La caja del fallo 20000 (`DFBH_DUMPFALLO=N`) resuelta aparte
+muere en 3 celdas con los dos órdenes: depende del estado heredado, no de la
+región (anchos de 1e-16 a 1e6). **`DFBH_REINTENTA=1`**: un INFEASIBLE que no
+certifica se resuelve otra vez en frío. Arregla los tres: 260 s / 18451
+celdas, 373 s / 25739, 780 s / 39645 (lejos: 191, 336, 728 s). En banco de
+60 s (en curso, `$M/reint`).
 
 **Brecha en las relajaciones grandes (2026-10-09).** x_B incremental también en
 los pasos primales (commit 41d22ab8): Bratu-0150 36.9 → 31.2 s, Bratu-0120

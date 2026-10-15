@@ -95,6 +95,8 @@ int main(int argc, char** argv) {
 
     Solver s(sys, ctc, *bsc, *buf, Vector(sys.nb_var, eps), Vector(sys.nb_var, POS_INFINITY));
     if (timeout > 0) s.time_limit = timeout;
+    /* `DFBH_SOLTRACE=1`: imprime cada solucion, incierta y pendiente al encontrarla. */
+    if (getenv("DFBH_SOLTRACE")) s.trace = 1;
     Solver::Status st = s.solve(sys.box);
     const CovSolverData& d = s.get_data();
     s.report();

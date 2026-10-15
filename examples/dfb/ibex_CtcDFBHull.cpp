@@ -1619,8 +1619,35 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         static long lps_pasada = 0; ++lps_pasada;
         if (lp_largo2 && (lps_pasada % 1000) == 0)
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
-        const DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
-                                                 : sk.solve(k, lado == 1, z, tope_paso, true);
+        DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
+                                           : sk.solve(k, lado == 1, z, tope_paso, true);
+        /* `DFBH_REINTENTA=1`: un INFEASIBLE cuyo rayo no certifica se vuelve a
+         * resolver EN FRIO. En CountercurrentReactors2-26 (semilla 2, orden
+         * propio) la busqueda se estanca en una zona donde el simplex en
+         * caliente declara vacios espurios (rayos de 3 filas, el cero en medio
+         * de la suma) que el certificado rechaza, y el nodo no se poda; la
+         * misma caja resuelta desde cero se prueba vacia. */
+        static const bool reintenta = DFB_ENV("DFBH_REINTENTA");
+        if (reintenta && !motor_caja && st == DFBSimplex::INFEASIBLE) {
+            const std::vector<double>& l0 = sk.lambda();
+            IntervalVector g0(na, Interval(0.0));
+            for (int j = 0; j < m; ++j) {
+                if (l0[j] == 0.0) continue;
+                const Interval lj(l0[j]);
+                for (int c = 0; c < na; ++c)
+                    if (A[j][c] != Interval(0.0)) g0[c] += lj * A[j][c];
+            }
+            Interval s0(0.0);
+            for (int c = 0; c < na; ++c) s0 += g0[c] * z[c];
+            if (s0.contains(0.0)) {
+                st = sk.solve(k, lado == 1, z, tope_paso, false);
+                static long nr = 0, nopt = 0, ninf = 0;
+                ++nr; if (st == DFBSimplex::OPTIMAL) ++nopt; else if (st == DFBSimplex::INFEASIBLE) ++ninf;
+                if (nr % 1000 == 0)
+                    fprintf(stderr, "[reintenta] %ld en frio: OPTIMAL %ld, INFEASIBLE %ld, otros %ld\n",
+                            nr, nopt, ninf, nr - nopt - ninf);
+            }
+        }
         ++abc_cnt[motor_caja][0];
         if (techo) {
             const std::vector<double>& lam0 = sk.lambda();
@@ -2300,6 +2327,14 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     const double margen = std::min(-lo, hi) / anc;
                     static long n = 0, b1 = 0, b5 = 0, b20 = 0, bres = 0;
                     ++n;
+                    /* `DFBH_DUMPFALLO=N`: vuelca la caja (x) del N-esimo fallo, para
+                     * resolverla aparte con otro orden. */
+                    static const long dump_n = getenv("DFBH_DUMPFALLO") ? atol(getenv("DFBH_DUMPFALLO")) : 0;
+                    if (dump_n > 0 && n + 1 == dump_n) {
+                        fprintf(stderr, "[dumpfallo]");
+                        for (int c = 0; c < nb_var; ++c) fprintf(stderr, " %.17g %.17g", z[c].lb(), z[c].ub());
+                        fprintf(stderr, "\n");
+                    }
                     if (margen < 0.01) ++b1;
                     else if (margen < 0.05) ++b5;
                     else if (margen < 0.20) ++b20;
