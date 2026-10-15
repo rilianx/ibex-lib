@@ -934,23 +934,25 @@ same LPs: at every node the black box first runs the pass on a copy of the box,
 and SC then runs it on the same box and polytope, with the search following
 SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
-pass of SC costs $0.50$ times that of the black box on systems of equations
+pass of SC costs $0.52$ times that of the black box on systems of equations
 (geometric mean over the 182 systems with at least 20 nodes and 100 LPs;
-median 431 against 847\,$\mu$s) and $0.39$ times on optimization problems (89
-problems; median 90 against 232\,$\mu$s), and is cheaper on 95\% and 100\% of
-the instances.
+median 417 against 829\,$\mu$s) and $0.39$ times on optimization problems (89
+problems; median 90 against 232\,$\mu$s), and is cheaper on 93\% and 100\% of
+the instances. Each engine uses its own bound order, as in Table~\ref{tab:main}.
 
 The two other panels split this ratio into pivots per pass and time per pivot.
-On systems of equations the gain comes from pivoting less ($\times0.62$), owing
-to the basis shared by the $2n$ bounds and the dual-feasible restart; a pivot
-of SC costs a little less than one of SoPlex ($\times0.88$, over the 121
-systems with at least two pivots per LP in both engines). On optimization
+On systems of equations the gain comes from pivoting less ($\times0.73$; 3.0
+against 3.7 pivots per LP), owing to the basis shared by the $2n$ bounds and
+the dual-feasible restart, and from cheaper pivots ($\times0.74$, over the 120
+systems with at least two pivots per LP in both engines). With the farthest
+bound first the black box pivots more per LP (4.9) but skips more bounds, and
+the ratio of a pass is almost the same ($\times0.50$). On optimization
 problems, with the primal warm start, SC pivots as much as the black box
 ($\times0.98$), and what dominates is the fixed cost of each call to the black
 box (setting bounds and objective, starting the simplex, reading the
 solution): the time per pivot of SC is $\times0.49$.
 Since the pass is only part of the cost of a node, with the linearization,
-propagation, ACID and interval Newton, halving its cost yields the 19--30\% of
+propagation, ACID and interval Newton, halving its cost yields the 15--30\% of
 Table~\ref{tab:main}.
 
 \begin{figure}[t]
@@ -965,21 +967,21 @@ Table~\ref{tab:main}.
 \nextgroupplot[title={time per pass}, xmin=5, xmax=2000000, ymin=5, ymax=2000000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
-\addlegendentry{systems: $\times0.50$}
+\addlegendentry{systems: $\times0.52$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
 \addlegendentry{optimization: $\times0.39$}
 \addplot[gray, thin, domain=5:2000000]{x};
 \nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
   xlabel={black box}, ylabel={SC}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
-\addlegendentry{systems: $\times0.62$}
+\addlegendentry{systems: $\times0.73$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
 \addlegendentry{optimization: $\times0.98$}
 \addplot[gray, thin, domain=0.005:100000]{x};
 \nextgroupplot[title={time per pivot}, xmin=2, xmax=200, ymin=2, ymax=200,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_sol.dat};
-\addlegendentry{systems: $\times0.88$}
+\addlegendentry{systems: $\times0.74$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_opt.dat};
 \addlegendentry{optimization: $\times0.49$}
 \addplot[gray, thin, domain=2:200]{x};

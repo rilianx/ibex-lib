@@ -3,6 +3,7 @@ import os,sys,math,collections
 M='/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad'
 S='/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad'
 T=3600.0; X=sys.argv[1] if len(sys.argv)>1 else 'sc'
+REFSOL=sys.argv[2] if len(sys.argv)>2 else 'caja'; CC=collections.defaultdict(dict)
 EXC=set()
 for l in open(os.path.expanduser('~/ibex2024/examples/dfb/results/excluidas_3600.txt')):
     if l.startswith('#') or not l.strip(): continue
@@ -18,13 +19,19 @@ for f in os.listdir(M+'/l3600f'):
     if not f.endswith('.csv'): continue
     b,kind=f.split('.')[:2]
     n,arm,seed,r=parse(M+'/l3600f/'+f,kind)
-    if arm!=X and not (X=='propio' and f.split('.')[-3]=='propio'): continue
+    if kind=='sol' and REFSOL!='caja' and arm==REFSOL: CC[(b,kind,n)][('caja',seed)]=r; continue
+    if arm!=X: continue
     R[(b,kind,n)][('x',seed)]=r
 for b,d in (('l','l3600'),('all','all3600')):
     for f in os.listdir(S+'/'+d):
         kind=f.split('.')[0]
         n,arm,seed,r=parse(S+'/'+d+'/'+f,kind)
         if arm=='caja' and (b,kind,n) in R: R[(b,kind,n)][('caja',seed)]=r
+if REFSOL!='caja':
+    for k,d in R.items():
+        if k[1]=='sol':
+            for kk in [q for q in d if q[0]=='caja']: del d[kk]
+            d.update(CC.get(k,{}))
 gm=lambda v: math.exp(sum(map(math.log,v))/len(v)) if v else float('nan')
 for g,lab in ((('l','sol'),'sistemas paper'),(('l','opt'),'opt paper'),(('all','opt'),'opt all')):
     ks=[k for k in R if k[:2]==g and (k[1],k[2]) not in EXC]
