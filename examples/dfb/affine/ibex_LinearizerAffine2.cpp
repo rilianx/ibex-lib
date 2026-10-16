@@ -81,7 +81,7 @@ bool LinearizerAffine2::goal_linearization(const IntervalVector& box, LPSolver& 
 		return false;
 	}
 	try {
-	if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+	if (af2.is_actif() && af2.size() == sys.nb_var) { // valid: active (bounded, non-empty) and of full size
 		// convert the epsilon variables to the original box
 		double tmp=0;
 		for (int i =0; i <sys.nb_var; i++) {
@@ -126,7 +126,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 
 		//std::cout <<ev<<":::"<< af2<<"  "<<af2.size()<<"  " <<sys.nb_var<< std::endl;
 
-		if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+		if (af2.is_actif() && af2.size() == sys.nb_var) { // valid: active (bounded, non-empty) and of full size
 			bool b_abort=false;
 			// convert the epsilon variables to the original box
 			double tmp=0;
@@ -241,7 +241,7 @@ int LinearizerAffine2::linearize_id(const IntervalVector& box, std::vector<Vecto
 		ev  = res.first->i();
 		af2 = res.second->i();
 		if (ev.is_empty()) af2.set_empty();
-		if (af2.size() != sys.nb_var) continue;   /* sin forma afin: se omite */
+		if (!af2.is_actif() || af2.size() != sys.nb_var) continue;   /* sin forma afin (o no acotada/vacia): se omite */
 
 		const double t2 = linperf ? lin_ahora() : 0.0;
 		bool b_abort = false;
@@ -376,7 +376,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 		}
 		//std::cout <<ev<<":::"<< af2<<"  "<<af2.size()<<"  " <<sys.nb_var<< std::endl;
 
-		if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+		if (af2.is_actif() && af2.size() == sys.nb_var) { // valid: active (bounded, non-empty) and of full size
 			bool b_abort=false;
 			// convert the epsilon variables to the original box
 			double tmp=0;
