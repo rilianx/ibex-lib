@@ -522,6 +522,13 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Sonda de costo con binarios finales (2026-10-16, `results/frio_2026-10-15/costo3/`).**
+Sistemas: pasada ×0.53 (mediana 422 vs 826 µs), pivotes ×0.73, µs/pivote ×0.75,
+igual que antes. Opt: ahora la caja usa su orden (`DFBH_ORDEN_CAJA=lejos`; la
+sonda vieja de opt no lo fijaba): pasada ×0.39, pivotes ×0.87 (2.3 vs 2.8 por LP;
+antes ×0.98), µs/pivote ×0.57 (antes ×0.49). Figura y texto del paper al día.
+Scatter en `results/frio_2026-10-15/scatter2.png`.
+
 **Banco de 60 s rehecho con el reintento en los dos motores (2026-10-15,
 `results/final_2026-10-15.csv`, 11 924 corridas, 12 brazos con `cajacerca`;
 resumen en `results/final_2026-10-15_resumen.txt`).** El reintento es neutro:
