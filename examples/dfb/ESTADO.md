@@ -522,6 +522,35 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Banco único de opt de 240 problemas (2026-10-16, `results/valid_2026-10-16/`,
+60 s en `results/final_2026-10-16.csv`).** A los 139 del paper se sumaron los
+102 de `ibex2026/benchs/optim/all` que no estaban ni excluidos; robot se
+excluye (`cuelga`: no respeta `-t`, también con el Ibex sin modificar), quedan
+101. Corridos a 3600 s en sc/caja/lejos × 4 semillas (`h3600.sh`) y los 8
+brazos de ablación a 60 s (`fix.sh`). Ignacio decidió un solo banco (no
+validación aparte); en el paper se dice que SC se ajustó en 139 y que en los
+otros 101 gana lo mismo (×0.79 en los dos a 3600 s).
+- La caja no terminaba a 3600 s ex6_2_13, hs101, hs112 y pollut (SC sí, en
+  2400–3100 s): con 7200 s (`c7200.sh`) termina en 3850–4390 s con las mismas
+  celdas, SC ×0.56–0.80. Entran como pares; no se cuentan como victorias.
+- 60 s, 240 problemas: best ×0.77 / 0.78 / 0.80, celdas 0.97–0.99, 217 / 216;
+  same order ×0.79 / 0.80 / 0.81. Pierden >5 %: launch ×1.43 y ex8_4_4 ×1.12
+  (3722–4130 celdas vs 2638–3374, como launch). Ablación opt: tibio ×1.07,
+  tableau ×1.04, revisado ×1.03. Perfiles: SC más rápido en 92 % (489 corridas).
+- 3600 s, los 24 con alguna corrida en el tope de 60 s: ×0.73, celdas 0.91,
+  96 / 80 (sin bearing ×0.78, celdas 0.99). Reemplaza las filas «7 del banco» e
+  «Ibex hard» de `tab:long`.
+- **Bug del linearizador afín (commit `32446e22`):** una forma afín inactiva
+  (vacía o no acotada) conserva `size()==nb_var` y `LinearizerAffine2` la leía;
+  sin `-DNDEBUG` abortaba en el `assert` de `AffineMain::val`. Se agregó
+  `af2.is_actif()` a los cuatro chequeos. Afectaba wall (los NA de siempre),
+  matrix2, concon, eigmaxc, ex8_4_5(-1), haldmads, makela3, polak1–5; todos
+  terminan con `ibexopt_fix`, y donde no abortaba da las mismas celdas.
+  Pendiente: los barridos viejos usaron `./ibexopt` sin el arreglo; reemplazar
+  `./ibexopt` por `ibexopt_fix` antes del próximo barrido.
+- Quedan sobre el banco viejo de 139: la sonda de costo (89 problemas opt) y
+  la tabla de cotas que cambian por LP (§3).
+
 **Sonda de costo con binarios finales (2026-10-16, `results/frio_2026-10-15/costo3/`).**
 Sistemas: pasada ×0.53 (mediana 422 vs 826 µs), pivotes ×0.73, µs/pivote ×0.75,
 igual que antes. Opt: ahora la caja usa su orden (`DFBH_ORDEN_CAJA=lejos`; la

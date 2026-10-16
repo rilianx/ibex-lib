@@ -80,3 +80,4 @@ sol Yamamura1-0020 4 0 tope
 sol Yamamura1-0040 4 0 tope
 sol Yamamura1-0080 4 0 tope
 sol Yamamura1-0200 4 0 tope
+opt robot 12 12 cuelga

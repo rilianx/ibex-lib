@@ -1,0 +1,5 @@
+dificiles 24 ['bearing', 'chem', 'chem-1', 'chembis', 'ex14_1_7', 'ex2_1_9bis', 'ex5_4_4', 'ex6_2_10', 'ex6_2_13', 'ex8_4_6', 'ex8_4_6ter', 'harker', 'hhfair', 'hs093', 'hs101', 'hs102', 'hs103', 'hs112', 'hs117', 'matrix2', 'polak3', 'pollut', 'sambal', 'ship-1']
+sin 3600: []
+inst 24 runs 96 sc fin 96 caja fin3600 80 caja fin7200 96 pares 96 cells x0.91 cpu x0.73
+ sin ['bearing'] 92 cells x0.99 cpu x0.78
+[(0.13, 'bearing'), (0.52, 'ex2_1_9bis'), (0.56, 'pollut'), (0.6, 'hs117'), (0.65, 'hs093'), (0.71, 'chembis'), (0.71, 'hs112'), (0.72, 'chem'), (0.72, 'ex8_4_6'), (0.73, 'chem-1'), (0.74, 'hs101'), (0.76, 'hs102'), (0.79, 'ex6_2_13'), (0.82, 'ex6_2_10'), (0.82, 'hs103'), (0.85, 'hhfair'), (0.85, 'sambal'), (0.86, 'polak3'), (0.88, 'ship-1'), (0.91, 'matrix2'), (0.92, 'ex8_4_6ter'), (1.0, 'harker'), (1.01, 'ex14_1_7'), (1.18, 'ex5_4_4')]

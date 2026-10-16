@@ -1,0 +1,34 @@
+== principal
+     mejores: ex7_2_3 x0.34, immun x0.48, ex2_1_9fact x0.55, ex2_1_9 x0.56, avgasa x0.58, dipigri x0.58
+     peores : ex8_4_5-1 x0.99, ex14_2_7 x1.00, hs088 x1.01, himmelbk x1.01, ex8_4_4 x1.12, launch x1.43
+opt sc         / caja   cells 0.991/0.985/0.971  cpu 0.767/0.781/0.804  (n=483/276/134)  runs 873/867  solved 217/216
+     mejores: ex7_2_3 x0.32, ex2_1_9fact x0.53, ex2_1_9 x0.55, dipigri x0.57, avgasa x0.61, dualc5 x0.61
+     peores : hs088 x0.99, himmelbk x1.00, himmel16 x1.10, immun x1.11, ex8_4_4 x1.12, launch x1.44
+opt lejos      / caja   cells 1.004/1.002/0.980  cpu 0.792/0.799/0.808  (n=483/276/134)  runs 873/867  solved 217/216
+== ablacion
+opt sinpert    / sc     cells 1.000/1.000/1.000  cpu 1.002/1.003/1.006  (n=457/257/109)  runs 873/873  solved 217/217
+opt tibio      / sc     cells 1.004/1.005/0.971  cpu 1.067/1.088/1.051  (n=455/255/107)  runs 874/873  solved 217/217
+opt sinlargo   / sc     cells 1.001/1.006/0.986  cpu 1.003/1.006/0.980  (n=457/257/109)  runs 875/873  solved 218/217
+opt sindevex   / sc     cells 1.008/1.015/1.008  cpu 1.003/1.010/1.011  (n=457/257/109)  runs 872/873  solved 217/217
+opt sintau     / sc     cells 1.004/1.003/1.009  cpu 1.004/1.003/1.011  (n=457/257/109)  runs 874/873  solved 217/217
+opt tableau    / sc     cells 0.994/0.994/0.990  cpu 1.037/1.063/1.049  (n=457/257/109)  runs 871/873  solved 217/217
+opt revisado   / sc     cells 1.006/1.002/0.988  cpu 1.033/1.019/0.997  (n=455/255/107)  runs 870/873  solved 217/217
+opt sinfusion  / sc     cells 1.008/1.009/0.989  cpu 1.024/1.024/1.008  (n=454/254/106)  runs 870/873  solved 216/217
+opt lejos      / sc     cells 1.015/1.003/1.007  cpu 1.033/1.008/1.004  (n=457/257/109)  runs 873/873  solved 217/217
+== principal
+     mejores: Brown-20-1 x0.05, Brown-19 x0.08, Brown-18 x0.13, DiscreteBoundary-0200 x0.14, Geneig-icse x0.33, Bratu-0210 x0.56
+     peores : Trigexp2-13 x0.98, BroydenBanded-120 x0.99, BroydenBanded-140 x0.99, Trigo1-0020sp x1.00, Katsurabis-14 x1.02, CountercurrentReactors2-18 x1.04
+sol sc         / caja   cells 0.916/0.880/0.913  cpu 0.776/0.761/0.812  (n=263/179/99)  runs 362/356  solved 180/178
+     mejores: Brown-20-1 x0.05, Brown-19 x0.08, Brown-18 x0.13, DiscreteBoundary-0200 x0.14, Geneig-icse x0.38, Bratu-0210 x0.57
+     peores : Trigexp2-13 x0.97, Yamamua1-0028sp x0.98, Designsp x1.00, Trigo1-0020sp x1.00, BroydenBanded-140 x1.01, Katsurabis-14 x1.21
+sol lejos      / caja   cells 0.916/0.881/0.914  cpu 0.788/0.771/0.822  (n=263/179/99)  runs 361/356  solved 180/178
+== ablacion
+sol sinpert    / sc     cells 1.016/1.026/1.005  cpu 1.029/1.040/1.038  (n=252/164/94)  runs 361/362  solved 180/180
+sol tibio      / sc     cells 1.014/1.023/0.999  cpu 1.047/1.050/1.036  (n=251/163/93)  runs 361/362  solved 180/180
+sol sinlargo   / sc     cells 1.012/1.018/0.996  cpu 1.102/1.082/1.073  (n=251/163/93)  runs 360/362  solved 180/180
+sol sindevex   / sc     cells 1.013/1.020/1.000  cpu 1.014/1.020/1.002  (n=252/164/94)  runs 361/362  solved 180/180
+sol sintau     / sc     cells 0.999/0.999/0.999  cpu 1.005/0.997/0.997  (n=252/164/94)  runs 362/362  solved 181/180
+sol tableau    / sc     cells 1.016/1.026/1.001  cpu 1.148/1.142/1.075  (n=246/158/88)  runs 355/362  solved 177/180
+sol revisado   / sc     cells 1.003/1.006/1.011  cpu 0.994/0.999/0.993  (n=253/165/95)  runs 362/362  solved 180/180
+sol sinfusion  / sc     cells 1.021/1.033/1.015  cpu 1.424/1.339/1.256  (n=245/157/87)  runs 354/362  solved 177/180
+sol lejos      / sc     cells 1.001/1.002/1.002  cpu 1.020/1.015/1.014  (n=251/163/93)  runs 361/362  solved 180/180

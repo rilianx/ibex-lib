@@ -1,0 +1,18 @@
+validacion (102)                   sc      60s corridas 408 terminan 341/337 pares 337 t x0.79 c x1.00 | >1s n=197 t x0.79 c x0.98 | >10s n=49 t x0.88 c x1.02
+    solo sc ['ex2_1_9bis'] solo caja []
+paper (139-excl)                   sc      60s corridas 556 terminan 532/530 pares 529 t x0.79 c x1.00 | >1s n=79 t x0.77 c x0.98 | >10s n=19 t x0.66 c x0.81
+    solo sc ['bearing', 'ship-1'] solo caja ['ship-1']
+unido                              sc      60s corridas 964 terminan 873/867 pares 866 t x0.79 c x1.00 | >1s n=276 t x0.78 c x0.98 | >10s n=68 t x0.82 c x0.95
+    solo sc ['bearing', 'ex2_1_9bis', 'ship-1'] solo caja ['ship-1']
+validacion (102)                   sc    3600s corridas 408 terminan 404/404 pares 404 t x0.79 c x0.99 | >1s n=264 t x0.79 c x0.98 | >10s n=116 t x0.82 c x0.99 | >60s n=67 t x0.78 c x0.97 | >600s n=32 t x0.75 c x0.95
+paper (139-excl)                   sc    3600s corridas 556 terminan 556/556 pares 556 t x0.78 c x0.99 | >1s n=106 t x0.72 c x0.93 | >10s n=46 t x0.63 c x0.80 | >60s n=26 t x0.58 c x0.76
+unido                              sc    3600s corridas 964 terminan 960/960 pares 960 t x0.79 c x0.99 | >1s n=370 t x0.77 c x0.97 | >10s n=162 t x0.76 c x0.93 | >60s n=93 t x0.72 c x0.90 | >600s n=32 t x0.75 c x0.95
+    peores [(1.01, 'ex14_1_7'), (1.01, 'himmelbk'), (1.01, 'hs088'), (1.12, 'ex8_4_4'), (1.18, 'ex5_4_4'), (1.43, 'launch')]
+validacion (102)                   lejos   60s corridas 408 terminan 341/337 pares 337 t x0.81 c x1.01 | >1s n=197 t x0.81 c x1.01 | >10s n=49 t x0.88 c x1.02
+    solo lejos ['ex2_1_9bis'] solo caja []
+paper (139-excl)                   lejos   60s corridas 556 terminan 532/530 pares 529 t x0.80 c x1.00 | >1s n=79 t x0.77 c x0.99 | >10s n=19 t x0.70 c x0.86
+    solo lejos ['bearing', 'ship-1'] solo caja ['ship-1']
+unido                              lejos   60s corridas 964 terminan 873/867 pares 866 t x0.81 c x1.00 | >1s n=276 t x0.80 c x1.00 | >10s n=68 t x0.82 c x0.97
+    solo lejos ['bearing', 'ex2_1_9bis', 'ship-1'] solo caja ['ship-1']
+validacion (102)                   lejos 3600s corridas 408 terminan 404/404 pares 404 t x0.81 c x1.00 | >1s n=264 t x0.80 c x1.00 | >10s n=116 t x0.83 c x0.99 | >60s n=67 t x0.79 c x0.97 | >600s n=32 t x0.76 c x0.96
+instancias: nuevos 102 paper 139

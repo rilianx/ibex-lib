@@ -1,0 +1,2 @@
+sol cajacerca runs 268 tau1 sc 0.9291 bb 0.0709  tau2 sc 1.000 bb 0.940  bb no termina 0.037 sc no termina 0.000
+opt caja runs 489 tau1 sc 0.9202 bb 0.0798  tau2 sc 0.998 bb 0.975  bb no termina 0.010 sc no termina 0.002

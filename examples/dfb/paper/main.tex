@@ -61,8 +61,8 @@ iteration, and primal on optimization problems, where few nonbasic variables
 change bound between consecutive LPs. We compare it in a controlled setting: the same contractor, with
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
-(SoPlex) as a black box, tuned to its best configuration. On 139 constrained
-global optimization problems, SC is 23--29\% faster with similar search trees.
+(SoPlex) as a black box, tuned to its best configuration. On 240 constrained
+global optimization problems, SC is 20--23\% faster with similar search trees.
 On 242 systems of equations it is 15--23\% faster, explores 5--13\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. Checked against an LP
@@ -153,7 +153,7 @@ equations, primal on optimization problems), and a hybrid tableau/revised engine
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
 (Section~\ref{sec:properties}).
-\item A controlled evaluation in Ibex, on 242 systems of equations and 139
+\item A controlled evaluation in Ibex, on 242 systems of equations and 240
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver feeding the same certificate; a rigor check against the
 LP hull; a same-box analysis of where the black box loses bounds; and an
@@ -537,7 +537,7 @@ revised engine is. The threshold is 30 rows in the solver of systems of
 equations, and 15 rows in the optimizer, where the warm start is primal; both
 were chosen on the bank of Table~\ref{tab:main}. The ablation (Table~\ref{tab:ablation}) shows that the
 tableau alone is 8--15\% slower on systems of equations, and the revised
-engine alone 2--4\% slower on optimization problems.
+engine alone up to 3\% slower on optimization problems.
 
 \subsection{Certification}
 
@@ -812,7 +812,11 @@ composition of Ibex (HC4, ACID, interval Newton when the system is square, and
 the linear contractor within a fixed point with HC4) with the LSmear bisector,
 on the 242 systems of the Ibex solver benchmark that some configuration solves
 within 3600\,s (22 are excluded), 2 seeds, 60\,s per run. For
-optimization we use IbexOpt on 139 problems, 4 seeds, 60\,s per run; three
+optimization we use IbexOpt on 240 problems, those of the Ibex optimization
+benchmark that some configuration solves within 3600\,s (59 are excluded), 4
+seeds, 60\,s per run. The parameters of SC were chosen on 139 of them; on the
+other 101, which we added afterwards, SC is as much faster as on these 139
+($\times0.79$ in both at 3600\,s). Three
 problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
 magnitude between seeds of the same configuration are excluded from the means.
 We report geometric means of ratios over the pairs of runs in which both
@@ -863,7 +867,7 @@ total                  & 3\,090 & 2\,980 & 125 & 27\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
-whose relaxations are small, SC is 23--29\% faster with similar search trees.
+whose relaxations are small, SC is 20--23\% faster with similar search trees.
 On systems of equations SC is 15--23\% faster and explores 5--13\% fewer
 cells; it finishes 362 runs against 352 (356 with the farthest bound first).
 The largest gains are on systems where the black box reports no optimum for
@@ -891,10 +895,10 @@ engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 0.94--0.99 & 0.75 & 0.77 & 0.71 & 131 / 131\\
+optimization & best of each      & 0.97--0.99 & 0.77 & 0.78 & 0.80 & 217 / 216\\
 systems      & best of each      & 0.87--0.95 & 0.84 & 0.85 & 0.82 & 362 / 352\\
 \midrule
-optimization & same bound order  & 0.94--0.99 & 0.77 & 0.77 & 0.71 & 131 / 131\\
+optimization & same bound order  & 0.98--1.00 & 0.79 & 0.80 & 0.81 & 217 / 216\\
 systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
 \bottomrule
 \end{tabular}
@@ -902,8 +906,8 @@ systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
 Figure~\ref{fig:profiles} shows the same comparison as performance
 profiles~\cite{dolan2002benchmarking} over the runs above 0.1\,s that at least
 one engine finishes: SC is the faster engine in 93\% of the runs on systems of
-equations and in 94\% on optimization problems; within a factor of 2 the black
-box reaches 94\% and 97\% of the runs, and it does not finish 4\% and 0.5\% of
+equations and in 92\% on optimization problems; within a factor of 2 the black
+box reaches 94\% and 98\% of the runs, and it does not finish 4\% and 1\% of
 them, all of which SC finishes; SC does not finish one run (ship-1, near the
 limit), which the black box finishes.
 
@@ -922,7 +926,7 @@ limit), which the black box finishes.
 \addlegendentry{SC}
 \addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_sol.dat};
 \addlegendentry{black box}
-\nextgroupplot[title={optimization (213 runs)}]
+\nextgroupplot[title={optimization (489 runs)}]
 \addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_opt.dat};
 \addlegendentry{SC}
 \addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_opt.dat};
@@ -939,9 +943,7 @@ of runs solved within a factor $\tau$ of the faster engine.}
 
 The 60\,s limit leaves out the hardest instances. We reran with a limit of
 3600\,s the instances on which some configuration reached the 60\,s limit
-(48 systems with 2 seeds; 7 optimization problems of the benchmark with 4
-seeds, and 16 harder problems of the Ibex optimization collection with 2 to 4
-seeds), each engine with its own bound order, and on systems also with the
+(48 systems with 2 seeds, 24 optimization problems with 4 seeds), each engine with its own bound order, and on systems also with the
 farthest bound first in both. Both engines re-solve from a cold start when a
 reported infeasibility cannot be certified (Section~\ref{sec:properties}); for
 the black box this also covers infeasibility reported without a ray, and at
@@ -961,18 +963,18 @@ benchmark & instances & runs & cells & CPU & finished\\
 \midrule
 systems                   & 48 & 96 & 1.04 & 0.96 & 94 / 89\\
 systems, same bound order & 48 & 96 & 0.76 & 0.76 & 94 / 94\\
-optimization              &  7 & 28 & 0.79 & 0.60 & 28 / 28\\
-optimization (Ibex, hard) & 16 & 36 & 0.96 & 0.77 & 33 / 25\\
+optimization              & 24 & 96 & 0.91 & 0.73 & 96 / 80\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-On optimization problems the gain of Table~\ref{tab:main} carries over, and
-SC finishes four problems (ex6\_2\_13, hs101, hs112, pollut) in 2\,400 to
-3\,100\,s that the black box does not finish. The mean on the benchmark is
-pulled down by bearing, where a few cold re-solves change the search of SC
+On optimization problems the gain of Table~\ref{tab:main} carries over. SC
+finishes four problems (ex6\_2\_13, hs101, hs112, pollut) in 2\,400 to
+3\,100\,s that the black box does not finish within 3\,600\,s; with 7\,200\,s it
+finishes them in 3\,850 to 4\,390\,s with the same cells, and these runs enter
+the means. The mean is pulled down by bearing, where a few cold re-solves change the search of SC
 (1\,910 cells in two seeds, against 40\,132 without the retry); without
-bearing SC is 22\% faster with 4\% more cells. On systems SC finishes five runs
+bearing SC is 22\% faster with 1\% fewer cells. On systems SC finishes five runs
 that the black box does not (Brown-30 and Brown-30-1, in 1--2\,s, and one run
 of CountercurrentReactors2-24), and is 4\% faster on the others. The mean is
 dominated by one run, CountercurrentReactors2-28 with seed 1 ($\times4.2$);
@@ -1104,29 +1106,30 @@ changes little: cell ratios are within 3.5\% in every row. The components
 differ in cost, mostly on systems of equations, whose relaxations are larger.
 Merging the twin rows is the largest saving (without it, CPU time
 $\times1.26$--$1.42$ and eight fewer runs finished), followed by the hybrid
-engine (with the tableau alone, $\times1.08$--$1.15$ and seven fewer runs). The
-revised engine alone is about as fast on systems of equations, but 2--4\%
+engine (with the tableau alone, $\times1.08$--$1.15$ and seven fewer runs on
+systems of equations, $\times1.04$ on optimization problems). The
+revised engine alone is about as fast on systems of equations, but up to 3\%
 slower on the small relaxations of optimization problems; the
 threshold keeps the best of both. Among the pivoting rules, the long-step ratio
 test gives 7--10\% on systems of equations, the cost perturbation 3--4\% (and
 one more run finished), devex 1--2\%, and the box-scaled tolerance is neutral in
 time: it is there for correctness on narrow boxes (Section~\ref{sec:simplex}).
-On optimization problems these rules are within 1.5\%; the perturbation, applied
+On optimization problems these rules are within 2\%; the perturbation, applied
 when the dual warm start relocates the nonbasic variables, does not act there,
 and the search is identical without it. Each program loses with the warm start
 of the other (Section~\ref{sec:simplex}): the primal warm start is 4--5\%
 slower on systems of equations, with one fewer run finished, and the dual
-warm start up to 4\% slower on optimization problems. Ordering the bounds with
+warm start 5--9\% slower on optimization problems. Ordering the bounds with
 information of the tableau instead of the farthest-bound rule saves 1--2\% on
 systems of equations, and on optimization problems it is 3\% faster on runs
-above 0.1\,s and 1\% slower above 5\,s.
+above 0.1\,s and within 1\% above 1\,s.
 
 \begin{table}[t]
 \centering
 \caption{Ablation: each row changes one component of SC. Ratios against full
 SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
 runs finished out of 484 (full SC: 362), CPU on optimization problems above
-0.1\,s and problems solved in all seeds (full SC: 131). The warm-start row
+0.1\,s and problems solved in all seeds (full SC: 217). The warm-start row
 gives each program the warm start of the other: primal on systems of
 equations, dual on optimization problems.}
 \label{tab:ablation}
@@ -1136,15 +1139,15 @@ equations, dual on optimization problems.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 361 & 1.00 & 131\\
-warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 361 & 1.04 & 131\\
-without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 360 & 1.01 & 132\\
-without devex                     & 1.01 & 1.01 & 1.02 & 1.00 & 361 & 1.00 & 131\\
-without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 362 & 1.01 & 131\\
-tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 355 & 1.01 & 131\\
-revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 362 & 1.04 & 131\\
-without merging twin rows         & 1.02 & 1.42 & 1.34 & 1.26 & 354 & 1.02 & 131\\
-farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 361 & 1.03 & 131\\
+without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 361 & 1.00 & 217\\
+warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 361 & 1.07 & 217\\
+without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 360 & 1.00 & 218\\
+without devex                     & 1.01 & 1.01 & 1.02 & 1.00 & 361 & 1.00 & 217\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 362 & 1.00 & 217\\
+tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 355 & 1.04 & 217\\
+revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 362 & 1.03 & 217\\
+without merging twin rows         & 1.02 & 1.42 & 1.34 & 1.26 & 354 & 1.02 & 216\\
+farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 361 & 1.03 & 217\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1176,8 +1179,9 @@ black box by more than 5\% on three systems: Katsurabis-14 ($\times1.19$),
 which explores the same cells with costlier nodes, CountercurrentReactors2-18
 ($\times1.10$), with 1--3\% more cells, and Bratu-0180 ($\times1.06$), with
 51 cells against 47. On optimization problems
-the largest loss is launch ($\times1.43$): SC explores 154--286 cells against
-88--150, and its cheaper nodes do not make up for it. With the farthest bound
+the largest losses are launch ($\times1.43$), where SC explores 154--286 cells
+against 88--150, and ex8\_4\_4 ($\times1.12$, 3\,722--4\,130 cells against
+2\,638--3\,374); its cheaper nodes do not make up for it. With the farthest bound
 first in both engines, SC loses only on Katsurabis-14 ($\times1.21$).
 
 \paragraph{What did not pay.} We also measured on the whole benchmark several
