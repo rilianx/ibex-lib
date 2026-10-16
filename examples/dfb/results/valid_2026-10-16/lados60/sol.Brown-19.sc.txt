@@ -1,0 +1,2 @@
+[basecomp2] no basicas: variables 1.2 (cambian 0.10), holguras 17.8 (cambian 1.66) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.000332, en las que cambian 2.64e-13
+[basecomp] LPs tibios=1400  m=19.0  columnas basicas nuevas=0.14 (0.8% de la base)  base identica en el 96.8%  pivotes=0.19  | no basicas que siguen: 18.9, cambian de lado: 1.75 (9.3%)

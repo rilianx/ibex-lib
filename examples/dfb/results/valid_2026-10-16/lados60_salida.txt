@@ -1,0 +1,14 @@
+sol instancias 165
+  m mediana 18.00  cuartiles 10.00 / 31.50
+  pnb mediana 9.60  cuartiles 4.05 / 19.15
+  lado mediana 1.87  cuartiles 1.15 / 2.81
+  plado mediana 15.60  cuartiles 7.50 / 21.70
+  piv/LP mediana dual 3.08 primal 5.08 ; primal-dual mediana 1.88 ; lados mediana 1.87
+  franjas (sc) n=165: var cambian 14.4%  holguras cambian 13.5%  franja media 0.130  en las que cambian 0.097
+opt instancias 140
+  m mediana 9.00  cuartiles 5.00 / 17.00
+  pnb mediana 15.90  cuartiles 11.85 / 22.20
+  lado mediana 0.49  cuartiles 0.34 / 0.75
+  plado mediana 5.65  cuartiles 3.52 / 8.88
+  piv/LP mediana dual 1.90 primal 2.04 ; primal-dual mediana 0.42 ; lados mediana 0.49
+  franjas (sc) n=140: var cambian 13.5%  holguras cambian 0.3%  franja media 0.482  en las que cambian 0.058

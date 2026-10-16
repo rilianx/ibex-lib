@@ -358,7 +358,7 @@ and which one is cheaper depends on how the optima of consecutive bounds are
 related. An optimal vertex is given by a basis and by the bound on which each
 nonbasic variable rests. Table~\ref{tab:sides} compares the optima of
 consecutive bounds over the benchmarks of Section~\ref{sec:experiments}: the
-basis changes by 10--17\% in both programs, but on systems of equations a
+basis changes by 10--16\% in both programs, but on systems of equations a
 median of 1.9 nonbasic variables per LP move to their opposite bound, against
 0.5 on optimization problems. The dual warm start moves them for free, since
 relocation is not a pivot; the primal warm start pays one iteration for each,
@@ -377,19 +377,19 @@ instead of 16--17\,$\mu$s per LP; on ex2\_1\_9, whose LPs need one or two
 pivots, the primal warm start pivots 25\% more and its LPs are still 6\%
 cheaper.
 The side changes differ because of the rows. The box bounds of the variables
-change side alike in both programs (14\% and 17\% of the nonbasic variables);
+change side alike in both programs (14\% and 13\% of the nonbasic variables);
 the slacks of the rows change side in 14\% of the cases on systems of equations
-and in 0.4\% on optimization problems. On systems every row comes from an
+and in 0.3\% on optimization problems. On systems every row comes from an
 equation and is a narrow slab: the interval of its slack is, on average, 13\%
 of the range of the row over the box, so that the optima of consecutive bounds
 often rest on opposite faces of a slab. On optimization problems the slack
 intervals cover 48\% of the range on average, and the few rows whose slack
-changes side are the narrow ones (4\%).
+changes side are the narrow ones (6\%).
 
 \begin{table}[t]
 \centering
-\caption{Optima of consecutive bounds of a pass (seed 1, 20\,s per run, 162
-systems and 60 optimization problems with at least 1\,000 warm LPs in both
+\caption{Optima of consecutive bounds of a pass (seed 1, 60\,s per run, 165
+systems and 140 optimization problems with at least 1\,000 warm LPs in both
 warm starts). Medians, with quartiles in parentheses, of the rows of the
 relaxation, the basic variables that change, the nonbasic variables that move
 to their opposite bound, and the iterations per warm LP with each warm start.}
@@ -400,8 +400,8 @@ to their opposite bound, and the iterations per warm LP with each warm start.}
 \cmidrule(lr){4-5}\cmidrule(lr){6-7}
 benchmark & rows & changed & per LP & \% nonbasic & dual & primal\\
 \midrule
-systems      & 18 (10--31) & 10\% & 1.9 (1.1--2.8) & 15\% & 3.1 & 4.9\\
-optimization & 8.5 (5--11) & 17\% & 0.5 (0.3--0.7) & 8\% & 1.8 & 1.9\\
+systems      & 18 (10--32) & 10\% & 1.9 (1.1--2.8) & 16\% & 3.1 & 5.1\\
+optimization & 9 (5--17)   & 16\% & 0.5 (0.3--0.8) & 6\% & 1.9 & 2.0\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -815,8 +815,8 @@ within 3600\,s (22 are excluded), 2 seeds, 60\,s per run. For
 optimization we use IbexOpt on 240 problems, those of the Ibex optimization
 benchmark that some configuration solves within 3600\,s (59 are excluded), 4
 seeds, 60\,s per run. The parameters of SC were chosen on 139 of them; on the
-other 101, which we added afterwards, SC is as much faster as on these 139
-($\times0.79$ in both at 3600\,s). Three
+other 101, which we added afterwards, SC is 14--22\% faster, against 23--29\%
+on the 139. Three
 problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
 magnitude between seeds of the same configuration are excluded from the means.
 We report geometric means of ratios over the pairs of runs in which both
@@ -999,8 +999,8 @@ SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
 pass of SC costs $0.53$ times that of the black box on systems of equations
 (geometric mean over the 182 systems with at least 20 nodes and 100 LPs;
-median 422 against 826\,$\mu$s) and $0.39$ times on optimization problems (89
-problems; median 91 against 236\,$\mu$s), and is cheaper on 93\% and 99\% of
+median 422 against 826\,$\mu$s) and $0.43$ times on optimization problems (175
+problems; median 116 against 270\,$\mu$s), and is cheaper on 93\% and 98\% of
 the instances. Each engine uses its own bound order, as in Table~\ref{tab:main}.
 
 The two other panels split this ratio into pivots per pass and time per pivot.
@@ -1011,12 +1011,12 @@ systems with at least two pivots per LP in both engines). With the farthest
 bound first the black box pivots more per LP (4.9) but skips more bounds, and
 the ratio of a pass is almost the same ($\times0.50$). On optimization
 problems, with the primal warm start, SC pivots somewhat less than the black
-box ($\times0.87$; 2.3 against 2.8 pivots per LP), and what dominates is the
+box ($\times0.94$; 2.7 against 2.9 pivots per LP), and what dominates is the
 fixed cost of each call to the black box (setting bounds and objective,
 starting the simplex, reading the solution): the time per pivot of SC is
-$\times0.57$ (over 56 problems).
+$\times0.59$ (over 115 problems).
 Since the pass is only part of the cost of a node, with the linearization,
-propagation, ACID and interval Newton, halving its cost yields the 15--30\% of
+propagation, ACID and interval Newton, halving its cost yields the 15--23\% of
 Table~\ref{tab:main}.
 
 \begin{figure}[t]
@@ -1033,21 +1033,21 @@ Table~\ref{tab:main}.
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
 \addlegendentry{systems: $\times0.53$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.39$}
+\addlegendentry{optimization: $\times0.43$}
 \addplot[gray, thin, domain=5:2000000]{x};
 \nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
   xlabel={black box}, ylabel={SC}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
 \addlegendentry{systems: $\times0.73$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.87$}
+\addlegendentry{optimization: $\times0.94$}
 \addplot[gray, thin, domain=0.005:100000]{x};
 \nextgroupplot[title={time per pivot}, xmin=2, xmax=200, ymin=2, ymax=200,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_sol.dat};
 \addlegendentry{systems: $\times0.75$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_opt.dat};
-\addlegendentry{optimization: $\times0.57$}
+\addlegendentry{optimization: $\times0.59$}
 \addplot[gray, thin, domain=2:200]{x};
 \end{groupplot}
 \end{tikzpicture}

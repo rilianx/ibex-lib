@@ -548,8 +548,14 @@ otros 101 gana lo mismo (×0.79 en los dos a 3600 s).
   terminan con `ibexopt_fix`, y donde no abortaba da las mismas celdas.
   Pendiente: los barridos viejos usaron `./ibexopt` sin el arreglo; reemplazar
   `./ibexopt` por `ibexopt_fix` antes del próximo barrido.
-- Quedan sobre el banco viejo de 139: la sonda de costo (89 problemas opt) y
-  la tabla de cotas que cambian por LP (§3).
+- Todo el paper usa este banco a 60 s salvo `tab:long` (3600 s). Sonda de
+  costo extendida (`costo4.sh`, 101 nuevos con `ibexopt_fix`): opt pasada ×0.43
+  (116 vs 270 µs, n=175), pivotes ×0.94, µs/pivote ×0.59; sistemas igual.
+  Sonda de lados a 60 s (`lados60.sh`, antes 20 s; `lados_ana.py`): 165
+  sistemas casi idénticos; 140 opt: base 16 %, lados 0.49 por LP (6 %), pivotes
+  dual 1.9 / primal 2.0, holguras cambian 0.3 %, franja media 0.48.
+- En §5: en los 101 agregados SC es 14–22 % más rápido (×0.78/0.79/0.86),
+  contra 23–29 % en los 139 de ajuste; el banco de ajuste favorecía a SC.
 
 **Sonda de costo con binarios finales (2026-10-16, `results/frio_2026-10-15/costo3/`).**
 Sistemas: pasada ×0.53 (mediana 422 vs 826 µs), pivotes ×0.73, µs/pivote ×0.75,
