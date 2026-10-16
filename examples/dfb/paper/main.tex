@@ -941,34 +941,38 @@ The 60\,s limit leaves out the hardest instances. We reran with a limit of
 3600\,s the instances on which some configuration reached the 60\,s limit
 (48 systems with 2 seeds; 7 optimization problems of the benchmark with 4
 seeds, and 16 harder problems of the Ibex optimization collection with 2 to 4
-seeds), each engine with its own bound order. On systems, both engines
-re-solve from a cold start when a reported infeasibility cannot be certified
-(Section~\ref{sec:properties}); for the black box this also covers
-infeasibility reported without a ray, and at 60\,s the retry is neutral for it
-as well (ratio 1.00, identical cells in 347 of 352 runs). The optimization
-runs were made without the retry in both engines.
-Table~\ref{tab:long} gives the results.
+seeds), each engine with its own bound order, and on systems also with the
+farthest bound first in both. Both engines re-solve from a cold start when a
+reported infeasibility cannot be certified (Section~\ref{sec:properties}); for
+the black box this also covers infeasibility reported without a ray, and at
+60\,s the retry is neutral for it as well (ratio 1.00, identical cells in 347
+of 352 runs). Table~\ref{tab:long} gives the results.
 
 \begin{table}[t]
 \centering
 \caption{SC against the black box with a limit of 3600\,s, each engine with its
-own bound order. Geometric means of the ratios SC/BB over the runs both
-engines finish, and runs finished.}
+own bound order, and on systems also with the farthest bound first in both.
+Geometric means of the ratios SC/BB over the runs both engines finish, and
+runs finished.}
 \label{tab:long}
 \begin{tabular}{lrrccc}
 \toprule
 benchmark & instances & runs & cells & CPU & finished\\
 \midrule
 systems                   & 48 & 96 & 1.04 & 0.96 & 94 / 89\\
-optimization              &  7 & 28 & 0.97 & 0.74 & 28 / 28\\
-optimization (Ibex, hard) & 16 & 36 & 0.97 & 0.77 & 33 / 25\\
+systems, same bound order & 48 & 96 & 0.76 & 0.76 & 94 / 94\\
+optimization              &  7 & 28 & 0.79 & 0.60 & 28 / 28\\
+optimization (Ibex, hard) & 16 & 36 & 0.96 & 0.77 & 33 / 25\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 On optimization problems the gain of Table~\ref{tab:main} carries over, and
 SC finishes four problems (ex6\_2\_13, hs101, hs112, pollut) in 2\,400 to
-3\,100\,s that the black box does not finish. On systems SC finishes five runs
+3\,100\,s that the black box does not finish. The mean on the benchmark is
+pulled down by bearing, where a few cold re-solves change the search of SC
+(1\,910 cells in two seeds, against 40\,132 without the retry); without
+bearing SC is 22\% faster with 4\% more cells. On systems SC finishes five runs
 that the black box does not (Brown-30 and Brown-30-1, in 1--2\,s, and one run
 of CountercurrentReactors2-24), and is 4\% faster on the others. The mean is
 dominated by one run, CountercurrentReactors2-28 with seed 1 ($\times4.2$);
@@ -977,7 +981,11 @@ caused by the linear contractor: the adaptive tuning of ACID, which every
 1\,000 calls re-estimates how many variables to shave from a window of 50
 calls, settles on shaving none for a long stretch of the search, and boxes that
 ACID alone would empty are bisected instead (with a different seed, or without
-the retry, the same instance finishes in 320--370\,s).
+the retry, the same instance finishes in 320--370\,s). With the farthest bound
+first in both engines SC finishes the same runs and is 24\% faster: the black
+box needs 72--78\,s and 15\,000 cells on Brown-30 and Brown-30-1, and one run of
+CountercurrentReactors2-24 takes it 3\,250\,s against 120\,s for SC. Without
+these, SC is 8\% faster with the same cells.
 
 \subsection{Cost of a pass}
 

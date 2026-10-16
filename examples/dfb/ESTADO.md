@@ -507,8 +507,20 @@ Brown-30 y Brown-30-1 en 1–2 s y CCR2-24 s2); sin CCR2-28 s1 (×4.2, ACID) ×0
 celdas ×1.01. Opt (sin reintento en ninguno): paper ×0.74, celdas ×0.97, 28 / 28;
 `all` ×0.77, celdas ×0.97, 33 / 25. La caja con reintento a 3600 s cambia poco
 (CCR2-28 s2 466 → 349 s). Los binarios finales se recompilaron desde el fuente
-(reintento en los dos motores; respaldo `$M/*.fin2`). Falta rehacer a 3600 s
-las filas de orden igual («lejos» en los dos) y opt con reintento.
+(reintento en los dos motores; respaldo `$M/*.fin2`).
+
+**3600 s con reintento en los dos motores (2026-10-16,
+`results/frio_2026-10-15/l3600z/`, `tab3600z.py`, 320 corridas).** Sistemas,
+orden igual (SC lejos / SoPlex lejos): t ×0.76, celdas ×0.76, 94 / 94; sin
+Brown (SoPlex 72–78 s, 15 mil celdas) ×0.89; sin Brown ni CCR2-24 s1 (SoPlex
+3253 s, 633 mil celdas) ×0.92, celdas ×1.00. Opt paper (SC propio / SoPlex
+lejos): ×0.60, celdas ×0.79, 28 / 28; lo baja bearing: el reintento cambia la
+búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
+`DFBH_FRIO_SI_NO_CERTIFICA=0`; menos de 1000 reintentos), s1/s4 empeoran
+72–81 → 93 s; sin bearing ×0.78, celdas ×1.04. Opt all: ×0.77, celdas ×0.96,
+33 / 25 (igual que sin reintento). SoPlex con reintento en opt ×0.99 contra
+su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
+antes). Paper `tab:long` al día con las cuatro filas.
 
 **Banco de 60 s rehecho con el reintento en los dos motores (2026-10-15,
 `results/final_2026-10-15.csv`, 11 924 corridas, 12 brazos con `cajacerca`;
