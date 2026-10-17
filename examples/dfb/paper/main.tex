@@ -1014,15 +1014,16 @@ the ratio of a pass is almost the same ($\times0.50$). On optimization
 problems SC pivots almost as much as the black box ($\times0.94$; 2.7 against
 2.9 pivots per LP), and the gain is in the cost of an LP ($\times0.39$; median
 12.6 against 33.1\,$\mu$s). With so few pivots per LP, the black box pays
-mostly for what a call does besides pivoting. SoPlex discards its
-factorization whenever the objective changes, so that every LP starts with an
-LU factorization (1.2 to 1.4 per LP on ex2\_1\_9, chem, hs117 and launch,
-for 2 to 10 pivots), and the interface loads the bounds and copies the
-solution (on ex2\_1\_9, 7 of the 31\,$\mu$s of an LP; the solve of SoPlex
-takes the other 24, against 8\,$\mu$s for a whole LP of SC). Loading only
-the bounds that changed saves 3\,$\mu$s per LP and does not avoid the
-factorization. SC solves the $2n$ bounds of a pass on one tableau and only
-replaces the objective row. Where the LPs need many pivots the factorization
+mostly for what a call does besides pivoting. On ex2\_1\_9 an LP of the
+black box takes 31\,$\mu$s against 8\,$\mu$s for a whole LP of SC; counting
+instructions inside the calls, the pivots take 12\% and the factorizations
+10\%, while SoPlex spends 20\% rebuilding its vectors at the start of every
+solve, 20\% storing, unscaling and verifying the solution and 11\% presolving
+the LPs of a new relaxation, and the interface 9\% loading the bounds.
+Neither part dominates: suppressing the refactorizations that SoPlex makes
+before declaring optimality (from 1.2 to 0.25 per LP) leaves the time of an LP
+unchanged, and so does loading only the bounds that changed. SC solves the
+$2n$ bounds of a pass on one tableau and only replaces the objective row. Where the LPs need many pivots this fixed cost
 is amortized: on launch (10 pivots per LP) an LP costs about the same in both
 engines (95 against 101\,$\mu$s), and launch is where SC loses most.
 Since the pass is only part of the cost of a node, with the linearization,
@@ -1222,13 +1223,10 @@ are found only in boxes of width $10^{-4}$ to $10^{-3}$, and the search tree
 changes by two orders of magnitude between seeds; we excluded it, with alkyl
 and alkylbis, from the means. Relaxations of several hundred rows are still
 expensive for both engines: the systems of 400 to 1\,000 variables of the
-benchmark exceed the limits of 60\,s and 6\,GB with either. Part of the gain on optimization
-problems is specific to SoPlex: it discards its factorization whenever the
-objective changes, so that every LP of a pass starts with one. A solver that
-kept the factorization between objectives would narrow the gap on small
-relaxations, whose LPs need two or three pivots. On systems of equations the
-factorization weighs less, since the LPs need more pivots, and SC also pivots
-27\% less.
+benchmark exceed the limits of 60\,s and 6\,GB with either. On optimization problems the gain
+comes from the cost of a call, measured for SoPlex~4.0.2 through the interface
+of Ibex; other LP solvers have other per-call costs, which we did not measure.
+On systems of equations SC also pivots 27\% less.
 
 % =====================================================================
 \bibliographystyle{plain}

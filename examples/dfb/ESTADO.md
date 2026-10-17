@@ -528,16 +528,24 @@ LPs; `DFBH_CAJA_COTAS=cambio` carga solo las cotas que cambiaron).** En opt SC
 pivotea casi igual que la caja (×0.94); la ganancia es por LP (×0.39). En
 ex2_1_9 un LP de la caja son 31 µs: `solve` de SoPlex 24, cargar cotas y
 objetivo 2.5, copiar la solución 1.1, leer multiplicadores 1.8; un LP entero de
-SC son 8 µs. SoPlex factoriza en cada LP (1.16–1.36 LU por LP en ex2_1_9,
-chem, hs117 y launch, con 2–10 pivotes; ~6 LU solves por pivote) porque
-`SPxSolver::changeObj` llama a `unInit()` (el propio TODO de SoPlex dice que la
-factorización sigue valiendo). Cargar solo las cotas cambiadas ahorra 3 µs y no
+SC son 8 µs. SoPlex factoriza ~1.2 veces por LP (1.16–1.36 en ex2_1_9, chem, hs117 y
+launch), **pero no por el cambio de objetivo** (`unInit()` no descarta la
+factorización; los LPs sin pivotes no factorizan): refactoriza al llegar al
+óptimo si hubo alguna actualización (`spxsolve.cpp:403/717`, «eliminate
+accumulated errors»). **Y no es el costo:** con un SoPlex parchado
+(`SOPLEX_REFACT_FIN=k`, `$M/sxp/libsoplex.a`, binarios `ibexopt_sx`,
+`ibexsolve_dfb_sx`) bajan a 0.25 LU/LP y el µs/LP no cambia (27.7 → 27.0).
+Callgrind dentro de `resolver_caja` (ex2_1_9, instrucciones): pivotes
+(`leave`) 12 %, factorizar 10 %, `init()` al inicio de cada solve 20 %,
+guardar/desescalar/verificar la solución 20 %, presolve en LPs de una
+relajación nueva 11 %, `set_bounds` de Ibex 9 %. Ninguna parte domina: es el
+costo por llamada de un solver de propósito general. La primera versión del
+paper (commit e2b7fe28/56f5114d) atribuía todo a la factorización; corregido. Cargar solo las cotas cambiadas ahorra 3 µs y no
 evita la factorización: no es un lastre de nuestro arnés. En launch (10
 pivotes por LP) la factorización se amortiza y el LP cuesta igual (95 vs
 101 µs): es donde SC más pierde. Panel derecho de la figura de costo ahora es
-tiempo por LP (sistemas ×0.59, opt ×0.39). Matiz para el paper: parte de la
-ventaja en opt es propia de SoPlex; un solver que conserve la factorización al
-cambiar el objetivo la achicaría.
+tiempo por LP (sistemas ×0.59, opt ×0.39). Matiz en «Limits»: el costo por llamada es el de
+SoPlex 4.0.2 vía Ibex; otros solvers tendrán otro, no medido.
 
 **Banco único de opt de 240 problemas (2026-10-16, `results/valid_2026-10-16/`,
 60 s en `results/final_2026-10-16.csv`).** A los 139 del paper se sumaron los
