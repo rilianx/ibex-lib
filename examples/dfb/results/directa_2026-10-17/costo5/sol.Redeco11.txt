@@ -1,0 +1,5 @@
+[abcaja] DFB  : LPs=104746 | optimo certificado=29920  optimo sin certificado=74068  vacio probado=329  no optimo=429 | saltadas=123865
+[abcaja] caja : LPs=131260 | optimo certificado=42937  optimo sin certificado=87994  vacio probado=329  no optimo=0 | saltadas=96923
+[abcaja] nodos=10686 | contraccion media DFB=0.08749 caja=0.08683 | nodos vaciados DFB=329 caja=329 | gana DFB=754 caja=23
+[abcaja] costo DFB  : pasada 3.373 s  pivotes=573475  us/LP=32.20  piv/LP=5.48  us/piv=5.881
+[abcaja] costo caja : pasada 6.240 s  pivotes=515028  us/LP=47.54  piv/LP=3.93  us/piv=12.116

@@ -535,7 +535,17 @@ los mismos LPs (`pasada_ab_caja` / `pasada_ab_sc`, ex2_1_9): caja 84 k
 instrucciones por LP, SC 26.5 k; el pivoteo cuesta lo mismo (~10 k); el resto
 de la caja es maquinaria por llamada (`init` 2.1 veces por LP 18 k, factorizar
 9 k, presolve y recarga por relajación ~10 k, guardar/verificar ~10 k,
-interfaz ~14 k). Barrido de 60 s con la caja directa en curso (`d60.sh`).
+interfaz ~14 k). Barrido de 60 s con la caja directa (`d60.sh`, `results/directa_2026-10-17/`):
+caja directa ×0.96–0.98 opt, ×0.95–0.97 sistemas; SC contra ella opt ×0.79/0.80/0.82,
+sistemas best ×0.91, same order ×0.88–0.89; termina 364/352 (hayes1 rehecho:
+tenía el mismo assert afín). **Sonda de costo con la caja directa (`costo5.sh`):
+SC NO pivotea menos** (sistemas 3.0 vs 2.0 piv/LP, ×1.33; opt 2.7 vs 2.5,
+×1.12): el «×0.73 de pivotes» era artefacto de las filas de cotas, que le
+agregaban pivotes a SoPlex. Toda la ganancia es costo por LP (×0.69 sistemas,
+×0.41 opt); pasada ×0.62 / ×0.44. Callgrind con la caja directa (ex2_1_9):
+caja 74 k instr/LP, SC 26 k; pivoteo 9 k vs 10 k; SoPlex `init` 16 %,
+guardar/desescalar/verificar 20 %, presolve 11 %, factorizar 7 %. Brown-18 con
+la caja directa: 250 de 1862 LPs sin óptimo (antes 176).
 **Ojo al compilar:** cambiar `ibex_CtcDFBHull.h` exige recompilar también
 `ibex_LSmearDFB.o`, `ibex_Optimizer05Config.o` e `ibexsolve_dfb.o` (si no,
 core dump por tamaño de clase distinto).

@@ -1,0 +1,70 @@
+--------------------------------------------------------------------------------
+Profile data file '/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad/cgd_sc.out' (creator: callgrind-3.22.0)
+--------------------------------------------------------------------------------
+I1 cache: 
+D1 cache: 
+LL cache: 
+Timerange: Basic block 0 - 5609859968
+Trigger: Program termination
+Profiled target:  ./ibexopt_reloj /home/iaraya/ibex2026/benchs/optim/all/ex2_1_9.bch --filtering=acidhc4 --lr=dfbhull --seed=1 -t3600 (PID 2391587, part 1)
+Events recorded:  Ir
+Events shown:     Ir
+Event sort order: Ir
+Thresholds:       99
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+Ir                     
+--------------------------------------------------------------------------------
+4,925,827,369 (100.0%)  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+Ir                      file:function
+--------------------------------------------------------------------------------
+4,925,827,369 (100.0%)  ./csu/../csu/libc-start.c:__libc_start_main@@GLIBC_2.34 [/usr/lib/x86_64-linux-gnu/libc.so.6]
+4,925,827,369 (100.0%)  ./csu/../sysdeps/nptl/libc_start_call_main.h:(below main) [/usr/lib/x86_64-linux-gnu/libc.so.6]
+4,925,827,369 (100.0%)  /home/iaraya/ibex2024/examples/dfb/ibex_CtcDFBHull.cpp:ibex::CtcDFBHull::contract(ibex::IntervalVector&, ibex::ContractContext&)
+4,925,827,369 (100.0%)  /home/iaraya/ibex2024/examples/dfb/ibexopt.cpp:main
+4,925,827,369 (100.0%)  ???:(below main) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  ???:0x000000000001f540 [/usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2]
+4,925,827,369 (100.0%)  ???:ibex::CtcCompo::contract(ibex::IntervalVector&, ibex::ContractContext&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  ???:ibex::CtcCompo::contract(ibex::IntervalVector&, ibex::ContractContext&)'2 [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  ???:ibex::CtcFixPoint::contract(ibex::IntervalVector&, ibex::ContractContext&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  ???:ibex::Optimizer::contract_and_bound(ibex::Cell&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  ???:ibex::Optimizer::optimize(ibex::IntervalVector const&, double) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  examples/dfb/ibex_CtcDFBHull.cpp:ibex::CtcDFBHull::contract(ibex::IntervalVector&, ibex::ContractContext&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  examples/dfb/ibex_CtcDFBHull.cpp:ibex::CtcDFBHull::contract_nucleo(ibex::IntervalVector&, ibex::ContractContext&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  examples/dfb/ibex_CtcDFBHull.cpp:ibex::CtcDFBHull::pasada_ab_sc(ibex::IntervalVector&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,827,369 (100.0%)  examples/dfb/ibexopt.cpp:main [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,786,097 (100.0%)  examples/dfb/ibex_CtcDFBHull.cpp:ibex::CtcDFBHull::una_pasada(ibex::IntervalVector&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+4,925,315,597 (99.99%)  ???:ibex::Optimizer::optimize() [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+2,913,522,044 (59.15%)  /home/iaraya/ibex2024/examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::solve(int, bool, ibex::IntervalVector const&, int, bool)
+2,692,264,461 (54.66%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::solve(int, bool, ibex::IntervalVector const&, int, bool) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+1,315,260,786 (26.70%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::dual_step(ibex::IntervalVector const&, bool&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  928,686,083 (18.85%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::compute_basics(ibex::IntervalVector const&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  808,851,075 (16.42%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::dual_step_comun(ibex::IntervalVector const&, bool&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  670,997,642 (13.62%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::pivot(int, int) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  636,887,263 (12.93%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::primal_step(ibex::IntervalVector const&, bool&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  423,488,812 ( 8.60%)  /home/iaraya/ibex2024/examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::load(ibex::Matrix const&, int)
+  400,858,775 ( 8.14%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::axpy(int, int, double, int) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  396,900,928 ( 8.06%)  /home/iaraya/ibex2024/examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::primal_solution(ibex::IntervalVector const&, std::vector<double, std::allocator<double> >&)
+  385,129,902 ( 7.82%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::refrescar(int, bool, ibex::IntervalVector const&, bool) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  382,890,754 ( 7.77%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::load(ibex::Matrix const&, int) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  362,644,201 ( 7.36%)  /home/iaraya/ibex2024/examples/dfb/ibex_DFBBasis.cpp:ibex::DFBBasis::load_matrix(ibex::Matrix const&)
+  348,405,358 ( 7.07%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::refrescar_desde_tableau(int, bool, ibex::IntervalVector const&, bool) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  299,836,197 ( 6.09%)  examples/dfb/../../lp_lib_wrapper/soplex/soplex-4.0.2/src/soplex/spxalloc.h:ibex::DFBBasis::load_matrix(ibex::Matrix const&)
+  229,843,966 ( 4.67%)  ???:gaol::interval::operator*=(gaol::interval const&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  228,688,619 ( 4.64%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::primal_solution(ibex::IntervalVector const&, std::vector<double, std::allocator<double> >&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  216,637,065 ( 4.40%)  examples/dfb/../../interval_lib_wrapper/gaol/gaol-4.2.0/gaol/gaol_interval.h:ibex::CtcDFBHull::una_pasada(ibex::IntervalVector&)
+  193,201,850 ( 3.92%)  ???:gaol::interval::operator/=(double) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  179,628,921 ( 3.65%)  /usr/include/c++/13/bits/stl_vector.h:ibex::DFBSimplex::axpy(int, int, double, int)
+  156,727,879 ( 3.18%)  ???:0x0000000000133680 [???]
+  155,200,811 ( 3.15%)  ./malloc/./malloc/malloc.c:realloc [/usr/lib/x86_64-linux-gnu/libc.so.6]
+  144,387,012 ( 2.93%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::fila_objetivo_consistente(int, bool) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  125,302,546 ( 2.54%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::entry(int, int) const [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  122,836,152 ( 2.49%)  examples/dfb/ibex_DFBSimplex.cpp:ibex::DFBSimplex::reparar_cotas_infinitas(ibex::IntervalVector const&) [/home/iaraya/ibex2024/examples/dfb/ibexopt_reloj]
+  111,051,548 ( 2.25%)  examples/dfb/../../interval_lib_wrapper/gaol/gaol-4.2.0/gaol/gaol_interval.h:ibex::DFBSimplex::solve(int, bool, ibex::IntervalVector const&, int, bool)
+  109,286,160 ( 2.22%)  ./malloc/./malloc/malloc.c:free [/usr/lib/x86_64-linux-gnu/libc.so.6]
+  107,821,048 ( 2.19%)  ./malloc/./malloc/malloc.c:_int_realloc [/usr/lib/x86_64-linux-gnu/libc.so.6]

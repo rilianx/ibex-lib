@@ -1002,37 +1002,33 @@ same LPs: at every node the black box first runs the pass on a copy of the box,
 and SC then runs it on the same box and polytope, with the search following
 SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
-pass of SC costs $0.53$ times that of the black box on systems of equations
-(geometric mean over the 182 systems with at least 20 nodes and 100 LPs;
-median 422 against 826\,$\mu$s) and $0.43$ times on optimization problems (175
-problems; median 116 against 270\,$\mu$s), and is cheaper on 93\% and 98\% of
+pass of SC costs $0.62$ times that of the black box on systems of equations
+(geometric mean over the 183 systems with at least 20 nodes and 100 LPs;
+median 407 against 666\,$\mu$s) and $0.44$ times on optimization problems (175
+problems; median 115 against 266\,$\mu$s), and is cheaper on 84\% and 97\% of
 the instances. Each engine uses its own bound order, as in Table~\ref{tab:main}.
 
 The two other panels split this ratio into pivots per pass and time per LP.
-On systems of equations the gain comes from pivoting less ($\times0.73$; 3.0
-against 3.7 pivots per LP), owing to the basis shared by the $2n$ bounds and
-the dual-feasible restart, and from cheaper LPs ($\times0.59$; per pivot
-$\times0.75$, over the 120 systems with at least two pivots per LP in both
-engines). With the farthest
-bound first the black box pivots more per LP (4.9) but skips more bounds, and
-the ratio of a pass is almost the same ($\times0.50$). On optimization
-problems SC pivots almost as much as the black box ($\times0.94$; 2.7 against
-2.9 pivots per LP), and the gain is in the cost of an LP ($\times0.39$; median
-12.6 against 33.1\,$\mu$s). With so few pivots per LP, the black box pays
-mostly for what a call does besides pivoting. On ex2\_1\_9 an LP of the
-black box takes 31\,$\mu$s against 8\,$\mu$s for a whole LP of SC; counting
-instructions inside the calls, the pivots take 12\% and the factorizations
-10\%, while SoPlex spends 20\% rebuilding its vectors at the start of every
-solve, 20\% storing, unscaling and verifying the solution and 11\% presolving
-the LPs of a new relaxation, and the interface 9\% loading the bounds.
-Neither part dominates: suppressing the refactorizations that SoPlex makes
-before declaring optimality (from 1.2 to 0.25 per LP) leaves the time of an LP
-unchanged, and so does loading only the bounds that changed. SC solves the
-$2n$ bounds of a pass on one tableau and only replaces the objective row. Where the LPs need many pivots this fixed cost
-is amortized: on launch (10 pivots per LP) an LP costs about the same in both
-engines (95 against 101\,$\mu$s), and launch is where SC loses most.
+SC does not pivot less: it makes 33\% more pivots than the black box on
+systems of equations (3.0 against 2.0 per LP) and 12\% more on optimization
+problems (2.7 against 2.5). The whole gain is in the cost of an LP
+($\times0.69$ and $\times0.41$; medians 24.4 against 38.4 and 12.4 against
+33.7\,$\mu$s). With two or three pivots per LP, the black box pays mostly for
+what a call does besides pivoting. On ex2\_1\_9 an LP of the black box takes
+24\,$\mu$s against 8\,$\mu$s for SC, with the same 2.1 pivots. Counting
+instructions on the same LPs, the pivots themselves cost about the same in
+both engines (9 and 10 thousand instructions per LP), while SoPlex spends 16\%
+of a call rebuilding its vectors at the start of every solve, 20\% storing,
+unscaling and verifying the solution, 11\% presolving each new relaxation and
+7\% refactorizing; an LP of the black box takes 74 thousand instructions,
+against 26 thousand for SC. No single part dominates: suppressing the
+refactorizations that SoPlex makes before declaring optimality (from 1.2 to
+0.25 per LP) did not change the time of an LP. SC solves the $2n$ bounds of a
+pass on one tableau and only replaces the objective row and the bounds that
+changed. Where the LPs need many pivots this fixed cost is amortized: on launch
+(9 to 10 pivots per LP) an LP costs the same in both engines (93\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
-propagation, ACID and interval Newton, halving its cost yields the 15--23\% of
+propagation, ACID and interval Newton, its lower cost yields the 9--21\% of
 Table~\ref{tab:main}.
 
 \begin{figure}[t]
@@ -1047,23 +1043,23 @@ Table~\ref{tab:main}.
 \nextgroupplot[title={time per pass}, xmin=5, xmax=2000000, ymin=5, ymax=2000000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
-\addlegendentry{systems: $\times0.53$}
+\addlegendentry{systems: $\times0.62$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.43$}
+\addlegendentry{optimization: $\times0.44$}
 \addplot[gray, thin, domain=5:2000000]{x};
 \nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
   xlabel={black box}, ylabel={SC}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
-\addlegendentry{systems: $\times0.73$}
+\addlegendentry{systems: $\times1.33$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.94$}
+\addlegendentry{optimization: $\times1.12$}
 \addplot[gray, thin, domain=0.005:100000]{x};
 \nextgroupplot[title={time per LP}, xmin=1, xmax=3000, ymin=1, ymax=3000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_sol.dat};
-\addlegendentry{systems: $\times0.59$}
+\addlegendentry{systems: $\times0.69$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_opt.dat};
-\addlegendentry{optimization: $\times0.39$}
+\addlegendentry{optimization: $\times0.41$}
 \addplot[gray, thin, domain=1:3000]{x};
 \end{groupplot}
 \end{tikzpicture}
@@ -1082,15 +1078,15 @@ at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
 \begin{enumerate}
 \item \emph{No optimum.} On some relaxations SoPlex ends without an optimal
 basis (infeasibility it cannot prove, unknown status or iteration limit), and
-the bound is lost. On Brown-18 this happens for 176 of 1\,735 LPs, against 2
+the bound is lost. On Brown-18 this happens for 250 of 1\,862 LPs, against 2
 for SC, whose primal tolerance is scaled to the width of the box; on
-Geneig-icse, 499 against 70. With the twin rows unmerged this mechanism was
+Geneig-icse, 379 against 70. With the twin rows unmerged this mechanism was
 dominant (a third of the LPs of the black box on Geneig-icse); merging them
 removes most of it.
 \item \emph{Dual accuracy.} When both engines reach an optimum, the
 certificate built from the multipliers of SC is often slightly tighter. On
-Geneig-icse, SC contracts more in 277 of 1\,710 nodes and the black box in
-none; on CountercurrentReactors2-9, 126 against 4; on Bellido, 141 against 3.
+Geneig-icse, SC contracts more in 224 of 1\,710 nodes and the black box in
+9; on CountercurrentReactors2-9, 105 against 2; on Bellido, 138 against 4.
 The difference per node is small but compounds along the search. It persists
 with tolerance $10^{-9}$ for the black box; we have not isolated its cause.
 \end{enumerate}
@@ -1107,10 +1103,10 @@ and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
 system & SC & BB & SC & BB & SC & BB\\
 \midrule
-Geneig-icse               & 0.323 & 0.322 &  277 &  0 &   70 & 499\\
-CountercurrentReactors2-9 & 0.046 & 0.047 &  126 &  4 &  116 & 142\\
-Brown-18                  & 0.314 & 0.292 &   21 &  0 &    2 & 176\\
-Bellido                   & 0.281 & 0.281 &  141 &  3 &  152 &   0\\
+Geneig-icse               & 0.323 & 0.323 &  224 &  9 &   70 & 379\\
+CountercurrentReactors2-9 & 0.046 & 0.047 &  105 &  2 &  110 &   0\\
+Brown-18                  & 0.314 & 0.290 &    9 &  1 &    2 & 250\\
+Bellido                   & 0.281 & 0.281 &  138 &  4 &  152 &   0\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1180,10 +1176,12 @@ pruned. The black-box engine above, inside our contractor, recovers most of it.
 
 \paragraph{Why SC wins.} SC does not contract with a better polytope: both
 engines solve the same relaxation and feed the same certificate. Its advantage
-has two sources. The first is cost: a pass over the $2n$ bounds costs half that
-of the black box on systems of equations and 0.39 times on optimization problems
-(Figure~\ref{fig:cost}), thanks to the basis shared by the bounds, the restart
-without phase~1 and the absence of a per-call overhead. The second is
+has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
+times that of the black box on systems of equations and 0.44 times on
+optimization problems (Figure~\ref{fig:cost}). SC does not pivot less; each LP
+is cheaper because the $2n$ bounds share one tableau and the restart needs no
+phase~1, so that an LP costs its few pivots and little else, while each call to
+the black box pays for setting up and tearing down a general-purpose solve. The second is
 robustness: where the black box ends without an optimum, the bound is lost,
 while the multipliers of SC still certify it (Table~\ref{tab:samebox}); this is
 where the largest gains are (Brown, Geneig-icse). The slightly tighter
@@ -1231,10 +1229,10 @@ are found only in boxes of width $10^{-4}$ to $10^{-3}$, and the search tree
 changes by two orders of magnitude between seeds; we excluded it, with alkyl
 and alkylbis, from the means. Relaxations of several hundred rows are still
 expensive for both engines: the systems of 400 to 1\,000 variables of the
-benchmark exceed the limits of 60\,s and 6\,GB with either. On optimization problems the gain
-comes from the cost of a call, measured for SoPlex~4.0.2 through the interface
-of Ibex; other LP solvers have other per-call costs, which we did not measure.
-On systems of equations SC also pivots 27\% less.
+benchmark exceed the limits of 60\,s and 6\,GB with either. The cheaper pass of SC comes from
+the cost of a call to SoPlex~4.0.2, whose LPs here need two or three pivots,
+not from pivoting less; other LP solvers have other per-call costs, which we
+did not measure.
 
 % =====================================================================
 \bibliographystyle{plain}
