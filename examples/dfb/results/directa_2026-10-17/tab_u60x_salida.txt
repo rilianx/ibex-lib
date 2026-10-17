@@ -1,0 +1,44 @@
+== principal
+     mejores: house x0.36, hs114 x0.44, ex2_1_9fact x0.58, hs100 x0.58, ex7_2_4 x0.59, ex2_1_9 x0.60
+     peores : hs088 x0.99, ex14_2_7 x1.00, ex7_3_5 x1.03, hhfair1 x1.13, ramseybis x1.15, haldmads x1.46
+opt sc         / caja   cells 0.998/0.982/0.992  cpu 0.786/0.795/0.822  (n=482/276/128)  runs 873/867  solved 217/216
+     mejores: house x0.38, ex2_1_9fact x0.57, ex2_1_9 x0.58, hs104 x0.62, hs100 x0.62, hs113 x0.62
+     peores : ex7_3_5 x1.03, himmel16 x1.04, hhfair1 x1.12, ramseybis x1.15, immun x1.42, haldmads x1.61
+opt lejos      / caja   cells 1.008/1.002/0.994  cpu 0.811/0.816/0.821  (n=482/276/128)  runs 873/867  solved 217/216
+== ablacion
+opt sinpert    / sc     cells 1.000/1.000/1.000  cpu 1.002/1.003/1.006  (n=457/257/109)  runs 873/873  solved 217/217
+opt tibio      / sc     cells 1.004/1.005/0.971  cpu 1.067/1.088/1.051  (n=455/255/107)  runs 874/873  solved 217/217
+opt sinlargo   / sc     cells 1.001/1.006/0.986  cpu 1.003/1.006/0.980  (n=457/257/109)  runs 875/873  solved 218/217
+opt sindevex   / sc     cells 1.008/1.015/1.008  cpu 1.003/1.010/1.011  (n=457/257/109)  runs 872/873  solved 217/217
+opt sintau     / sc     cells 1.004/1.003/1.009  cpu 1.004/1.003/1.011  (n=457/257/109)  runs 874/873  solved 217/217
+opt tableau    / sc     cells 0.994/0.994/0.990  cpu 1.037/1.063/1.049  (n=457/257/109)  runs 871/873  solved 217/217
+opt revisado   / sc     cells 1.006/1.002/0.988  cpu 1.033/1.019/0.997  (n=455/255/107)  runs 870/873  solved 217/217
+opt sinfusion  / sc     cells 1.008/1.009/0.989  cpu 1.024/1.024/1.008  (n=454/254/106)  runs 870/873  solved 216/217
+opt lejos      / sc     cells 1.015/1.003/1.007  cpu 1.033/1.008/1.004  (n=457/257/109)  runs 873/873  solved 217/217
+== principal
+     mejores: DiscreteBoundary-0200 x0.29, Geneig-icse x0.35, exnewton x0.65, Geneigbis x0.69, Fredtest x0.71, Geneig x0.79
+     peores : Bratu-0070 x1.02, Bratu-0090 x1.04, Bratu-0080 x1.06, Bratu-0180 x1.14, Katsurabis-14 x1.23, Bratu-0175 x1.29
+sol sc         / cajacerca cells 0.977/0.966/0.946  cpu 0.908/0.910/0.908  (n=253/161/98)  runs 364/352  solved 181/176
+     mejores: DiscreteBoundary-0200 x0.18, Geneig-icse x0.51, Bratu-0210 x0.60, exnewton x0.65, Fredtest x0.68, Bratu-0200 x0.71
+     peores : Trigo1-0015 x0.99, Trigo1-0012 x1.00, BroydenBanded-140 x1.00, Trigo1-0020sp x1.01, ponts-geo x1.01, Katsurabis-14 x1.33
+sol lejos      / caja   cells 0.981/0.972/0.955  cpu 0.885/0.880/0.881  (n=252/165/98)  runs 363/352  solved 181/176
+== ablacion
+sol sinpert    / sc     cells 1.016/1.026/1.005  cpu 1.029/1.040/1.038  (n=254/164/94)  runs 363/364  solved 181/181
+sol tibio      / sc     cells 1.014/1.023/0.999  cpu 1.047/1.050/1.036  (n=253/163/93)  runs 363/364  solved 181/181
+sol sinlargo   / sc     cells 1.012/1.018/0.996  cpu 1.101/1.082/1.073  (n=253/163/93)  runs 362/364  solved 181/181
+sol sindevex   / sc     cells 1.012/1.020/1.000  cpu 1.014/1.020/1.002  (n=254/164/94)  runs 363/364  solved 181/181
+sol sintau     / sc     cells 0.999/0.999/0.999  cpu 1.005/0.997/0.997  (n=254/164/94)  runs 364/364  solved 182/181
+sol tableau    / sc     cells 1.016/1.026/1.001  cpu 1.147/1.142/1.075  (n=248/158/88)  runs 357/364  solved 178/181
+sol revisado   / sc     cells 1.003/1.006/1.011  cpu 0.995/0.999/0.993  (n=255/165/95)  runs 364/364  solved 181/181
+sol sinfusion  / sc     cells 1.020/1.033/1.015  cpu 1.423/1.339/1.256  (n=247/157/87)  runs 356/364  solved 178/181
+sol lejos      / sc     cells 1.001/1.002/1.002  cpu 1.020/1.015/1.014  (n=253/163/93)  runs 363/364  solved 181/181
+Brown-(1[89]|2\d|30)(-1)? sc (0.8767121244253626, 1, [12, 2])
+Brown-(1[89]|2\d|30)(-1)? lejos (0.8782115257673252, 1, [12, 2])
+Geneig-icse sc (0.4370184519683519, 1, [2, 2])
+Geneig-icse lejos (0.5088934127067565, 1, [2, 2])
+Bratu-0(1[2-9]\d|200) sc (0.8189621352181273, 5, [10, 10])
+Bratu-0(1[2-9]\d|200) lejos (0.8172423590259659, 5, [10, 10])
+Katsurabis-14 sc (1.1138974719011716, 1, [2, 2])
+Katsurabis-14 lejos (1.3304381894190223, 1, [2, 2])
+sc peores >1s [(1.0015782502018993, 'ponts-geo'), (1.0043034470996344, 'Trigo1-0020sp'), (1.0091380033929431, 'CountercurrentReactors2-18'), (1.1138974719011716, 'Katsurabis-14')]
+lejos peores >1s [(1.0045687564686194, 'BroydenBanded-140'), (1.0089575634438723, 'Trigo1-0020sp'), (1.0097263629654911, 'ponts-geo'), (1.3304381894190223, 'Katsurabis-14')]

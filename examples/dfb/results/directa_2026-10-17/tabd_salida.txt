@@ -1,0 +1,16 @@
+opt cajad     /caja       celdas/cpu >0.1 0.988/0.971(n=482)  >1 0.993/0.975(n=275)  >5 0.972/0.963(n=133)  terminan 867/867
+opt sc        /cajad      celdas/cpu >0.1 0.998/0.786(n=482)  >1 0.982/0.795(n=276)  >5 0.992/0.822(n=128)  terminan 873/867
+    mejores [(0.36, 'house'), (0.44, 'hs114'), (0.58, 'ex2_1_9fact'), (0.58, 'hs100'), (0.59, 'ex7_2_4')] 
+    peores [(1.0, 'ex14_2_7'), (1.03, 'ex7_3_5'), (1.13, 'hhfair1'), (1.15, 'ramseybis'), (1.46, 'haldmads')]
+opt sc        /caja       celdas/cpu >0.1 0.991/0.767(n=483)  >1 0.985/0.781(n=276)  >5 0.971/0.804(n=134)  terminan 873/867
+opt lejos     /cajad      celdas/cpu >0.1 1.008/0.811(n=482)  >1 1.002/0.816(n=276)  >5 0.994/0.821(n=128)  terminan 873/867
+opt scnew     /sc         celdas/cpu >0.1 1.000/0.998(n=19)  >1 1.000/0.999(n=10)  >5 1.000/0.999(n=4)  terminan 37/37
+sol cajacercad/cajacerca  celdas/cpu >0.1 1.000/0.948(n=258)  >1 1.001/0.964(n=167)  >5 1.000/0.971(n=98)  terminan 352/354
+sol cajad     /caja       celdas/cpu >0.1 0.996/0.936(n=259)  >1 0.993/0.949(n=173)  >5 0.993/0.962(n=98)  terminan 352/358
+sol sc        /cajacercad celdas/cpu >0.1 0.977/0.908(n=253)  >1 0.966/0.910(n=161)  >5 0.946/0.908(n=98)  terminan 364/352
+    mejores [(0.29, 'DiscreteBoundary-0200'), (0.35, 'Geneig-icse'), (0.65, 'exnewton'), (0.69, 'Geneigbis'), (0.71, 'Fredtest')] 
+    peores [(1.04, 'Bratu-0090'), (1.06, 'Bratu-0080'), (1.14, 'Bratu-0180'), (1.23, 'Katsurabis-14'), (1.29, 'Bratu-0175')]
+sol sc        /cajacerca  celdas/cpu >0.1 0.946/0.836(n=260)  >1 0.920/0.845(n=169)  >5 0.870/0.823(n=100)  terminan 364/354
+sol lejos     /cajad      celdas/cpu >0.1 0.981/0.885(n=252)  >1 0.972/0.880(n=165)  >5 0.955/0.881(n=98)  terminan 363/352
+sol lejos     /caja       celdas/cpu >0.1 0.916/0.787(n=265)  >1 0.881/0.771(n=179)  >5 0.914/0.822(n=99)  terminan 363/358
+sol scnew     /sc         celdas/cpu >0.1 1.000/1.003(n=24)  >1 1.000/1.008(n=16)  >5 1.000/1.017(n=8)  terminan 33/33

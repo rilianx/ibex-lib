@@ -62,8 +62,8 @@ change bound between consecutive LPs. We compare it in a controlled setting: the
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box, tuned to its best configuration. On 240 constrained
-global optimization problems, SC is 20--23\% faster with similar search trees.
-On 242 systems of equations it is 15--23\% faster, explores 5--13\% fewer cells
+global optimization problems, SC is 18--21\% faster with similar search trees.
+On 242 systems of equations it is 9\% faster, explores 2--5\% fewer cells
 and finishes more runs; its multipliers yield certified bounds where the black
 box reports no optimum, and slightly tighter ones elsewhere. Checked against an LP
 oracle, SC never goes beyond the LP hull by more than the tolerance of the oracle.
@@ -782,7 +782,13 @@ common to both, and SoPlex itself solves ranged rows in the same form, with
 one bounded logical variable per row. What differs is a simplex designed for
 that certificate: the free dual-feasible start, one basis shared by the $2n$
 bounds, and a primal tolerance scaled to the width of the box.
-The black box was given its best configuration. Its feasibility and optimality
+The black box was given its best configuration. It runs on its own SoPlex
+instance holding the same rows and sides, with the box only as column bounds:
+the LP interface of Ibex also stores the $n$ variable bounds as rows, which
+makes each LP of SoPlex 16\% more expensive on small relaxations and up to
+twice as large on square systems (with them, the comparison of
+Table~\ref{tab:main} was 6--11 points more favorable to SC on systems of
+equations and 2 on optimization problems). Its feasibility and optimality
 tolerance matters: $10^{-9}$ makes SoPlex report spurious infeasibility on
 relaxations with nearly-equal rows, while $10^{-6}$ weakens the dual on
 optimization problems; we use $10^{-6}$ for systems of equations and $10^{-9}$
@@ -790,10 +796,8 @@ for optimization, the best value in each case. Turning off presolving or
 scaling, or forcing the row or column representation, did not help; forcing the
 primal algorithm reduced the spurious infeasibility but made the overall
 results worse. The bound order matters for the black box too: on systems of
-equations, the nearest bound first makes its warm starts cheaper (on the
-Bratu systems, 9 pivots per LP instead of 30) and saves 4--6\% of CPU time with
-the same cells, although it fails four runs of Brown-19 and Brown-20-1 that
-the farthest bound first finishes; on optimization problems both orders tie
+equations, the nearest bound first makes its warm starts cheaper and saves
+4--5\% of CPU time with the same cells and the same runs finished; on optimization problems both orders tie
 ($\times1.00$ on the 19 problems with runs between 1 and 60\,s). The black box
 therefore uses the nearest bound first on systems and the farthest bound first
 on optimization problems, and SC its own order. We also compare both engines
@@ -815,7 +819,7 @@ within 3600\,s (22 are excluded), 2 seeds, 60\,s per run. For
 optimization we use IbexOpt on 240 problems, those of the Ibex optimization
 benchmark that some configuration solves within 3600\,s (59 are excluded), 4
 seeds, 60\,s per run. The parameters of SC were chosen on 139 of them; on the
-other 101, which we added afterwards, SC is 14--22\% faster, against 23--29\%
+other 101, which we added afterwards, SC is 16--20\% faster, against 21--24\%
 on the 139. Three
 problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
 magnitude between seeds of the same configuration are excluded from the means.
@@ -867,18 +871,19 @@ total                  & 3\,090 & 2\,980 & 125 & 27\\
 \subsection{Main comparison}
 
 Table~\ref{tab:main} compares SC with the black box. On optimization problems,
-whose relaxations are small, SC is 20--23\% faster with similar search trees.
-On systems of equations SC is 15--23\% faster and explores 5--13\% fewer
-cells; it finishes 362 runs against 352 (356 with the farthest bound first).
+whose relaxations are small, SC is 18--21\% faster with similar search trees.
+On systems of equations SC is 9\% faster (12\% with the farthest bound first in
+both) and explores 2--5\% fewer cells; it finishes 364 runs against 352.
 The largest gains are on systems where the black box reports no optimum for
-many LPs (Brown-18 to 30, $\times0.15$ in CPU time on the runs both finish,
-the black box finishing 4 of the 12 runs) and on Geneig ($\times0.37$ on
-Geneig-icse); on the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200
-after merging) SC is still faster ($\times0.92$ on the family against the
-nearest bound first of the black box, $\times0.72$ with the farthest bound
-first in both). SC loses by more than 5\% on three systems (Katsurabis-14
-$\times1.19$, CountercurrentReactors2-18 $\times1.10$, Bratu-0180 $\times1.06$);
-with the same bound order it loses only on Katsurabis-14 ($\times1.21$).
+many LPs (Brown-18 to 30, where it finishes 2 of the 12 runs that SC
+finishes in at most 2.3\,s) and on Geneig ($\times0.35$ on Geneig-icse).
+On the largest relaxations (Bratu-0120 to 0200, $m=n$ up to 200 after
+merging) the black box with the nearest bound first is slightly faster
+($\times1.05$ for SC on the family; $\times0.82$ with the farthest bound first
+in both). SC loses by more than 5\% on four systems, all with the nearest
+bound first for the black box (Bratu-0175 $\times1.29$, Katsurabis-14
+$\times1.23$, Bratu-0180 $\times1.14$, Bratu-0080 $\times1.06$); with the same
+bound order it loses only on Katsurabis-14 ($\times1.33$).
 
 \begin{table}[t]
 \centering
@@ -895,21 +900,21 @@ engines.}
 \cmidrule(lr){4-6}
 benchmark & configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
 \midrule
-optimization & best of each      & 0.97--0.99 & 0.77 & 0.78 & 0.80 & 217 / 216\\
-systems      & best of each      & 0.87--0.95 & 0.84 & 0.85 & 0.82 & 362 / 352\\
+optimization & best of each      & 0.98--1.00 & 0.79 & 0.80 & 0.82 & 217 / 216\\
+systems      & best of each      & 0.95--0.98 & 0.91 & 0.91 & 0.91 & 364 / 352\\
 \midrule
-optimization & same bound order  & 0.98--1.00 & 0.79 & 0.80 & 0.81 & 217 / 216\\
-systems      & same bound order  & 0.88--0.92 & 0.79 & 0.77 & 0.82 & 361 / 356\\
+optimization & same bound order  & 0.99--1.01 & 0.81 & 0.82 & 0.82 & 217 / 216\\
+systems      & same bound order  & 0.96--0.98 & 0.89 & 0.88 & 0.88 & 363 / 352\\
 \bottomrule
 \end{tabular}
 \end{table}
 Figure~\ref{fig:profiles} shows the same comparison as performance
 profiles~\cite{dolan2002benchmarking} over the runs above 0.1\,s that at least
-one engine finishes: SC is the faster engine in 93\% of the runs on systems of
-equations and in 92\% on optimization problems; within a factor of 2 the black
-box reaches 94\% and 98\% of the runs, and it does not finish 4\% and 1\% of
-them, all of which SC finishes; SC does not finish one run (ship-1, near the
-limit), which the black box finishes.
+one engine finishes: SC is the faster engine in 83\% of the runs on systems of
+equations and in 93\% on optimization problems; within a factor of 2 the black
+box reaches 94\% and 97\% of the runs, and it does not finish 4.5\% and 1\% of
+them, all of which SC finishes; SC finishes every run that the black box
+finishes.
 
 \begin{figure}[t]
 \centering
@@ -921,12 +926,12 @@ limit), which the black box finishes.
   legend style={draw=none, fill=none, font=\tiny, at={(0.97,0.03)}, anchor=south east},
   legend cell align=left, label style={font=\footnotesize}, tick label style={font=\scriptsize},
   title style={font=\footnotesize}, xlabel={$\tau$}]
-\nextgroupplot[title={systems of equations (268 runs)}, ylabel={fraction of runs}]
+\nextgroupplot[title={systems of equations (265 runs)}, ylabel={fraction of runs}]
 \addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_sol.dat};
 \addlegendentry{SC}
 \addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_sol.dat};
 \addlegendentry{black box}
-\nextgroupplot[title={optimization (489 runs)}]
+\nextgroupplot[title={optimization (487 runs)}]
 \addplot[const plot, thick, color=serieA] table[x=tau,y=sc]{perfil_opt.dat};
 \addlegendentry{SC}
 \addplot[const plot, thick, dashed, color=serieB] table[x=tau,y=bb]{perfil_opt.dat};
@@ -1139,7 +1144,7 @@ above 0.1\,s and within 1\% above 1\,s.
 \centering
 \caption{Ablation: each row changes one component of SC. Ratios against full
 SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
-runs finished out of 484 (full SC: 362), CPU on optimization problems above
+runs finished out of 484 (full SC: 364), CPU on optimization problems above
 0.1\,s and problems solved in all seeds (full SC: 217). The warm-start row
 gives each program the warm start of the other: primal on systems of
 equations, dual on optimization problems.}
@@ -1150,15 +1155,15 @@ equations, dual on optimization problems.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 361 & 1.00 & 217\\
-warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 361 & 1.07 & 217\\
-without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 360 & 1.00 & 218\\
-without devex                     & 1.01 & 1.01 & 1.02 & 1.00 & 361 & 1.00 & 217\\
-without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 362 & 1.00 & 217\\
-tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 355 & 1.04 & 217\\
-revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 362 & 1.03 & 217\\
-without merging twin rows         & 1.02 & 1.42 & 1.34 & 1.26 & 354 & 1.02 & 216\\
-farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 361 & 1.03 & 217\\
+without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 363 & 1.00 & 217\\
+warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 363 & 1.07 & 217\\
+without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 362 & 1.00 & 218\\
+without devex                     & 1.01 & 1.01 & 1.02 & 1.00 & 363 & 1.00 & 217\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 364 & 1.00 & 217\\
+tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 357 & 1.04 & 217\\
+revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 364 & 1.03 & 217\\
+without merging twin rows         & 1.02 & 1.42 & 1.34 & 1.26 & 356 & 1.02 & 216\\
+farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 363 & 1.03 & 217\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1186,14 +1191,17 @@ certificates of SC on the remaining LPs compound along the search but are a
 second-order effect.
 
 \paragraph{Where it loses.} On systems of equations, SC is slower than the
-black box by more than 5\% on three systems: Katsurabis-14 ($\times1.19$),
-which explores the same cells with costlier nodes, CountercurrentReactors2-18
-($\times1.10$), with 1--3\% more cells, and Bratu-0180 ($\times1.06$), with
-51 cells against 47. On optimization problems
-the largest losses are launch ($\times1.43$), where SC explores 154--286 cells
-against 88--150, and ex8\_4\_4 ($\times1.12$, 3\,722--4\,130 cells against
-2\,638--3\,374); its cheaper nodes do not make up for it. With the farthest bound
-first in both engines, SC loses only on Katsurabis-14 ($\times1.21$).
+black box with the nearest bound first by more than 5\% on four systems. On
+the largest relaxations its nodes cost more and it explores slightly more
+cells: Bratu-0175 ($\times1.29$, 55 cells against 51) and Bratu-0180
+($\times1.14$, 51 against 47); Katsurabis-14 ($\times1.23$) and Bratu-0080
+($\times1.06$) explore the same cells with costlier nodes. On optimization
+problems the largest losses are haldmads ($\times1.46$), whose search tree
+varies by a factor of two between seeds in both engines (2\,528--5\,502 cells
+for SC, 2\,402--3\,942 for the black box), ramseybis ($\times1.15$, where one
+seed of the black box needs 128 cells instead of 330) and hhfair1 ($\times1.13$,
+1\,512--2\,020 cells against 1\,462). With the farthest bound first in both
+engines, SC loses only on Katsurabis-14 ($\times1.33$).
 
 \paragraph{What did not pay.} We also measured on the whole benchmark several
 ideas that use the certificate or the tableau beyond the pass, and none paid.
