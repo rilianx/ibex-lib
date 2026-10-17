@@ -1003,18 +1003,28 @@ median 422 against 826\,$\mu$s) and $0.43$ times on optimization problems (175
 problems; median 116 against 270\,$\mu$s), and is cheaper on 93\% and 98\% of
 the instances. Each engine uses its own bound order, as in Table~\ref{tab:main}.
 
-The two other panels split this ratio into pivots per pass and time per pivot.
+The two other panels split this ratio into pivots per pass and time per LP.
 On systems of equations the gain comes from pivoting less ($\times0.73$; 3.0
 against 3.7 pivots per LP), owing to the basis shared by the $2n$ bounds and
-the dual-feasible restart, and from cheaper pivots ($\times0.75$, over the 120
-systems with at least two pivots per LP in both engines). With the farthest
+the dual-feasible restart, and from cheaper LPs ($\times0.59$; per pivot
+$\times0.75$, over the 120 systems with at least two pivots per LP in both
+engines). With the farthest
 bound first the black box pivots more per LP (4.9) but skips more bounds, and
 the ratio of a pass is almost the same ($\times0.50$). On optimization
-problems, with the primal warm start, SC pivots somewhat less than the black
-box ($\times0.94$; 2.7 against 2.9 pivots per LP), and what dominates is the
-fixed cost of each call to the black box (setting bounds and objective,
-starting the simplex, reading the solution): the time per pivot of SC is
-$\times0.59$ (over 115 problems).
+problems SC pivots almost as much as the black box ($\times0.94$; 2.7 against
+2.9 pivots per LP), and the gain is in the cost of an LP ($\times0.39$; median
+12.6 against 33.1\,$\mu$s). With so few pivots per LP, the black box pays
+mostly for what a call does besides pivoting. SoPlex discards its
+factorization whenever the objective changes, so that every LP starts with an
+LU factorization (1.2 to 1.4 per LP on ex2\_1\_9, chem, hs117 and launch,
+for 2 to 10 pivots), and the interface loads the bounds and copies the
+solution (on ex2\_1\_9, 7 of the 31\,$\mu$s of an LP; the solve of SoPlex
+takes the other 24, against 8\,$\mu$s for a whole LP of SC). Loading only
+the bounds that changed saves 3\,$\mu$s per LP and does not avoid the
+factorization. SC solves the $2n$ bounds of a pass on one tableau and only
+replaces the objective row. Where the LPs need many pivots the factorization
+is amortized: on launch (10 pivots per LP) an LP costs about the same in both
+engines (95 against 101\,$\mu$s), and launch is where SC loses most.
 Since the pass is only part of the cost of a node, with the linearization,
 propagation, ACID and interval Newton, halving its cost yields the 15--23\% of
 Table~\ref{tab:main}.
@@ -1042,19 +1052,19 @@ Table~\ref{tab:main}.
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
 \addlegendentry{optimization: $\times0.94$}
 \addplot[gray, thin, domain=0.005:100000]{x};
-\nextgroupplot[title={time per pivot}, xmin=2, xmax=200, ymin=2, ymax=200,
+\nextgroupplot[title={time per LP}, xmin=1, xmax=3000, ymin=1, ymax=3000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
-\addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_sol.dat};
-\addlegendentry{systems: $\times0.75$}
-\addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=upbb,y=upsc]{costo_pivote_opt.dat};
-\addlegendentry{optimization: $\times0.59$}
-\addplot[gray, thin, domain=2:200]{x};
+\addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_sol.dat};
+\addlegendentry{systems: $\times0.59$}
+\addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_opt.dat};
+\addlegendentry{optimization: $\times0.39$}
+\addplot[gray, thin, domain=1:3000]{x};
 \end{groupplot}
 \end{tikzpicture}
 \caption{Cost of a polytope-hull pass with both engines on the same LPs (same
 boxes and polytope at every node), one point per instance; points below the
 diagonal favour SC. Left: time per pass. Middle: pivots per pass. Right: time
-per pivot, for instances with at least two pivots per LP in both engines.}
+per LP.}
 \label{fig:cost}
 \end{figure}
 

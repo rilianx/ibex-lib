@@ -381,6 +381,8 @@ private:
     static bool motor_caja;
     std::vector<double> lam_caja, x_caja;
     int it_caja;
+    IntervalVector caja_cotas = IntervalVector(1);   // cotas cargadas en SoPlex (`DFBH_CAJA_COTAS=cambio`)
+    long caja_cotas_ep = -1;                         // relajacion (n_m_llam) a la que corresponden
     bool caja_inf_sin_rayo;   // SoPlex declaro infactible pero no entrego rayo
     DFBSimplex::Status resolver_caja(int k, bool maximizar, const IntervalVector& z, bool frio = false);
     /** \brief Pasada que reusa la relajacion y las bases del punto fijo. */

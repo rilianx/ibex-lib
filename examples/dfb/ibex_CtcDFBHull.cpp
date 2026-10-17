@@ -1,3 +1,4 @@
+#include <sstream>
 //============================================================================
 //                                  I B E X
 // File        : ibex_CtcDFBHull.cpp
@@ -108,6 +109,20 @@ static void abc_resumen() {
 
 static double ab_accF = 0.0, ab_accC = 0.0;
 long CtcDFBHull::n_nodes = 0;
+
+/* Reloj de la caja negra (`DFBH_CAJA_RELOJ=1`, 2026-10-16): reparte el tiempo de
+ * `resolver_caja` en cargar cotas y objetivo, `minimize` (dentro, el `solve`
+ * de SoPlex y la copia de la solucion, si ademas `IBEX_PH_STATS=1`) y leer
+ * multiplicadores. `DFBH_CAJA_COTAS=cambio` carga solo las cotas que cambiaron
+ * desde el LP anterior de la misma relajacion, en vez de las n cada vez. */
+extern double ph_t_solve, ph_t_extrae;
+static double cr_t[5] = {0.0, 0.0, 0.0, 0.0, 0.0};   /* cotas+obj, minimize, lectura, solve, copia */
+static long cr_n = 0, cr_cotas = 0;
+static void cr_resumen() {
+    if (!cr_n) return;
+    fprintf(stderr, "[cajareloj] LPs=%ld  us/LP: cotas+obj %.2f  minimize %.2f (solve %.2f, copia %.2f)  lectura %.2f  | cotas cargadas por LP %.2f\n",
+            cr_n, 1e6*cr_t[0]/cr_n, 1e6*cr_t[1]/cr_n, 1e6*cr_t[3]/cr_n, 1e6*cr_t[4]/cr_n, 1e6*cr_t[2]/cr_n, (double)cr_cotas/cr_n);
+}
 long CtcDFBHull::n_goal_lp = 0;
 long CtcDFBHull::n_sens_extra = 0;
 long CtcDFBHull::n_filas_fusionadas = 0;
@@ -398,6 +413,7 @@ CtcDFBHull::~CtcDFBHull() {
     pf_resumen();
     ph_resumen();
     abc_resumen();
+    cr_resumen();
     if (ab_n)
         fprintf(stderr, "[abcong] nodos=%ld | contraccion media fresca=%.6f congelada=%.6f "
                 "razon=%.4f | gana fresca=%ld congelada=%ld iguales=%ld | vacios F=%ld C=%ld | "
@@ -3033,13 +3049,31 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
             mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::ALGORITHM, soplex::SoPlex::ALGORITHM_PRIMAL);
     }
 
-    IntervalVector xb(nb_var);
-    for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
-    mylinearsolver.set_bounds(xb);
+    static const bool reloj = DFB_ENV("DFBH_CAJA_RELOJ");
+    static const bool cotas_cambio = getenv("DFBH_CAJA_COTAS") && std::string(getenv("DFBH_CAJA_COTAS")) == "cambio";
+    const double cr0 = reloj ? ahora_s() : 0.0;
+    if (cotas_cambio && caja_cotas_ep == n_m_llam && (int)caja_cotas.size() == nb_var) {
+        for (int i = 0; i < nb_var; ++i)
+            if (!(caja_cotas[i] == z[i])) { mylinearsolver.set_bounds(i, z[i]); caja_cotas[i] = z[i]; ++cr_cotas; }
+    } else {
+        IntervalVector xb(nb_var);
+        for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
+        mylinearsolver.set_bounds(xb);
+        cr_cotas += nb_var;
+        if (cotas_cambio) { caja_cotas = xb; caja_cotas_ep = n_m_llam; }
+    }
     mylinearsolver.set_cost(k, maximizar ? -1.0 : 1.0);
     /* en frio: se borra la base que SoPlex guarda del LP anterior */
     if (frio) mylinearsolver.mysoplex->clearBasis();
+    const double cr1 = reloj ? ahora_s() : 0.0;
+    const double ps0 = ph_t_solve, pe0 = ph_t_extrae;
     const LPSolver::Status st = mylinearsolver.minimize();
+    const double cr2 = reloj ? ahora_s() : 0.0;
+    if (reloj) { cr_t[0] += cr1 - cr0; cr_t[1] += cr2 - cr1; cr_t[3] += ph_t_solve - ps0; cr_t[4] += ph_t_extrae - pe0; ++cr_n; }
+    if (reloj && getenv("DFBH_CAJA_STATS") && cr_n % atol(getenv("DFBH_CAJA_STATS")) == 0) {
+        std::ostringstream os; mylinearsolver.mysoplex->printSolvingStatistics(os);
+        fprintf(stderr, "[cajastats] LP %ld\n%s", cr_n, os.str().c_str());
+    }
     it_caja = mylinearsolver.mysoplex->numIterations();
     const int m = A.nb_rows();
     lam_caja.assign(m, 0.0);
@@ -3069,6 +3103,7 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
         } else caja_inf_sin_rayo = true;
     }
     mylinearsolver.set_cost(k, 0.0);
+    if (reloj) cr_t[2] += ahora_s() - cr2;
     if (getenv("DFBH_CAJA_DBG")) {
         static long cnt[8] = {0,0,0,0,0,0,0,0}, tot = 0, rayo = 0;
         ++cnt[(int)st]; ++tot; if (res == DFBSimplex::INFEASIBLE) ++rayo;

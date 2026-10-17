@@ -522,6 +522,23 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Por qué un LP de la caja cuesta más (2026-10-16, `DFBH_CAJA_RELOJ=1
+IBEX_PH_STATS=1`, `DFBH_CAJA_STATS=k` imprime la estadística de SoPlex cada k
+LPs; `DFBH_CAJA_COTAS=cambio` carga solo las cotas que cambiaron).** En opt SC
+pivotea casi igual que la caja (×0.94); la ganancia es por LP (×0.39). En
+ex2_1_9 un LP de la caja son 31 µs: `solve` de SoPlex 24, cargar cotas y
+objetivo 2.5, copiar la solución 1.1, leer multiplicadores 1.8; un LP entero de
+SC son 8 µs. SoPlex factoriza en cada LP (1.16–1.36 LU por LP en ex2_1_9,
+chem, hs117 y launch, con 2–10 pivotes; ~6 LU solves por pivote) porque
+`SPxSolver::changeObj` llama a `unInit()` (el propio TODO de SoPlex dice que la
+factorización sigue valiendo). Cargar solo las cotas cambiadas ahorra 3 µs y no
+evita la factorización: no es un lastre de nuestro arnés. En launch (10
+pivotes por LP) la factorización se amortiza y el LP cuesta igual (95 vs
+101 µs): es donde SC más pierde. Panel derecho de la figura de costo ahora es
+tiempo por LP (sistemas ×0.59, opt ×0.39). Matiz para el paper: parte de la
+ventaja en opt es propia de SoPlex; un solver que conserve la factorización al
+cambiar el objetivo la achicaría.
+
 **Banco único de opt de 240 problemas (2026-10-16, `results/valid_2026-10-16/`,
 60 s en `results/final_2026-10-16.csv`).** A los 139 del paper se sumaron los
 102 de `ibex2026/benchs/optim/all` que no estaban ni excluidos; robot se
