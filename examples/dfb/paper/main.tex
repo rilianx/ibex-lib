@@ -64,7 +64,11 @@ for uncertified bounds, using either SC or a state-of-the-art LP solver
 (SoPlex) as a black box on the same LPs, tuned to its best configuration. On
 240 constrained global optimization problems, SC is 18--21\% faster with
 similar search trees. On 242 systems of equations it is 9\% faster, explores
-2--5\% fewer cells and finishes more runs. SC does not pivot less than SoPlex:
+2--5\% fewer cells and finishes more runs. Measured on identical LPs, a full
+polytope-hull pass over the $2n$ bounds costs 0.44 times that of the black box
+on optimization problems and 0.62 times on systems of equations; the rest of
+the node (linearization, propagation, shaving) is common to both, which is why
+the gain on the whole solver is smaller. SC does not pivot less than SoPlex:
 its LPs are cheaper because the $2n$ problems share one tableau and restart
 dual feasible, without the setup and teardown of a general-purpose solve at
 every call, and its multipliers yield certified bounds where the black box
@@ -159,9 +163,11 @@ lower bound that is nondecreasing along the iterations
 \item A controlled evaluation in Ibex, on 242 systems of equations and 240
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver on the same LPs, feeding the same certificate; a rigor
-check against the LP hull; an analysis on identical LPs showing that the gain
-comes from the cost of each LP and from the bounds the black box loses, not
-from fewer pivots; and an ablation (Section~\ref{sec:experiments}).
+check against the LP hull; an analysis on identical LPs, where a full pass of
+the contractor costs 0.44 (optimization) and 0.62 (systems) times that of the
+black box, showing that the gain comes from the cost of each LP and from the
+bounds the black box loses, not from fewer pivots; and an ablation
+(Section~\ref{sec:experiments}).
 \end{itemize}
 
 % =====================================================================
