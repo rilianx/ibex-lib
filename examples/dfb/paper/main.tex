@@ -42,38 +42,23 @@
 
 % =====================================================================
 \begin{abstract}
-Polytope-hull contractors are a key component of interval branch-and-bound
-solvers: at every node they bound each variable over a linear relaxation of the
-constraints by solving $2n$ linear programs. Current implementations delegate
-these programs to a floating-point LP solver and recover rigor afterwards, by
-Neumaier--Shcherbina safe bounds and Farkas-ray verification. We present a
-self-certifying simplex (SC): a simplex that computes its own multipliers, so
-that the contractor no longer depends on an external solver. The rigor principle is the classical one: writing the
-relaxation as $\Abar z = 0$ with interval-bounded slacks, any multiplier vector
-$\lambda$ yields an interval certificate $\lambda^T\Abar$ that bounds a
-variable, or proves emptiness, over the current box and every sub-box. The
-contribution is a simplex designed for this certificate: a free dual-feasible
-start for every bound, one tableau shared by the $2n$ problems, and a hybrid
-engine that solves small relaxations on an explicit tableau and large ones with
-a tableau-free revised simplex, and a warm start between bounds that is dual on
-systems of equations, where it keeps a valid certified bound at every
-iteration, and primal on optimization problems, where few nonbasic variables
-change bound between consecutive LPs. We compare it in a controlled setting: the same contractor, with
-the same relaxation, the same pass, the same certificate and the same policy
-for uncertified bounds, using either SC or a state-of-the-art LP solver
-(SoPlex) as a black box on the same LPs, tuned to its best configuration. On
-240 constrained global optimization problems, SC is 18--21\% faster with
-similar search trees. On 242 systems of equations it is 9\% faster, explores
-2--5\% fewer cells and finishes more runs. Measured on identical LPs, a full
-polytope-hull pass over the $2n$ bounds costs 0.44 times that of the black box
-on optimization problems and 0.62 times on systems of equations; the rest of
-the node (linearization, propagation, shaving) is common to both, which is why
-the gain on the whole solver is smaller. SC does not pivot less than SoPlex:
-its LPs are cheaper because the $2n$ problems share one tableau and restart
-dual feasible, without the setup and teardown of a general-purpose solve at
-every call, and its multipliers yield certified bounds where the black box
-reports no optimum. Checked against an LP oracle, SC never goes beyond the LP
-hull by more than the tolerance of the oracle.
+Polytope-hull contractors bound each variable of an interval branch-and-bound
+node over a linear relaxation by solving $2n$ linear programs. Current
+implementations delegate them to a floating-point LP solver and recover rigor
+afterwards from its dual solution. We present a self-certifying simplex (SC)
+that computes its own multipliers: writing the relaxation as $\Abar z=0$ with
+interval-bounded slacks, any multiplier vector yields a certificate valid on
+the box and every sub-box, and SC is designed around it, with a free
+dual-feasible start for every bound, one tableau shared by the $2n$ problems,
+a warm start chosen per program and a hybrid tableau/revised engine. Inside the
+same contractor, against SoPlex solving the same LPs, a full polytope-hull
+pass costs 0.44 times as much on optimization problems and 0.62 times on
+systems of equations. SC does not pivot less: its LPs avoid the per-call setup
+of a general-purpose solver, and its multipliers certify bounds where SoPlex
+reports no optimum. The whole solver is 18--21\% faster on 240 global
+optimization problems and 9\% faster on 242 systems of equations, with
+slightly fewer cells and more runs finished, and SC never exceeds the LP hull
+beyond the tolerance of an LP oracle.
 \end{abstract}
 
 % =====================================================================
