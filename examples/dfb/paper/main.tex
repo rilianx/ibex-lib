@@ -1222,7 +1222,13 @@ are found only in boxes of width $10^{-4}$ to $10^{-3}$, and the search tree
 changes by two orders of magnitude between seeds; we excluded it, with alkyl
 and alkylbis, from the means. Relaxations of several hundred rows are still
 expensive for both engines: the systems of 400 to 1\,000 variables of the
-benchmark exceed the limits of 60\,s and 6\,GB with either.
+benchmark exceed the limits of 60\,s and 6\,GB with either. Part of the gain on optimization
+problems is specific to SoPlex: it discards its factorization whenever the
+objective changes, so that every LP of a pass starts with one. A solver that
+kept the factorization between objectives would narrow the gap on small
+relaxations, whose LPs need two or three pivots. On systems of equations the
+factorization weighs less, since the LPs need more pivots, and SC also pivots
+27\% less.
 
 % =====================================================================
 \bibliographystyle{plain}
