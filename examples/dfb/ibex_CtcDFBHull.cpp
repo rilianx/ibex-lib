@@ -3023,6 +3023,87 @@ Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) co
 
 bool CtcDFBHull::motor_caja = getenv("DFBH_MOTOR") && std::string(getenv("DFBH_MOTOR")) == "caja";
 
+__attribute__((noinline)) void CtcDFBHull::pasada_ab_caja(IntervalVector& b) { una_pasada(b); }
+__attribute__((noinline)) void CtcDFBHull::pasada_ab_sc(IntervalVector& b) { una_pasada(b); }
+
+/* CAJA NEGRA DIRECTA (`DFBH_CAJA_DIRECTA=1`, 2026-10-16). El `LPSolver` de Ibex
+ * guarda las cotas de las n variables tambien como n filas (para los duales de
+ * Neumaier-Shcherbina), asi que SoPlex trabaja con m+n filas en vez de m. Aca
+ * la caja negra usa su propio SoPlex, con los mismos parametros que
+ * `mylinearsolver` (se copian todos), las mismas filas y lados de la relajacion
+ * y las cotas solo como cotas de columna. Las cotas se cargan solo si cambiaron. */
+DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, const IntervalVector& z, bool frio) {
+    it_caja = 0;
+    caja_inf_sin_rayo = false;
+    static const bool reloj = DFB_ENV("DFBH_CAJA_RELOJ");
+    const double cr0 = reloj ? ahora_s() : 0.0;
+    const int m = A.nb_rows();
+    soplex::SoPlex& lp = *mylinearsolver.mysoplex;
+    if (!sx_directa) sx_directa = new soplex::SoPlex();
+    soplex::SoPlex& sx = *sx_directa;
+    static const bool reb = DFB_ENV("DFBH_CAJA_DIRECTA_REB");
+    if (reb || sx_directa_ep != n_m_llam || sx.numRowsReal() != m || sx.numColsReal() != nb_var) {
+        /* los parametros van DESPUES de `clearLPReal`: el clear devuelve el LP
+         * al sentido de fabrica (maximizar) sin volver a aplicar OBJSENSE */
+        sx.clearLPReal();
+        for (int i = 0; i < soplex::SoPlex::INTPARAM_COUNT; ++i)
+            sx.setIntParam((soplex::SoPlex::IntParam) i, lp.intParam((soplex::SoPlex::IntParam) i), true);
+        for (int i = 0; i < soplex::SoPlex::REALPARAM_COUNT; ++i)
+            sx.setRealParam((soplex::SoPlex::RealParam) i, lp.realParam((soplex::SoPlex::RealParam) i), true);
+        for (int i = 0; i < soplex::SoPlex::BOOLPARAM_COUNT; ++i)
+            sx.setBoolParam((soplex::SoPlex::BoolParam) i, lp.boolParam((soplex::SoPlex::BoolParam) i), true);
+        sx.setIntParam(soplex::SoPlex::OBJSENSE, soplex::SoPlex::OBJSENSE_MINIMIZE, true);
+        soplex::LPColSetReal cols(nb_var);
+        soplex::DSVectorReal vacio(0);
+        for (int i = 0; i < nb_var; ++i) cols.add(0.0, z[i].lb(), vacio, z[i].ub());
+        sx.addColsReal(cols);
+        soplex::LPRowSetReal rows(m);
+        const Matrix R = mylinearsolver.rows();
+        const IntervalVector LR = mylinearsolver.lhs_rhs();
+        for (int j = 0; j < m; ++j) {
+            soplex::DSVectorReal fila(nb_var);
+            for (int i = 0; i < nb_var; ++i) if (R[nb_var + j][i] != 0.0) fila.add(i, R[nb_var + j][i]);
+            rows.add(LR[nb_var + j].lb(), fila, LR[nb_var + j].ub());
+        }
+        sx.addRowsReal(rows);
+        caja_cotas = IntervalVector(nb_var);
+        for (int i = 0; i < nb_var; ++i) caja_cotas[i] = z[i];
+        sx_directa_ep = n_m_llam;
+    } else {
+        for (int i = 0; i < nb_var; ++i)
+            if (!(caja_cotas[i] == z[i])) { sx.changeBoundsReal(i, z[i].lb(), z[i].ub()); caja_cotas[i] = z[i]; }
+    }
+    sx.changeObjReal(k, maximizar ? -1.0 : 1.0);
+    if (frio) sx.clearBasis();
+    const double cr1 = reloj ? ahora_s() : 0.0;
+    sx.optimize();
+    sx.ignoreUnscaledViolations();   /* como `LPSolver::minimize` */
+    const soplex::SPxSolver::Status st = sx.status();
+    const double cr2 = reloj ? ahora_s() : 0.0;
+    if (reloj) { cr_t[0] += cr1 - cr0; cr_t[1] += cr2 - cr1; cr_t[3] += cr2 - cr1; ++cr_n; }
+    it_caja = sx.numIterations();
+    lam_caja.assign(m, 0.0);
+    DFBSimplex::Status res = DFBSimplex::SINGULAR;
+    if (st == soplex::SPxSolver::OPTIMAL) {
+        soplex::DVectorReal y(m), x(nb_var);
+        if (sx.getDualReal(y) && sx.getPrimalReal(x)) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = y[j];
+            x_caja.assign(nb_var, 0.0);
+            for (int i = 0; i < nb_var; ++i) x_caja[i] = x[i];
+            res = DFBSimplex::OPTIMAL;
+        }
+    } else if (st == soplex::SPxSolver::INFEASIBLE) {
+        soplex::DVectorReal f(m);
+        if (sx.getDualFarkasReal(f)) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = f[j];
+            res = DFBSimplex::INFEASIBLE;
+        } else caja_inf_sin_rayo = true;
+    }
+    sx.changeObjReal(k, 0.0);
+    if (reloj) cr_t[2] += ahora_s() - cr2;
+    return res;
+}
+
 DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const IntervalVector& z, bool frio) {
     it_caja = 0;
     caja_inf_sin_rayo = false;
@@ -3048,6 +3129,8 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
         if (getenv("DFBH_CAJA_ALG") && std::string(getenv("DFBH_CAJA_ALG")) == "primal")
             mylinearsolver.mysoplex->setIntParam(soplex::SoPlex::ALGORITHM, soplex::SoPlex::ALGORITHM_PRIMAL);
     }
+    static const bool directa = DFB_ENV("DFBH_CAJA_DIRECTA");
+    if (directa) return resolver_caja_directa(k, maximizar, z, frio);
 
     static const bool reloj = DFB_ENV("DFBH_CAJA_RELOJ");
     static const bool cotas_cambio = getenv("DFBH_CAJA_COTAS") && std::string(getenv("DFBH_CAJA_COTAS")) == "cambio";
@@ -3104,6 +3187,30 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
     }
     mylinearsolver.set_cost(k, 0.0);
     if (reloj) cr_t[2] += ahora_s() - cr2;
+    if (DFB_ENV("DFBH_CAJA_CMP")) {
+        /* Compara con la caja directa en el mismo LP: estados y valor optimo. */
+        static long n = 0, dif_st = 0, st_ibex[8] = {0}, st_dir[8] = {0}, dif_obj = 0;
+        const std::vector<double> lam0 = lam_caja, x0 = x_caja; const int it0 = it_caja; const bool sr0 = caja_inf_sin_rayo;
+        const DFBSimplex::Status r2 = resolver_caja_directa(k, maximizar, z, frio);
+        ++n; ++st_ibex[(int)res & 7]; ++st_dir[(int)r2 & 7];
+        if (r2 != res) ++dif_st;
+        else if (res == DFBSimplex::OPTIMAL && (int)x0.size() > k && (int)x_caja.size() > k
+                 && std::fabs(x0[k] - x_caja[k]) > 1e-7 * (1 + std::fabs(x0[k]))) {
+            if (++dif_obj <= 4) {
+                fprintf(stderr, "[cajacmp-dif] k=%d max=%d z_k=[%g,%g] ibex x_k=%.9g directa x_k=%.9g | m=%d filas sx=%d cols sx=%d filas ibex=%d\n",
+                        k, (int)maximizar, z[k].lb(), z[k].ub(), x0[k], x_caja[k], A.nb_rows(), sx_directa->numRowsReal(), sx_directa->numColsReal(), mylinearsolver.nb_rows());
+                for (int j = 0; j < sx_directa->numRowsReal() && j < 4; ++j) fprintf(stderr, "   fila %d lados sx [%g,%g] ibex [%g,%g]\n", j, sx_directa->lhsReal(j), sx_directa->rhsReal(j), mylinearsolver.lhs_rhs()[nb_var+j].lb(), mylinearsolver.lhs_rhs()[nb_var+j].ub());
+            }
+        }
+        if (n % 20000 == 0) {
+            fprintf(stderr, "[cajacmp] LPs=%ld estado distinto=%ld optimo distinto=%ld | ibex:", n, dif_st, dif_obj);
+            for (int i = 0; i < 8; ++i) fprintf(stderr, " %ld", st_ibex[i]);
+            fprintf(stderr, " | directa:");
+            for (int i = 0; i < 8; ++i) fprintf(stderr, " %ld", st_dir[i]);
+            fprintf(stderr, "\n");
+        }
+        lam_caja = lam0; x_caja = x0; it_caja = it0; caja_inf_sin_rayo = sr0;
+    }
     if (getenv("DFBH_CAJA_DBG")) {
         static long cnt[8] = {0,0,0,0,0,0,0,0}, tot = 0, rayo = 0;
         ++cnt[(int)st]; ++tot; if (res == DFBSimplex::INFEASIBLE) ++rayo;
@@ -3715,14 +3822,14 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
             caja_ab = box;
             motor_caja = true;
             const long p0 = n_pivots; const double t0 = ahora_s();
-            una_pasada(caja_ab);
+            pasada_ab_caja(caja_ab);
             abc_t[1] += ahora_s() - t0; abc_piv[1] += n_pivots - p0;
             motor_caja = false;
             z = zsave;
         }
         {
             const long p0 = n_pivots; const double t0 = ahora_s();
-            una_pasada(box);
+            if (abcaja) pasada_ab_sc(box); else una_pasada(box);
             if (abcaja) { abc_t[0] += ahora_s() - t0; abc_piv[0] += n_pivots - p0; }
         }
         if (abcaja && caja_ab.size() == box.size()) {

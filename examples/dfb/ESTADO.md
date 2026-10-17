@@ -522,6 +522,24 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Caja negra directa (2026-10-17, `DFBH_CAJA_DIRECTA=1`, binarios
+`ibexopt_dir` / `ibexsolve_dfb_dir`).** El `LPSolver` de Ibex guarda las cotas
+de las n variables también como n filas (duales para Neumaier–Shcherbina): en
+ex2_1_9 SoPlex ve 14 filas contra 3 de SC. La caja directa usa su propio
+SoPlex con los mismos parámetros (copiados DESPUÉS de `clearLPReal`, que
+devuelve el sentido a maximizar), las mismas filas y lados, cotas solo de
+columna e `ignoreUnscaledViolations` como Ibex. Validada con
+`DFBH_CAJA_CMP=1`: mismos estados y óptimos en 160 000 LPs de ex2_1_9. Costo
+por LP −16 % en ex2_1_9 y hs117, igual en launch. Callgrind lado a lado sobre
+los mismos LPs (`pasada_ab_caja` / `pasada_ab_sc`, ex2_1_9): caja 84 k
+instrucciones por LP, SC 26.5 k; el pivoteo cuesta lo mismo (~10 k); el resto
+de la caja es maquinaria por llamada (`init` 2.1 veces por LP 18 k, factorizar
+9 k, presolve y recarga por relajación ~10 k, guardar/verificar ~10 k,
+interfaz ~14 k). Barrido de 60 s con la caja directa en curso (`d60.sh`).
+**Ojo al compilar:** cambiar `ibex_CtcDFBHull.h` exige recompilar también
+`ibex_LSmearDFB.o`, `ibex_Optimizer05Config.o` e `ibexsolve_dfb.o` (si no,
+core dump por tamaño de clase distinto).
+
 **Por qué un LP de la caja cuesta más (2026-10-16, `DFBH_CAJA_RELOJ=1
 IBEX_PH_STATS=1`, `DFBH_CAJA_STATS=k` imprime la estadística de SoPlex cada k
 LPs; `DFBH_CAJA_COTAS=cambio` carga solo las cotas que cambiaron).** En opt SC

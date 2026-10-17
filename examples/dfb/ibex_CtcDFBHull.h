@@ -383,8 +383,14 @@ private:
     int it_caja;
     IntervalVector caja_cotas = IntervalVector(1);   // cotas cargadas en SoPlex (`DFBH_CAJA_COTAS=cambio`)
     long caja_cotas_ep = -1;                         // relajacion (n_m_llam) a la que corresponden
+    soplex::SoPlex* sx_directa = nullptr;            // caja negra sin las filas de cotas de `LPSolver` (`DFBH_CAJA_DIRECTA=1`)
+    long sx_directa_ep = -1;
+    DFBSimplex::Status resolver_caja_directa(int k, bool maximizar, const IntervalVector& z, bool frio);
     bool caja_inf_sin_rayo;   // SoPlex declaro infactible pero no entrego rayo
     DFBSimplex::Status resolver_caja(int k, bool maximizar, const IntervalVector& z, bool frio = false);
+    /* envoltorios de `una_pasada` para perfilar cada motor por separado en la sonda `DFBH_ABCAJA` */
+    void pasada_ab_caja(IntervalVector& b);
+    void pasada_ab_sc(IntervalVector& b);
     /** \brief Pasada que reusa la relajacion y las bases del punto fijo. */
     void una_pasada_reusada(IntervalVector& box);
     bool sin_recarga;
