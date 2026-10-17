@@ -61,12 +61,15 @@ iteration, and primal on optimization problems, where few nonbasic variables
 change bound between consecutive LPs. We compare it in a controlled setting: the same contractor, with
 the same relaxation, the same pass, the same certificate and the same policy
 for uncertified bounds, using either SC or a state-of-the-art LP solver
-(SoPlex) as a black box, tuned to its best configuration. On 240 constrained
-global optimization problems, SC is 18--21\% faster with similar search trees.
-On 242 systems of equations it is 9\% faster, explores 2--5\% fewer cells
-and finishes more runs; its multipliers yield certified bounds where the black
-box reports no optimum, and slightly tighter ones elsewhere. Checked against an LP
-oracle, SC never goes beyond the LP hull by more than the tolerance of the oracle.
+(SoPlex) as a black box on the same LPs, tuned to its best configuration. On
+240 constrained global optimization problems, SC is 18--21\% faster with
+similar search trees. On 242 systems of equations it is 9\% faster, explores
+2--5\% fewer cells and finishes more runs. SC does not pivot less than SoPlex:
+its LPs are cheaper because the $2n$ problems share one tableau and restart
+dual feasible, without the setup and teardown of a general-purpose solve at
+every call, and its multipliers yield certified bounds where the black box
+reports no optimum. Checked against an LP oracle, SC never goes beyond the LP
+hull by more than the tolerance of the oracle.
 \end{abstract}
 
 % =====================================================================
@@ -155,9 +158,10 @@ lower bound that is nondecreasing along the iterations
 (Section~\ref{sec:properties}).
 \item A controlled evaluation in Ibex, on 242 systems of equations and 240
 optimization problems, in which the same contractor runs either SC or a
-black-box LP solver feeding the same certificate; a rigor check against the
-LP hull; a same-box analysis of where the black box loses bounds; and an
-ablation (Section~\ref{sec:experiments}).
+black-box LP solver on the same LPs, feeding the same certificate; a rigor
+check against the LP hull; an analysis on identical LPs showing that the gain
+comes from the cost of each LP and from the bounds the black box loses, not
+from fewer pivots; and an ablation (Section~\ref{sec:experiments}).
 \end{itemize}
 
 % =====================================================================
@@ -465,8 +469,8 @@ With objective $\pm z_k$ and $z_k$ basic in row $r$, the reduced costs after
 relocation are $d = \mp\alpha_r$ on the nonbasic variables: exactly zero on
 every column that does not meet row $r$. Those columns give ratio zero in the
 dual ratio test, so they enter first and the dual objective does not move. On
-some systems (Virasoro, Katsura) 80--95\% of the dual pivots were degenerate,
-with up to five times more pivots per LP than the black box. SC uses the
+some systems (Virasoro, Katsura) 80--95\% of the dual pivots were
+degenerate. SC uses the
 standard remedy~\cite{koberstein2005dual}: after relocation, each zero
 reduced cost is replaced by a random value in $[\varepsilon,2\varepsilon)$,
 $\varepsilon=10^{-7}$, with the sign that its current bound already
@@ -502,7 +506,7 @@ The iteration above can be implemented in two ways, which differ in how
 $B^{-1}$ is represented; SC has both and chooses per node by the number of
 rows.
 
-\paragraph{Tableau engine.} For $m\le 40$ the simplex keeps the whole tableau
+\paragraph{Tableau engine.} On small relaxations, below the threshold given at the end of this section, the simplex keeps the whole tableau
 $T = B^{-1}\Abar$ explicitly, row by row in sparse form, together with
 $\lambda$, $d$ and $x_B$. The pivot row and column are then read from $T$,
 with no linear system to solve, and a pivot is a Gauss--Jordan elimination:
@@ -535,7 +539,8 @@ the update, all proportional to the number of nonzeros involved, instead of a
 pass over the tableau. Below a threshold the tableau is cheaper; above it the
 revised engine is. The threshold is 30 rows in the solver of systems of
 equations, and 15 rows in the optimizer, where the warm start is primal; both
-were chosen on the bank of Table~\ref{tab:main}. The ablation (Table~\ref{tab:ablation}) shows that the
+were chosen on the systems of equations and on the 139 optimization problems
+used for tuning (Section~\ref{sec:experiments}). The ablation (Table~\ref{tab:ablation}) shows that the
 tableau alone is 8--15\% slower on systems of equations, and the revised
 engine alone up to 3\% slower on optimization problems.
 
@@ -951,9 +956,8 @@ The 60\,s limit leaves out the hardest instances. We reran with a limit of
 (48 systems with 2 seeds, 24 optimization problems with 4 seeds), each engine with its own bound order, and on systems also with the
 farthest bound first in both. Both engines re-solve from a cold start when a
 reported infeasibility cannot be certified (Section~\ref{sec:properties}); for
-the black box this also covers infeasibility reported without a ray, and at
-60\,s the retry is neutral for it as well (ratio 1.00, identical cells in 347
-of 352 runs). Table~\ref{tab:long} gives the results.
+the black box this also covers infeasibility reported without a ray.
+Table~\ref{tab:long} gives the results.
 
 \begin{table}[t]
 \centering
@@ -1087,8 +1091,8 @@ removes most of it.
 certificate built from the multipliers of SC is often slightly tighter. On
 Geneig-icse, SC contracts more in 224 of 1\,710 nodes and the black box in
 9; on CountercurrentReactors2-9, 105 against 2; on Bellido, 138 against 4.
-The difference per node is small but compounds along the search. It persists
-with tolerance $10^{-9}$ for the black box; we have not isolated its cause.
+The difference per node is small but compounds along the search; we have not
+isolated its cause.
 \end{enumerate}
 
 \begin{table}[t]
