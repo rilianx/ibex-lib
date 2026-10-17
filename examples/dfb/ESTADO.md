@@ -522,6 +522,23 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Brown era un lastre de la caja: una fila libre con coeficientes de 1e108
+(2026-10-17).** Volcando los LPs fallidos (`DFBH_CAJA_DUMP=dir`, formato
+`.txtlp` exacto; el MPS no se puede escribir, `XMPSWR02`) y resolviéndolos
+fuera de Ibex (`$M/lptest/resolver2.cpp`), SoPlex 4.0.2 **y 7.1.6** fallan en
+los 40. En Brown-18 la fila 17 (la ecuación producto, forma afín sobre una caja
+de ancho 5.5e6) tiene lados ±1e100 (libre para SoPlex) y coeficientes de
+6e107 a 1.1e109: no restringe nada pero quiebra a SoPlex. Con
+`DFBH_CAJA_SINLIBRES=1` (la fila libre se le pasa vacía) la caja resuelve
+Brown-18/20-1/30 en 67/65/71 celdas, igual que SC, en 0.31/0.38/2.4 s. Geneig-icse
+no cambia (767 vs 295 celdas): ahí el mecanismo es otro. El redondeo hacia
+arriba de GAOL (SoPlex corre con FE_UPWARD dentro de Ibex) no es la causa.
+**Orden de la caja directa en opt:** cerca es ×0.93–0.96 contra lejos con las
+mismas celdas (antes «empatan», medido con la caja vieja en 19 problemas).
+Barrido corregido en curso (`d60s.sh`, binarios `_dir2`, caja sin filas libres,
+los dos órdenes en opt y sistemas). Las corridas de 3600 s (`d3600`) y la sonda
+de costo (`costo5`) se hicieron con la caja sin corregir: rehacer.
+
 **Por qué SoPlex pierde Brown (2026-10-17, `DFBH_CAJA_DBG=1`, `DFBH_CAJA_VERB=1`,
 `DFBH_CAJA_FRIO=1` en la caja directa).** En Brown-18 el 90 % de los LPs de
 SoPlex terminan con estado RUNNING: lanza `SPxInternalCodeException("XLEAVE02

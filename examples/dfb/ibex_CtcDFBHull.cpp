@@ -1,3 +1,4 @@
+#include <cfenv>
 #include <map>
 #include <sstream>
 //============================================================================
@@ -3040,6 +3041,8 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
     const double cr0 = reloj ? ahora_s() : 0.0;
     const int m = A.nb_rows();
     soplex::SoPlex& lp = *mylinearsolver.mysoplex;
+    /* `DFBH_CAJA_NUEVO=1`: un objeto SoPlex nuevo por LP (diagnostico del estado que SoPlex arrastra) */
+    if (sx_directa && DFB_ENV("DFBH_CAJA_NUEVO")) { delete sx_directa; sx_directa = nullptr; sx_directa_ep = -1; }
     if (!sx_directa) sx_directa = new soplex::SoPlex();
     soplex::SoPlex& sx = *sx_directa;
     static const bool reb = DFB_ENV("DFBH_CAJA_DIRECTA_REB");
@@ -3065,7 +3068,40 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
         for (int j = 0; j < m; ++j) {
             soplex::DSVectorReal fila(nb_var);
             for (int i = 0; i < nb_var; ++i) if (R[nb_var + j][i] != 0.0) fila.add(i, R[nb_var + j][i]);
-            rows.add(LR[nb_var + j].lb(), fila, LR[nb_var + j].ub());
+            /* `DFBH_CAJA_FILTRA=t`: la fila se deja libre (lados infinitos) si sus coeficientes
+             * no nulos abarcan mas de t ordenes de magnitud; sigue siendo una relajacion valida
+             * y el multiplicador de esa fila sale cero. */
+            static const double filtra = getenv("DFBH_CAJA_FILTRA") ? atof(getenv("DFBH_CAJA_FILTRA")) : 0.0;
+            bool libre = false;
+            if (filtra > 0) {
+                double amax = 0, amin = std::numeric_limits<double>::infinity();
+                for (int i = 0; i < nb_var; ++i) { const double v = std::fabs(R[nb_var + j][i]); if (v > 0) { amax = std::max(amax, v); amin = std::min(amin, v); } }
+                libre = amax > 0 && std::log10(amax / amin) > filtra;
+            }
+            /* `DFBH_CAJA_SINLIBRES=1`: una fila libre (los dos lados infinitos para SoPlex) no
+             * restringe nada; se le pasa vacia para que sus coeficientes no entren al LP. */
+            static const bool sin_libres = DFB_ENV("DFBH_CAJA_SINLIBRES");
+            const double inf_sx = sx.realParam(soplex::SoPlex::INFTY);
+            if (sin_libres && LR[nb_var + j].lb() <= -inf_sx && LR[nb_var + j].ub() >= inf_sx) {
+                soplex::DSVectorReal vacia(0);
+                rows.add(-soplex::infinity, vacia, soplex::infinity);
+            }
+            else if (libre) rows.add(-soplex::infinity, fila, soplex::infinity);
+            else rows.add(LR[nb_var + j].lb(), fila, LR[nb_var + j].ub());
+            if (false) {
+                static long n_raras = 0;
+                const double lo = LR[nb_var + j].lb(), up = LR[nb_var + j].ub();
+                bool rara = !(lo <= up) || std::isnan(lo) || std::isnan(up) || LR[nb_var + j].is_empty();
+                for (int i = 0; i < nb_var; ++i) if (std::isnan(R[nb_var + j][i]) || std::isinf(R[nb_var + j][i])) rara = true;
+                if (rara && ++n_raras <= 5)
+                    fprintf(stderr, "[cajafila] fila %d lados [%g, %g] vacia=%d\n", j, lo, up, (int)LR[nb_var + j].is_empty());
+            }
+        }
+        if (DFB_ENV("DFBH_CAJA_DBG")) {
+            static long n_cr = 0;
+            for (int i = 0; i < nb_var; ++i)
+                if ((!(z[i].lb() <= z[i].ub()) || std::isnan(z[i].lb()) || std::isnan(z[i].ub())) && ++n_cr <= 5)
+                    fprintf(stderr, "[cajacol] columna %d cotas [%g, %g]\n", i, z[i].lb(), z[i].ub());
         }
         sx.addRowsReal(rows);
         caja_cotas = IntervalVector(nb_var);
@@ -3077,10 +3113,77 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
     }
     sx.changeObjReal(k, maximizar ? -1.0 : 1.0);
     if (frio || DFB_ENV("DFBH_CAJA_FRIO")) sx.clearBasis();   /* DFBH_CAJA_FRIO=1: la caja directa parte en frio en cada LP */
+    /* `DFBH_CAJA_DUMP=dir`: guarda cada LP ANTES de resolverlo (MPS, base de
+     * partida y parametros) y conserva los que SoPlex no termina (hasta 40) y
+     * uno de cada 2000 que si (control). Despues de una falla el LP interno de
+     * SoPlex queda inconsistente y ya no se puede escribir. */
+    static const char* dump_dir = getenv("DFBH_CAJA_DUMP");
+    std::string cur;
+    if (dump_dir) {
+        /* formato propio, exacto (hexadecimal): n m k max / cotas de columnas / filas (lhs rhs coeficientes) */
+        FILE* t = fopen((std::string(dump_dir) + "/cur.txtlp").c_str(), "w");
+        if (t) {
+            const Matrix R = mylinearsolver.rows();
+            const IntervalVector LR = mylinearsolver.lhs_rhs();
+            fprintf(t, "%d %d %d %d\n", nb_var, m, k, (int)maximizar);
+            for (int i = 0; i < nb_var; ++i) fprintf(t, "%a %a\n", z[i].lb(), z[i].ub());
+            for (int j = 0; j < m; ++j) {
+                fprintf(t, "%a %a", LR[nb_var + j].lb(), LR[nb_var + j].ub());
+                for (int i = 0; i < nb_var; ++i) fprintf(t, " %a", R[nb_var + j][i]);
+                fprintf(t, "\n");
+            }
+            fclose(t);
+        }
+    }
+    if (dump_dir) {
+        cur = std::string(dump_dir) + "/cur";
+        static long n_esc_mal = 0, n_esc = 0;
+        ++n_esc;
+        try {
+            sx.writeFileReal((cur + ".mps").c_str());
+            sx.saveSettingsFile((cur + ".set").c_str());
+            std::remove((cur + ".bas").c_str());
+            if (sx.hasBasis()) sx.writeBasisFile((cur + ".bas").c_str());
+        } catch (const soplex::SPxException& ex) {
+            std::remove((cur + ".mps").c_str());
+            if (n_esc_mal < 3) fprintf(stderr, "[cajadump] excepcion al escribir: %s\n", ex.what().c_str());
+            ++n_esc_mal;
+        } catch (...) {
+            std::remove((cur + ".mps").c_str());
+            if (++n_esc_mal % 1000 == 1) fprintf(stderr, "[cajadump] LP %ld no se pudo escribir (%ld de %ld): LP interno de SoPlex inconsistente\n", n_esc, n_esc_mal, n_esc);
+        }
+    }
     const double cr1 = reloj ? ahora_s() : 0.0;
+    static const int modo_red = getenv("DFBH_CAJA_REDONDEO") ? atoi(getenv("DFBH_CAJA_REDONDEO")) : -1;
+    static int red_vista = -2;
+    const int red0 = fegetround();
+    if (red_vista == -2 && DFB_ENV("DFBH_CAJA_DBG")) {
+        red_vista = red0;
+        fprintf(stderr, "[cajad] modo de redondeo al llamar a SoPlex: %s\n",
+                red0 == FE_TONEAREST ? "mas cercano" : red0 == FE_UPWARD ? "hacia arriba" : red0 == FE_DOWNWARD ? "hacia abajo" : "hacia cero");
+    }
+    if (modo_red == 1) fesetround(FE_TONEAREST);   /* `DFBH_CAJA_REDONDEO=1`: SoPlex con redondeo al mas cercano */
     sx.optimize();
     sx.ignoreUnscaledViolations();   /* como `LPSolver::minimize` */
+    if (modo_red == 1) fesetround(red0);
     const soplex::SPxSolver::Status st = sx.status();
+    if (dump_dir) {
+        static long n_mal = 0, n_bien = 0, n_tot = 0; ++n_tot;
+        const bool mal = !(st == soplex::SPxSolver::OPTIMAL || st == soplex::SPxSolver::INFEASIBLE);
+        if ((mal && n_mal < 40) || (!mal && n_tot % 2000 == 0 && n_bien < 20)) {
+            const long id = mal ? n_mal++ : n_bien++;
+            char base[512];
+            snprintf(base, sizeof base, "%s/%s%03ld", dump_dir, mal ? "mal" : "bien", id);
+            const std::string f(base);
+            std::rename((std::string(dump_dir) + "/cur.txtlp").c_str(), (f + ".txtlp").c_str());
+            std::rename((cur + ".mps").c_str(), (f + ".mps").c_str());
+            std::rename((cur + ".set").c_str(), (f + ".set").c_str());
+            std::rename((cur + ".bas").c_str(), (f + ".bas").c_str());
+            FILE* g = fopen((f + ".txt").c_str(), "w");
+            if (g) { fprintf(g, "estado %d iteraciones %d k %d max %d\n", (int)st, sx.numIterations(), k, (int)maximizar); fclose(g); }
+        }
+    }
+fin_dump:
     const double cr2 = reloj ? ahora_s() : 0.0;
     if (reloj) { cr_t[0] += cr1 - cr0; cr_t[1] += cr2 - cr1; cr_t[3] += cr2 - cr1; ++cr_n; }
     it_caja = sx.numIterations();
