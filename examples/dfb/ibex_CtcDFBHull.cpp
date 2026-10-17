@@ -1,3 +1,4 @@
+#include <map>
 #include <sstream>
 //============================================================================
 //                                  I B E X
@@ -3053,6 +3054,7 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
         for (int i = 0; i < soplex::SoPlex::BOOLPARAM_COUNT; ++i)
             sx.setBoolParam((soplex::SoPlex::BoolParam) i, lp.boolParam((soplex::SoPlex::BoolParam) i), true);
         sx.setIntParam(soplex::SoPlex::OBJSENSE, soplex::SoPlex::OBJSENSE_MINIMIZE, true);
+        if (DFB_ENV("DFBH_CAJA_VERB")) sx.setIntParam(soplex::SoPlex::VERBOSITY, soplex::SoPlex::VERBOSITY_NORMAL, true);
         soplex::LPColSetReal cols(nb_var);
         soplex::DSVectorReal vacio(0);
         for (int i = 0; i < nb_var; ++i) cols.add(0.0, z[i].lb(), vacio, z[i].ub());
@@ -3074,7 +3076,7 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
             if (!(caja_cotas[i] == z[i])) { sx.changeBoundsReal(i, z[i].lb(), z[i].ub()); caja_cotas[i] = z[i]; }
     }
     sx.changeObjReal(k, maximizar ? -1.0 : 1.0);
-    if (frio) sx.clearBasis();
+    if (frio || DFB_ENV("DFBH_CAJA_FRIO")) sx.clearBasis();   /* DFBH_CAJA_FRIO=1: la caja directa parte en frio en cada LP */
     const double cr1 = reloj ? ahora_s() : 0.0;
     sx.optimize();
     sx.ignoreUnscaledViolations();   /* como `LPSolver::minimize` */
@@ -3101,6 +3103,23 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
     }
     sx.changeObjReal(k, 0.0);
     if (reloj) cr_t[2] += ahora_s() - cr2;
+    if (DFB_ENV("DFBH_CAJA_DBG")) {
+        /* estados de SoPlex en la caja directa: optimo, infactible con/sin rayo, no acotado, tope de iteraciones, otro */
+        static long c[6] = {0,0,0,0,0,0}, tot = 0;
+        int i = 5;
+        if (st == soplex::SPxSolver::OPTIMAL) i = 0;
+        else if (st == soplex::SPxSolver::INFEASIBLE) i = (res == DFBSimplex::INFEASIBLE) ? 1 : 2;
+        else if (st == soplex::SPxSolver::UNBOUNDED) i = 3;
+        else if (st == soplex::SPxSolver::ABORT_ITER) i = 4;
+        ++c[i]; ++tot;
+        static std::map<int,long> hist; ++hist[(int)st];
+        if (tot % 2000 == 0) {
+            fprintf(stderr, "[cajad] LPs=%ld optimo=%ld inf_con_rayo=%ld inf_sin_rayo=%ld noacotado=%ld tope_iter=%ld otro=%ld | estados SoPlex:",
+                    tot, c[0], c[1], c[2], c[3], c[4], c[5]);
+            for (std::map<int,long>::const_iterator it = hist.begin(); it != hist.end(); ++it) fprintf(stderr, " %d:%ld", it->first, it->second);
+            fprintf(stderr, "\n");
+        }
+    }
     return res;
 }
 
@@ -3202,7 +3221,8 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
                 for (int j = 0; j < sx_directa->numRowsReal() && j < 4; ++j) fprintf(stderr, "   fila %d lados sx [%g,%g] ibex [%g,%g]\n", j, sx_directa->lhsReal(j), sx_directa->rhsReal(j), mylinearsolver.lhs_rhs()[nb_var+j].lb(), mylinearsolver.lhs_rhs()[nb_var+j].ub());
             }
         }
-        if (n % 20000 == 0) {
+        static const long cada = std::max(1L, atol(getenv("DFBH_CAJA_CMP")));
+        if (n % cada == 0) {
             fprintf(stderr, "[cajacmp] LPs=%ld estado distinto=%ld optimo distinto=%ld | ibex:", n, dif_st, dif_obj);
             for (int i = 0; i < 8; ++i) fprintf(stderr, " %ld", st_ibex[i]);
             fprintf(stderr, " | directa:");

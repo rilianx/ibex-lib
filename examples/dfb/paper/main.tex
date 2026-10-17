@@ -90,6 +90,10 @@ representation, the bound is lost; when the solver reports infeasibility
 without a verifiable ray, the pass is abandoned and the node survives. On our
 benchmark, these losses, and not the quality of the relaxation, explain most of
 the pruning gap between contractors that share the same polytope
+(Section~\ref{sec:experiments}). The design has a second cost, which turns
+out to be the larger one: the $2n$ LPs of a node are small and closely
+related, typically two or three pivots apart, and each is a separate call to a
+general-purpose solver, whose work per call then exceeds the pivots themselves
 (Section~\ref{sec:experiments}).
 
 \paragraph{Positioning.} The certificate we use is not new. That \emph{any}
@@ -132,10 +136,11 @@ used by Ibex, comes from Baharev, Achterberg and R\'ev~\cite{baharev2009distilla
 
 \paragraph{Contributions.}
 \begin{itemize}
-\item A homogeneous formulation of the relaxation in which every basis can be
-made dual feasible by relocating nonbasic variables, so that each of the $2n$
-bound problems starts dual feasible without a phase~1
-(Section~\ref{sec:properties}).
+\item The use, in the homogeneous form of the relaxation, of a standard
+property of boxed LPs~\cite{koberstein2005dual}: every basis becomes dual
+feasible for every bound problem by relocating its nonbasic variables, so that
+the $2n$ problems, and each problem after the box contracts, share one tableau
+and start without a phase~1 (Section~\ref{sec:properties}).
 \item A specialized simplex for the $2n$ problems: shared tableau, long-step
 dual ratio test, devex pricing, box-scaled tolerances, warm starts between
 bounds chosen by how many nonbasic variables change bound (dual on systems of
@@ -362,9 +367,9 @@ changes (medians 1.9 and 0.4 per LP). The two warm starts thus have different
 costs: the primal one pays one iteration per side change, the dual one a fixed
 cost per LP, since relocation changes the values of the nonbasic variables and
 the basic values must be recomputed from the factorization. On systems of
-equations side changes dominate: the primal warm start pivots 2.5 times more,
-and an LP costs about twice as much (Bratu-0120: 422 against 223\,$\mu$s, of
-which 224\,$\mu$s in primal steps). On optimization problems few sides change,
+equations side changes dominate: the primal warm start makes 5.1 iterations
+per LP against 3.1, and on Bratu-0120 an LP costs about twice as much (422
+against 223\,$\mu$s, of which 224\,$\mu$s in primal steps). On optimization problems few sides change,
 and the fixed cost of relocation dominates: on launch and ex5\_3\_2 (about 40
 rows), an LP costs 143 against 158 and 128 against 168\,$\mu$s with the primal
 warm start, which pivots slightly less and recomputes the basic values for 6--7
@@ -694,7 +699,10 @@ whenever the required bound is finite.
 
 When the objective changes from one bound to the next, or the box is
 contracted between two bounds, relocation restores dual feasibility without a
-phase~1. This is what allows one tableau to be shared by the $2n$ problems. The
+phase~1. That a boxed LP needs no dual phase~1 is a standard
+observation~\cite{koberstein2005dual}; what we use is that it holds across the
+$2n$ objectives and the contractions of the box, which is what allows one
+tableau to be shared by the $2n$ problems. The
 case of a box change was exploited by Yamamura and
 coworkers~\cite{yamamura2001dual,yamamura2006dual} to resume an LP emptiness test
 after a bisection; Proposition~\ref{prop:start} extends it to a change of
@@ -777,7 +785,7 @@ certificate, its evaluation over the box and its validity on sub-boxes are
 common to both, and SoPlex itself solves ranged rows in the same form, with
 one bounded logical variable per row. What differs is a simplex designed for
 that certificate: the free dual-feasible start, one basis shared by the $2n$
-bounds, and a primal tolerance scaled to the width of the box.
+bounds, and the warm start between bounds.
 The black box was given its best configuration. It runs on its own SoPlex
 instance holding the same rows and sides, with the box only as column bounds:
 the LP interface of Ibex also stores the $n$ variable bounds as rows, which
@@ -1072,10 +1080,14 @@ they produce. We ran both engines on the same input boxes and the same polytope
 at every node (Table~\ref{tab:samebox}). Two mechanisms appear.
 \begin{enumerate}
 \item \emph{No optimum.} On some relaxations SoPlex ends without an optimal
-basis (infeasibility it cannot prove, unknown status or iteration limit), and
-the bound is lost. On Brown-18 this happens for 250 of 1\,862 LPs, against 2
-for SC, whose primal tolerance is scaled to the width of the box; on
-Geneig-icse, 379 against 70. With the twin rows unmerged this mechanism was
+basis, and the bound is lost. On Brown-18 this happens for 250 of 1\,862 LPs
+on the boxes of the search of SC, and for 90\% of the LPs in its own search:
+SoPlex fails inside its dual simplex with an internal exception (in the update
+of the leaving variable), whatever the start, representation, tolerance or
+presolving; SC fails on 2 LPs. On Geneig-icse SoPlex reaches the iteration
+limit or reports an infeasibility it cannot prove on 379 LPs, against 70 for
+SC. SC has no such outcome by design: any basis certifies, and an LP that
+stops early yields a weaker bound, not a lost one. With the twin rows unmerged this mechanism was
 dominant (a third of the LPs of the black box on Geneig-icse); merging them
 removes most of it.
 \item \emph{Dual accuracy.} When both engines reach an optimum, the
@@ -1175,8 +1187,8 @@ has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
 times that of the black box on systems of equations and 0.44 times on
 optimization problems (Figure~\ref{fig:cost}). SC does not pivot less; each LP
 is cheaper because the $2n$ bounds share one tableau and the restart needs no
-phase~1, so that an LP costs its few pivots and little else, while each call to
-the black box pays for setting up and tearing down a general-purpose solve. The second is
+phase~1, so that an LP costs little beyond its pivots, while each call to the black
+box pays for setting up and tearing down a general-purpose solve. The second is
 robustness: where the black box ends without an optimum, the bound is lost,
 while the multipliers of SC still certify it (Table~\ref{tab:samebox}); this is
 where the largest gains are (Brown, Geneig-icse). The slightly tighter

@@ -522,6 +522,20 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Por qué SoPlex pierde Brown (2026-10-17, `DFBH_CAJA_DBG=1`, `DFBH_CAJA_VERB=1`,
+`DFBH_CAJA_FRIO=1` en la caja directa).** En Brown-18 el 90 % de los LPs de
+SoPlex terminan con estado RUNNING: lanza `SPxInternalCodeException("XLEAVE02
+This should never happen")` en `getLeaveVals` (estado de base inconsistente
+en el paso de salida del dual); `_evaluateSolutionReal` lee `m_status` y queda
+RUNNING (Ibex lo ve como Unknown: 51 k de 60 k). Pasa igual en frío
+(85 %), con representación por columnas, tolerancia 1e-9 y sin
+presolve/escalado (99 %). Geneig-icse: 1.3 % no óptimos (tope de iteraciones
+e infactibles). La tolerancia escalada (`sintau`) NO explica Brown ni Geneig:
+celdas idénticas sin ella. Paper corregido (§samebox, §5 y contribución 1:
+la factibilidad dual por reubicación es estándar en LPs acotados, Koberstein).
+Pendiente: no se aisló la causa del XLEAVE02 (¿filas casi dependientes de
+Brown?); con SoPlex más nuevo podría no pasar.
+
 **Caja negra directa (2026-10-17, `DFBH_CAJA_DIRECTA=1`, binarios
 `ibexopt_dir` / `ibexsolve_dfb_dir`).** El `LPSolver` de Ibex guarda las cotas
 de las n variables también como n filas (duales para Neumaier–Shcherbina): en
