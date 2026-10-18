@@ -522,6 +522,20 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Banco de pasadas y error en la sonda (2026-10-18).** Captura de cajas
+(`DFBH_CAPTURA=archivo`, `DFBH_CAPTURA_N`, `DFBH_CAPTURA_CADA`, binarios `*_cap`) y
+reproductor `ibexreplay problema.bch opt|sol cajas.txt` (mismo contractor que
+`ibexopt`/`ibexsolve_dfb`, mismas omisiones del optimizador): determinista, y con
+`DFBH_ABCAJA=1` mide SC y la caja sobre las mismas pasadas sin ruido de búsqueda.
+**Error corregido en `DFBH_ABCAJA`:** «gana DFB» contaba los nodos que vacían los
+dos motores. Corregido: Geneig-icse 128 vs 9 (antes 224), CCR2-9 66 vs 2 (105),
+Brown-18 1 vs 1, Bellido 4 vs 4 (antes 138 vs 4). La «precisión del dual» se
+sostiene en Geneig-icse y CCR2-9, no en Bellido. Tabla samebox corregida.
+**Devex primal en el motor tableau (`DFB_SX_DEVEXPT=1`):** pivotes por LP ×0.96,
+costo por LP ×1.00 en 20 opt; el ×0.87 de tiempo es ruido de búsqueda. Apagado.
+**Pivotes:** comparar piv/LP exagera la brecha (la caja resuelve más LPs triviales);
+por pasada, ex2_1_9 370 k vs 366 k.
+
 **Emulación de SoPlex dentro de SC (2026-10-18, `DFB_EMU_FACT/INIT/VERIF/COPIA`,
 binarios `*_emu`; datos en `results/directa_2026-10-17/emu/`).** Se le agrega a
 SC, en cada LP y sobre vectores aparte (la búsqueda no cambia), el trabajo por

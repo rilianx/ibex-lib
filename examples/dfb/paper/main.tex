@@ -1117,8 +1117,9 @@ dominant (a third of the LPs of the black box on Geneig-icse); merging them
 removes most of it.
 \item \emph{Dual accuracy.} When both engines reach an optimum, the
 certificate built from the multipliers of SC is often slightly tighter. On
-Geneig-icse, SC contracts more in 224 of 1\,710 nodes and the black box in
-9; on CountercurrentReactors2-9, 105 against 2; on Bellido, 138 against 4.
+Geneig-icse, SC contracts more in 128 of 1\,710 nodes and the black box in
+9, and on CountercurrentReactors2-9 in 66 against 2; on Bellido and Brown-18
+the two engines tie (4 against 4, 1 against 1).
 The difference per node is small but compounds along the search; we have not
 isolated its cause.
 \end{enumerate}
@@ -1126,7 +1127,8 @@ isolated its cause.
 \begin{table}[t]
 \centering
 \caption{Both engines on the same input boxes and the same polytope. Mean
-relative contraction of the perimeter, nodes where each engine contracts more,
+relative contraction of the perimeter, nodes where each engine contracts more
+(nodes that both empty count as ties),
 and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \label{tab:samebox}
 \begin{tabular}{lcccccc}
@@ -1135,10 +1137,10 @@ and LPs without a usable certificate (black box with tolerance $10^{-6}$).}
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
 system & SC & BB & SC & BB & SC & BB\\
 \midrule
-Geneig-icse               & 0.323 & 0.323 &  224 &  9 &   70 & 379\\
-CountercurrentReactors2-9 & 0.046 & 0.047 &  105 &  2 &  110 &   0\\
-Brown-18                  & 0.314 & 0.305 &    4 &  1 &    2 &   0\\
-Bellido                   & 0.281 & 0.281 &  138 &  4 &  152 &   0\\
+Geneig-icse               & 0.323 & 0.323 &  128 &  9 &   70 & 379\\
+CountercurrentReactors2-9 & 0.046 & 0.047 &   66 &  2 &  110 &   0\\
+Brown-18                  & 0.314 & 0.305 &    1 &  1 &    2 &   0\\
+Bellido                   & 0.281 & 0.281 &    4 &  4 &  152 &   0\\
 \bottomrule
 \end{tabular}
 \end{table}

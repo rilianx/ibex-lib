@@ -3461,6 +3461,24 @@ void CtcDFBHull::add_property(const IntervalVector& init_box, BoxProperties& pro
 }
 
 void CtcDFBHull::contract(IntervalVector& box, ContractContext& context) {
+    /* CAPTURA DE CAJAS (`DFBH_CAPTURA=archivo`, 2026-10-18): guarda la caja de
+     * entrada de cada llamada (hexadecimal exacto, una por linea) para
+     * reproducir las mismas pasadas fuera de la busqueda (`ibexreplay`).
+     * `DFBH_CAPTURA_CADA=k` guarda una de cada k; `DFBH_CAPTURA_N` es el tope. */
+    {
+        static const char* cap = getenv("DFBH_CAPTURA");
+        static FILE* fcap = cap ? fopen(cap, "w") : NULL;
+        static const long cada = getenv("DFBH_CAPTURA_CADA") ? atol(getenv("DFBH_CAPTURA_CADA")) : 1;
+        static const long tope = getenv("DFBH_CAPTURA_N") ? atol(getenv("DFBH_CAPTURA_N")) : 2000;
+        static long n_llam = 0, n_cap = 0;
+        if (fcap && (n_llam++ % cada) == 0 && n_cap < tope) {
+            ++n_cap;
+            fprintf(fcap, "%d", box.size());
+            for (int i = 0; i < box.size(); ++i) fprintf(fcap, " %a %a", box[i].lb(), box[i].ub());
+            fprintf(fcap, "\n");
+            fflush(fcap);
+        }
+    }
     cortes_nuevos.clear();
     contract_nucleo(box, context);
     /* Mezcla de los cortes de esta llamada al pozo de la celda: quedan los
@@ -4005,7 +4023,11 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
                     for (int i = 0; i < nb_var; ++i) if (entrada_ab[i].diam() < 1e18) p[e] += (*r[e])[i].diam();
                     abc_contr[e] += 1.0 - p[e]/per0;
                 }
-                if (p[0] < p[1] * (1 - 1e-9)) ++abc_gana[0]; else if (p[1] < p[0] * (1 - 1e-9)) ++abc_gana[1];
+                /* Gana el motor que contrae mas. Si los dos vacian el nodo, empatan
+                 * (antes ese caso se contaba como victoria de DFB: p = -1 en los dos). */
+                if (!(p[0] < 0 && p[1] < 0)) {
+                    if (p[0] < p[1] * (1 - 1e-9)) ++abc_gana[0]; else if (p[1] < p[0] * (1 - 1e-9)) ++abc_gana[1];
+                }
             }
         }
         if (perfil) { const double t2 = ahora_s(); pf_pas += t2 - pf_t1; pf_tot += t2 - pf_t0; }
