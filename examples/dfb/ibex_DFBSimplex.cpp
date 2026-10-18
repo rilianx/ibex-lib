@@ -15,6 +15,8 @@
  * sola vez por punto de llamada. */
 #define DFB_ENV(n) ([]() { static const bool v_ = (getenv(n) != NULL); return v_; }())
 
+static long emu_epoca = 0;   /* sube en cada `load`: la LU de emulacion recarga la matriz */
+
 namespace ibex {
 
 /* --- Perfilado interno del simplex (DFB_SX_PERF=1) ---
@@ -265,6 +267,7 @@ void DFBSimplex::calcular_escalas(const Matrix& Abar) {
 }
 
 void DFBSimplex::load(const Matrix& Abar, int nx_) {
+    ++emu_epoca;
     perf::Cron _c(&perf::t_load);
     /* Si la linealizacion conserva las dimensiones, la BASE se conserva como
      * conjetura para el nodo nuevo. Los coeficientes cambian —hay que
@@ -1810,7 +1813,81 @@ void DFBSimplex::registrar_traza(int k, bool maximize) {
     traza_y->push_back(c);
 }
 
+/* EMULACION DEL TRABAJO POR LLAMADA DE SOPLEX (2026-10-18). Cada interruptor
+ * le agrega a SC, en cada LP, el costo de una parte de lo que hace SoPlex en
+ * cada llamada, sobre vectores aparte: la busqueda no cambia, solo el costo.
+ *   DFB_EMU_FACT=1   factoriza la base al empezar cada LP;
+ *   DFB_EMU_INIT=1   recalcula desde la LU multiplicadores (BTRAN), costos
+ *                    reducidos completos (A^T y) y valores basicos (A x, FTRAN);
+ *   DFB_EMU_VERIF=1  verifica la solucion al terminar: actividades de filas
+ *                    contra sus cotas y costos reducidos completos;
+ *   DFB_EMU_COPIA=1  copia la solucion primal, dual y los costos reducidos a
+ *                    vectores nuevos (memoria pedida en cada LP). */
+static bool emu_on(const char* v) { const char* e = getenv(v); return e && *e && std::string(e) != "0"; }
+
+void DFBSimplex::emular_soplex_antes() {
+    static const bool e_fact = emu_on("DFB_EMU_FACT"), e_init = emu_on("DFB_EMU_INIT");
+    if ((!e_fact && !e_init) || !base_lista || m <= 0) return;
+    if (e_fact) {
+        for (int r = 1; r <= m; ++r) cols_buf[r-1] = basic[r];
+        static DFBBasis emu;            /* LU aparte: no toca la de SC */
+        static long emu_ep = -1;
+        if (emu_ep != emu_epoca) {
+            Matrix Ab(m, na);
+            for (int j = 0; j < m; ++j) { for (int c = 0; c < na; ++c) Ab[j][c] = 0.0; for (size_t t = 0; t < arow[j].size(); ++t) Ab[j][arow[j][t].first] = arow[j][t].second; }
+            emu.load_matrix(Ab); emu_ep = emu_epoca;
+        }
+        emu.set_basis(cols_buf);
+        if (e_init) {
+            std::vector<double> yy(m), dd(na, 0.0), ax(m), xb(m), xx(na);
+            emu.btran_row(0, &yy[0]);
+            for (int j = 0; j < m; ++j) { const double v = yy[j]; if (v == 0.0) continue;
+                for (size_t t = 0; t < arow[j].size(); ++t) dd[arow[j][t].first] -= v * arow[j][t].second; }
+            for (int c = 0; c < na; ++c) xx[c] = zs[c].lb();
+            for (int j = 0; j < m; ++j) { double acc = 0.0; for (size_t t = 0; t < arow[j].size(); ++t) acc += arow[j][t].second * xx[arow[j][t].first]; ax[j] = acc; }
+            emu.ftran_vec(&ax[0], &xb[0]);
+            volatile double sink = dd[0] + xb[0]; (void) sink;
+        }
+    }
+}
+
+void DFBSimplex::emular_soplex_despues(int k, bool maximize) {
+    static const bool e_verif = emu_on("DFB_EMU_VERIF"), e_copia = emu_on("DFB_EMU_COPIA");
+    if ((!e_verif && !e_copia) || m <= 0) return;
+    if (e_verif) {
+        std::vector<double> xx(na), dd(na, 0.0);
+        for (int c = 0; c < na; ++c) xx[c] = zs[c].mid();
+        double viol = 0.0;
+        for (int j = 0; j < m; ++j) {
+            double acc = 0.0;
+            for (size_t t = 0; t < arow[j].size(); ++t) acc += arow[j][t].second * xx[arow[j][t].first];
+            viol += std::fabs(acc);
+            const double v = (j < (int)y.size()) ? y[j] : 0.0;
+            if (v != 0.0) for (size_t t = 0; t < arow[j].size(); ++t) dd[arow[j][t].first] -= v * arow[j][t].second;
+        }
+        dd[k] += maximize ? -1.0 : 1.0;
+        for (int c = 0; c < na; ++c) viol += std::fabs(dd[c]);
+        volatile double sink = viol; (void) sink;
+    }
+    if (e_copia) {
+        double* p = new double[na]; double* q = new double[m]; double* r = new double[na];
+        for (int c = 0; c < na; ++c) { p[c] = zs[c].lb(); r[c] = (c < (int)d.size()) ? d[c] : 0.0; }
+        for (int j = 0; j < m; ++j) q[j] = (j < (int)y.size()) ? y[j] : 0.0;
+        volatile double sink = p[0] + q[0] + r[0]; (void) sink;
+        delete[] p; delete[] q; delete[] r;
+    }
+}
+
 DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
+                                     const IntervalVector& z, int max_iter,
+                                     bool warm) {
+    emular_soplex_antes();
+    const Status st = solve_nucleo(k, maximize, z, max_iter, warm);
+    emular_soplex_despues(k, maximize);
+    return st;
+}
+
+DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
                                      const IntervalVector& z, int max_iter,
                                      bool warm) {
     perf::Cron _c(&perf::t_total);

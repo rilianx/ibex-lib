@@ -109,6 +109,10 @@ public:
      */
     Status solve(int k, bool maximize, const IntervalVector& z, int max_iter,
                  bool warm = true);
+    /* nucleo de `solve`; `solve` le agrega las emulaciones `DFB_EMU_*` */
+    Status solve_nucleo(int k, bool maximize, const IntervalVector& z, int max_iter, bool warm);
+    void emular_soplex_antes();
+    void emular_soplex_despues(int k, bool maximize);
 
     /**
      * \brief Si no es NULL, `solve` deja aca el `lambda` despues de CADA

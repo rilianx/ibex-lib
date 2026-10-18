@@ -522,6 +522,20 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Emulación de SoPlex dentro de SC (2026-10-18, `DFB_EMU_FACT/INIT/VERIF/COPIA`,
+binarios `*_emu`; datos en `results/directa_2026-10-17/emu/`).** Se le agrega a
+SC, en cada LP y sobre vectores aparte (la búsqueda no cambia), el trabajo por
+llamada de SoPlex. µs/LP de SC base → con todo (caja): ex2_1_9 7.7 → 13.3
+(22.6), dipigri 6.8 → 12.2 (22.6), Geneig 11.2 → 18.2 (26.9), Bellido
+23.0 → 33.0 (35.6), chem 24.1 → 31.8 (37.2). Factorizar por LP +25–40 %,
+verificar +10–25 %, init y copia poco. Explica ~40 % de la brecha en los LPs
+chicos; el resto es presolve/escalado por relajación y maquinaria no emulada.
+En Katsurabis-14 (203 vs 105), Bratu-0060 (110 vs 80) y launch (93 vs 79) el LP
+de SoPlex ya es más barato sin emular: pivotea menos y más barato. Párrafo en
+la sección de costo. **De paso:** SC con `DFBH_ORDEN=cerca` pivotea mucho menos
+en algunos opt (ex8_4_4 5.8 → 2.8 piv/LP, 31 → 21 s; himmel16 6.0 → 3.6,
+20.8 → 16.1 s; ex5_3_2 9.9 → 5.2) y gana en 6 de 8: probar en todo el banco.
+
 **SoPlex 7.1.6 (2026-10-17).** Compilado con el namespace renombrado
 (`-Dsoplex=soplex7`, `$M/sx7ns`) para convivir con 4.0.2. (1) Caja con SoPlex 7
 (`DFBH_CAJA_SOPLEX7=1`, `ibex_Caja7.{h,cpp}`, binarios `*_s7`): en 8 problemas

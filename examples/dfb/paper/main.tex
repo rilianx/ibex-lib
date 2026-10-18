@@ -1035,7 +1035,21 @@ against 26 thousand for SC. No single part dominates: suppressing the
 refactorizations that SoPlex makes before declaring optimality (from 1.2 to
 0.25 per LP) did not change the time of an LP. SC solves the $2n$ bounds of a
 pass on one tableau and only replaces the objective row and the bounds that
-changed. Where the LPs need many pivots this fixed cost is amortized: on launch
+changed.
+To check this attribution we ran the converse experiment: we added to SC, at
+every LP and on separate vectors, so that the search does not change, the work
+that SoPlex does in each call. Refactorizing the basis at the start of each LP
+adds 25--40\% to an LP of SC on small relaxations (on ex2\_1\_9, from 7.7 to
+10.6\,$\mu$s), verifying the solution 10--25\%, and recomputing the vectors
+or copying the solution little. With all of them an LP of SC costs
+13.3\,$\mu$s on ex2\_1\_9 against 22.6 for the black box, and 33 and
+32\,$\mu$s on Bellido and chem against 36 and 37; the rest is the presolving
+and scaling of each new relaxation and the general machinery of a call, which
+we did not emulate. On large relaxations or LPs with many pivots the
+comparison reverses: on Katsurabis-14, Bratu-0060 and launch an LP of SoPlex
+is cheaper than one of SC even without any emulation (105 against
+203\,$\mu$s on Katsurabis-14), because it pivots less and each pivot costs
+less; these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
 (9 to 10 pivots per LP) an LP of the black box is even cheaper (80 against
 94\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
