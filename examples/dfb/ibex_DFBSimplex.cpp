@@ -268,6 +268,7 @@ void DFBSimplex::calcular_escalas(const Matrix& Abar) {
 
 void DFBSimplex::load(const Matrix& Abar, int nx_) {
     ++emu_epoca;
+    wp.clear();   /* pesos devex primales: marco de referencia nuevo por relajacion */
     perf::Cron _c(&perf::t_load);
     /* Si la linealizacion conserva las dimensiones, la BASE se conserva como
      * conjetura para el nodo nuevo. Los coeficientes cambian —hay que
@@ -1267,18 +1268,20 @@ bool DFBSimplex::primal_step(const IntervalVector& z, bool& unbounded) {
     perf::Cron _c(&perf::t_primal);
     unbounded = false;
 
-    /* entrante: regla de Dantzig sobre los costos reducidos que violan */
+    /* entrante: regla de Dantzig sobre los costos reducidos que violan, o
+     * devex primal (`DFB_SX_DEVEXPT=1`, 2026-10-18): d_c^2 / w_c, con pesos de
+     * referencia que se actualizan con la fila del pivote y se conservan entre
+     * los LPs de una pasada (se reinician en `load`). */
+    static const bool devexpt = getenv("DFB_SX_DEVEXPT") && std::string(getenv("DFB_SX_DEVEXPT")) == "1";
+    if (devexpt && (int)wp.size() != na) wp.assign(na, 1.0);
     int q = -1; double bestd = 0.0;
     for (int c = 0; c < na; ++c) {
         if (rowof[c] >= 0) continue;
         const double dc = d[c];
-        const double esc = 1.0 + std::fabs(dc);
-        (void)esc;
-        if (!atupper[c] && dc < -DUAL_TOL) {
-            if (-dc > bestd) { bestd = -dc; q = c; }
-        } else if (atupper[c] && dc > DUAL_TOL) {
-            if (dc > bestd) { bestd = dc; q = c; }
-        }
+        const bool viola = (!atupper[c] && dc < -DUAL_TOL) || (atupper[c] && dc > DUAL_TOL);
+        if (!viola) continue;
+        const double sc = devexpt ? dc * dc / wp[c] : std::fabs(dc);
+        if (sc > bestd) { bestd = sc; q = c; }
     }
     if (q < 0) return false;   /* factible dual: optimo */
 
@@ -1364,6 +1367,21 @@ bool DFBSimplex::primal_step(const IntervalVector& z, bool& unbounded) {
     if (r_out < 0) { unbounded = true; return false; }
 
     const int c_out = basic[r_out];
+    if (devexpt) {
+        /* actualizacion devex con la fila del pivote, antes de pivotear */
+        const double arq = colq[r_out];
+        const double wq = wp[q];
+        const std::vector<int>& ti = tidx[r_out];
+        const std::vector<double>& tv = tval[r_out];
+        for (size_t t = 0; t < ti.size(); ++t) {
+            const int c = ti[t];
+            if (c >= na || c == q || rowof[c] >= 0) continue;
+            const double rr = tv[t] / arq;
+            const double w = rr * rr * wq;
+            if (w > wp[c]) wp[c] = w;
+        }
+        wp[c_out] = std::max(wq / (arq * arq), 1.0);
+    }
     if (!pivot(r_out, q)) {
         /* No es optimalidad: es un pivote que no se pudo aplicar. Informarlo
          * como tal, para que el bucle no lo confunda con la parada limpia. */

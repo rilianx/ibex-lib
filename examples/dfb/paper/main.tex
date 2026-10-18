@@ -52,7 +52,7 @@ the box and every sub-box, and SC is designed around it, with a free
 dual-feasible start for every bound, one tableau shared by the $2n$ problems,
 a warm start chosen per program and a hybrid tableau/revised engine. Inside the
 same contractor, against SoPlex solving the same LPs, a full polytope-hull
-pass costs 0.46 times as much on optimization problems and 0.62 times on
+pass costs 0.44 times as much on optimization problems and 0.62 times on
 systems of equations. SC does not pivot less: its LPs avoid the per-call setup
 of a general-purpose solver, and its multipliers certify bounds where SoPlex
 reports no optimum. The whole solver is 17--20\% faster on 240 global
@@ -154,7 +154,7 @@ lower bound that is nondecreasing along the iterations
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver on the same LPs, feeding the same certificate; a rigor
 check against the LP hull; an analysis on identical LPs, where a full pass of
-the contractor costs 0.46 (optimization) and 0.62 (systems) times that of the
+the contractor costs 0.44 (optimization) and 0.62 (systems) times that of the
 black box, showing that the gain comes from the cost of each LP and from the
 bounds the black box loses, not from fewer pivots; and an ablation
 (Section~\ref{sec:experiments}).
@@ -363,12 +363,15 @@ and which one is cheaper depends on how the optima of consecutive bounds are
 related. An optimal vertex is given by a basis and by the bound on which each
 nonbasic variable rests. Table~\ref{tab:sides} compares the optima of
 consecutive bounds over the benchmarks of Section~\ref{sec:experiments}: the
-basis changes by 10--16\% in both programs, but on systems of equations a
+basis changes by 10--17\% in both programs, but on systems of equations a
 median of 1.9 nonbasic variables per LP move to their opposite bound, against
-0.5 on optimization problems. The dual warm start moves them for free, since
+0.3 on optimization problems. The dual warm start moves them for free, since
 relocation is not a pivot; the primal warm start pays one iteration for each,
-and its iterations exceed those of the dual by about the number of side
-changes (medians 1.9 and 0.4 per LP). The two warm starts thus have different
+and on systems of equations its iterations exceed those of the dual by about
+the number of side changes (a median difference of 1.9 per LP, for 1.9 side
+changes); on optimization
+problems, with the nearest bound first, it even needs fewer iterations than
+the dual (2.1 against 2.5). The two warm starts thus have different
 costs: the primal one pays one iteration per side change, the dual one a fixed
 cost per LP, since relocation changes the values of the nonbasic variables and
 the basic values must be recomputed from the factorization. On systems of
@@ -382,19 +385,19 @@ instead of 16--17\,$\mu$s per LP; on ex2\_1\_9, whose LPs need one or two
 pivots, the primal warm start pivots 25\% more and its LPs are still 6\%
 cheaper.
 The side changes differ because of the rows. The box bounds of the variables
-change side alike in both programs (14\% and 13\% of the nonbasic variables);
+change side in both programs (14\% and 8\% of the nonbasic variables);
 the slacks of the rows change side in 14\% of the cases on systems of equations
 and in 0.3\% on optimization problems. On systems every row comes from an
 equation and is a narrow slab: the interval of its slack is, on average, 13\%
 of the range of the row over the box, so that the optima of consecutive bounds
 often rest on opposite faces of a slab. On optimization problems the slack
 intervals cover 48\% of the range on average, and the few rows whose slack
-changes side are the narrow ones (6\%).
+changes side are the narrow ones (8\%).
 
 \begin{table}[t]
 \centering
 \caption{Optima of consecutive bounds of a pass (seed 1, 60\,s per run, 165
-systems and 140 optimization problems with at least 1\,000 warm LPs in both
+systems and 141 optimization problems with at least 1\,000 warm LPs in both
 warm starts). Medians, with quartiles in parentheses, of the rows of the
 relaxation, the basic variables that change, the nonbasic variables that move
 to their opposite bound, and the iterations per warm LP with each warm start.}
@@ -406,7 +409,7 @@ to their opposite bound, and the iterations per warm LP with each warm start.}
 benchmark & rows & changed & per LP & \% nonbasic & dual & primal\\
 \midrule
 systems      & 18 (10--32) & 10\% & 1.9 (1.1--2.8) & 16\% & 3.1 & 5.1\\
-optimization & 9 (5--17)   & 16\% & 0.5 (0.3--0.8) & 6\% & 1.9 & 2.0\\
+optimization & 9 (5--17)   & 17\% & 0.3 (0.2--0.5) & 4\% & 2.5 & 2.1\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -983,7 +986,7 @@ benchmark & instances & runs & cells & CPU & finished\\
 \midrule
 systems                   & 48 & 96 & 1.02 & 0.97 & 94 / 93\\
 systems, same bound order & 48 & 96 & 1.00 & 0.95 & 94 / 94\\
-optimization              & 24 & 96 & 0.95 & 0.75 & 96 / 84\\
+optimization              & 24 & 96 & 0.95 & 0.77 & 96 / 84\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -992,9 +995,9 @@ On optimization problems the gain of Table~\ref{tab:main} carries over. SC
 finishes three problems (ex6\_2\_13, hs101, hs112) in 3\,000 to 3\,100\,s
 that the black box does not finish within 3\,600\,s; with 7\,200\,s it
 finishes them in 4\,000 to 4\,480\,s with the same cells, and these runs
-enter the means. The mean is pulled down by bearing, where a few cold
-re-solves change the search of SC (1\,910 cells in two seeds, against 40\,132
-without the retry); without bearing SC is 19\% faster with 2\% more cells.
+enter the means. Without bearing, whose search tree changes by two orders of
+magnitude between seeds (Section~\ref{sec:discussion}), SC is 22\% faster
+with 2\% fewer cells; the largest loss is ex5\_4\_4 ($\times1.18$).
 On long runs of systems of equations the two engines are close: SC is 3\% faster
 with its own bound order and 5\% faster with the farthest bound first in both,
 with the same cells, and finishes one more run (CountercurrentReactors2-26,
@@ -1017,16 +1020,16 @@ SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
 pass of SC costs $0.62$ times that of the black box on systems of equations
 (geometric mean over the 183 systems with at least 20 nodes and 100 LPs;
-median 417 against 682\,$\mu$s) and $0.46$ times on optimization problems (175
-problems; median 114 against 252\,$\mu$s), and is cheaper on 85\% and 92\% of
+median 417 against 682\,$\mu$s) and $0.44$ times on optimization problems (175
+problems; median 114 against 254\,$\mu$s), and is cheaper on 85\% and 99\% of
 the instances. Each engine uses its own bound order, as in Table~\ref{tab:main}.
 
 The two other panels split this ratio into pivots per pass and time per LP.
 SC does not pivot less: it makes 33\% more pivots than the black box on
-systems of equations (3.0 against 2.0 per LP) and 40\% more on optimization
-problems (2.7 against 1.8). The whole gain is in the cost of an LP
-($\times0.68$ and $\times0.46$; medians 25.1 against 38.2 and 12.5 against
-30.0\,$\mu$s). With two or three pivots per LP, the black box pays mostly for
+systems of equations (3.0 against 2.0 per LP) and 37\% more on optimization
+problems (2.4 against 1.8). The whole gain is in the cost of an LP
+($\times0.68$ and $\times0.41$; medians 25.1 against 38.2 and 12.3 against
+30.2\,$\mu$s). With two or three pivots per LP, the black box pays mostly for
 what a call does besides pivoting. On ex2\_1\_9 an LP of the black box takes
 24\,$\mu$s against 8\,$\mu$s for SC, with about two pivots per LP in both. Counting
 instructions on the same LPs, the pivots themselves cost about the same in
@@ -1053,8 +1056,8 @@ comparison reverses: on Katsurabis-14, Bratu-0060 and launch an LP of SoPlex
 is cheaper than one of SC even without any emulation (105 against
 203\,$\mu$s on Katsurabis-14), because it pivots less and each pivot costs
 less; these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
-(9 to 10 pivots per LP) an LP of the black box is even cheaper (80 against
-94\,$\mu$s).
+(9 to 11 pivots per LP) an LP costs about the same in both engines (78 against
+81\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
 propagation, ACID and interval Newton, its lower cost yields the 9--21\% of
 Table~\ref{tab:main}.
@@ -1073,21 +1076,21 @@ Table~\ref{tab:main}.
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_sol.dat};
 \addlegendentry{systems: $\times0.62$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=tbb,y=tsc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times0.46$}
+\addlegendentry{optimization: $\times0.44$}
 \addplot[gray, thin, domain=5:2000000]{x};
 \nextgroupplot[title={pivots per pass}, xmin=0.005, xmax=100000, ymin=0.005, ymax=100000,
   xlabel={black box}, ylabel={SC}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_sol.dat};
 \addlegendentry{systems: $\times1.33$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=pbb,y=psc]{costo_pasada_opt.dat};
-\addlegendentry{optimization: $\times1.40$}
+\addlegendentry{optimization: $\times1.37$}
 \addplot[gray, thin, domain=0.005:100000]{x};
 \nextgroupplot[title={time per LP}, xmin=1, xmax=3000, ymin=1, ymax=3000,
   xlabel={black box, $\mu$s}, ylabel={SC, $\mu$s}]
 \addplot[only marks, mark=*, mark size=1.1pt, color=serieA, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_sol.dat};
 \addlegendentry{systems: $\times0.68$}
 \addplot[only marks, mark=triangle*, mark size=1.4pt, color=serieB, fill opacity=0.8, draw=white, line width=0.15pt] table[x=bb,y=sc]{costo_lp_opt.dat};
-\addlegendentry{optimization: $\times0.46$}
+\addlegendentry{optimization: $\times0.41$}
 \addplot[gray, thin, domain=1:3000]{x};
 \end{groupplot}
 \end{tikzpicture}
@@ -1206,7 +1209,7 @@ pruned. The black-box engine above, inside our contractor, recovers most of it.
 \paragraph{Why SC wins.} SC does not contract with a better polytope: both
 engines solve the same relaxation and feed the same certificate. Its advantage
 has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
-times that of the black box on systems of equations and 0.46 times on
+times that of the black box on systems of equations and 0.44 times on
 optimization problems (Figure~\ref{fig:cost}). SC does not pivot less; each LP
 is cheaper because the $2n$ bounds share one tableau and the restart needs no
 phase~1, so that an LP costs little beyond its pivots, while each call to the black
