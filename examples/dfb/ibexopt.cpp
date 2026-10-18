@@ -84,6 +84,13 @@ int main(int argc, char** argv) {
         if (!getenv("DFB_SX_REVPRIMAL")) DFBSimplex::rev_primal = true;
         if (!getenv("DFB_SX_MOTOR_M")) DFBSimplex::motor_umbral = 15;
     }
+    /* Orden de cotas del optimizador (2026-10-18): la mas cercana primero. Con
+     * el arranque tibio primal la base anterior conserva su vertice, y la cota
+     * mas cercana es la que menos pivotes primales necesita; el orden por costo
+     * (conteo de infactibilidades duales) es el adecuado para el arranque dual
+     * del solver. En los 240 problemas: cpu x0.98 / x0.97 / x0.95, mismas
+     * celdas. `DFBH_ORDEN` definida manda como antes (`costo` es el anterior). */
+    if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "cerca", 0);
     // Menú interactivo para configurar las opciones
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
