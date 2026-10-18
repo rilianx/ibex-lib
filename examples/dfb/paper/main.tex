@@ -976,33 +976,31 @@ runs finished.}
 \toprule
 benchmark & instances & runs & cells & CPU & finished\\
 \midrule
-systems                   & 48 & 96 & 1.04 & 0.96 & 94 / 89\\
-systems, same bound order & 48 & 96 & 0.76 & 0.76 & 94 / 94\\
-optimization              & 24 & 96 & 0.91 & 0.73 & 96 / 80\\
+systems                   & 48 & 96 & 1.02 & 0.97 & 94 / 93\\
+systems, same bound order & 48 & 96 & 1.00 & 0.95 & 94 / 94\\
+optimization              & 24 & 96 & 0.95 & 0.75 & 96 / 84\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 On optimization problems the gain of Table~\ref{tab:main} carries over. SC
-finishes four problems (ex6\_2\_13, hs101, hs112, pollut) in 2\,400 to
-3\,100\,s that the black box does not finish within 3\,600\,s; with 7\,200\,s it
-finishes them in 3\,850 to 4\,390\,s with the same cells, and these runs enter
-the means. The mean is pulled down by bearing, where a few cold re-solves change the search of SC
-(1\,910 cells in two seeds, against 40\,132 without the retry); without
-bearing SC is 22\% faster with 1\% fewer cells. On systems SC finishes five runs
-that the black box does not (Brown-30 and Brown-30-1, in 1--2\,s, and one run
-of CountercurrentReactors2-24), and is 4\% faster on the others. The mean is
-dominated by one run, CountercurrentReactors2-28 with seed 1 ($\times4.2$);
-without it SC is 6\% faster with the same number of cells. That run is not
-caused by the linear contractor: the adaptive tuning of ACID, which every
-1\,000 calls re-estimates how many variables to shave from a window of 50
-calls, settles on shaving none for a long stretch of the search, and boxes that
-ACID alone would empty are bisected instead (with a different seed, or without
-the retry, the same instance finishes in 320--370\,s). With the farthest bound
-first in both engines SC finishes the same runs and is 24\% faster: the black
-box needs 72--78\,s and 15\,000 cells on Brown-30 and Brown-30-1, and one run of
-CountercurrentReactors2-24 takes it 3\,250\,s against 120\,s for SC. Without
-these, SC is 8\% faster with the same cells.
+finishes three problems (ex6\_2\_13, hs101, hs112) in 3\,000 to 3\,100\,s
+that the black box does not finish within 3\,600\,s; with 7\,200\,s it
+finishes them in 4\,000 to 4\,480\,s with the same cells, and these runs
+enter the means. The mean is pulled down by bearing, where a few cold
+re-solves change the search of SC (1\,910 cells in two seeds, against 40\,132
+without the retry); without bearing SC is 19\% faster with 2\% more cells.
+On long runs of systems of equations the two engines are close: SC is 3\% faster
+with its own bound order and 5\% faster with the farthest bound first in both,
+with the same cells, and finishes one more run (CountercurrentReactors2-26,
+in 257\,s). The mean with each engine's own order is dominated by one run,
+CountercurrentReactors2-28 with seed 1 ($\times4.2$); without it SC is 5\%
+faster with 1\% fewer cells. That run is not caused by the linear contractor:
+the adaptive tuning of ACID, which every 1\,000 calls re-estimates how many
+variables to shave from a window of 50 calls, settles on shaving none for a
+long stretch of the search, and boxes that ACID alone would empty are bisected
+instead (with a different seed, or without the retry, the same instance
+finishes in 320--370\,s).
 
 \subsection{Cost of a pass}
 
