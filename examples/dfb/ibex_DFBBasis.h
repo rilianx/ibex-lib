@@ -10,8 +10,10 @@
 #include <string>
 #include <cstdlib>
 #include "ibex_Matrix.h"
+#ifndef DFB_LU7
 #include "soplex.h"
 #include "soplex/slufactor.h"
+#endif
 
 #include <vector>
 
@@ -140,6 +142,7 @@ private:
 
     /* Abar disperso, por filas y por columnas. */
     std::vector<std::vector<std::pair<int,double> > > row_nz;
+#ifndef DFB_LU7
     std::vector<soplex::DSVector> col_nz;      //!< columnas de Abar
     std::vector<soplex::DSVector> unit_nz;     //!< columnas de la identidad
 
@@ -161,14 +164,24 @@ private:
     LUSinReloj lu;
     soplex::DVector   rhs, sol;
     soplex::SSVector* eta;   //!< se recrea en load_matrix con la dimension m
+#else
+    /* `-DDFB_LU7` (2026-10-17): la LU y los vectores de SoPlex 7 van detras de un
+     * puntero opaco (ibex_DFBBasis7.cpp), para no mezclar encabezados de 4.0.2 y 7. */
+    std::vector<int> basic;
+    std::vector<int> where_basic;
+    struct Impl7;
+    Impl7* p7;
+#endif
     int updates_since_factor;
     int col_preparada;   //!< columna cuyo eta dejo `preparar_cambio` (-1 si ninguna)
 
+#ifndef DFB_LU7
     const soplex::SVector& column(int c) const {
         return (c < na) ? (const soplex::SVector&)col_nz[c]
                         : (const soplex::SVector&)unit_nz[c - na];
     }
 
+#endif
     bool factorize();
 };
 

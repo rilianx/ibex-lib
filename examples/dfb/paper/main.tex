@@ -796,7 +796,12 @@ equations and 2 on optimization problems). Rows that are free for SoPlex
 (both sides infinite) are passed to it empty: such a row constrains nothing,
 but in the affine relaxation of Brown the row of the product equation has
 coefficients of order $10^{108}$, on which SoPlex~4.0.2 and 7.1.6 alike fail
-in almost every LP. Its feasibility and optimality
+in almost every LP. We also tried SoPlex~7.1.6 as the black box: on a sample
+of eight problems it explores the same cells or fewer per second and is
+1.2--1.9 times slower than 4.0.2, also with presolving and scaling off, so we
+keep 4.0.2; the revised engine of SC, which uses the LU factorization of
+SoPlex, gives the same search trees with the LU of 7.1.6 and is 0--14\%
+slower with it. Its feasibility and optimality
 tolerance matters: $10^{-9}$ makes SoPlex report spurious infeasibility on
 relaxations with nearly-equal rows, while $10^{-6}$ weakens the dual on
 optimization problems; we use $10^{-6}$ for systems of equations and $10^{-9}$

@@ -522,6 +522,16 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**SoPlex 7.1.6 (2026-10-17).** Compilado con el namespace renombrado
+(`-Dsoplex=soplex7`, `$M/sx7ns`) para convivir con 4.0.2. (1) Caja con SoPlex 7
+(`DFBH_CAJA_SOPLEX7=1`, `ibex_Caja7.{h,cpp}`, binarios `*_s7`): en 8 problemas
+es ×1.2–1.9 más lenta que la caja directa 4.0.2 (ex2_1_9 14.8 vs 7.6 s mismas
+celdas; sin presolve ni escalado 12.0 s); Brown-18 85 celdas vs 67. La caja
+del paper sigue con 4.0.2. (2) SC con la LU de SoPlex 7 (`-DDFB_LU7`,
+`ibex_DFBBasis7.cpp`, objetos en `$M/obj7`, binarios `*_lu7`): mismas celdas
+en todos los sistemas que terminan; Bratu-0120/0150/0200 ×1.08–1.14 más lento,
+el resto igual; en opt con tope, sambal procesa 34 % menos celdas. Frase en §5.
+
 **Brown era un lastre de la caja: una fila libre con coeficientes de 1e108
 (2026-10-17).** Volcando los LPs fallidos (`DFBH_CAJA_DUMP=dir`, formato
 `.txtlp` exacto; el MPS no se puede escribir, `XMPSWR02`) y resolviéndolos

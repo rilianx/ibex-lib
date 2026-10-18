@@ -19,6 +19,7 @@
 #include <vector>
 
 namespace ibex {
+class Caja7;
 
 /**
  * \brief Contractor de casco poliedral con DFB, sustituto directo de
@@ -386,6 +387,9 @@ private:
     soplex::SoPlex* sx_directa = nullptr;            // caja negra sin las filas de cotas de `LPSolver` (`DFBH_CAJA_DIRECTA=1`)
     long sx_directa_ep = -1;
     DFBSimplex::Status resolver_caja_directa(int k, bool maximizar, const IntervalVector& z, bool frio);
+    class Caja7* caja7 = nullptr;                   // caja negra con SoPlex 7 (`DFBH_CAJA_SOPLEX7=1`)
+    long caja7_ep = -1;
+    DFBSimplex::Status resolver_caja7(int k, bool maximizar, const IntervalVector& z, bool frio);
     bool caja_inf_sin_rayo;   // SoPlex declaro infactible pero no entrego rayo
     DFBSimplex::Status resolver_caja(int k, bool maximizar, const IntervalVector& z, bool frio = false);
     /* envoltorios de `una_pasada` para perfilar cada motor por separado en la sonda `DFBH_ABCAJA` */
