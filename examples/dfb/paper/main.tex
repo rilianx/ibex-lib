@@ -545,8 +545,9 @@ revised engine is. The threshold is 30 rows in the solver of systems of
 equations, and 15 rows in the optimizer, where the warm start is primal; both
 were chosen on the systems of equations and on the 139 optimization problems
 used for tuning (Section~\ref{sec:experiments}). The ablation (Table~\ref{tab:ablation}) shows that the
-tableau alone is 8--15\% slower on systems of equations, and the revised
-engine alone up to 3\% slower on optimization problems.
+tableau alone is 8--15\% slower on systems of equations and 7--12\% on
+optimization problems, and the revised engine alone 2--3\% slower on
+optimization problems.
 
 \subsection{Certification}
 
@@ -1153,8 +1154,8 @@ differ in cost, mostly on systems of equations, whose relaxations are larger.
 Merging the twin rows is the largest saving (without it, CPU time
 $\times1.26$--$1.42$ and eight fewer runs finished), followed by the hybrid
 engine (with the tableau alone, $\times1.08$--$1.15$ and seven fewer runs on
-systems of equations, $\times1.04$ on optimization problems). The
-revised engine alone is about as fast on systems of equations, but up to 3\%
+systems of equations, $\times1.07$--$1.12$ on optimization problems). The
+revised engine alone is about as fast on systems of equations, but 2--3\%
 slower on the small relaxations of optimization problems; the
 threshold keeps the best of both. Among the pivoting rules, the long-step ratio
 test gives 7--10\% on systems of equations, the cost perturbation 3--4\% (and
@@ -1165,19 +1166,22 @@ when the dual warm start relocates the nonbasic variables, does not act there,
 and the search is identical without it. Each program loses with the warm start
 of the other (Section~\ref{sec:simplex}): the primal warm start is 4--5\%
 slower on systems of equations, with one fewer run finished, and the dual
-warm start 5--9\% slower on optimization problems. Ordering the bounds with
-information of the tableau instead of the farthest-bound rule saves 1--2\% on
-systems of equations, and on optimization problems it is 3\% faster on runs
-above 0.1\,s and within 1\% above 1\,s.
+warm start 9--15\% slower on optimization problems. The bound order follows
+the warm start: the count read from the tableau saves 1--2\% over the
+farthest bound first on systems of equations, where the nearest bound first is
+1--2\% slower; on optimization problems the nearest bound first saves 4--5\%
+over the farthest and 2--3\% over the count.
 
 \begin{table}[t]
 \centering
 \caption{Ablation: each row changes one component of SC. Ratios against full
 SC: cells and CPU on systems of equations for runs above 0.1, 1 and 5\,s,
 runs finished out of 484 (full SC: 364), CPU on optimization problems above
-0.1\,s and problems solved in all seeds (full SC: 217). The warm-start row
+0.1\,s and problems solved in all seeds (full SC: 216). The warm-start row
 gives each program the warm start of the other: primal on systems of
-equations, dual on optimization problems.}
+equations, dual on optimization problems; the order row gives each the order
+of the other: nearest bound first on systems of equations, the count read from
+the tableau on optimization problems.}
 \label{tab:ablation}
 \begin{tabular}{lccccccc}
 \toprule
@@ -1185,15 +1189,16 @@ equations, dual on optimization problems.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 363 & 1.00 & 217\\
-warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 363 & 1.07 & 217\\
-without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 362 & 1.00 & 218\\
+without cost perturbation         & 1.02 & 1.03 & 1.04 & 1.04 & 363 & 1.01 & 215\\
+warm start of the other program   & 1.01 & 1.05 & 1.05 & 1.04 & 363 & 1.09 & 216\\
+without long-step ratio test      & 1.01 & 1.10 & 1.08 & 1.07 & 362 & 1.01 & 217\\
 without devex                     & 1.01 & 1.01 & 1.02 & 1.00 & 363 & 1.00 & 217\\
-without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 364 & 1.00 & 217\\
-tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 357 & 1.04 & 217\\
-revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 364 & 1.03 & 217\\
+without box-scaled tolerance      & 1.00 & 1.01 & 1.00 & 1.00 & 364 & 1.00 & 218\\
+tableau engine only               & 1.02 & 1.15 & 1.14 & 1.08 & 357 & 1.07 & 216\\
+revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 364 & 1.02 & 216\\
 without merging twin rows         & 1.02 & 1.42 & 1.34 & 1.26 & 356 & 1.02 & 216\\
-farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 363 & 1.03 & 217\\
+farthest-bound order              & 1.00 & 1.02 & 1.02 & 1.01 & 363 & 1.05 & 217\\
+order of the other program        & 1.02 & 1.02 & 1.02 & 1.01 & 362 & 1.02 & 217\\
 \bottomrule
 \end{tabular}
 \end{table}
