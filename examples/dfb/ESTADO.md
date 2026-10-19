@@ -522,6 +522,22 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Por qué SoPlex pivotea menos: el vértice en que termina (2026-10-19).**
+Con la sombra en `ibexreplay` (`DFBH_SOMBRA=1`, mide también la base al empezar y
+al terminar cada LP): SoPlex termina en bases con las estructurales en sus cotas
+(Katsurabis-14 ~6.5 estructurales básicas de 30 filas, Bratu-0060 ~25) y la
+cota siguiente le sale en 0–1 pivotes (x_k básica al empezar 6–31 %); SC termina
+con muchas estructurales básicas (22.6 y 50.4; x_k básica 32–79 %) y parte a ~10
+infactibilidades (dual: básicas fuera de cota; primal: costos reducidos de signo
+malo). En los LPs que la caja hace con ≤1 pivote, SC hace 39 (Katsurabis-14).
+SoPlex en frío también los resuelve con 0.7 pivotes: son LPs casi triviales.
+Descartado como causa o como remedio: warm start primal (24.6 piv/LP), devex
+primal (`DFB_SX_DEVEXPT`, ×0.96 en opt), DSE, perturbación, motor, cotas de
+holgura sin intersectar (`DFBH_HOLGURA=lados`: idéntico en sistemas, contrae
+menos en opt), limpieza de básicas en cota (solo 10–20 % lo están), desempate
+hacia las esquinas (`DFB_SX_ESQUINA=eps`: la base final no cambia). Todos
+apagados. Abierto: cómo hacer que SC termine en vértices "de caja".
+
 **Sombra LP a LP (2026-10-19, `DFBH_SOMBRA=1` en `ibexreplay`).** Cada LP que
 resuelve SC se resuelve también con la caja (mismo k, sentido y caja, en la misma
 cadena). En la misma secuencia SoPlex pivotea menos sobre todo porque termina en

@@ -161,6 +161,13 @@ bool DFBSimplex::rev_primal = getenv("DFB_SX_REVPRIMAL") && std::string(getenv("
 bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_primal_cero = 0;
+bool DFBSimplex::medir_inicio = false;
+int DFBSimplex::inicio_pinf = 0;
+int DFBSimplex::inicio_dinf = 0;
+int DFBSimplex::inicio_kbasica = 0;
+int DFBSimplex::inicio_nxbas = 0;
+int DFBSimplex::fin_nxbas = 0;
+int DFBSimplex::fin_nxcota = 0;
 long DFBSimplex::n_primal_total = 0;
 long DFBSimplex::n_verif      = 0;
 long DFBSimplex::n_verif_pinf = 0;
@@ -619,6 +626,27 @@ void DFBSimplex::set_objective(int k, bool maximize, bool reubicar) {
     std::fill(d.begin(), d.end(), 0.0);
     std::fill(ylam.begin(), ylam.end(), 0.0);
     d[k] = maximize ? -1.0 : 1.0;
+    /* DESEMPATE HACIA LAS ESQUINAS DE LA CAJA (`DFB_SX_ESQUINA=eps`, 2026-10-19).
+     * El LP de la cota de x_k tiene una cara optima grande; SoPlex termina en
+     * vertices con las estructurales en sus cotas, y entonces la cota siguiente
+     * le sale en 0-1 pivotes, mientras SC termina en vertices "de filas". Se
+     * agrega al objetivo un costo eps*sigma_j a cada estructural j != k: sigma
+     * la empuja a la cota en que esta (no basica) o a la mas cercana a su valor
+     * (basica). El certificado sigue siendo valido para cualquier lambda. */
+    static const double esquina = getenv("DFB_SX_ESQUINA") ? atof(getenv("DFB_SX_ESQUINA")) : 0.0;
+    if (esquina > 0.0 && (int)zs.size() >= nx) {
+        for (int c = 0; c < nx; ++c) {
+            if (c == k) continue;
+            bool abajo;
+            if (rowof[c] < 0) abajo = !atupper[c];
+            else {
+                const double lo = zs[c].lb(), hi = zs[c].ub();
+                const double v = ((int)xB.size() > rowof[c]) ? xB[rowof[c]] : 0.5*(lo + hi);
+                abajo = !(hi < POS_INFINITY) ? true : !(lo > NEG_INFINITY) ? false : (v - lo <= hi - v);
+            }
+            d[c] = abajo ? esquina : -esquina;
+        }
+    }
 
     for (int r = 1; r <= m; ++r) {
         const int b = basic[r];
@@ -1906,6 +1934,21 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
     emular_soplex_antes();
     const Status st = solve_nucleo(k, maximize, z, max_iter, warm);
     emular_soplex_despues(k, maximize);
+    if (medir_inicio && m > 0) {
+        /* base final: estructurales basicas y cuantas estan en una cota (solo lectura) */
+        if (xb_sucio) compute_basics(zs);
+        int nb = 0, nc = 0;
+        for (int r = 1; r <= m; ++r) {
+            const int c = basic[r];
+            if (c >= nx) continue;
+            ++nb;
+            const double lo = zs[c].lb(), hi = zs[c].ub();
+            const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ? std::fabs(lo) : std::fabs(hi));
+            const double tol = tol_primal(lo, hi, esc);
+            if (std::fabs(xB[r] - lo) <= tol || std::fabs(hi - xB[r]) <= tol) ++nc;
+        }
+        fin_nxbas = nb; fin_nxcota = nc;
+    }
     return st;
 }
 
@@ -2037,6 +2080,27 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     /* El estado inicial, con 0 pivotes, ya es una parada valida: da la cota
      * trivial. Es el primer punto de la curva anytime. */
     registrar_traza(k, maximize);
+    if (medir_inicio) {
+        /* infactibilidades del punto de partida (solo lectura: `compute_basics`
+         * es la misma cuenta que haria el bucle) */
+        if (xb_sucio) compute_basics(zz);
+        int pinf = 0, dinf = 0;
+        for (int r = 1; r <= m; ++r) {
+            const int c = basic[r];
+            const double lo = zz[c].lb(), hi = zz[c].ub();
+            const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ? std::fabs(lo) : std::fabs(hi));
+            const double tol = tol_primal(lo, hi, esc);
+            if (xB[r] < lo - tol || xB[r] > hi + tol) ++pinf;
+        }
+        for (int c = 0; c < na; ++c) {
+            if (rowof[c] >= 0) continue;
+            if ((!atupper[c] && d[c] < -DUAL_TOL) || (atupper[c] && d[c] > DUAL_TOL)) ++dinf;
+        }
+        inicio_pinf = pinf; inicio_dinf = dinf;
+        inicio_kbasica = rowof[k] >= 0;
+        int nxb = 0; for (int r = 1; r <= m; ++r) if (basic[r] < nx) ++nxb;
+        inicio_nxbas = nxb;
+    }
 
     /* Bucle COMPUESTO sobre el tableau: paso dual mientras haya
      * infactibilidad primal, paso primal mientras haya dual. */

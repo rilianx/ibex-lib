@@ -342,6 +342,9 @@ public:
     bool primal_step_revisado(const IntervalVector& z, bool& unbounded);
     static long n_entrak;
     static long n_primal_cero;   //!< pivotes primales de paso cero (degenerados)
+    static bool medir_inicio;    //!< mide las infactibilidades al empezar cada LP (sonda sombra)
+    static int  inicio_pinf, inicio_dinf, inicio_kbasica, inicio_nxbas;
+    static int  fin_nxbas, fin_nxcota;   //!< al terminar: estructurales basicas y cuantas de ellas estan en una cota   //!< basicas fuera de cota y no basicas con costo reducido de signo malo al empezar
     static long n_primal_total;  //!< pivotes primales   //!< pivotes de entrada explicita de `k` (`DFB_SX_ENTRAK=1`)
     static long n_verif;             //!< optimos verificados
     static long n_verif_pinf;        //!< de esos, con violacion primal relativa > 1e-6

@@ -126,8 +126,30 @@ static void sombra_anotar(int it_sc, int it_bb, double t_sc, double t_bb, bool o
     if (it_bb == 0) ++sm_cero_bb[sm_bin(it_sc)];
 }
 static long sz_lps = 0, sz_piv = 0, sz_prim = 0, sz_cero = 0;
+/* infactibilidades de partida de SC por clase de LP: [0] SC>10 y caja<=1, [1] el resto */
+static long si_n[2] = {0,0}, si_p[2] = {0,0}, si_d[2] = {0,0}, si_piv[2] = {0,0};
+static long sb_n[2] = {0,0}, sb_ksc[2] = {0,0}, sb_xsc[2] = {0,0}, sb_kbb[2] = {0,0}, sb_xbb[2] = {0,0}, sb_nbb[2] = {0,0};
+static void sombra_base(int it_sc, int it_bb, int ksc, int xsc, int kbb, int xbb) {
+    const int c = (it_sc > 10 && it_bb <= 1) ? 0 : 1;
+    ++sb_n[c]; sb_ksc[c] += ksc; sb_xsc[c] += xsc;
+    if (kbb >= 0) { ++sb_nbb[c]; sb_kbb[c] += kbb; sb_xbb[c] += xbb; }
+}
+static long sf_n = 0, sf_b = 0, sf_c = 0;
+static void sombra_fin(int b, int c) { ++sf_n; sf_b += b; sf_c += c; }
+static void sombra_inicio(int it_sc, int it_bb, int pinf, int dinf) {
+    const int c = (it_sc > 10 && it_bb <= 1) ? 0 : 1;
+    ++si_n[c]; si_p[c] += pinf; si_d[c] += dinf; si_piv[c] += it_sc;
+}
 static void sombra_cero(int it_sc, long prim, long cero) { ++sz_lps; sz_piv += it_sc; sz_prim += prim; sz_cero += cero; }
 static void sombra_resumen() {
+    if (sf_n) fprintf(stderr, "[sombra] al terminar cada LP, SC deja %.2f estructurales basicas, %.2f de ellas en una cota (%.0f%%)\n",
+                      (double)sf_b/sf_n, (double)sf_c/sf_n, sf_b ? 100.0*sf_c/sf_b : 0.0);
+    for (int c = 0; c < 2; ++c) if (sb_n[c] && sb_nbb[c])
+        fprintf(stderr, "[sombra] %s: k basica al empezar SC %.1f%% caja %.1f%% | estructurales basicas SC %.2f caja %.2f\n",
+                c == 0 ? "SC>10 y caja<=1" : "resto          ", 100.0*sb_ksc[c]/sb_n[c], 100.0*sb_kbb[c]/sb_nbb[c], (double)sb_xsc[c]/sb_n[c], (double)sb_xbb[c]/sb_nbb[c]);
+    for (int c = 0; c < 2; ++c) if (si_n[c])
+        fprintf(stderr, "[sombra] %s: LPs %ld | al empezar SC tiene %.2f basicas fuera de cota y %.2f costos reducidos de signo malo | piv/LP SC %.2f\n",
+                c == 0 ? "SC>10 y caja<=1" : "resto          ", si_n[c], (double)si_p[c]/si_n[c], (double)si_d[c]/si_n[c], (double)si_piv[c]/si_n[c]);
     if (sz_lps) fprintf(stderr, "[sombra] LPs con caja=0 y SC>0: %ld, pivotes SC %ld (primales %ld, de paso cero %ld)\n", sz_lps, sz_piv, sz_prim, sz_cero);
     if (!sm_n) return;
     fprintf(stderr, "[sombra] LPs=%ld | piv/LP SC %.2f caja %.2f | us/LP SC %.2f caja %.2f | caja pivotea menos %.1f%% igual %.1f%% mas %.1f%% | optimos SC %ld caja %ld\n",
@@ -645,7 +667,12 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         if (ladob.lb() <= -1e100) ladob = Interval(NEG_INFINITY, ladob.ub());
         if (ladob.ub() >=  1e100) ladob = Interval(ladob.lb(), POS_INFINITY);
         const Interval bi = ladob & enclosure;
-        z[nb_var+i] = bi.is_empty() ? enclosure : bi;
+        /* `DFBH_HOLGURA=lados` (2026-10-19, diagnostico): la holgura usa solo el
+         * lado del solver, como la caja negra, sin intersectarlo con la evaluacion
+         * por intervalos de la fila. Valido igual (el lado vale para toda
+         * solucion); el certificado puede quedar mas debil si un lado es infinito. */
+        static const bool holgura_lados = getenv("DFBH_HOLGURA") && std::string(getenv("DFBH_HOLGURA")) == "lados";
+        z[nb_var+i] = holgura_lados ? ladob : (bi.is_empty() ? enclosure : bi);
     }
     for (int i = 0; i < m; ++i) {
         for (int j = 0; j < nb_var; ++j) A[i][j] = rows0[nb_var+fuente[i]][j];
@@ -1675,6 +1702,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         if (lp_largo2 && (lps_pasada % 1000) == 0)
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
         static const bool sombra = DFB_ENV("DFBH_SOMBRA");
+        if (sombra) DFBSimplex::medir_inicio = true;
         const double sm0 = (sombra && !motor_caja) ? ahora_s() : 0.0;
         const long pc0 = DFBSimplex::n_primal_cero, pt0 = DFBSimplex::n_primal_total;
         DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
@@ -1686,11 +1714,21 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             const double sm1 = ahora_s();
             const int it_sc = sk.iterations();
             const std::vector<double> lam_g = lam_caja, x_g = x_caja;
+            int bb_kbas = -1, bb_nxbas = -1;
+            if (sx_directa && sx_directa->hasBasis() && sx_directa->numColsReal() == nb_var) {
+                std::vector<soplex::SPxSolver::VarStatus> br(sx_directa->numRowsReal()), bc(nb_var);
+                sx_directa->getBasis(br.data(), bc.data());
+                bb_kbas = bc[k] == soplex::SPxSolver::BASIC;
+                bb_nxbas = 0; for (int i = 0; i < nb_var; ++i) bb_nxbas += bc[i] == soplex::SPxSolver::BASIC;
+            }
             const DFBSimplex::Status st_bb = resolver_caja(k, lado == 1, z);
             const double sm2 = ahora_s();
             lam_caja = lam_g; x_caja = x_g;
             sombra_anotar(it_sc, it_caja, sm1 - sm0, sm2 - sm1, st == DFBSimplex::OPTIMAL, st_bb == DFBSimplex::OPTIMAL);
             if (it_caja == 0 && it_sc > 0) sombra_cero(it_sc, DFBSimplex::n_primal_total - pt0, DFBSimplex::n_primal_cero - pc0);
+            sombra_inicio(it_sc, it_caja, DFBSimplex::inicio_pinf, DFBSimplex::inicio_dinf);
+            sombra_base(it_sc, it_caja, DFBSimplex::inicio_kbasica, DFBSimplex::inicio_nxbas, bb_kbas, bb_nxbas);
+            sombra_fin(DFBSimplex::fin_nxbas, DFBSimplex::fin_nxcota);
         }
         /* `DFBH_FRIO_SI_NO_CERTIFICA` (encendido por omision; `=0` lo apaga):
          * un INFEASIBLE cuyo rayo no certifica se vuelve a resolver EN FRIO.
