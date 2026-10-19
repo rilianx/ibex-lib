@@ -21,6 +21,7 @@
 namespace ibex {
 class Caja7;
 class CajaHighs;
+class CajaGurobi;
 
 /**
  * \brief Contractor de casco poliedral con DFB, sustituto directo de
@@ -392,6 +393,9 @@ private:
     class CajaHighs* cajah = nullptr;               // caja negra con HiGHS (`DFBH_CAJA_HIGHS=1`)
     long cajah_ep = -1;
     DFBSimplex::Status resolver_cajahighs(int k, bool maximizar, const IntervalVector& z, bool frio);
+    class CajaGurobi* cajag = nullptr;              // caja negra con Gurobi (`DFBH_CAJA_GUROBI=1`)
+    long cajag_ep = -1;
+    DFBSimplex::Status resolver_cajagurobi(int k, bool maximizar, const IntervalVector& z, bool frio);
     long caja7_ep = -1;
     DFBSimplex::Status resolver_caja7(int k, bool maximizar, const IntervalVector& z, bool frio);
     bool caja_inf_sin_rayo;   // SoPlex declaro infactible pero no entrego rayo
