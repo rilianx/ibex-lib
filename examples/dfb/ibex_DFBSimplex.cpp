@@ -161,6 +161,8 @@ bool DFBSimplex::rev_primal = getenv("DFB_SX_REVPRIMAL") && std::string(getenv("
 bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_primal_cero = 0;
+long DFBSimplex::n_camina_piv = 0;
+long DFBSimplex::n_camina_lps = 0;
 bool DFBSimplex::medir_inicio = false;
 int DFBSimplex::inicio_pinf = 0;
 int DFBSimplex::inicio_dinf = 0;
@@ -1928,11 +1930,66 @@ void DFBSimplex::emular_soplex_despues(int k, bool maximize) {
     }
 }
 
+/* CAMINATA DENTRO DE LA CARA OPTIMA (`DFB_SX_CAMINA=K`, 2026-10-19).
+ *
+ * La sombra mostro que SoPlex termina cada LP en un vertice con casi todas las
+ * estructurales en sus cotas, y entonces la cota siguiente le sale en 0-1
+ * pivotes, mientras SC termina con muchas estructurales basicas. Aca, con el
+ * LP ya optimo, se dan hasta K pasos primales que no cambian el optimo: solo
+ * pueden entrar columnas con costo reducido nulo para el objetivo principal
+ * (`dp`), y se elige con un objetivo secundario que empuja cada estructural
+ * basica hacia su cota mas cercana (las no basicas, a la cota en que estan).
+ * Con costo reducido principal nulo en la entrante, el paso dual del objetivo
+ * principal es cero, asi que `dp` no cambia con los pivotes. Al final se
+ * recalcula el objetivo principal (`d` e `ylam`) desde el tableau, de modo que
+ * el certificado sale de la base final con los costos verdaderos. Solo el motor
+ * tableau. Los pivotes se cuentan en `iters`. */
+void DFBSimplex::caminar_cara_optima(int k, bool maximize, int tope) {
+    if (xb_sucio) compute_basics(zs);
+    const std::vector<double> dp = d;
+    std::vector<char> sigma_abajo(nx, 1);
+    for (int c = 0; c < nx; ++c) {
+        if (rowof[c] < 0) { sigma_abajo[c] = !atupper[c]; continue; }
+        const double lo = zs[c].lb(), hi = zs[c].ub(), v = xB[rowof[c]];
+        sigma_abajo[c] = !(hi < POS_INFINITY) ? 1 : !(lo > NEG_INFINITY) ? 0 : (v - lo <= hi - v);
+    }
+    int dados = 0;
+    for (int paso = 0; paso < tope; ++paso) {
+        /* costos reducidos del objetivo secundario sobre la base actual */
+        std::fill(d.begin(), d.end(), 0.0);
+        std::fill(ylam.begin(), ylam.end(), 0.0);
+        for (int c = 0; c < nx; ++c) if (c != k) d[c] = sigma_abajo[c] ? 1.0 : -1.0;
+        for (int r = 1; r <= m; ++r) {
+            const int b = basic[r];
+            const double f = (b < na) ? d[b] : ylam[b - na];
+            if (f == 0.0) continue;
+            const std::vector<int>& ix = tidx[r];
+            const std::vector<double>& vl = tval[r];
+            for (size_t t = 0; t < ix.size(); ++t) {
+                const int c = ix[t];
+                if (c < na) d[c] -= f * vl[t]; else ylam[c-na] -= f * vl[t];
+            }
+            if (b < na) d[b] = 0.0; else ylam[b - na] = 0.0;
+        }
+        /* solo columnas que no cambian el optimo principal */
+        for (int c = 0; c < na; ++c) if (rowof[c] < 0 && std::fabs(dp[c]) > DUAL_TOL) d[c] = 0.0;
+        bool unb = false;
+        const int r0 = n_primal_total;
+        if (!primal_step(zs, unb) || unb) break;
+        if (n_primal_total > r0) { ++iters; ++dados; }
+        if (xb_sucio) compute_basics(zs);
+    }
+    if (dados > 0) { n_camina_piv += dados; ++n_camina_lps; }
+    set_objective(k, maximize, false);   /* d e ylam del objetivo principal sobre la base final */
+}
+
 DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
                                      const IntervalVector& z, int max_iter,
                                      bool warm) {
     emular_soplex_antes();
     const Status st = solve_nucleo(k, maximize, z, max_iter, warm);
+    static const int camina = getenv("DFB_SX_CAMINA") ? atoi(getenv("DFB_SX_CAMINA")) : 0;
+    if (camina > 0 && st == OPTIMAL && !rev && m > 0) caminar_cara_optima(k, maximize, camina);
     emular_soplex_despues(k, maximize);
     if (medir_inicio && m > 0) {
         /* base final: estructurales basicas y cuantas estan en una cota (solo lectura) */

@@ -50,12 +50,13 @@ that computes its own multipliers: writing the relaxation as $\Abar z=0$ with
 interval-bounded slacks, any multiplier vector yields a certificate valid on
 the box and every sub-box, and SC is designed around it, with a free
 dual-feasible start for every bound, one tableau shared by the $2n$ problems,
-a warm start chosen per program and a hybrid tableau/revised engine. Inside the
-same contractor, against SoPlex solving the same LPs, a full polytope-hull
-pass costs 0.44 times as much on optimization problems and 0.62 times on
-systems of equations. SC does not pivot less: its LPs avoid the per-call setup
-of a general-purpose solver, and its multipliers certify bounds where SoPlex
-reports no optimum. The whole solver is 17--20\% faster on 240 global
+a warm start chosen per program and a hybrid tableau/revised engine. Replaying
+the same polytope-hull passes inside the same contractor, a pass of SC costs 0.47
+times that of SoPlex on optimization problems and 0.55 times on systems of
+equations, with the same contraction. SC does not pivot less: refactorizing at
+every call, verifying the solution and presolving each relaxation account for
+two thirds of the difference, which SC avoids by sharing one tableau among the
+$2n$ problems. The whole solver is 17--20\% faster on 240 global
 optimization problems and 9--10\% faster on 242 systems of equations, with
 slightly fewer cells, and SC never exceeds the LP hull
 beyond the tolerance of an LP oracle.
@@ -153,10 +154,11 @@ lower bound that is nondecreasing along the iterations
 \item A controlled evaluation in Ibex, on 242 systems of equations and 240
 optimization problems, in which the same contractor runs either SC or a
 black-box LP solver on the same LPs, feeding the same certificate; a rigor
-check against the LP hull; an analysis on identical LPs, where a full pass of
-the contractor costs 0.44 (optimization) and 0.62 (systems) times that of the
-black box, showing that the gain comes from the cost of each LP and from the
-bounds the black box loses, not from fewer pivots; and an ablation
+check against the LP hull; a bank of polytope-hull passes replayed outside the
+search, where a pass of SC costs 0.47 (optimization) and 0.55 (systems) times
+that of the black box with the same contraction, and an attribution of that
+difference to the parts of a call of the black box; an analysis of the LPs
+where the black box pivots less; and an ablation
 (Section~\ref{sec:experiments}).
 \end{itemize}
 
@@ -1014,8 +1016,78 @@ finishes in 320--370\,s).
 \subsection{Cost of a pass}
 
 Table~\ref{tab:main} mixes two effects: how many cells are explored and what
-each pass of the contractor costs. To separate them we ran both engines on the
-same LPs: at every node the black box first runs the pass on a copy of the box,
+each pass of the contractor costs. To measure the polytope-hull contractor alone,
+without the noise of the search, we built a bank of passes: for 71 instances,
+one per family on systems of equations and 35 optimization problems spread over
+the range of running times, we recorded the input boxes of 1\,000 calls of the
+contractor along the search of SC, and replayed each call outside the search
+with both engines on the same LPs. Both engines then contract every box to the
+same result (mean contraction 0.166 against 0.166 on systems and 0.273 against
+0.273 on optimization problems, with the same boxes emptied), and only their cost
+differs (Table~\ref{tab:bank}). A pass of SC costs 0.55 times that of SoPlex on
+systems of equations and 0.47 times on optimization problems; it is cheaper on
+33 of the 36 systems and on all 35 optimization problems. The three exceptions
+are DiscreteBoundary-0200, Katsurabis-14 and Bratu-0120, discussed in
+Section~\ref{sec:discussion}.
+
+\begin{table}[t]
+\centering
+\caption{Polytope-hull passes replayed outside the search (1\,000 recorded calls
+per instance): time per pass of SC over that of SoPlex on the same LPs (geometric
+mean and medians), instances where SC is cheaper, and mean contraction of the
+perimeter with each engine.}
+\label{tab:bank}
+\begin{tabular}{lrcccc}
+\toprule
+benchmark & instances & SC/BB & median ($\mu$s) & SC cheaper & contraction (SC / BB)\\
+\midrule
+systems      & 36 & 0.55 & 215 / 412 & 33 & 0.166 / 0.166\\
+optimization & 35 & 0.47 & 121 / 261 & 35 & 0.273 / 0.273\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+To attribute this difference we used the same bank in two directions
+(Table~\ref{tab:cascade}). On one side we added to SC, at every LP and on separate
+vectors, so that its contraction does not change, each part of the work that
+SoPlex does in a call; on the other we removed from SoPlex the parts that can be
+removed from outside (with a patched copy for the verification and the
+refactorization at optimality). In logarithmic scale the shares add up.
+Refactorizing the basis at the start of each LP would account for 41--45\% of the
+gap, verifying the solution for 16--19\% (10--18\% when it is removed from
+SoPlex, the one part measured both ways), and presolving each new relaxation,
+which only SoPlex does, for 22--23\%; recomputing the vectors at the start of a
+solve and copying the solution add little, and turning off the scaling of SoPlex
+makes it slower on systems of equations. With everything added, a pass of SC
+would cost 0.85 and 0.76 times that of SoPlex: these parts explain 73\% and 65\%
+of the gap, and the rest is the general machinery of a call (setting up and
+storing vectors, unscaling, the interface).
+
+\begin{table}[t]
+\centering
+\caption{Attribution of the gap of Table~\ref{tab:bank}, as the share of the
+logarithm of the time ratio. Left: work of SoPlex added to SC at every LP,
+cumulatively. Right: work removed from SoPlex, cumulatively. The time per pass
+relative to SoPlex is given after each step (34 optimization problems: one
+emulation failed on launch).}
+\label{tab:cascade}
+\begin{tabular}{lcc@{\hspace{2em}}lcc}
+\toprule
+added to SC & systems & optim. & removed from SoPlex & systems & optim.\\
+\midrule
+(SC)                    & 0.55 & 0.46 & (SoPlex)                       & 1.00 & 1.00\\
+refactorize per LP      & 45\% & 41\% & verification                  & 18\% & 10\%\\
+recompute vectors       &  7\% &  6\% & refactorization at optimum    &  1\% &  3\%\\
+verify the solution     & 19\% & 16\% & presolve                      & 22\% & 23\%\\
+copy the solution       &  2\% &  1\% & scaling                       & $-22$\% & 4\%\\
+\midrule
+result                  & 0.85 & 0.76 & result                        & 0.90 & 0.74\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The same comparison can be made inside the search. We ran both engines on the
+same LPs at every node: the black box first runs the pass on a copy of the box,
 and SC then runs it on the same box and polytope, with the search following
 SC. Figure~\ref{fig:cost} compares the time of a full pass over the bounds,
 including ordering, skipping and certification, which are common to both. A
@@ -1043,20 +1115,12 @@ refactorizations that SoPlex makes before declaring optimality (from 1.2 to
 0.25 per LP) did not change the time of an LP. SC solves the $2n$ bounds of a
 pass on one tableau and only replaces the objective row and the bounds that
 changed.
-To check this attribution we ran the converse experiment: we added to SC, at
-every LP and on separate vectors, so that the search does not change, the work
-that SoPlex does in each call. Refactorizing the basis at the start of each LP
-adds 25--40\% to an LP of SC on small relaxations (on ex2\_1\_9, from 7.7 to
-10.6\,$\mu$s), verifying the solution 10--25\%, and recomputing the vectors
-or copying the solution little. With all of them an LP of SC costs
-13.3\,$\mu$s on ex2\_1\_9 against 22.6 for the black box, and 33 and
-32\,$\mu$s on Bellido and chem against 36 and 37; the rest is the presolving
-and scaling of each new relaxation and the general machinery of a call, which
-we did not emulate. On large relaxations or LPs with many pivots the
+The cascade of Table~\ref{tab:cascade} confirms this attribution on the
+whole bank of passes. On large relaxations or LPs with many pivots the
 comparison reverses: on Katsurabis-14 and Bratu-0060 an LP of SoPlex is
-cheaper than one of SC even without any emulation (105 against 203 and 80
-against 110\,$\mu$s), because it pivots less (see Section~\ref{sec:discussion});
-these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
+cheaper than one of SC (105 against 203 and 80 against 110\,$\mu$s), because
+it pivots less (Section~\ref{sec:discussion}); these are the instances where
+SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
 (9 to 11 pivots per LP) an LP costs about the same in both engines (78 against
 81\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
@@ -1241,7 +1305,11 @@ infeasibilities away. On Katsurabis-14, with the same sequence of LPs, SC
 needs 10.4 pivots per LP against 1.2 (181 against 34\,$\mu$s per solve; with
 each engine on its own pass, 203 against 105\,$\mu$s per LP), with about 22
 basic structural variables against 6.5 in SoPlex; changing the warm start, the
-pricing, the perturbation or the engine of SC does not change this. On systems
+pricing, the perturbation or the engine of SC does not change this. The third
+exception of Table~\ref{tab:bank}, DiscreteBoundary-0200, is of another kind:
+on the same sequence of LPs both engines need the same pivots (12.4 against
+12.7 per LP), and the difference comes from the LPs that each engine solves in
+its own pass, with its own order and skipped bounds. On systems
 of equations, SC is slower than the
 black box with the nearest bound first by more than 5\% on three systems. On
 the largest relaxations its nodes cost more and it explores slightly more
@@ -1287,8 +1355,11 @@ the cost of a call to SoPlex~4.0.2, whose LPs here need two or three pivots,
 not from pivoting less; other LP solvers have other per-call costs, which we
 did not measure. Making SC end its LPs at vertices of the box, as SoPlex does,
 would remove most of its losses; a tie-break toward the corners of the box
-inside the optimal face did not, and we leave a more direct mechanism, such as
-a short walk inside the optimal face at the end of each LP, to future work.
+inside the optimal face did not, and neither did a short walk inside the
+optimal face at the end of each LP (up to ten primal steps that keep the
+optimum and push the basic structural variables toward a bound: the optimal
+face leaves them almost no room, and the extra pivots are not recovered). Why
+the dual and primal paths of SoPlex end at those vertices remains open.
 
 % =====================================================================
 \bibliographystyle{plain}

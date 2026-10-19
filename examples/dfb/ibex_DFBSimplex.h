@@ -548,6 +548,9 @@ private:
      *  costo reducido, sale la basica que primero toca una cota. Devuelve
      *  false si no hay ninguna que viole (optimo dual). */
     bool primal_step(const IntervalVector& z, bool& unbounded);
+    /* caminata dentro de la cara optima al terminar un LP (`DFB_SX_CAMINA=K`) */
+    void caminar_cara_optima(int k, bool maximize, int tope);
+    static long n_camina_piv, n_camina_lps;
 
     /** \brief Un paso dual: sale la basica que mas viola sus cotas, entra la
      *  del menor cociente |d_j/a_rj|. Devuelve false si no hay violacion

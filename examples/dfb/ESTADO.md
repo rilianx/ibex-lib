@@ -522,6 +522,22 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Banco de pasadas y cascada de atribución (2026-10-19, `results/banco_2026-10-19/`).**
+71 instancias (36 sistemas, una por familia; 35 opt por cuantiles de tiempo), 1000
+cajas capturadas por instancia (`banco_cap.sh`), reproducidas con `ibexreplay` y
+`DFBH_ABCAJA=1`. Pasada SC/caja: sistemas ×0.55 (mediana 215 vs 412 µs, SC más
+barato en 33/36), opt ×0.47 (121 vs 261, 35/35); contracción idéntica. Excepciones:
+DiscreteBoundary-0200 ×2.03 (en la sombra, mismos pivotes: la diferencia son los
+LPs que resuelve cada uno), Katsurabis-14 ×1.63, Bratu-0120 ×1.13. Cascada
+(`cascada.sh`, `ibexreplay_sx` con SoPlex parchado `SOPLEX_SIN_VERIF`): agregar a
+SC factorizar por LP 45/41 % de la brecha log (sist/opt), recalcular vectores
+7/6 %, verificar 19/16 %, copiar 2/1 % (total 73/65 %); quitar a SoPlex verificar
+18/10 %, refactorizar al óptimo 1/3 %, presolve 22/23 %, escalado −22/+4 %. Tablas
+`tab:bank` y `tab:cascade` en el paper; el resumen usa ×0.47 / ×0.55.
+**Caminata en la cara óptima (`DFB_SX_CAMINA=K`):** no sirve (Katsurabis-14
+estructurales básicas 22.6 → 22.1, pivotes 10.0 → 11.6 con K=10; DiscreteBoundary
+y Bratu-0120: cero pasos posibles). Apagada; resultado negativo en Limits.
+
 **Por qué SoPlex pivotea menos: el vértice en que termina (2026-10-19).**
 Con la sombra en `ibexreplay` (`DFBH_SOMBRA=1`, mide también la base al empezar y
 al terminar cada LP): SoPlex termina en bases con las estructurales en sus cotas
