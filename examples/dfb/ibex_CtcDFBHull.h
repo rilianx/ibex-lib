@@ -20,6 +20,7 @@
 
 namespace ibex {
 class Caja7;
+class CajaHighs;
 
 /**
  * \brief Contractor de casco poliedral con DFB, sustituto directo de
@@ -388,6 +389,9 @@ private:
     long sx_directa_ep = -1;
     DFBSimplex::Status resolver_caja_directa(int k, bool maximizar, const IntervalVector& z, bool frio);
     class Caja7* caja7 = nullptr;                   // caja negra con SoPlex 7 (`DFBH_CAJA_SOPLEX7=1`)
+    class CajaHighs* cajah = nullptr;               // caja negra con HiGHS (`DFBH_CAJA_HIGHS=1`)
+    long cajah_ep = -1;
+    DFBSimplex::Status resolver_cajahighs(int k, bool maximizar, const IntervalVector& z, bool frio);
     long caja7_ep = -1;
     DFBSimplex::Status resolver_caja7(int k, bool maximizar, const IntervalVector& z, bool frio);
     bool caja_inf_sin_rayo;   // SoPlex declaro infactible pero no entrego rayo
