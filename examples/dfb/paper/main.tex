@@ -1217,8 +1217,10 @@ pruned. The black-box engine above, inside our contractor, recovers most of it.
 engines solve the same relaxation and feed the same certificate. Its advantage
 has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
 times that of the black box on systems of equations and 0.44 times on
-optimization problems (Figure~\ref{fig:cost}). SC does not pivot less; each LP
-is cheaper because the $2n$ bounds share one tableau and the restart needs no
+optimization problems (Figure~\ref{fig:cost}). SC does not pivot less: on the
+same sequence of LPs, SoPlex needs as many pivots or fewer (on ex2\_1\_9, 1.6
+per LP against 2.0), yet an LP of SC costs a quarter (5 against 20\,$\mu$s).
+Each LP is cheaper because the $2n$ bounds share one tableau and the restart needs no
 phase~1, so that an LP costs little beyond its pivots, while each call to the black
 box pays for setting up and tearing down a general-purpose solve. The second is
 robustness: where the black box ends without an optimum, the bound is lost,
@@ -1227,7 +1229,17 @@ where the largest gain is (Geneig-icse). The slightly tighter
 certificates of SC on the remaining LPs compound along the search but are a
 second-order effect.
 
-\paragraph{Where it loses.} On systems of equations, SC is slower than the
+\paragraph{Where it loses.} SC loses where the LPs need many pivots and SoPlex
+needs fewer of them. Replaying the same LPs with both engines shows why: SoPlex
+ends each LP at a vertex where most structural variables sit at a bound of
+the box, so that the variable of the next bound is usually nonbasic and that
+LP takes zero or one pivot; SC ends at vertices where many structural
+variables are basic and many rows are tight, and starts the next LP about ten
+infeasibilities away. On Katsurabis-14, with the same sequence of LPs, SC
+needs 10.4 pivots per LP against 1.2 (181 against 34\,$\mu$s), with about 22
+basic structural variables against 6.5 in SoPlex; changing the warm start, the
+pricing, the perturbation or the engine of SC does not change this. On systems
+of equations, SC is slower than the
 black box with the nearest bound first by more than 5\% on three systems. On
 the largest relaxations its nodes cost more and it explores slightly more
 cells: Bratu-0175 ($\times1.27$, 55 cells against 51) and Bratu-0180
@@ -1270,7 +1282,10 @@ expensive for both engines: the systems of 400 to 1\,000 variables of the
 benchmark exceed the limits of 60\,s and 6\,GB with either. The cheaper pass of SC comes from
 the cost of a call to SoPlex~4.0.2, whose LPs here need two or three pivots,
 not from pivoting less; other LP solvers have other per-call costs, which we
-did not measure.
+did not measure. Making SC end its LPs at vertices of the box, as SoPlex does,
+would remove most of its losses; a tie-break toward the corners of the box
+inside the optimal face did not, and we leave a more direct mechanism, such as
+a short walk inside the optimal face at the end of each LP, to future work.
 
 % =====================================================================
 \bibliographystyle{plain}
