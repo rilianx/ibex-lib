@@ -13,6 +13,7 @@
 #include "ibex_Caja7.h"
 #include "ibex_CajaHighs.h"
 #include "ibex_CajaGurobi.h"
+#include "ibex_CajaSPx.h"
 #include "ibex_LPSolver.h"
 #include "ibex_LinearizerCompo.h"
 
@@ -3260,6 +3261,41 @@ DFBSimplex::Status CtcDFBHull::resolver_cajagurobi(int k, bool maximizar, const 
     return DFBSimplex::SINGULAR;
 }
 
+DFBSimplex::Status CtcDFBHull::resolver_cajaspx(int k, bool maximizar, const IntervalVector& z, bool frio) {
+    it_caja = 0;
+    caja_inf_sin_rayo = false;
+    const int m = A.nb_rows();
+    if (!cajas) cajas = new CajaSPx();
+    if (cajas_ep != n_m_llam || (int)caja_cotas.size() != nb_var) {
+        const Matrix R = mylinearsolver.rows();
+        const IntervalVector LR = mylinearsolver.lhs_rhs();
+        std::vector<double> lb(nb_var), ub(nb_var), lhs(m), rhs(m), a((size_t)m * nb_var);
+        for (int i = 0; i < nb_var; ++i) { lb[i] = z[i].lb(); ub[i] = z[i].ub(); }
+        for (int j = 0; j < m; ++j) {
+            lhs[j] = LR[nb_var + j].lb(); rhs[j] = LR[nb_var + j].ub();
+            for (int i = 0; i < nb_var; ++i) a[(size_t)j * nb_var + i] = R[nb_var + j][i];
+        }
+        soplex::SoPlex& lp = *mylinearsolver.mysoplex;
+        cajas->cargar(nb_var, m, &lb[0], &ub[0], &lhs[0], &rhs[0], &a[0],
+                      lp.realParam(soplex::SoPlex::FEASTOL),
+                      !(getenv("DFBH_CAJA_SCALER") && std::string(getenv("DFBH_CAJA_SCALER")) == "0"));
+        caja_cotas = IntervalVector(nb_var);
+        for (int i = 0; i < nb_var; ++i) caja_cotas[i] = z[i];
+        cajas_ep = n_m_llam;
+    } else {
+        for (int i = 0; i < nb_var; ++i)
+            if (!(caja_cotas[i] == z[i])) { cajas->cota(i, z[i].lb(), z[i].ub()); caja_cotas[i] = z[i]; }
+    }
+    lam_caja.assign(m, 0.0);
+    x_caja.assign(nb_var, 0.0);
+    const int r = cajas->resolver(k, maximizar, frio, &lam_caja[0], &x_caja[0], &it_caja);
+    if (r == 0) return DFBSimplex::OPTIMAL;
+    if (r == 1) return DFBSimplex::INFEASIBLE;
+    if (r == 2) caja_inf_sin_rayo = true;
+    lam_caja.assign(m, 0.0);
+    return DFBSimplex::SINGULAR;
+}
+
 DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, const IntervalVector& z, bool frio) {
     it_caja = 0;
     caja_inf_sin_rayo = false;
@@ -3480,6 +3516,7 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
     if (DFB_ENV("DFBH_CAJA_SOPLEX7")) return resolver_caja7(k, maximizar, z, frio);
     if (DFB_ENV("DFBH_CAJA_HIGHS")) return resolver_cajahighs(k, maximizar, z, frio);
     if (DFB_ENV("DFBH_CAJA_GUROBI")) return resolver_cajagurobi(k, maximizar, z, frio);
+    if (DFB_ENV("DFBH_CAJA_SPX")) return resolver_cajaspx(k, maximizar, z, frio);
     static const bool directa = DFB_ENV("DFBH_CAJA_DIRECTA");
     if (directa) return resolver_caja_directa(k, maximizar, z, frio);
 
