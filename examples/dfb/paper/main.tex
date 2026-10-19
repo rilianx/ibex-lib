@@ -839,9 +839,9 @@ on the 242 systems of the Ibex solver benchmark that some configuration solves
 within 3600\,s (22 are excluded), 2 seeds, 60\,s per run. For
 optimization we use IbexOpt on 240 problems, those of the Ibex optimization
 benchmark that some configuration solves within 3600\,s (59 are excluded), 4
-seeds, 60\,s per run. The parameters of SC were chosen on 139 of them; on the
-other 101, which we added afterwards, SC is 17--20\% faster, against 18--20\%
-on the 139. Three
+seeds, 60\,s per run. The parameters of SC were chosen on 139 of them, except
+the bound order of the optimizer, chosen on all 240; on the other 101, which we
+added afterwards, SC is 17--20\% faster, against 18--20\% on the 139. Three
 problems (alkyl, alkylbis, bearing) whose search trees change by two orders of
 magnitude between seeds of the same configuration are excluded from the means.
 We report geometric means of ratios over the pairs of runs in which both
@@ -933,8 +933,8 @@ profiles~\cite{dolan2002benchmarking} over the runs above 0.1\,s that at least
 one engine finishes: SC is the faster engine in 85\% of the runs on systems of
 equations and in 91\% on optimization problems; within a factor of 2 the black
 box reaches 98\% of the runs in both, and it does not finish 0.8\% and 1.2\% of
-them, all of which SC finishes; SC finishes every run that the black box
-finishes.
+them, all of which SC finishes; SC fails to finish one run that the black box
+finishes (alkyl, seed 2, one of the three problems excluded from the means).
 
 \begin{figure}[t]
 \centering
@@ -1053,14 +1053,14 @@ or copying the solution little. With all of them an LP of SC costs
 32\,$\mu$s on Bellido and chem against 36 and 37; the rest is the presolving
 and scaling of each new relaxation and the general machinery of a call, which
 we did not emulate. On large relaxations or LPs with many pivots the
-comparison reverses: on Katsurabis-14, Bratu-0060 and launch an LP of SoPlex
-is cheaper than one of SC even without any emulation (105 against
-203\,$\mu$s on Katsurabis-14), because it pivots less and each pivot costs
-less; these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
+comparison reverses: on Katsurabis-14 and Bratu-0060 an LP of SoPlex is
+cheaper than one of SC even without any emulation (105 against 203 and 80
+against 110\,$\mu$s), because it pivots less (see Section~\ref{sec:discussion});
+these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
 (9 to 11 pivots per LP) an LP costs about the same in both engines (78 against
 81\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
-propagation, ACID and interval Newton, its lower cost yields the 9--21\% of
+propagation, ACID and interval Newton, its lower cost yields the 9--20\% of
 Table~\ref{tab:main}.
 
 \begin{figure}[t]
@@ -1219,7 +1219,9 @@ has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
 times that of the black box on systems of equations and 0.44 times on
 optimization problems (Figure~\ref{fig:cost}). SC does not pivot less: on the
 same sequence of LPs, SoPlex needs as many pivots or fewer (on ex2\_1\_9, 1.6
-per LP against 2.0), yet an LP of SC costs a quarter (5 against 20\,$\mu$s).
+per LP against 2.0), yet the solve of an LP of SC costs a quarter (5 against
+20\,$\mu$s; 8 against 24 with ordering and certification, as in
+Figure~\ref{fig:cost}).
 Each LP is cheaper because the $2n$ bounds share one tableau and the restart needs no
 phase~1, so that an LP costs little beyond its pivots, while each call to the black
 box pays for setting up and tearing down a general-purpose solve. The second is
@@ -1236,7 +1238,8 @@ the box, so that the variable of the next bound is usually nonbasic and that
 LP takes zero or one pivot; SC ends at vertices where many structural
 variables are basic and many rows are tight, and starts the next LP about ten
 infeasibilities away. On Katsurabis-14, with the same sequence of LPs, SC
-needs 10.4 pivots per LP against 1.2 (181 against 34\,$\mu$s), with about 22
+needs 10.4 pivots per LP against 1.2 (181 against 34\,$\mu$s per solve; with
+each engine on its own pass, 203 against 105\,$\mu$s per LP), with about 22
 basic structural variables against 6.5 in SoPlex; changing the warm start, the
 pricing, the perturbation or the engine of SC does not change this. On systems
 of equations, SC is slower than the
