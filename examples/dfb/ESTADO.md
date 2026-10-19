@@ -1693,3 +1693,20 @@ con la misma explicación (§6).
   con la caja con presolve; caja con SPxSolver directo (mantener la LU entre
   cotas) sin probar.
 - Resultados y scripts en `results/solvers_2026-10-19/`.
+
+**SPxSolver directo como caja negra (2026-10-19).** El núcleo de SoPlex 4.0.2
+sin la clase SoPlex (`DFBH_CAJA_SPX=1`): LP cargado, entre cotas solo cambian
+objetivo y cotas, relojes apagados (también los de la LU: sin eso, 41 mil
+llamadas a `times()` lo hacían más lento que la clase).
+- Refactoriza igual ~1 vez por LP: la hace el propio simplex de SoPlex antes
+  de declarar el óptimo (spxsolve.cpp), no la envoltura.
+- Banco de pasadas: SPx ×0.755 de la clase en las 71 instancias; SC/SPx 0.80
+  (sistemas, 27/36 más barato) y 0.72 (opt, 25/35). Contra la clase eran 0.62
+  y 0.56: la envoltura explicaba cerca de la mitad de la ventaja.
+- 60 s, banco completo (brazo `cajaspx`): opt celdas 0.99–1.03, cpu
+  0.91/0.91/0.93, 872/868; sistemas 0.94–0.98, 0.97/0.95/0.95, 364/362;
+  sistemas con «cerca» en ambos 0.98–0.99, 0.98/0.97/0.98, 362/362. SPx
+  contra la clase: cpu ×0.93 opt, ×0.96 sistemas, mismas celdas.
+- SC pierde donde pivotea mucho más (Bratu-0120 10.3 contra 3.3 piv/LP,
+  BroydenTri, launch, Katsurabis-14); gana grande por robustez
+  (DiscreteBoundary-0200 ×0.19, Geneig-icse ×0.45).

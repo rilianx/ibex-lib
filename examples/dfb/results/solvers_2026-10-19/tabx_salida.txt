@@ -1,0 +1,11 @@
+opt sccerca   /cajaspx    celdas/cpu >0.1 0.992/0.908(n=465)  >1 0.989/0.906(n=258)  >5 1.029/0.934(n=110)  terminan 872/868
+    mejores [(0.06, 'ex7_2_2'), (0.06, 'ex8_1_8bis'), (0.67, 'dipigri'), (0.72, 'hs100'), (0.73, 'ex2_1_9fact')] 
+    peores [(1.12, 'batch'), (1.12, 'dixchlng'), (1.18, 'launch'), (1.25, 'ex7_2_3'), (1.82, 'hhfair1')]
+opt cajaspx   /cajacercap celdas/cpu >0.1 1.002/0.932(n=477)  >1 0.989/0.919(n=264)  >5 0.995/0.928(n=114)  terminan 868/869
+sol sc        /cajaspx    celdas/cpu >0.1 0.975/0.965(n=257)  >1 0.966/0.952(n=165)  >5 0.944/0.949(n=97)  terminan 364/362
+    mejores [(0.19, 'DiscreteBoundary-0200'), (0.45, 'Geneig-icse'), (0.58, 'Brown-30'), (0.59, 'Brown-30-1'), (0.72, 'exnewton')] 
+    peores [(1.21, 'Bratu-0080'), (1.22, 'Bratu-0070'), (1.29, 'Bratu-0180'), (1.33, 'Katsurabis-14'), (1.46, 'Bratu-0175')]
+sol sccerca   /cajaspx    celdas/cpu >0.1 0.989/0.981(n=257)  >1 0.988/0.974(n=165)  >5 0.980/0.983(n=97)  terminan 362/362
+    mejores [(0.46, 'Geneig-icse'), (0.59, 'Brown-30'), (0.59, 'Brown-30-1'), (0.71, 'exnewton'), (0.8, 'Fredtest')] 
+    peores [(1.16, 'Bratu-0090'), (1.16, 'Bratu-0120'), (1.19, 'Bratu-0070'), (1.21, 'Bratu-0175'), (1.45, 'Katsurabis-14')]
+sol cajaspx   /cajacercap celdas/cpu >0.1 1.007/0.959(n=261)  >1 1.006/0.961(n=163)  >5 1.009/0.966(n=98)  terminan 362/362

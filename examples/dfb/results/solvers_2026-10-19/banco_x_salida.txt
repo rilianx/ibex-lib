@@ -1,0 +1,79 @@
+== sol: 36 instancias, 15775 pasadas
+   pasada SC/caja x0.80 (mediana 208 vs 277 us), mas barata en 27/36
+   us/LP x0.86  piv/LP x1.35
+   contraccion media SC 0.1664 caja 0.1654; vaciados SC 1468 caja 1468
+   exnewton                     pasada       11 vs       30 us x0.38 | piv/LP  0.35 vs  0.43 | contr 0.000 vs 0.000
+   Pramanik                     pasada       18 vs       44 us x0.41 | piv/LP  0.78 vs  0.90 | contr 0.240 vs 0.240
+   Rose                         pasada       19 vs       45 us x0.42 | piv/LP  0.64 vs  0.75 | contr 0.132 vs 0.131
+   SjirkBoon                    pasada       33 vs       66 us x0.50 | piv/LP  1.94 vs  1.81 | contr 0.268 vs 0.268
+   ponts-geo                    pasada       97 vs      189 us x0.51 | piv/LP  0.35 vs  0.37 | contr 0.016 vs 0.016
+   Geneig-icse                  pasada     1831 vs     3467 us x0.53 | piv/LP  3.45 vs  4.47 | contr 0.336 vs 0.335
+   Geneigbis                    pasada      111 vs      207 us x0.54 | piv/LP  1.81 vs  1.93 | contr 0.336 vs 0.336
+   Yamamua1-0016sp              pasada      160 vs      273 us x0.59 | piv/LP  1.54 vs  1.40 | contr 0.017 vs 0.017
+   Brent-10                     pasada      104 vs      174 us x0.60 | piv/LP  0.92 vs  0.84 | contr 0.037 vs 0.035
+   Fredtest                     pasada       75 vs      119 us x0.63 | piv/LP  2.06 vs  2.30 | contr 0.312 vs 0.312
+   Geneig                       pasada      101 vs      161 us x0.63 | piv/LP  2.13 vs  1.80 | contr 0.337 vs 0.338
+   ExtendedWood-08              pasada       92 vs      140 us x0.65 | piv/LP  2.52 vs  1.88 | contr 0.264 vs 0.262
+   Discrete-Integral-6          pasada       76 vs      113 us x0.67 | piv/LP  2.44 vs  2.13 | contr 0.220 vs 0.220
+   Redeco9                      pasada      188 vs      273 us x0.69 | piv/LP  4.17 vs  3.17 | contr 0.130 vs 0.130
+   Trigexp2-11                  pasada      111 vs      158 us x0.70 | piv/LP  0.91 vs  0.81 | contr 0.015 vs 0.015
+   Eco10                        pasada      201 vs      281 us x0.71 | piv/LP  4.66 vs  3.25 | contr 0.114 vs 0.114
+   Fourbarbis-1                 pasada      101 vs      136 us x0.74 | piv/LP  2.01 vs  1.70 | contr 0.276 vs 0.275
+   I5bis                        pasada      171 vs      222 us x0.77 | piv/LP  2.17 vs  1.88 | contr 0.070 vs 0.070
+   Neveu1                       pasada      256 vs      329 us x0.78 | piv/LP  1.29 vs  1.10 | contr 0.000 vs 0.000
+   Directkin                    pasada      264 vs      336 us x0.79 | piv/LP  2.13 vs  1.92 | contr 0.225 vs 0.225
+   Yamamura1-0040sp             pasada      612 vs      741 us x0.83 | piv/LP  2.90 vs  1.75 | contr 0.028 vs 0.028
+   transistor                   pasada      211 vs      251 us x0.84 | piv/LP  4.99 vs  3.56 | contr 0.269 vs 0.269
+   Design                       pasada      206 vs      245 us x0.84 | piv/LP  5.06 vs  3.59 | contr 0.278 vs 0.278
+   Trigo1-0015                  pasada      461 vs      542 us x0.85 | piv/LP  1.34 vs  1.09 | contr 0.191 vs 0.189
+   Brown-30                     pasada     1168 vs     1286 us x0.91 | piv/LP  1.30 vs  1.19 | contr 0.333 vs 0.318
+   Designbis                    pasada      298 vs      311 us x0.96 | piv/LP  5.60 vs  3.80 | contr 0.269 vs 0.269
+   BroydenBanded-120            pasada     3805 vs     3844 us x0.99 | piv/LP  3.05 vs  1.71 | contr 0.026 vs 0.026
+   Katsura-17                   pasada     1507 vs     1471 us x1.02 | piv/LP  8.58 vs  6.50 | contr 0.146 vs 0.146
+   Discrete-Integralf2-21       pasada     6500 vs     6250 us x1.04 | piv/LP  8.31 vs  3.62 | contr 0.154 vs 0.153
+   CountercurrentReactors2-14   pasada      558 vs      483 us x1.15 | piv/LP  4.48 vs  2.87 | contr 0.097 vs 0.093
+   transistor-icse              pasada      507 vs      415 us x1.22 | piv/LP  6.38 vs  3.81 | contr 0.264 vs 0.264
+   Designsp                     pasada      499 vs      407 us x1.23 | piv/LP  6.31 vs  3.77 | contr 0.251 vs 0.251
+   BroydenTri-0100              pasada     8355 vs     6065 us x1.38 | piv/LP  6.20 vs  2.60 | contr 0.041 vs 0.041
+   Bratu-0120                   pasada    22429 vs    14799 us x1.52 | piv/LP 10.29 vs  3.31 | contr 0.113 vs 0.108
+   Katsurabis-14                pasada     5344 vs     2747 us x1.95 | piv/LP 10.02 vs  7.37 | contr 0.168 vs 0.167
+   DiscreteBoundary-0200        pasada    88200 vs    35200 us x2.51 | piv/LP 12.42 vs  1.31 | contr 0.013 vs 0.013
+== opt: 35 instancias, 21586 pasadas
+   pasada SC/caja x0.72 (mediana 122 vs 159 us), mas barata en 25/35
+   us/LP x0.70  piv/LP x1.12
+   contraccion media SC 0.2730 caja 0.2730; vaciados SC 2978 caja 2978
+   hs088                        pasada       19 vs       54 us x0.35 | piv/LP  1.36 vs  1.00 | contr 0.237 vs 0.237
+   ex8_4_5bis                   pasada       20 vs       50 us x0.40 | piv/LP  1.23 vs  0.90 | contr 0.155 vs 0.155
+   hs100                        pasada       50 vs      112 us x0.44 | piv/LP  1.77 vs  1.47 | contr 0.348 vs 0.348
+   ex6_2_6                      pasada       27 vs       60 us x0.45 | piv/LP  1.69 vs  1.35 | contr 0.170 vs 0.170
+   ex6_2_12                     pasada       35 vs       75 us x0.46 | piv/LP  1.75 vs  1.66 | contr 0.365 vs 0.365
+   ex6_2_9                      pasada       41 vs       85 us x0.48 | piv/LP  1.77 vs  1.71 | contr 0.218 vs 0.218
+   dualc5                       pasada       62 vs      127 us x0.49 | piv/LP  2.15 vs  2.13 | contr 0.404 vs 0.404
+   ex2_1_9bis                   pasada       58 vs      109 us x0.53 | piv/LP  1.84 vs  1.38 | contr 0.273 vs 0.273
+   ex2_1_9                      pasada       68 vs      127 us x0.54 | piv/LP  1.86 vs  1.91 | contr 0.385 vs 0.385
+   dualc1                       pasada       68 vs      125 us x0.54 | piv/LP  2.06 vs  1.88 | contr 0.507 vs 0.507
+   ex7_2_3                      pasada       69 vs      127 us x0.55 | piv/LP  1.93 vs  1.19 | contr 0.059 vs 0.059
+   ex7_2_8                      pasada       79 vs      141 us x0.56 | piv/LP  1.88 vs  1.57 | contr 0.310 vs 0.310
+   ex6_2_10                     pasada       68 vs      111 us x0.62 | piv/LP  2.47 vs  1.85 | contr 0.382 vs 0.382
+   ex7_2_9                      pasada      132 vs      203 us x0.65 | piv/LP  2.19 vs  1.74 | contr 0.307 vs 0.307
+   hs117                        pasada      229 vs      337 us x0.68 | piv/LP  2.82 vs  2.15 | contr 0.384 vs 0.384
+   ex14_2_7                     pasada      111 vs      155 us x0.72 | piv/LP  2.81 vs  2.77 | contr 0.450 vs 0.450
+   ex8_5_1                      pasada      111 vs      150 us x0.74 | piv/LP  2.91 vs  2.79 | contr 0.399 vs 0.399
+   ex8_5_2                      pasada      116 vs      156 us x0.74 | piv/LP  3.37 vs  3.18 | contr 0.397 vs 0.397
+   ex8_5_1-1                    pasada      108 vs      145 us x0.75 | piv/LP  2.94 vs  2.82 | contr 0.410 vs 0.410
+   ex8_5_2_1                    pasada      122 vs      159 us x0.77 | piv/LP  3.29 vs  3.16 | contr 0.364 vs 0.364
+   chem                         pasada      229 vs      285 us x0.80 | piv/LP  3.87 vs  3.31 | contr 0.344 vs 0.344
+   hs119                        pasada      656 vs      748 us x0.88 | piv/LP  4.58 vs  4.23 | contr 0.353 vs 0.353
+   mconcon                      pasada      229 vs      260 us x0.88 | piv/LP  3.29 vs  3.16 | contr 0.077 vs 0.077
+   ex6_1_1                      pasada      160 vs      181 us x0.89 | piv/LP  2.70 vs  2.72 | contr 0.325 vs 0.325
+   himmel16                     pasada      482 vs      518 us x0.93 | piv/LP  3.62 vs  3.45 | contr 0.165 vs 0.165
+   ex7_3_5                      pasada      288 vs      288 us x1.00 | piv/LP  2.96 vs  2.85 | contr 0.012 vs 0.012
+   batch                        pasada     2305 vs     2286 us x1.01 | piv/LP  3.26 vs  3.64 | contr 0.270 vs 0.270
+   ex8_4_5-1                    pasada      585 vs      576 us x1.02 | piv/LP  3.42 vs  3.23 | contr 0.321 vs 0.321
+   eigmaxc                      pasada      444 vs      431 us x1.03 | piv/LP  1.84 vs  1.53 | contr 0.061 vs 0.061
+   ramsey                       pasada     1427 vs     1348 us x1.06 | piv/LP  3.28 vs  3.53 | contr 0.261 vs 0.261
+   ex8_4_4-1                    pasada      718 vs      664 us x1.08 | piv/LP  3.07 vs  2.93 | contr 0.310 vs 0.310
+   linear                       pasada     2141 vs     1966 us x1.09 | piv/LP  5.99 vs  7.00 | contr 0.288 vs 0.288
+   disc2                        pasada     1168 vs     1035 us x1.13 | piv/LP  3.99 vs  3.88 | contr 0.127 vs 0.127
+   haldmads                     pasada      212 vs      183 us x1.16 | piv/LP  3.00 vs  2.33 | contr 0.109 vs 0.109
+   launch                       pasada     2155 vs     1520 us x1.42 | piv/LP  7.98 vs  6.15 | contr 0.006 vs 0.006
