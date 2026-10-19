@@ -1676,3 +1676,20 @@ rodajas de ACID (re-medido el 2026-09-30: con los `γ` propios acierta ≈ 0 %;
 con los de un ancestro mata rodajas que el lineal del nodo mata igual) y la cota
 lagrangiana con monotonía (contrae de verdad, a precio de linealización). Todas
 con la misma explicación (§6).
+
+**Caja negra sin presolve y otros solvers (2026-10-19).**
+- SoPlex sin presolve (`DFBH_CAJA_SIMP=0`) es la caja negra desde ahora: a
+  60 s, ×0.97 de tiempo en ambos bancos (×0.94 en opt > 1 s), mismas celdas.
+  Tabla principal contra ella: opt celdas 0.99–1.02, cpu 0.85/0.85/0.87,
+  216/216; sistemas 0.95–0.98, 0.93/0.93/0.92, 364/362; sistemas con «cerca»
+  en ambos 0.99–1.00, 0.94/0.95/0.95, 362/362 (`results/final_2026-10-19.csv`,
+  brazo `cajasp`).
+- Banco de pasadas, SC/caja por pasada (sistemas / opt), misma contracción:
+  SoPlex sin presolve 0.62 / 0.56, Gurobi 12.0.3 0.26 / 0.20, HiGHS 1.15.1
+  0.18 / 0.12. SoPlex es el más barato por llamada de los tres.
+- Cascada contra SoPlex sin presolve: refactorizar 58/53 %, vectores 9/8 %,
+  verificar 23/21 %, copiar 2/2 %, resto 8/16 %.
+- Pendiente: tabla de 3600 s y sonda en la búsqueda (figura de costo) siguen
+  con la caja con presolve; caja con SPxSolver directo (mantener la LU entre
+  cotas) sin probar.
+- Resultados y scripts en `results/solvers_2026-10-19/`.

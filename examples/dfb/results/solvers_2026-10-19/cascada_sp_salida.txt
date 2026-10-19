@@ -1,0 +1,12 @@
+sol: 36 instancias, SC/BB x0.617
+   +sc_fact   -> x0.815  participacion  57.8%
+   +sc_init   -> x0.851  participacion   8.9%
+   +sc_verif  -> x0.951  participacion  23.0%
+   +sc_copia  -> x0.963  participacion   2.4%
+   resto      -> x1.000  participacion   7.9%
+opt: 34 instancias, SC/BB x0.547
+   +sc_fact   -> x0.755  participacion  53.3%
+   +sc_init   -> x0.793  participacion   8.2%
+   +sc_verif  -> x0.899  participacion  20.8%
+   +sc_copia  -> x0.908  participacion   1.8%
+   resto      -> x1.000  participacion  16.0%

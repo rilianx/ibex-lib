@@ -1,0 +1,12 @@
+opt: corridas 960 instancias 240 terminan sin/con presolve 869/866 pares 865 t x0.975 celdas x1.038
+   >1s n=273 t x0.936 celdas x0.994  gana sin=176 gana con=28
+   >10s n=62 t x0.969 celdas x1.012  gana sin=35 gana con=11
+   solo sin presolve: ['bearing', 'ship-1']
+   solo con presolve: ['ship-1']
+   extremos: [('hs114', 0.38), ('concon', 0.58), ('ex14_2_4', 0.79), ('linear', 0.82)] ... [('dixchlng', 1.07), ('haldmads', 1.08), ('ex8_2_4', 1.11), ('himmel16', 1.32)]
+sol: corridas 484 instancias 242 terminan sin/con presolve 362/362 pares 362 t x0.974 celdas x0.997
+   >1s n=163 t x0.979 celdas x0.994  gana sin=23 gana con=2
+   >10s n=69 t x0.978 celdas x0.990  gana sin=7 gana con=0
+   solo sin presolve: []
+   solo con presolve: []
+   extremos: [('Geneig-icse', 0.7), ('Fredtest', 0.88), ('exnewton', 0.9), ('Pramanik', 0.93)] ... [('BroydenBanded-100', 1.01), ('Bratu-0175', 1.02), ('Yamamua1-0024sp', 1.02), ('DiscreteBoundary-0200', 1.36)]
