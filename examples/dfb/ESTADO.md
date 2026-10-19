@@ -522,6 +522,22 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**CORRECCIÓN: la sombra comparaba otro LP en sistemas (2026-10-19).** La caja solo
+recargaba las filas fusionadas con `DFBH_MOTOR=caja` o `DFBH_ABCAJA`; con
+`DFBH_SOMBRA` SoPlex resolvía el LP SIN fusionar (mismo poliedro, el doble de filas).
+Corregido (la sombra también recarga). Con el LP correcto, en sistemas SoPlex NO
+pivotea mucho menos: Katsurabis-14 10.0 vs 9.1, Bratu-0060 7.9 vs 10.9 (SoPlex más),
+Bellido 4.5 vs 3.5, Geneig-icse 3.5 vs 5.1. El «vértice de caja» de Katsurabis-14
+(10.4 vs 1.2, 22 vs 6.5 estructurales) era artefacto; el banco (`DFBH_ABCAJA`) estaba
+bien. En Katsurabis-14 SoPlex gana por costo por pivote a ~10 pivotes/LP (110 vs 172
+µs por solve). En opt (también hay fusión con igualdades) el patrón se mantiene:
+SoPlex 13–40 % de LPs sin pivotes, ex6_2_10 1.5 vs 2.5, ex7_2_3 1.3 vs 1.9; **SC
+arrancando desde la base de SoPlex** (`DFBH_SOMBRA_BASE=1`, `instalar_base` por
+pivotes de tableau, sin LU: la LU de SoPlex rechazaba hasta la base propia de SC)
+pivotea como SoPlex en ex2_1_9 (1.68 vs 1.87), ex6_2_10 (1.92 vs 1.89), chem (3.33
+vs 3.34); no en ex7_2_3 (2.03 vs 1.27). La diferencia está en la cadena de bases.
+Paper corregido (Where it loses, Limits, Why SC wins).
+
 **Banco de pasadas y cascada de atribución (2026-10-19, `results/banco_2026-10-19/`).**
 71 instancias (36 sistemas, una por familia; 35 opt por cuantiles de tiempo), 1000
 cajas capturadas por instancia (`banco_cap.sh`), reproducidas con `ibexreplay` y

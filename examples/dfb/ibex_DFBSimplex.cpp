@@ -162,6 +162,8 @@ bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(get
 long DFBSimplex::n_entrak = 0;
 long DFBSimplex::n_primal_cero = 0;
 long DFBSimplex::n_camina_piv = 0;
+long DFBSimplex::n_inst_ok = 0;
+long DFBSimplex::n_inst_fallo = 0;
 long DFBSimplex::n_camina_lps = 0;
 bool DFBSimplex::medir_inicio = false;
 int DFBSimplex::inicio_pinf = 0;
@@ -438,6 +440,44 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
             for (int r = 1; r <= m; ++r) { tidx[r].clear(); tval[r].clear(); }
         }
     }
+}
+
+bool DFBSimplex::instalar_base(const std::vector<int>& basicas, const std::vector<char>& atup) {
+    /* Se arma el tableau de la base de holguras (como en el arranque en frio) y se
+     * meten las columnas pedidas con pivotes de Gauss-Jordan sobre el tableau
+     * escalado, sin pasar por la LU (que rechaza por estabilidad bases que el
+     * tableau maneja bien). Solo el motor tableau. */
+    if (rev || (int)basicas.size() != m || (int)atup.size() != na || m <= 0) { ++n_inst_fallo; return false; }
+    std::vector<char> quiero(nc, 0);
+    for (int r = 0; r < m; ++r) { const int c = basicas[r]; if (c < 0 || c >= na || quiero[c]) { ++n_inst_fallo; return false; } quiero[c] = 1; }
+    std::fill(rowof.begin(), rowof.end(), -1);
+    for (int r = 1; r <= m; ++r) {
+        tidx[r].clear(); tval[r].clear();
+        const std::vector<std::pair<int,double> >& a = arow[r-1];
+        for (size_t t = 0; t < a.size(); ++t) { tidx[r].push_back(a[t].first); tval[r].push_back(-a[t].second); }
+        tidx[r].push_back(na + (r-1)); tval[r].push_back(-1.0);
+        basic[r] = nx + (r-1); rowof[nx + (r-1)] = r;
+    }
+    std::fill(d.begin(), d.end(), 0.0); std::fill(ylam.begin(), ylam.end(), 0.0);
+    for (int c = 0; c < na; ++c) {
+        if (!quiero[c] || rowof[c] >= 0) continue;
+        /* fila cuya basica no se quiere, con el mayor |T[r][c]| */
+        int rb = -1; double amax = 0.0;
+        for (int r = 1; r <= m; ++r) {
+            if (quiero[basic[r]]) continue;
+            const double v = std::fabs(entry(r, c));
+            if (v > amax) { amax = v; rb = r; }
+        }
+        if (rb < 0 || amax < 1e-9) { ++n_inst_fallo; base_lista = false; return false; }
+        const int sale = basic[rb];
+        if (!pivot(rb, c)) { ++n_inst_fallo; base_lista = false; return false; }
+        rowof[sale] = -1; basic[rb] = c; rowof[c] = rb;
+    }
+    for (int c = 0; c < na; ++c) atupper[c] = (rowof[c] >= 0) ? 0 : atup[c];
+    dw.assign(m + 1, 1.0);
+    fact_sucia = true; base_lista = true; xb_sucio = true;
+    ++n_inst_ok;
+    return true;
 }
 
 double DFBSimplex::entry(int r, int col) const {

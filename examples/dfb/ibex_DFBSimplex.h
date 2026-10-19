@@ -550,6 +550,13 @@ private:
     bool primal_step(const IntervalVector& z, bool& unbounded);
     /* caminata dentro de la cara optima al terminar un LP (`DFB_SX_CAMINA=K`) */
     void caminar_cara_optima(int k, bool maximize, int tope);
+public:
+    /* instala una base dada (m columnas basicas en [0, na)) y la cota de cada no
+     * basica, y reconstruye el tableau; false si no factoriza (`DFBH_SOMBRA_BASE`) */
+    bool instalar_base(const std::vector<int>& basicas, const std::vector<char>& atup);
+    int nb_x() const { return nx; }
+    static long n_inst_ok, n_inst_fallo;
+private:
     static long n_camina_piv, n_camina_lps;
 
     /** \brief Un paso dual: sale la basica que mas viola sus cotas, entra la

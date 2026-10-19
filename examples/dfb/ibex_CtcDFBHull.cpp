@@ -142,6 +142,8 @@ static void sombra_inicio(int it_sc, int it_bb, int pinf, int dinf) {
 }
 static void sombra_cero(int it_sc, long prim, long cero) { ++sz_lps; sz_piv += it_sc; sz_prim += prim; sz_cero += cero; }
 static void sombra_resumen() {
+    if (DFBSimplex::n_inst_ok + DFBSimplex::n_inst_fallo)
+        fprintf(stderr, "[sombra] bases de SoPlex instaladas en SC: %ld, fallidas %ld\n", DFBSimplex::n_inst_ok, DFBSimplex::n_inst_fallo);
     if (sf_n) fprintf(stderr, "[sombra] al terminar cada LP, SC deja %.2f estructurales basicas, %.2f de ellas en una cota (%.0f%%)\n",
                       (double)sf_b/sf_n, (double)sf_c/sf_n, sf_b ? 100.0*sf_c/sf_b : 0.0);
     for (int c = 0; c < 2; ++c) if (sb_n[c] && sb_nbb[c])
@@ -613,7 +615,7 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
     } else {
         for (int i = 0; i < m0; ++i) fuente.push_back(i);
     }
-    if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA"))) {
+    if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA") || DFB_ENV("DFBH_SOMBRA"))) {
         /* La caja negra resuelve sobre `mylinearsolver`: se recarga con las
          * filas fusionadas para que los multiplicadores sigan siendo fila a
          * fila los de `A`. */
@@ -1703,6 +1705,30 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
         static const bool sombra = DFB_ENV("DFBH_SOMBRA");
         if (sombra) DFBSimplex::medir_inicio = true;
+        /* `DFBH_SOMBRA_BASE=1` (2026-10-19): SC arranca cada LP desde la base final de
+         * SoPlex del LP anterior de la sombra (estructurales y holguras basicas, cota de
+         * cada no basica), para separar el efecto de la cadena de bases del algoritmo. */
+        static const bool base_de_soplex = DFB_ENV("DFBH_SOMBRA_BASE");
+        if (sombra && base_de_soplex && !motor_caja && sx_directa && sx_directa->hasBasis()
+            && sx_directa->numColsReal() == nb_var && sx_directa->numRowsReal() == A.nb_rows()
+            && sk.nb_x() == nb_var) {
+            const int mr = sx_directa->numRowsReal();
+            std::vector<soplex::SPxSolver::VarStatus> br(mr), bc(nb_var);
+            sx_directa->getBasis(br.data(), bc.data());
+            std::vector<int> bas; std::vector<char> atup(nb_var + mr, 0);
+            for (int i = 0; i < nb_var; ++i) {
+                if (bc[i] == soplex::SPxSolver::BASIC) bas.push_back(i);
+                else atup[i] = (bc[i] == soplex::SPxSolver::ON_UPPER);
+            }
+            for (int j = 0; j < mr; ++j) {
+                if (br[j] == soplex::SPxSolver::BASIC) bas.push_back(nb_var + j);
+                else atup[nb_var + j] = (br[j] == soplex::SPxSolver::ON_UPPER);
+            }
+            static long f_tam = 0, f_otro = 0, n_vis = 0;
+            if ((int)bas.size() == mr) { if (!sk.instalar_base(bas, atup)) ++f_otro; }
+            else { ++DFBSimplex::n_inst_fallo; ++f_tam; }
+            if (++n_vis % 2000 == 0) fprintf(stderr, "[sombrabase] vistos %ld | tamano de base distinto %ld (ultima %d de %d) | otros fallos %ld\n", n_vis, f_tam, (int)bas.size(), mr, f_otro);
+        }
         const double sm0 = (sombra && !motor_caja) ? ahora_s() : 0.0;
         const long pc0 = DFBSimplex::n_primal_cero, pt0 = DFBSimplex::n_primal_total;
         DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)

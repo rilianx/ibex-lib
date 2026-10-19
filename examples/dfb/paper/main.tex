@@ -1118,9 +1118,9 @@ changed.
 The cascade of Table~\ref{tab:cascade} confirms this attribution on the
 whole bank of passes. On large relaxations or LPs with many pivots the
 comparison reverses: on Katsurabis-14 and Bratu-0060 an LP of SoPlex is
-cheaper than one of SC (105 against 203 and 80 against 110\,$\mu$s), because
-it pivots less (Section~\ref{sec:discussion}); these are the instances where
-SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
+cheaper than one of SC (105 against 203 and 80 against 110\,$\mu$s): with many
+pivots per LP the fixed cost of a call is amortized and its pivots are cheaper
+(Section~\ref{sec:discussion}); these are the instances where SC loses. Where the LPs need many pivots this fixed cost is amortized: on launch
 (9 to 11 pivots per LP) an LP costs about the same in both engines (78 against
 81\,$\mu$s).
 Since the pass is only part of the cost of a node, with the linearization,
@@ -1282,9 +1282,9 @@ engines solve the same relaxation and feed the same certificate. Its advantage
 has two sources. The first is cost: a pass over the $2n$ bounds costs 0.62
 times that of the black box on systems of equations and 0.44 times on
 optimization problems (Figure~\ref{fig:cost}). SC does not pivot less: on the
-same sequence of LPs, SoPlex needs as many pivots or fewer (on ex2\_1\_9, 1.6
-per LP against 2.0), yet the solve of an LP of SC costs a quarter (5 against
-20\,$\mu$s; 8 against 24 with ordering and certification, as in
+same sequence of LPs, SoPlex needs as many pivots or fewer (on ex2\_1\_9, 1.9
+per LP in both), yet the solve of an LP of SC costs a quarter (5.7 against
+22.7\,$\mu$s; 8 against 24 with ordering and certification, as in
 Figure~\ref{fig:cost}).
 Each LP is cheaper because the $2n$ bounds share one tableau and the restart needs no
 phase~1, so that an LP costs little beyond its pivots, while each call to the black
@@ -1295,21 +1295,24 @@ where the largest gain is (Geneig-icse). The slightly tighter
 certificates of SC on the remaining LPs compound along the search but are a
 second-order effect.
 
-\paragraph{Where it loses.} SC loses where the LPs need many pivots and SoPlex
-needs fewer of them. Replaying the same LPs with both engines shows why: SoPlex
-ends each LP at a vertex where most structural variables sit at a bound of
-the box, so that the variable of the next bound is usually nonbasic and that
-LP takes zero or one pivot; SC ends at vertices where many structural
-variables are basic and many rows are tight, and starts the next LP about ten
-infeasibilities away. On Katsurabis-14, with the same sequence of LPs, SC
-needs 10.4 pivots per LP against 1.2 (181 against 34\,$\mu$s per solve; with
-each engine on its own pass, 203 against 105\,$\mu$s per LP), with about 22
-basic structural variables against 6.5 in SoPlex; changing the warm start, the
-pricing, the perturbation or the engine of SC does not change this. The third
-exception of Table~\ref{tab:bank}, DiscreteBoundary-0200, is of another kind:
-on the same sequence of LPs both engines need the same pivots (12.4 against
-12.7 per LP), and the difference comes from the LPs that each engine solves in
-its own pass, with its own order and skipped bounds. On systems
+\paragraph{Where it loses.} SC loses where an LP needs many pivots, so that the
+cost of a call no longer dominates. Replaying the same sequence of LPs with both
+engines, on systems of equations the two need about as many pivots
+(Katsurabis-14, 10.0 against 9.1 per LP; Bratu-0060, 7.9 against 10.9), but on
+Katsurabis-14 a solve of SoPlex is cheaper (110 against 172\,$\mu$s): with ten
+pivots per LP on 30 rows, the pivots of the explicit tableau of SC cost more
+than those of the factorized basis of SoPlex. On optimization problems SoPlex
+pivots less on some problems (ex6\_2\_10, 1.5 against 2.5 per LP; ex7\_2\_3,
+1.3 against 1.9), because it ends 13--40\% of its LPs at a vertex that is
+already optimal for the next bound; started at every LP from the final basis of
+SoPlex, SC needs about as many pivots as SoPlex on ex2\_1\_9, ex6\_2\_10 and
+chem, so the difference lies in the chain of bases and not in the algorithm.
+Since an LP of SC still costs a quarter, this matters only where LPs need many
+pivots (launch). The third exception of Table~\ref{tab:bank},
+DiscreteBoundary-0200, is of another kind: on the same sequence of LPs both
+engines need the same pivots (12.4 against 12.7 per LP), and the difference
+comes from the LPs that each engine solves in its own pass, with its own order
+and skipped bounds. On systems
 of equations, SC is slower than the
 black box with the nearest bound first by more than 5\% on three systems. On
 the largest relaxations its nodes cost more and it explores slightly more
@@ -1353,13 +1356,12 @@ expensive for both engines: the systems of 400 to 1\,000 variables of the
 benchmark exceed the limits of 60\,s and 6\,GB with either. The cheaper pass of SC comes from
 the cost of a call to SoPlex~4.0.2, whose LPs here need two or three pivots,
 not from pivoting less; other LP solvers have other per-call costs, which we
-did not measure. Making SC end its LPs at vertices of the box, as SoPlex does,
-would remove most of its losses; a tie-break toward the corners of the box
-inside the optimal face did not, and neither did a short walk inside the
-optimal face at the end of each LP (up to ten primal steps that keep the
-optimum and push the basic structural variables toward a bound: the optimal
-face leaves them almost no room, and the extra pivots are not recovered). Why
-the dual and primal paths of SoPlex end at those vertices remains open.
+did not measure. On optimization problems SoPlex ends many LPs at vertices that are already
+optimal for the next bound, and started from those bases SC needs as few
+pivots; neither a tie-break toward the corners of the box inside the optimal
+face nor a short walk inside that face (up to ten primal steps that keep the
+optimum) made SC end at such vertices, and how to choose them cheaply remains
+open.
 
 % =====================================================================
 \bibliographystyle{plain}
