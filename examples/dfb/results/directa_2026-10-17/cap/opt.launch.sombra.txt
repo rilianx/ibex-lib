@@ -1,0 +1,6 @@
+[sombra] LPs con caja=0 y SC>0: 63, pivotes SC 92 (primales 0, de paso cero 0)
+[sombra] LPs=2518 | piv/LP SC 7.84 caja 5.50 | us/LP SC 65.84 caja 81.56 | caja pivotea menos 51.7% igual 30.7% mas 17.8% | optimos SC 2517 caja 2518
+[sombra] SC   pivotes por LP: 0:5.3% 1:23.1% 2:8.7% 3:4.1% 4-5:8.6% 6-9:21.0% 10-19:20.4% 20+:9.3%
+[sombra] caja pivotes por LP: 0:7.4% 1:22.2% 2:8.9% 3:7.6% 4-5:15.2% 6-9:22.1% 10-19:13.6% 20+:3.4%
+[sombra] en los 186 LPs sin pivotes de la caja, SC hace: 0:66.2% 1:25.3% 2:4.9% 3:1.1% 4-5:2.7% 6-9:0.0% 10-19:0.0% 20+:0.0%
+[replay] cajas=91 vacias=0 contraccion_media=0.00799 cpu_contractor=0.5004 s us_por_llamada=5498.8 LPs=2518 pivotes=19738

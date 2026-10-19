@@ -160,6 +160,8 @@ bool DFBSimplex::dual_puro = leer_dual_puro();
 bool DFBSimplex::rev_primal = getenv("DFB_SX_REVPRIMAL") && std::string(getenv("DFB_SX_REVPRIMAL")) == "1";
 bool DFBSimplex::pivoteo_por_motor = getenv("DFB_SX_PIVOTEO") && std::string(getenv("DFB_SX_PIVOTEO")) == "por_motor";
 long DFBSimplex::n_entrak = 0;
+long DFBSimplex::n_primal_cero = 0;
+long DFBSimplex::n_primal_total = 0;
 long DFBSimplex::n_verif      = 0;
 long DFBSimplex::n_verif_pinf = 0;
 long DFBSimplex::n_verif_dinf = 0;
@@ -1367,6 +1369,8 @@ bool DFBSimplex::primal_step(const IntervalVector& z, bool& unbounded) {
     if (r_out < 0) { unbounded = true; return false; }
 
     const int c_out = basic[r_out];
+    ++n_primal_total;
+    if (lim <= 0.0) ++n_primal_cero;
     if (devexpt) {
         /* actualizacion devex con la fila del pivote, antes de pivotear */
         const double arq = colq[r_out];

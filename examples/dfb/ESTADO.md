@@ -522,6 +522,21 @@ búsqueda de SC (s2/s3 112 → 4.8 s, 40132 → 1910 celdas, comprobado con
 su corrida vieja. matrix2 NA en 3 semillas con los dos (memoria, igual que
 antes). Paper `tab:long` al día con las cuatro filas.
 
+**Sombra LP a LP (2026-10-19, `DFBH_SOMBRA=1` en `ibexreplay`).** Cada LP que
+resuelve SC se resuelve también con la caja (mismo k, sentido y caja, en la misma
+cadena). En la misma secuencia SoPlex pivotea menos sobre todo porque termina en
+vértices que ya son óptimos para la cota siguiente: LPs sin pivotes de la caja
+ex6_2_10 51 %, ex7_2_3 50 %, Bratu-0060 56 % (SC ~1.4 %). Piv/LP SC/caja:
+ex6_2_10 2.49/0.96, ex7_2_3 1.63/0.95, chem 3.92/3.46, Bellido 4.46/2.37,
+**Katsurabis-14 10.43/1.22** (µs/LP 181 vs 34: explica su pérdida), Geneig-icse
+3.08/4.43 (SC menos). En los LPs sin pivotes de la caja, los pivotes de SC no son
+degenerados (2 de 4809 en ex2_1_9). En Katsurabis-14 no lo explican: warm start
+primal de SC (24.6 piv/LP), devex primal (22.8), sin perturbación (21.2), DSE
+(15.0); ni la representación o el algoritmo de SoPlex (1.2–1.4 en todos).
+Hipótesis abierta: las cotas de holgura de SC (lado ∩ evaluación por intervalos)
+contra los lados del solver en SoPlex; **la prueba hecha fue inválida** (las
+cotas no calzaban con las filas: SoPlex declaró infactibles los 5823 LPs).
+
 **Banco de pasadas y error en la sonda (2026-10-18).** Captura de cajas
 (`DFBH_CAPTURA=archivo`, `DFBH_CAPTURA_N`, `DFBH_CAPTURA_CADA`, binarios `*_cap`) y
 reproductor `ibexreplay problema.bch opt|sol cajas.txt` (mismo contractor que

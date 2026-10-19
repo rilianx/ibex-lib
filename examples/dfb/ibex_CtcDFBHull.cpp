@@ -111,6 +111,41 @@ static void abc_resumen() {
 }
 
 static double ab_accF = 0.0, ab_accC = 0.0;
+
+/* Sonda sombra: pivotes y tiempo de SC y de la caja negra en el mismo LP. */
+static long sm_n = 0, sm_menos = 0, sm_igual = 0, sm_mas = 0, sm_piv[2] = {0,0}, sm_opt[2] = {0,0};
+static double sm_t[2] = {0.0, 0.0};
+static long sm_hist[2][8] = {{0}};   /* pivotes por LP: 0,1,2,3,4-5,6-9,10-19,20+ */
+static long sm_cero_bb[8] = {0};   /* pivotes de SC en los LPs que la caja resuelve sin pivotes */
+static int sm_bin(int p) { return p <= 3 ? p : p <= 5 ? 4 : p <= 9 ? 5 : p <= 19 ? 6 : 7; }
+static void sombra_anotar(int it_sc, int it_bb, double t_sc, double t_bb, bool o_sc, bool o_bb) {
+    ++sm_n; sm_piv[0] += it_sc; sm_piv[1] += it_bb; sm_t[0] += t_sc; sm_t[1] += t_bb;
+    sm_opt[0] += o_sc; sm_opt[1] += o_bb;
+    if (it_bb < it_sc) ++sm_menos; else if (it_bb == it_sc) ++sm_igual; else ++sm_mas;
+    ++sm_hist[0][sm_bin(it_sc)]; ++sm_hist[1][sm_bin(it_bb)];
+    if (it_bb == 0) ++sm_cero_bb[sm_bin(it_sc)];
+}
+static long sz_lps = 0, sz_piv = 0, sz_prim = 0, sz_cero = 0;
+static void sombra_cero(int it_sc, long prim, long cero) { ++sz_lps; sz_piv += it_sc; sz_prim += prim; sz_cero += cero; }
+static void sombra_resumen() {
+    if (sz_lps) fprintf(stderr, "[sombra] LPs con caja=0 y SC>0: %ld, pivotes SC %ld (primales %ld, de paso cero %ld)\n", sz_lps, sz_piv, sz_prim, sz_cero);
+    if (!sm_n) return;
+    fprintf(stderr, "[sombra] LPs=%ld | piv/LP SC %.2f caja %.2f | us/LP SC %.2f caja %.2f | caja pivotea menos %.1f%% igual %.1f%% mas %.1f%% | optimos SC %ld caja %ld\n",
+            sm_n, (double)sm_piv[0]/sm_n, (double)sm_piv[1]/sm_n, 1e6*sm_t[0]/sm_n, 1e6*sm_t[1]/sm_n,
+            100.0*sm_menos/sm_n, 100.0*sm_igual/sm_n, 100.0*sm_mas/sm_n, sm_opt[0], sm_opt[1]);
+    const char* et[8] = {"0","1","2","3","4-5","6-9","10-19","20+"};
+    for (int e = 0; e < 2; ++e) {
+        fprintf(stderr, "[sombra] %s pivotes por LP:", e ? "caja" : "SC  ");
+        for (int b = 0; b < 8; ++b) fprintf(stderr, " %s:%.1f%%", et[b], 100.0*sm_hist[e][b]/sm_n);
+        fprintf(stderr, "\n");
+    }
+    long nz = 0; for (int b = 0; b < 8; ++b) nz += sm_cero_bb[b];
+    if (nz) {
+        fprintf(stderr, "[sombra] en los %ld LPs sin pivotes de la caja, SC hace:", nz);
+        for (int b = 0; b < 8; ++b) fprintf(stderr, " %s:%.1f%%", et[b], 100.0*sm_cero_bb[b]/nz);
+        fprintf(stderr, "\n");
+    }
+}
 long CtcDFBHull::n_nodes = 0;
 
 /* Reloj de la caja negra (`DFBH_CAJA_RELOJ=1`, 2026-10-16): reparte el tiempo de
@@ -417,6 +452,7 @@ CtcDFBHull::~CtcDFBHull() {
     ph_resumen();
     abc_resumen();
     cr_resumen();
+    sombra_resumen();
     if (ab_n)
         fprintf(stderr, "[abcong] nodos=%ld | contraccion media fresca=%.6f congelada=%.6f "
                 "razon=%.4f | gana fresca=%ld congelada=%ld iguales=%ld | vacios F=%ld C=%ld | "
@@ -1638,8 +1674,24 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         static long lps_pasada = 0; ++lps_pasada;
         if (lp_largo2 && (lps_pasada % 1000) == 0)
             fprintf(stderr, "[pasada] LPs=%ld paso=%d de %d (nc=%d) k=%d lado=%d nodos=%ld\n", lps_pasada, paso, tope_pasos, nc, k, lado, n_nodes);
+        static const bool sombra = DFB_ENV("DFBH_SOMBRA");
+        const double sm0 = (sombra && !motor_caja) ? ahora_s() : 0.0;
+        const long pc0 = DFBSimplex::n_primal_cero, pt0 = DFBSimplex::n_primal_total;
         DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
                                            : sk.solve(k, lado == 1, z, tope_paso, true);
+        if (sombra && !motor_caja) {
+            /* SOMBRA (`DFBH_SOMBRA=1`, 2026-10-19): el MISMO LP (cota, sentido, caja)
+             * se resuelve tambien con la caja negra, en la misma cadena de LPs, para
+             * comparar pivotes y tiempo LP a LP. No toca el estado de SC. */
+            const double sm1 = ahora_s();
+            const int it_sc = sk.iterations();
+            const std::vector<double> lam_g = lam_caja, x_g = x_caja;
+            const DFBSimplex::Status st_bb = resolver_caja(k, lado == 1, z);
+            const double sm2 = ahora_s();
+            lam_caja = lam_g; x_caja = x_g;
+            sombra_anotar(it_sc, it_caja, sm1 - sm0, sm2 - sm1, st == DFBSimplex::OPTIMAL, st_bb == DFBSimplex::OPTIMAL);
+            if (it_caja == 0 && it_sc > 0) sombra_cero(it_sc, DFBSimplex::n_primal_total - pt0, DFBSimplex::n_primal_cero - pc0);
+        }
         /* `DFBH_FRIO_SI_NO_CERTIFICA` (encendido por omision; `=0` lo apaga):
          * un INFEASIBLE cuyo rayo no certifica se vuelve a resolver EN FRIO.
          * En CountercurrentReactors2-26 (semilla 2, orden
