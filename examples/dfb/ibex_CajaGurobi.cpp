@@ -16,6 +16,8 @@ CajaGurobi::CajaGurobi() : env(nullptr), mod(nullptr), n_(0), m_(0) {
     GRBsetintparam(e, "Method", getenv("DFBH_GRB_METODO") ? atoi(getenv("DFBH_GRB_METODO")) : 1);
     GRBsetintparam(e, "InfUnbdInfo", 1);
     GRBsetintparam(e, "DualReductions", 0);
+    /* el mismo tope que Ibex le pone a SoPlex (iterlimit = 100) */
+    GRBsetdblparam(e, "IterationLimit", 100);
     env = e;
 }
 CajaGurobi::~CajaGurobi() {
