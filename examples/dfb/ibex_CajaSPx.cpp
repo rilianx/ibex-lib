@@ -79,7 +79,8 @@ long CajaSPx::n_fact() const { return 0; }
 int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, int* iters) {
     SPxSolver& s = C.sx;
     ++C.nlp;
-    if (getenv("DFBH_CAJA_VERB") && C.nlp % 2000 == 0)
+    static const bool verb = getenv("DFBH_CAJA_VERB") != NULL;
+    if (verb && C.nlp % 2000 == 0)
         fprintf(stderr, "[spx] LPs %ld factorizaciones %d (%.3f por LP)\n", C.nlp, C.lu.getFactorCount(),
                 (double) C.lu.getFactorCount() / C.nlp);
     s.changeObj(k, maximizar ? -1.0 : 1.0, C.escalado);
@@ -97,9 +98,14 @@ int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, 
         static int ne = 5; if (ne-- > 0) fprintf(stderr, "[spx] excepcion: %s\n", e.what().c_str());
     }
     *iters = s.iterations();
-    static int dbg = getenv("DFBH_CAJA_VERB") ? 20 : 0;
+    static int dbg = verb ? 20 : 0;
     if (dbg > 0) { --dbg; fprintf(stderr, "[spx] k %d st %d it %d rep %d tipo %d filas %d cols %d\n", k, (int) st, s.iterations(), (int) s.rep(), (int) s.type(), s.nRows(), s.nCols()); }
     int res = 3;
+    static long hist[32] = {0}; static long nh = 0;
+    if (verb) {
+        ++hist[(int) st + 16]; ++nh;
+        if (nh % 20000 == 0) { fprintf(stderr, "[spx] estados:"); for (int q = 0; q < 32; ++q) if (hist[q]) fprintf(stderr, " %d:%ld", q - 16, hist[q]); fprintf(stderr, "\n"); }
+    }
     if (st == SPxSolver::OPTIMAL) {
         DVector y(m_), z(n_);
         if (s.getDual(y) == SPxSolver::OPTIMAL && s.getPrimal(z) == SPxSolver::OPTIMAL) {
