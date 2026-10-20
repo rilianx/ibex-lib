@@ -1,0 +1,15 @@
+2331 24.2081 0 28 0 0 0
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=3134  vacios probados por DFB=108 (3.5% de los nodos)  LPs=57678  pivotes=1169219
+[dfb] piv/LP=20.28  degen=41.6%  degen-enmascarados=30.4%  LPs perturbados=39235  pivotes de limpieza=2162
+[dfb] filas de la relajacion: 59.78 por linealizacion (3134 llamadas)
+[sombra] al terminar cada LP, SC deja 10.73 estructurales basicas, 0.53 de ellas en una cota (5%)
+[sombra] SC>10 y caja<=1: k basica al empezar SC 93.9% caja 73.4% | estructurales basicas SC 10.01 caja 10.04
+[sombra] resto          : k basica al empezar SC 90.9% caja 94.2% | estructurales basicas SC 10.11 caja 10.55
+[sombra] SC>10 y caja<=1: LPs 3812 | al empezar SC tiene 38.55 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 21.67
+[sombra] resto          : LPs 53866 | al empezar SC tiene 37.49 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 20.09
+[sombra] LPs con caja=0 y SC>0: 3348, pivotes SC 51644 (primales 0, de paso cero 0)
+[sombra] LPs=57678 | piv/LP SC 20.19 caja 8.75 | us/LP SC 204.14 caja 103.45 | caja pivotea menos 85.8% igual 4.4% mas 9.9% | optimos SC 57094 caja 57307
+[sombra] SC   pivotes por LP: 0:3.1% 1:1.1% 2:1.9% 3:1.5% 4-5:3.9% 6-9:10.1% 10-19:32.5% 20+:46.3%
+[sombra] caja pivotes por LP: 0:7.5% 1:6.8% 2:7.3% 3:6.6% 4-5:13.0% 6-9:21.7% 10-19:29.5% 20+:8.0%
+[sombra] en los 4286 LPs sin pivotes de la caja, SC hace: 0:21.9% 1:3.5% 2:4.4% 3:3.1% 4-5:5.1% 6-9:11.2% 10-19:27.1% 20+:24.0%

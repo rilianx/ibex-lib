@@ -1,0 +1,10 @@
+2133 23.1432 0 28 0 0 0
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=3047  vacios probados por DFB=221 (7.3% de los nodos)  LPs=113839  pivotes=1669410
+[dfb] piv/LP=14.67  degen=28.6%  degen-enmascarados=20.3%  LPs perturbados=37249  pivotes de limpieza=1982
+[dfb] filas de la relajacion: 59.70 por linealizacion (3047 llamadas)
+[abcaja] DFB  : LPs=55986 | optimo certificado=37948  optimo sin certificado=17725  vacio probado=110  no optimo=203 | saltadas=14701
+[abcaja] caja : LPs=57853 | optimo certificado=39730  optimo sin certificado=17916  vacio probado=111  no optimo=96 | saltadas=12726
+[abcaja] nodos=3047 | contraccion media DFB=0.13710 caja=0.13432 | nodos vaciados DFB=110 caja=111 | gana DFB=764 caja=577
+[abcaja] costo DFB  : pasada 12.650 s  pivotes=1172101  us/LP=225.94  piv/LP=20.94  us/piv=10.792
+[abcaja] costo caja : pasada 5.707 s  pivotes=497309  us/LP=98.64  piv/LP=8.60  us/piv=11.475

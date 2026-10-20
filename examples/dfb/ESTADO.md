@@ -1815,3 +1815,18 @@ compo, cota más cercana) en curso.
   (conteo con tableau, más cercana con el revisado). Bratu-0120 afín: 10.3 →
   7.5 piv/LP, 7.5 → 7.0 s, mismas celdas. Barrido `d60coc` (sistemas, afín y
   compo, 968 corridas) en curso.
+- **Barrido `d60coc` completo (sistemas, `DFBH_ORDEN=costo_o_cerca`).** Afín:
+  contra SC actual celdas ×1.00–1.02, cpu ×0.99–1.01, 363/364 (Bratu ×0.93–0.95;
+  DiscreteBoundary-0200 ×4.6: con la más lejana se resolvía en la raíz, efecto
+  de árbol); contra la caja ×0.93–0.94 (era ×0.92–0.93). Compo: contra SC
+  actual ×0.77–0.80 con las mismas celdas; contra la caja con compo ×1.18–1.21
+  (era ×1.38–1.46), 355/368.
+- **Descomposición de la pérdida con compo** (`perdida/`, seis peores, orden
+  nuevo): pasada SC/SoPlex = LPs × algoritmo × cadena × µs/pivote. La cadena
+  ya es ~1 (salvo DiscreteBoundary ×4.9) y el costo por pivote ~1; queda el
+  **algoritmo**: SC ×1.6–2.5 los pivotes de SoPlex sobre el mismo LP (Trigo
+  ×5). Descartado: representación de SoPlex (por columnas: mismos pivotes,
+  pivotes más baratos), tolerancia (SC a 1e-6: igual). Hipótesis: SoPlex
+  reoptimiza en primal con devex/steepest (SPxSolver pasa a ENTER tras el
+  primer LP); SC repara en dual tras reubicar (decenas de básicas fuera de
+  cota) y su primal usa Dantzig.
