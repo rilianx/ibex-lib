@@ -47,6 +47,11 @@ public:
 };
 
 int main(int argc, char** argv) {
+    /* Orden de las cotas por omision (2026-10-20): el conteo del tableau donde
+     * lo hay y la mas cercana con el motor revisado. Antes el conteo caia en
+     * silencio a la MAS LEJANA con el revisado, el peor orden para el warm
+     * start dual en relajaciones grandes. `DFBH_ORDEN` lo cambia. */
+    if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "costo_o_cerca", 0);
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
     string lr = "xn", lin = "art", bis = "lsmear"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
     for (int i = 2; i < argc; ++i) {

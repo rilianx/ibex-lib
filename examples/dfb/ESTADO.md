@@ -1830,3 +1830,17 @@ compo, cota más cercana) en curso.
   reoptimiza en primal con devex/steepest (SPxSolver pasa a ENTER tras el
   primer LP); SC repara en dual tras reubicar (decenas de básicas fuera de
   cota) y su primal usa Dantzig.
+- **SoPlex reoptimiza en primal** (contadores de SPxSolver, compo):
+  Katsurabis-14 91 % de sus pivotes primales, Trigo1-0020sp 87 %, aun
+  forzando el dual al empezar cada LP (la base queda dual infactible tras
+  cambiar el objetivo). SC con warm start primal + devex (`DFB_SX_PIVOTEO=primal
+  DFB_SX_REVPRIMAL=1 DFB_SX_DEVEXP=1 DFB_SX_DEVEXPT=1`): CCR2-12 pasada ×2.22 →
+  ×1.36, CCR2-14 ×1.96 → ×1.11; Katsurabis-14, Trigo1-0020sp,
+  Discrete-Integralf2-21 no mejoran (SC 2.3–3.7× los pivotes de SoPlex con
+  cualquier warm start). Con SoPlex a 1e-9 la ventaja de contracción de SC con
+  compo desaparece (Trigo 0.050 → 0.118 contra 0.111 de SC): era tolerancia.
+  Pendiente para esos tres: degeneración primal (SoPlex desplaza cotas; SC
+  solo perturba costos) o calidad del pricing (steepest edge).
+- **`costo_o_cerca` es la omisión de `ibexsolve_dfb` desde 2026-10-20.** En
+  cola (`cadena_sis.sh`): SC a 3600 s en sistemas (`l3600coc`, 96) y ablación
+  de sistemas con el orden nuevo (`abls`, 11 brazos, 5324 corridas).

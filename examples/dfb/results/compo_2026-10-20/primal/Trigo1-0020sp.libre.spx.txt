@@ -1,0 +1,1 @@
+[spx] LPs 10000 factorizaciones 11320 (1.133 por LP) | pivotes 62062, primales 87.5% | LPs solo primales 70.2%, mixtos 10.0%

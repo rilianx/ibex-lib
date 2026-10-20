@@ -1,0 +1,1 @@
+[spx] LPs 16000 factorizaciones 19114 (1.195 por LP) | pivotes 287057, primales 91.2% | LPs solo primales 85.7%, mixtos 2.8%

@@ -13,7 +13,7 @@ struct SPxCosas {
     SPxAutoPR pr;
     SPxEquiliSC esc;
     bool escalado = false;
-    long nlp = 0;
+    long nlp = 0, nit = 0, nprim = 0, nlp_prim = 0, nlp_mixto = 0;
     SPxCosas() : sx(SPxSolver::LEAVE, SPxSolver::COLUMN, Timer::OFF), esc(true) {
         out.setVerbosity(SPxOut::ERROR);
         sx.setOutstream(out);
@@ -81,8 +81,9 @@ int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, 
     ++C.nlp;
     static const bool verb = getenv("DFBH_CAJA_VERB") != NULL;
     if (verb && C.nlp % 2000 == 0)
-        fprintf(stderr, "[spx] LPs %ld factorizaciones %d (%.3f por LP)\n", C.nlp, C.lu.getFactorCount(),
-                (double) C.lu.getFactorCount() / C.nlp);
+        fprintf(stderr, "[spx] LPs %ld factorizaciones %d (%.3f por LP) | pivotes %ld, primales %.1f%% | LPs solo primales %.1f%%, mixtos %.1f%%\n",
+                C.nlp, C.lu.getFactorCount(), (double) C.lu.getFactorCount() / C.nlp,
+                C.nit, C.nit ? 100.0*C.nprim/C.nit : 0.0, 100.0*C.nlp_prim/C.nlp, 100.0*C.nlp_mixto/C.nlp);
     s.changeObj(k, maximizar ? -1.0 : 1.0, C.escalado);
     if (frio) s.reLoad();
     /* `DFBH_SPX_DUAL=1`: como la clase SoPlex, vuelve al simplex dual en cada
@@ -98,6 +99,11 @@ int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, 
         static int ne = 5; if (ne-- > 0) fprintf(stderr, "[spx] excepcion: %s\n", e.what().c_str());
     }
     *iters = s.iterations();
+    {
+        const int it = s.iterations(), pr = s.primalIterations();
+        C.nit += it; C.nprim += pr;
+        if (it > 0 && pr == it) ++C.nlp_prim; else if (pr > 0) ++C.nlp_mixto;
+    }
     static int dbg = verb ? 20 : 0;
     if (dbg > 0) { --dbg; fprintf(stderr, "[spx] k %d st %d it %d rep %d tipo %d filas %d cols %d\n", k, (int) st, s.iterations(), (int) s.rep(), (int) s.type(), s.nRows(), s.nCols()); }
     int res = 3;
