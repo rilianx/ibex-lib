@@ -1802,3 +1802,8 @@ sabido); perturbación 1e-5/1e-3 igual; **`DFBH_ORDEN=cerca` en SC: Bratu-0120
 47.6**. El orden por conteo engaña con compo (no ve las básicas que la
 reubicación deja fuera de cota: 73 por LP). Brazo `sccompocerca` (sistemas,
 compo, cota más cercana) en curso.
+- Brazo `sccompocerca` (sistemas, compo, SC con la cota más cercana): contra la
+  caja con compo cpu ×1.17–1.18 (era ×1.38–1.46), celdas 0.93–0.98, 354/368;
+  contra SC conteo con compo ×0.77–0.80, mismas celdas (Bratu ×0.3,
+  DiscreteBoundary-0200 ×0.21; pierde solo Yamamua1-0018sp ×1.74). Queda ×2–3
+  en DiscreteBoundary-0200, Katsurabis-14, Discrete-Integralf2-21.
