@@ -165,7 +165,7 @@ long DFBSimplex::n_camina_piv = 0;
 long DFBSimplex::n_inst_ok = 0;
 long DFBSimplex::n_inst_fallo = 0;
 long DFBSimplex::n_camina_lps = 0;
-bool DFBSimplex::medir_inicio = false;
+bool DFBSimplex::medir_inicio = (getenv("DFB_SX_DEGHIST") != NULL);
 int DFBSimplex::inicio_pinf = 0;
 int DFBSimplex::inicio_dinf = 0;
 int DFBSimplex::inicio_kbasica = 0;
@@ -199,7 +199,8 @@ const double PIV_TOL  = 1e-9;   /* pivote minimo aceptable */
  * tampoco (la reubicacion ya dejo los signos bien) y el bucle declara OPTIMAL
  * en un punto que no lo es. `DFB_SX_FEASTOL` para medir ese eje. */
 const double FEAS_TOL = getenv("DFB_SX_FEASTOL") ? atof(getenv("DFB_SX_FEASTOL")) : 1e-9;
-const double DUAL_TOL = 1e-9;
+/* `DFB_SX_DUALTOL` (2026-10-20): para igualarla a la OPTTOL de la caja negra. */
+const double DUAL_TOL = getenv("DFB_SX_DUALTOL") ? atof(getenv("DFB_SX_DUALTOL")) : 1e-9;
 /* TOLERANCIA A ESCALA DE LA CAJA (`DFB_SX_TOLANCHO=tau`, apagada con 0).
  * Medido en `bearing` (2026-09-30): con cajas de ~5e-8 de ancho y cotas de
  * magnitud ~7, `FEAS_TOL*(1+|cota|)` es ~13 % del ancho, y el dual puro
@@ -2286,6 +2287,22 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
             if ((!atupper[c] && d[c] < -DUAL_TOL) || (atupper[c] && d[c] > DUAL_TOL)) ++dinf;
         }
         inicio_pinf = pinf; inicio_dinf = dinf;
+        /* `DFB_SX_DEGHIST=1`: fraccion de basicas EN una cota al empezar
+         * (degeneracion primal del punto de partida) */
+        static const bool deghist = getenv("DFB_SX_DEGHIST") != NULL;
+        if (deghist) {
+            static double acc = 0.0; static long nlp = 0;
+            int enc = 0;
+            for (int r = 1; r <= m; ++r) {
+                const int c = basic[r];
+                const double lo = zz[c].lb(), hi = zz[c].ub();
+                const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
+                const double tol = tol_primal(lo, hi, esc, piso_de(c));
+                if (std::fabs(xB[r] - lo) <= tol || std::fabs(xB[r] - hi) <= tol) ++enc;
+            }
+            acc += (double) enc / m; ++nlp;
+            if (nlp % 5000 == 0) fprintf(stderr, "[deghist] %ld LPs | basicas en una cota al empezar: %.1f%%\n", nlp, 100.0*acc/nlp);
+        }
         inicio_kbasica = rowof[k] >= 0;
         int nxb = 0; for (int r = 1; r <= m; ++r) if (basic[r] < nx) ++nxb;
         inicio_nxbas = nxb;

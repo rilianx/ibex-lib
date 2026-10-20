@@ -1939,3 +1939,14 @@ compo, cota más cercana) en curso.
   ancho ×2.25 → sin ancho y 1e-6 ×1.31 (0 % infactibles, piv/LP 46 → 18),
   mismas celdas. En primal es pésimo (×14). Katsurabis-14 no cambia con la
   tolerancia (×3.2–3.4 dual, ×2.6 primal): queda pendiente.
+- **Misma tolerancia que SoPlex** (`DFB_SX_FEASTOL=1e-6 DFB_SX_DUALTOL=1e-6
+  DFB_SX_TOLANCHO=0` en sistemas; `DFB_SX_DUALTOL` es nueva) **y qué distingue
+  el warm start** (`ws/`, compo, piso + fusión, seed 1, 40 s). Pasada
+  SC/SoPlex, dual / primal+devex: BroydenBanded-100 1.52 / 9.88, -120 1.47 /
+  7.12; CCR2-14 1.62 / 1.03, CCR2-16 1.89 / 1.03; Katsurabis-14 3.23 / 2.69;
+  Yamamua1-0016 1.83 / 1.70 (27 % de LPs infactibles en los dos: por ver).
+  NO separan: cambios de lado por LP (BroydenBanded 2–3 %, Katsurabis 12 %, al
+  revés de la regla del afín) ni básicas en una cota al empezar
+  (`DFB_SX_DEGHIST=1`: BroydenBanded primal 4.7 %, CCR 5.4 %). SÍ separa la
+  degeneración de los pasos primales (BroydenBanded 85–88 %, CCR 9 %), pero es
+  un resultado, solo se ve probando.

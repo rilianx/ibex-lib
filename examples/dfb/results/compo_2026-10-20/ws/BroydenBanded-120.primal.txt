@@ -1,0 +1,49 @@
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 2.85) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.852, en las que cambian 0.838
+[basecomp] LPs tibios=200  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=2.85  | no basicas que siguen: 120.0, cambian de lado: 2.85 (2.4%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 2.87) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.831, en las que cambian 0.831
+[basecomp] LPs tibios=400  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=2.87  | no basicas que siguen: 120.0, cambian de lado: 2.87 (2.4%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.01) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.825, en las que cambian 0.829
+[basecomp] LPs tibios=600  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.01  | no basicas que siguen: 120.0, cambian de lado: 3.01 (2.6%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.08) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.821, en las que cambian 0.828
+[basecomp] LPs tibios=800  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.08  | no basicas que siguen: 120.0, cambian de lado: 3.08 (2.6%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.17) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.818, en las que cambian 0.826
+[basecomp] LPs tibios=1000  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.17  | no basicas que siguen: 120.0, cambian de lado: 3.17 (2.7%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.31) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.814, en las que cambian 0.821
+[basecomp] LPs tibios=1200  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.31  | no basicas que siguen: 120.0, cambian de lado: 3.31 (2.8%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.44) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.808, en las que cambian 0.814
+[basecomp] LPs tibios=1400  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.44  | no basicas que siguen: 120.0, cambian de lado: 3.44 (2.9%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.57) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.804, en las que cambian 0.808
+[basecomp] LPs tibios=1600  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.57  | no basicas que siguen: 120.0, cambian de lado: 3.57 (3.0%)
+[basecomp2] no basicas: variables 0.0 (cambian 0.00), holguras 120.0 (cambian 3.65) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.8, en las que cambian 0.803
+[basecomp] LPs tibios=1800  m=240.0  columnas basicas nuevas=0.00 (0.0% de la base)  base identica en el 100.0%  pivotes=3.65  | no basicas que siguen: 120.0, cambian de lado: 3.65 (3.1%)
+[basecomp2] no basicas: variables 1.2 (cambian 0.01), holguras 118.8 (cambian 3.56) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.797, en las que cambian 0.802
+[basecomp] LPs tibios=2000  m=240.1  columnas basicas nuevas=0.16 (0.1% de la base)  base identica en el 95.7%  pivotes=3.74  | no basicas que siguen: 119.9, cambian de lado: 3.56 (3.0%)
+[basecomp2] no basicas: variables 3.5 (cambian 0.02), holguras 116.1 (cambian 3.33) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.793, en las que cambian 0.8
+[basecomp] LPs tibios=2200  m=240.3  columnas basicas nuevas=0.54 (0.3% de la base)  base identica en el 87.0%  pivotes=4.04  | no basicas que siguen: 119.5, cambian de lado: 3.35 (2.8%)
+[basecomp2] no basicas: variables 5.2 (cambian 0.03), holguras 114.0 (cambian 3.14) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.79, en las que cambian 0.798
+[basecomp] LPs tibios=2400  m=240.5  columnas basicas nuevas=0.84 (0.4% de la base)  base identica en el 79.7%  pivotes=4.27  | no basicas que siguen: 119.2, cambian de lado: 3.17 (2.7%)
+[basecomp2] no basicas: variables 7.2 (cambian 0.08), holguras 111.5 (cambian 3.02) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.786, en las que cambian 0.79
+[basecomp] LPs tibios=2600  m=240.8  columnas basicas nuevas=1.37 (0.6% de la base)  base identica en el 73.6%  pivotes=20.71  | no basicas que siguen: 118.7, cambian de lado: 3.09 (2.7%)
+[basecomp2] no basicas: variables 9.1 (cambian 0.10), holguras 109.2 (cambian 2.88) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.781, en las que cambian 0.785
+[basecomp] LPs tibios=2800  m=241.2  columnas basicas nuevas=1.77 (0.8% de la base)  base identica en el 68.4%  pivotes=31.23  | no basicas que siguen: 118.3, cambian de lado: 2.98 (2.6%)
+[basecomp2] no basicas: variables 10.8 (cambian 0.15), holguras 107.1 (cambian 2.80) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.778, en las que cambian 0.777
+[basecomp] LPs tibios=3000  m=241.6  columnas basicas nuevas=2.20 (1.0% de la base)  base identica en el 63.8%  pivotes=48.32  | no basicas que siguen: 117.9, cambian de lado: 2.94 (2.5%)
+[basecomp2] no basicas: variables 12.3 (cambian 0.16), holguras 105.4 (cambian 2.66) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.774, en las que cambian 0.774
+[basecomp] LPs tibios=3200  m=241.8  columnas basicas nuevas=2.43 (1.1% de la base)  base identica en el 59.9%  pivotes=47.89  | no basicas que siguen: 117.6, cambian de lado: 2.81 (2.4%)
+[basecomp2] no basicas: variables 13.8 (cambian 0.17), holguras 103.7 (cambian 2.57) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.771, en las que cambian 0.77
+[basecomp] LPs tibios=3400  m=242.0  columnas basicas nuevas=2.69 (1.2% de la base)  base identica en el 56.4%  pivotes=53.57  | no basicas que siguen: 117.4, cambian de lado: 2.73 (2.4%)
+[basecomp2] no basicas: variables 15.1 (cambian 0.19), holguras 102.1 (cambian 2.50) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.768, en las que cambian 0.762
+[basecomp] LPs tibios=3600  m=242.2  columnas basicas nuevas=2.94 (1.3% de la base)  base identica en el 53.3%  pivotes=59.02  | no basicas que siguen: 117.1, cambian de lado: 2.69 (2.3%)
+[basecomp2] no basicas: variables 16.1 (cambian 0.20), holguras 100.9 (cambian 2.41) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.764, en las que cambian 0.759
+[basecomp] LPs tibios=3800  m=242.3  columnas basicas nuevas=3.13 (1.3% de la base)  base identica en el 50.5%  pivotes=60.83  | no basicas que siguen: 116.9, cambian de lado: 2.61 (2.3%)
+[basecomp2] no basicas: variables 17.2 (cambian 0.23), holguras 99.4 (cambian 2.37) | finitas en las dos cotas 100%, cambios en columnas con una cota infinita 0 | franja (ancho holgura / rango de la fila) media 0.762, en las que cambian 0.755
+[basecomp] LPs tibios=4000  m=242.5  columnas basicas nuevas=3.41 (1.5% de la base)  base identica en el 48.0%  pivotes=68.39  | no basicas que siguen: 116.6, cambian de lado: 2.59 (2.3%)
+5 13.4192 1 0 0 0 0
+[dfb] piv/LP=44.71  degen=85.4%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 243.25 por linealizacion (25 llamadas)
+[abcaja] DFB  : LPs=4141 | optimo certificado=2495  optimo sin certificado=1598  vacio probado=0  no optimo=48 | saltadas=1859
+[abcaja] caja : LPs=4515 | optimo certificado=2519  optimo sin certificado=1996  vacio probado=0  no optimo=0 | saltadas=1485
+[abcaja] nodos=25 | contraccion media DFB=0.05437 caja=0.05441 | nodos vaciados DFB=0 caja=0 | gana DFB=1 caja=16
+[abcaja] costo DFB  : pasada 10.970 s  pivotes=352842  us/LP=2648.90  piv/LP=85.21  us/piv=31.088
+[abcaja] costo caja : pasada 1.541 s  pivotes=34138  us/LP=341.27  piv/LP=7.57  us/piv=45.135
+[dfb] estados: solves=4180  optimal=98.0%  infeasible=1.0%  iterlimit=0.9%  otros(singular/unbounded)=0.3%  | warm=4104 cold=76 fact_fallo=1
