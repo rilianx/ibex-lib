@@ -1902,3 +1902,12 @@ compo, cota más cercana) en curso.
   celdas (7) en 28.8 s contra 50.1 s; pasada SC 39.8 → 17.1 s, SC/SoPlex 6.75
   → 3.10; piv/LP SC 92.7 → 39.4 (SoPlex 6.9); infactibles 12.1 % → 3.8 %.
   SoPlex casi no cambia con la fusión. Queda ×3 por pivotes (degeneración 66 %).
+- **Peores 34 con piso + fusión de paralelas (`peores2/`).** SC/SoPlex, media
+  geométrica: sistemas compo ×2.22 → ×1.96 (piso) → ×1.41 (ambos); opt compo
+  ×1.39 → ×1.03; afín sin cambios (sistemas ×1.08, opt ×1.02). Por instancia:
+  Discrete-Integralf2-21 2.19 → 0.66, DiscreteBoundary-0200 1.85 → 0.71,
+  Trigo 2.02 → 0.95, BroydenBanded-100 4.62 → 2.07, concon (opt compo) 1.34 →
+  0.68, haldmads 1.80 → 1.02, hydro 1.58 → 1.03. En opt compo la fusión
+  cambia el árbol (celdas ×0.6–0.7 en concon, haldmads, hs114). Siguen sin
+  cambio CCR2-14/16 (×1.7), Katsurabis-14 compo (×2.2), BroydenBanded-120/140
+  (×1.8–1.9), Yamamua1-0016 (×1.5): el punto de partida.
