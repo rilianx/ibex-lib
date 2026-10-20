@@ -1911,3 +1911,9 @@ compo, cota más cercana) en curso.
   cambia el árbol (celdas ×0.6–0.7 en concon, haldmads, hs114). Siguen sin
   cambio CCR2-14/16 (×1.7), Katsurabis-14 compo (×2.2), BroydenBanded-120/140
   (×1.8–1.9), Yamamua1-0016 (×1.5): el punto de partida.
+- **Caja negra también con la fusión de paralelas (`peores_caja/`).** La fusión
+  ayuda a SoPlex: caja fusionada / caja ×0.90 en sistemas compo, ×0.97 en opt
+  compo. En igualdad (los dos con fusión): SC/SoPlex sistemas compo ×1.57
+  (era ×2.22 sin arreglos y sin fusión en ninguno), opt compo ×1.06.
+  DiscreteBoundary-0200 1.01, Discrete-Integralf2-21 0.82, Trigo 0.98;
+  BroydenBanded-120/140 ×2.2–2.4, Katsurabis-14 ×2.3, CCR ×1.5–1.6.
