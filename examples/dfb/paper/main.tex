@@ -1014,28 +1014,25 @@ of runs solved within a factor $\tau$ of the faster engine.}
 
 The 60\,s limit leaves out the hardest instances. We reran with a limit of
 3600\,s the instances on which some configuration reached the 60\,s limit
-(48 systems with 2 seeds, 24 optimization problems with 4 seeds), each engine with its own bound order, and on systems also with the
-farthest bound first in both. Both engines re-solve from a cold start when a
+(48 systems with 2 seeds, 24 optimization problems with 4 seeds), each engine
+with its own bound order. Both engines re-solve from a cold start when a
 reported infeasibility cannot be certified (Section~\ref{sec:properties}); for
 the black box this also covers infeasibility reported without a ray.
-Table~\ref{tab:long} gives the results. These long runs were made with
-presolving on in the black box, which at 60\,s changes its time by 3\%.
-\todo{rehacer la caja negra a 3600\,s sin presolve}
+Table~\ref{tab:long} gives the results.
+\todo{fila ``same bound order'' en sistemas a 3600\,s: SC con la cota mas cercana en curso}
 
 \begin{table}[t]
 \centering
 \caption{SC against the black box with a limit of 3600\,s, each engine with its
-own bound order, and on systems also with the farthest bound first in both.
-Geometric means of the ratios SC/BB over the runs both engines finish, and
-runs finished.}
+own bound order. Geometric means of the ratios SC/BB over the runs both
+engines finish, and runs finished.}
 \label{tab:long}
 \begin{tabular}{lrrccc}
 \toprule
 benchmark & instances & runs & cells & CPU & finished\\
 \midrule
-systems                   & 48 & 96 & 1.02 & 0.97 & 94 / 93\\
-systems, same bound order & 48 & 96 & 1.00 & 0.95 & 94 / 94\\
-optimization              & 24 & 96 & 0.95 & 0.77 & 96 / 84\\
+systems      & 48 & 96 & 1.00 & 0.98 & 94 / 93\\
+optimization & 24 & 96 & 1.01 & 0.89 & 96 / 84\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1043,21 +1040,18 @@ optimization              & 24 & 96 & 0.95 & 0.77 & 96 / 84\\
 On optimization problems the gain of Table~\ref{tab:main} carries over. SC
 finishes three problems (ex6\_2\_13, hs101, hs112) in 3\,000 to 3\,100\,s
 that the black box does not finish within 3\,600\,s; with 7\,200\,s it
-finishes them in 4\,000 to 4\,480\,s with the same cells, and these runs
+finishes them in 3\,600 to 4\,100\,s with the same cells, and these runs
 enter the means. Without bearing, whose search tree changes by two orders of
-magnitude between seeds (Section~\ref{sec:discussion}), SC is 22\% faster
-with 2\% fewer cells; the largest loss is ex5\_4\_4 ($\times1.18$).
-On long runs of systems of equations the two engines are close: SC is 3\% faster
-with its own bound order and 5\% faster with the farthest bound first in both,
-with the same cells, and finishes one more run (CountercurrentReactors2-26,
-in 257\,s). The mean with each engine's own order is dominated by one run,
-CountercurrentReactors2-28 with seed 1 ($\times4.2$); without it SC is 5\%
-faster with 1\% fewer cells. That run is not caused by the linear contractor:
+magnitude between seeds (Section~\ref{sec:discussion}), SC is 17\% faster
+with 5\% fewer cells; the largest loss is ex5\_4\_4 ($\times1.21$). On long
+runs of systems of equations the two engines are close: SC is 2\% faster with
+the same cells, and finishes one more run (CountercurrentReactors2-28 with
+seed 1, in 1\,640\,s). That run is slow for SC too, against 320--370\,s with
+another seed or without the retry, and the linear contractor is not the cause:
 the adaptive tuning of ACID, which every 1\,000 calls re-estimates how many
 variables to shave from a window of 50 calls, settles on shaving none for a
 long stretch of the search, and boxes that ACID alone would empty are bisected
-instead (with a different seed, or without the retry, the same instance
-finishes in 320--370\,s).
+instead.
 
 \subsection{Cost of a pass}
 
@@ -1299,11 +1293,18 @@ Bellido                   & 0.281 & 0.281 &    4 &  4 &  152 &   0\\
 \end{table}
 
 \paragraph{Relation to the polytope-hull contractor of Ibex.}
-Against the contractor distributed with Ibex, SC explores about half the
-cells on systems of equations. Most of that gap comes from the contractor and
-not from the engine: when the LP solver reports infeasibility without a
-verifiable ray, the contractor of Ibex abandons the pass, and the node is not
-pruned. The black-box engine above, inside our contractor, recovers most of it.
+Against the contractor distributed with Ibex, run in its strongest
+configuration on each program (SoPlex in column representation in the solver
+of systems of equations, the default in the optimizer), our contractor with SC
+explores 0.70--0.76 times the cells on systems of equations in 0.66--0.68 of
+the time, and finishes 364 runs against 325; on optimization problems it
+explores 0.92--0.97 times the cells in 0.80--0.82 of the time, with 872 runs
+finished against 865. Most of that gap comes from the contractor and not from
+the engine: when the LP solver reports infeasibility without a verifiable ray,
+the contractor of Ibex abandons the pass, and the node is not pruned. The
+black-box engine inside our contractor already explores 0.71--0.77 of the
+cells on systems of equations in 0.71--0.72 of the time, and SC adds the
+7--15\% of Table~\ref{tab:main}.
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}

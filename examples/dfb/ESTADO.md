@@ -1730,3 +1730,16 @@ evaluar, 7 verificar; resto interfaz), SPxSolver 37 mil, SC 14 mil (23 con
 orden y certificación).
 Pendiente en cola (`cadena_larga.sh`): brazo de la caja a 3600 s sin presolve
 (`d3600p`, 192) + 7200 s (12) y PHull de producción a 60 s (`prod`, 1444).
+
+**Largas sin presolve y PHull de producción (2026-10-20,
+`results/largas_2026-10-20/`).** `tab:long` contra SoPlex sin presolve
+(`d3600p`, 7200 en `d7200p`): sistemas (SC propio de `frio_2026-10-15/sc3600`)
+celdas ×1.00, cpu ×0.98, 94/93 (SC termina CCR2-28 s1 en 1640 s; la caja no);
+opt (SC de `l3600c`) celdas ×1.01, cpu ×0.89, 96/84 (96 con 7200: ex6_2_13,
+hs101, hs112 en 3620–4053 s); sin bearing ×0.95 / ×0.83. Fila «same bound
+order» a 3600 s pendiente: SC cerca en sistemas corriendo (`l3600sc`, 96).
+PHull de producción a 60 s (`prod`, brazo en `final_2026-10-19.csv`; solver
+con `IBEX_LP_REP=col`, ibexopt de fábrica): SC/prod sistemas celdas 0.70–0.76,
+cpu 0.66–0.68, 364/325; opt celdas 0.92–0.97, cpu 0.80–0.82, 872/865. Caja
+sin presolve/prod: sistemas celdas 0.71–0.77, cpu 0.71–0.72; opt cpu
+0.92–0.96. Párrafo del paper con números.
