@@ -1710,3 +1710,23 @@ llamadas a `times()` lo hacían más lento que la clase).
 - SC pierde donde pivotea mucho más (Bratu-0120 10.3 contra 3.3 piv/LP,
   BroydenTri, launch, Katsurabis-14); gana grande por robustez
   (DiscreteBoundary-0200 ×0.19, Geneig-icse ×0.45).
+
+**Reorganización del paper (2026-10-19).** Encuadre: un simplex diseñado
+alrededor del certificado (cualquier base certifica → sin verificación, sin
+refactorizar antes del óptimo, sin fase 1, un tableau para las 2n cotas).
+Resumen y contribuciones nuevos; párrafo «What the certificate removes» al
+inicio de §4; §4.2 sin los µs viejos; §6 reordenado: rigor → principal (con
+filas de SPxSolver) → largas → costo de una pasada (banco con cuatro cajas +
+figura escalera `fig:ladder`) → «Where the gain comes from» (ablación, luego
+emulación, luego callgrind sin presolve) → dónde pierde cotas la caja (con la
+explicación de los «no óptimos» de SC: infactibilidades cuyo rayo no
+certifica, 1.0–1.1 % de sus LPs, nunca tope de iteraciones) → relación con el
+PHull de Ibex; discusión y conclusión nuevas. Se quitó la sonda en la búsqueda
+(`fig:cost`, medida con presolve). Escalera de la emulación contra SPxSolver:
+SPx directo quita 42–54 % de la brecha en log; una refactorización por LP sola
+explica 53–58 %. Callgrind sin presolve (ex2_1_9, 200 cajas): clase SoPlex 52
+mil instr/LP (32 simplex: 10 antes del primer pivote, 8 pivotes; 10 guardar y
+evaluar, 7 verificar; resto interfaz), SPxSolver 37 mil, SC 14 mil (23 con
+orden y certificación).
+Pendiente en cola (`cadena_larga.sh`): brazo de la caja a 3600 s sin presolve
+(`d3600p`, 192) + 7200 s (12) y PHull de producción a 60 s (`prod`, 1444).
