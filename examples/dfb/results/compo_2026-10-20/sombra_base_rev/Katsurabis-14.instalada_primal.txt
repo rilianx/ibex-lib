@@ -1,0 +1,3 @@
+[sombra] bases de SoPlex instaladas en SC: 17122, fallidas 6
+[sombra] LPs=17273 | piv/LP SC 25.12 caja 17.52 | us/LP SC 399.78 caja 237.08 | caja pivotea menos 35.7% igual 31.0% mas 33.4% | optimos SC 17094 caja 17229
+[sombra] en los 1798 LPs sin pivotes de la caja, SC hace: 0:84.8% 1:4.1% 2:1.7% 3:1.7% 4-5:2.3% 6-9:2.4% 10-19:1.2% 20+:2.2%

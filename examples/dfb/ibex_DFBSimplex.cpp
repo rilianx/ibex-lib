@@ -456,7 +456,26 @@ bool DFBSimplex::instalar_base(const std::vector<int>& basicas, const std::vecto
      * meten las columnas pedidas con pivotes de Gauss-Jordan sobre el tableau
      * escalado, sin pasar por la LU (que rechaza por estabilidad bases que el
      * tableau maneja bien). Solo el motor tableau. */
-    if (rev || (int)basicas.size() != m || (int)atup.size() != na || m <= 0) { ++n_inst_fallo; return false; }
+    if ((int)basicas.size() != m || (int)atup.size() != na || m <= 0) { ++n_inst_fallo; return false; }
+    /* MOTOR REVISADO (2026-10-20): no hay tableau que pivotear; se instala la
+     * lista de basicas y la ubicacion de las no basicas, y el arranque tibio
+     * siguiente (`refrescar`) recalcula d, lambda y x_B desde una LU nueva. */
+    if (rev) {
+        std::vector<char> ya(na, 0);
+        for (int r = 0; r < m; ++r) { const int c = basicas[r]; if (c < 0 || c >= na || ya[c]) { ++n_inst_fallo; return false; } ya[c] = 1; }
+        const std::vector<int> basic0(basic); const std::vector<int> rowof0(rowof); const std::vector<char> atup0(atupper);
+        std::fill(rowof.begin(), rowof.end(), -1);
+        for (int r = 1; r <= m; ++r) { basic[r] = basicas[r-1]; rowof[basic[r]] = r; }
+        for (int c = 0; c < na; ++c) atupper[c] = (rowof[c] >= 0) ? 0 : atup[c];
+        fact_sucia = true;
+        if (!asegurar_fact()) {   /* LU singular: se deja la base anterior */
+            basic = basic0; rowof = rowof0; atupper = atup0; fact_sucia = true; asegurar_fact();
+            ++n_inst_fallo; return false;
+        }
+        base_lista = true; xb_sucio = true;
+        ++n_inst_ok;
+        return true;
+    }
     std::vector<char> quiero(nc, 0);
     for (int r = 0; r < m; ++r) { const int c = basicas[r]; if (c < 0 || c >= na || quiero[c]) { ++n_inst_fallo; return false; } quiero[c] = 1; }
     std::fill(rowof.begin(), rowof.end(), -1);

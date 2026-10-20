@@ -1917,3 +1917,17 @@ compo, cota más cercana) en curso.
   (era ×2.22 sin arreglos y sin fusión en ninguno), opt compo ×1.06.
   DiscreteBoundary-0200 1.01, Discrete-Integralf2-21 0.82, Trigo 0.98;
   BroydenBanded-120/140 ×2.2–2.4, Katsurabis-14 ×2.3, CCR ×1.5–1.6.
+- **`instalar_base` en el motor revisado (2026-10-20)** y sombra con la base
+  final de SoPlex instalada en SC antes de cada LP (compo, piso + fusión,
+  `sombra_base_rev/`). Pivotes por LP, SC / SoPlex sobre los mismos LPs:
+
+  | | base propia | base de SoPlex, dual | base de SoPlex, primal+devex |
+  |---|---|---|---|
+  | Katsurabis-14 | 43.4 / 19.0 | 28.9 / 18.8 | 25.1 / 17.5 |
+  | CCR2-14 | 21.3 / 13.0 | 22.0 / 11.8 | **12.9 / 12.9** |
+  | BroydenBanded-120 | 39.9 / 8.4 | 55.6 / 8.8 | 35.4 / 7.8 |
+
+  CCR: todo es la estrategia (la reubicación del dual destruye el vértice;
+  desde la misma base con primal+devex, SC = SoPlex). Katsurabis: mitad base
+  de partida (43 → 29), resto algoritmo (×1.4). BroydenBanded: algoritmo (×4.5
+  aun desde la misma base y en primal; 8 % de LPs sin óptimo).

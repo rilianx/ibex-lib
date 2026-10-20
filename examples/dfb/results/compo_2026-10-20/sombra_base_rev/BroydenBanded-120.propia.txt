@@ -1,0 +1,2 @@
+[sombra] LPs=19395 | piv/LP SC 39.91 caja 8.40 | us/LP SC 1085.79 caja 232.49 | caja pivotea menos 61.5% igual 2.3% mas 36.4% | optimos SC 17490 caja 19395
+[sombra] en los 1972 LPs sin pivotes de la caja, SC hace: 0:2.3% 1:1.8% 2:1.9% 3:1.5% 4-5:2.6% 6-9:5.1% 10-19:14.8% 20+:70.4%
