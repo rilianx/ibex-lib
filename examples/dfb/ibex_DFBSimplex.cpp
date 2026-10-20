@@ -2265,7 +2265,21 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
             const double lo = zz[c].lb(), hi = zz[c].ub();
             const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ? std::fabs(lo) : std::fabs(hi));
             const double tol = tol_primal(lo, hi, esc, piso_de(c));
-            if (xB[r] < lo - tol || xB[r] > hi + tol) ++pinf;
+            if (xB[r] < lo - tol || xB[r] > hi + tol) {
+                ++pinf;
+                /* `DFB_SX_INFHIST=1`: tamano relativo de esas violaciones */
+                static const bool hist = getenv("DFB_SX_INFHIST") != NULL;
+                static long hb[6] = {0,0,0,0,0,0}, hn = 0, hlp = 0;
+                if (hist) {
+                    const double v = (xB[r] < lo ? lo - xB[r] : xB[r] - hi) / esc;
+                    const int b = v < 1e-12 ? 0 : v < 1e-10 ? 1 : v < 1e-8 ? 2 : v < 1e-6 ? 3 : v < 1e-3 ? 4 : 5;
+                    ++hb[b]; ++hn;
+                    if (r == 1 || hlp == 0) {}
+                    if ((hn % 20000) == 0)
+                        fprintf(stderr, "[infhist] %ld violaciones al empezar | relativas <1e-12 %.1f%% | <1e-10 %.1f%% | <1e-8 %.1f%% | <1e-6 %.1f%% | <1e-3 %.1f%% | >=1e-3 %.1f%%\n",
+                                hn, 100.0*hb[0]/hn, 100.0*hb[1]/hn, 100.0*hb[2]/hn, 100.0*hb[3]/hn, 100.0*hb[4]/hn, 100.0*hb[5]/hn);
+                }
+            }
         }
         for (int c = 0; c < na; ++c) {
             if (rowof[c] >= 0) continue;

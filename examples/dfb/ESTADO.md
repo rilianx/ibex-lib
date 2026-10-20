@@ -1931,3 +1931,11 @@ compo, cota más cercana) en curso.
   desde la misma base con primal+devex, SC = SoPlex). Katsurabis: mitad base
   de partida (43 → 29), resto algoritmo (×1.4). BroydenBanded: algoritmo (×4.5
   aun desde la misma base y en primal; 8 % de LPs sin óptimo).
+- **Tolerancia y BroydenBanded (2026-10-20, `tolerancia/`, compo, piso +
+  fusión, seed 1).** Desde la base de SoPlex, el 76 % de las violaciones que
+  SC ve al empezar son < 1e-8 relativo (`DFB_SX_INFHIST=1`): la base óptima
+  para SoPlex a 1e-6 es infactible para SC. Pasada SC/SoPlex en
+  BroydenBanded-120 (dual): base ×3.74 (16 % infactibles) → sin tolerancia por
+  ancho ×2.25 → sin ancho y 1e-6 ×1.31 (0 % infactibles, piv/LP 46 → 18),
+  mismas celdas. En primal es pésimo (×14). Katsurabis-14 no cambia con la
+  tolerancia (×3.2–3.4 dual, ×2.6 primal): queda pendiente.
