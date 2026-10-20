@@ -191,6 +191,8 @@ static void cr_resumen() {
 long CtcDFBHull::n_goal_lp = 0;
 long CtcDFBHull::n_sens_extra = 0;
 long CtcDFBHull::n_filas_fusionadas = 0;
+long CtcDFBHull::n_filas_paralelas = 0;
+long CtcDFBHull::n_filas_quitadas = 0;
 long CtcDFBHull::n_inf_falso = 0;
 long CtcDFBHull::n_bounds = 0;
 long CtcDFBHull::n_empty = 0;
@@ -469,6 +471,8 @@ CtcDFBHull::~CtcDFBHull() {
     if (n_m_tot)
         fprintf(stderr, "[dfb] filas de la relajacion: %.2f por linealizacion (%ld llamadas)\n",
                 (double)n_m_tot/n_m_llam, n_m_llam);
+        if (n_filas_paralelas || n_filas_quitadas)
+            fprintf(stderr, "[dfb] filas paralelas: fundidas=%ld quitadas=%ld (%.2f y %.2f por linealizacion)\n", n_filas_paralelas, n_filas_quitadas, (double)n_filas_paralelas/n_m_llam, (double)n_filas_quitadas/n_m_llam);
     if (DFB_ENV("DFBH_AFALLOC")) {
         extern long af_n_alloc, af_n_double;
         fprintf(stderr, "[afalloc] asignaciones de la afin=%ld  doubles=%ld  (%.1f por linealizacion)\n",
@@ -617,6 +621,68 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         m = k;
     } else {
         for (int i = 0; i < m0; ++i) fuente.push_back(i);
+    }
+
+    /* FILAS PARALELAS (`DFBH_FILAS=paralelas|quita`, 2026-10-20). La relajacion
+     * `compo` suma a la fila afin de cada restriccion las de XTaylor, casi
+     * paralelas a ella, y el LP se vuelve muy degenerado (Katsurabis-14 con
+     * compo: 53 % de pivotes degenerados y 64 piv/LP contra 10 con el afin).
+     * `paralelas`: dos filas PROPORCIONALES dentro de `DFBH_FILAS_TOL`
+     * (omision 1e-9, relativa) se funden en una: se escalan los lados de la
+     * segunda y se intersecan con los de la primera; el poliedro es el mismo.
+     * `quita`: ademas, de dos filas con coseno > 1 - `DFBH_FILAS_COS` (omision
+     * 1e-6) se deja la mas apretada sobre la caja (ancho relativo de la holgura
+     * sobre el rango de la fila); esto si cambia la relajacion. Se compara solo
+     * entre filas con el mismo soporte. Vale para los dos motores. */
+    static const char* filas_env = getenv("DFBH_FILAS");
+    static const bool filas_par = filas_env && (std::string(filas_env) == "paralelas" || std::string(filas_env) == "quita");
+    static const bool filas_quita = filas_env && std::string(filas_env) == "quita";
+    static const double filas_tol = getenv("DFBH_FILAS_TOL") ? atof(getenv("DFBH_FILAS_TOL")) : 1e-9;
+    static const double filas_cos = getenv("DFBH_FILAS_COS") ? atof(getenv("DFBH_FILAS_COS")) : 1e-6;
+    if (filas_par && m > 1) {
+        std::vector<char> viva(m, 1);
+        std::map<std::vector<int>, std::vector<int> > grupos;
+        std::vector<double> norma(m, 0.0), apriete(m, 0.0);
+        std::vector<std::vector<int> > sop(m);
+        for (int i = 0; i < m; ++i) {
+            const Vector& r = rows0[nb_var+fuente[i]];
+            Interval rango(0.0);
+            for (int j = 0; j < nb_var; ++j)
+                if (r[j] != 0.0) { sop[i].push_back(j); norma[i] += r[j]*r[j]; rango += Interval(r[j]) * box[j]; }
+            norma[i] = std::sqrt(norma[i]);
+            const Interval h = lados[i] & rango;
+            apriete[i] = (h.is_empty() || rango.diam() <= 0.0) ? 0.0 : h.diam() / rango.diam();   /* 0 = la mas apretada */
+        }
+        for (int i = 0; i < m; ++i) {
+            if (sop[i].empty()) continue;
+            std::vector<int>& g = grupos[sop[i]];
+            for (size_t t = 0; t < g.size() && viva[i]; ++t) {
+                const int q = g[t];
+                if (!viva[q]) continue;
+                const Vector& a = rows0[nb_var+fuente[q]];
+                const Vector& b = rows0[nb_var+fuente[i]];
+                const int j0 = sop[i][0];
+                const double c = b[j0] / a[j0];
+                bool prop = true; double dot = 0.0;
+                for (size_t u = 0; u < sop[i].size(); ++u) {
+                    const int j = sop[i][u];
+                    dot += a[j]*b[j];
+                    if (std::fabs(b[j] - c*a[j]) > filas_tol * std::max(std::fabs(b[j]), std::fabs(c*a[j]))) prop = false;
+                }
+                if (prop) {
+                    const Interval inter = lados[q] & (lados[i] / c);
+                    if (!inter.is_empty()) { lados[q] = inter; viva[i] = 0; ++n_filas_paralelas; }
+                } else if (filas_quita && std::fabs(dot) / (norma[q]*norma[i]) > 1.0 - filas_cos) {
+                    if (apriete[i] < apriete[q]) { viva[q] = 0; g[t] = i; } else viva[i] = 0;
+                    ++n_filas_quitadas;
+                }
+            }
+            if (viva[i]) g.push_back(i);
+        }
+        int k = 0;
+        for (int i = 0; i < m; ++i)
+            if (viva[i]) { fuente[k] = fuente[i]; lados[k] = lados[i]; ++k; }
+        m = k;
     }
     if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA") || DFB_ENV("DFBH_SOMBRA"))) {
         /* La caja negra resuelve sobre `mylinearsolver`: se recarga con las
@@ -3319,6 +3385,10 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
         for (int i = 0; i < soplex::SoPlex::BOOLPARAM_COUNT; ++i)
             sx.setBoolParam((soplex::SoPlex::BoolParam) i, lp.boolParam((soplex::SoPlex::BoolParam) i), true);
         sx.setIntParam(soplex::SoPlex::OBJSENSE, soplex::SoPlex::OBJSENSE_MINIMIZE, true);
+        /* `DFBH_CAJA_TOPE=igual`: el mismo tope de iteraciones que SC (20m+200)
+         * en vez del de Ibex (100), para comparar en igualdad de condiciones. */
+        static const bool tope_igual = getenv("DFBH_CAJA_TOPE") && std::string(getenv("DFBH_CAJA_TOPE")) == "igual";
+        if (tope_igual) sx.setIntParam(soplex::SoPlex::ITERLIMIT, 20*m + 200, true);
         if (DFB_ENV("DFBH_CAJA_VERB")) sx.setIntParam(soplex::SoPlex::VERBOSITY, soplex::SoPlex::VERBOSITY_NORMAL, true);
         soplex::LPColSetReal cols(nb_var);
         soplex::DSVectorReal vacio(0);

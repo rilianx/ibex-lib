@@ -1,0 +1,6 @@
+81522 40.0983700001 7049.25197121 7049.25197121
+[abcaja] DFB  : LPs=843403 | optimo certificado=169044  optimo sin certificado=672310  vacio probado=857  no optimo=1192 | saltadas=590312
+[abcaja] caja : LPs=818544 | optimo certificado=183145  optimo sin certificado=634542  vacio probado=857  no optimo=0 | saltadas=613979
+[abcaja] nodos=80394 | contraccion media DFB=0.06799 caja=0.06799 | nodos vaciados DFB=857 caja=857 | gana DFB=58 caja=28
+[abcaja] costo DFB  : pasada 5.451 s  pivotes=1619488  us/LP=6.47  piv/LP=1.93  us/piv=3.366
+[abcaja] costo caja : pasada 13.658 s  pivotes=969452  us/LP=16.69  piv/LP=1.19  us/piv=14.088

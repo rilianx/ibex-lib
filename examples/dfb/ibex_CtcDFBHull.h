@@ -171,6 +171,8 @@ public:
     void activar_sensibilidades() { calcular_sens = true; }
     static long n_sens_extra;    //!< LPs extra resueltos para las sensibilidades
     static long n_filas_fusionadas; //!< filas gemelas fusionadas en `linearize_fresca` (`DFBH_FUSIONA`)
+    static long n_filas_paralelas;  //!< filas proporcionales fundidas (`DFBH_FILAS=paralelas|quita`)
+    static long n_filas_quitadas;   //!< filas casi paralelas quitadas (`DFBH_FILAS=quita`)
     static long n_inf_falso;     //!< filas donde +-1e100 de SoPlex habria cortado (`DFBH_INFSTATS=1`)
 
     /* Contadores de diagnostico, analogos a los de CtcPolytopeHull. */

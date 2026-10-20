@@ -1746,3 +1746,32 @@ sin presolve/prod: sistemas celdas 0.71–0.77, cpu 0.71–0.72; opt cpu
 - Fila «same bound order» a 3600 s (SC cerca `l3600sc` contra `d3600p`):
   celdas ×1.00, cpu ×0.98, 93/93 (SC termina CCR2-28 s1 en 339 s; la caja
   termina CCR2-30 s2 en 799 s y SC no). `tab:long` completa, sin pendientes.
+
+**Relajación compo a 60 s (2026-10-20, `results/compo_2026-10-20/`, brazos
+`sccompo` y `cajacompo` en `final_2026-10-19.csv`).** SC/caja con compo: opt
+celdas 0.95–1.00, cpu 0.97–0.98, 875/872 (la ventaja de 13–15 % casi
+desaparece); sistemas celdas 0.95–0.98, **cpu ×1.38–1.46**, 355/368 (Bratu
+×4–4.7, DiscreteBoundary-0200 ×15.8). Compo contra afín: caja en sistemas
+celdas ×0.52–0.57 con cpu ×0.93–1.03 y 368 terminadas (6 más) → en sistemas
+**la mejor configuración es caja+compo**: SC+afín es ×1.12–1.15 más lento con
+×1.7 celdas. En opt SC+afín sigue siendo la más rápida (×0.74–0.76 de
+caja+compo, ×1.26 celdas).
+Mecanismo (sonda en la búsqueda y sombra, Katsurabis-14, Bratu-0120): no es
+el costo por pivote (SC 21 µs contra 15; en Bratu 54 contra 60) sino los
+pivotes: con compo SC 64 piv/LP; SoPlex sobre los mismos LPs 36; SoPlex en su
+propia pasada 17. Dos efectos: la cadena de bases de SC deja LPs más difíciles
+(73 básicas fuera de cota al empezar, contra 5 con afín) y sobre el mismo LP
+SC necesita ×1.8 (degeneración 24 % → 53 %). El warm start primal no lo
+arregla (71 piv/LP). Ninguna regla aislada lo explica (sin long-step 49 en
+Katsurabis pero 159 en Bratu; sin perturbación 180; sin devex 86; sin fusión
+103). `instalar_base` falla en el motor revisado (no se pudo probar SC desde
+la base de SoPlex con m=146).
+Confundido: tope de iteraciones SoPlex 100 contra SC 20m+200; con compo en
+Bratu-0120 SoPlex abandona el 18 % de sus LPs (`optimos caja 2057/2501` en la
+sombra). Nueva opción `DFBH_CAJA_TOPE=igual` (caja con 20m+200); sonda en
+curso.
+Fusión de filas paralelas (`DFBH_FILAS=paralelas|quita`, en el contractor,
+para los dos motores): implementada, resultados inconsistentes (DiscreteBoundary
+SC 174 → 6.5 piv/LP pero 705 de 736 óptimos sin certificado y la caja ×27 más
+lenta por pasada; Brown-30 SC 2 → 17 piv/LP). Hay algo mal o mal entendido:
+NO usar hasta depurar.

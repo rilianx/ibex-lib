@@ -1,0 +1,17 @@
+155 40.5341 3 1 0 1 9
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=490  vacios probados por DFB=54 (11.1% de los nodos)  LPs=29388  pivotes=1712864
+[dfb] piv/LP=58.29  degen=61.9%  degen-enmascarados=7.7%  LPs perturbados=5891  pivotes de limpieza=0
+[dfb] filas de la relajacion: 162.77 por linealizacion (490 llamadas)
+[abcaja] DFB  : LPs=13882 | optimo certificado=11909  optimo sin certificado=1819  vacio probado=27  no optimo=127 | saltadas=13951
+[abcaja] caja : LPs=15506 | optimo certificado=13696  optimo sin certificado=1742  vacio probado=27  no optimo=41 | saltadas=12301
+[abcaja] nodos=490 | contraccion media DFB=0.13210 caja=0.12981 | nodos vaciados DFB=27 caja=27 | gana DFB=177 caja=69
+[abcaja] costo DFB  : pasada 33.101 s  pivotes=1432701  us/LP=2384.40  piv/LP=103.21  us/piv=23.104
+[abcaja] costo caja : pasada 4.631 s  pivotes=280163  us/LP=298.64  piv/LP=18.07  us/piv=16.529
+[dfb] vueltas del bucle=1454117  (104.65 por resolucion, contra 123.27 pivotes)
+[dfb] compute_basics=653267  (0.39 por pivote)
+[dfb] estados: solves=13896  optimal=98.8%  infeasible=0.4%  iterlimit=0.9%  otros(singular/unbounded)=0.1%  | warm=13378 cold=518 fact_fallo=2
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=490 tableau=0
+[dfb] LU tableau: refrescos por tableau=0, guardia fallo en d=0 x_B=0, lambda final=0
+[dfb] LU diferida: refactorizaciones=0 (0.00 por resolucion)

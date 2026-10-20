@@ -1,0 +1,16 @@
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo resumen
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sombra
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sombra_base
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sinlargo
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sinpert
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sindevex
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo revisado
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo tableau
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sinfusion
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch compo sintau
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch art resumen
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch art sombra
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch compo sombra
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch compo sinlargo
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch compo sinpert
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch compo revisado

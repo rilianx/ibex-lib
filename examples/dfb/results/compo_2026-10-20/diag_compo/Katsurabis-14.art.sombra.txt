@@ -1,0 +1,21 @@
+265 8.70615 2 1 0 4 0
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=620  vacios probados por DFB=38 (6.2% de los nodos)  LPs=17506  pivotes=179613
+[dfb] piv/LP=10.27  degen=44.2%  degen-enmascarados=20.6%  LPs perturbados=7832  pivotes de limpieza=1
+[dfb] filas de la relajacion: 29.70 por linealizacion (620 llamadas)
+[sombra] al terminar cada LP, SC deja 22.54 estructurales basicas, 4.25 de ellas en una cota (19%)
+[sombra] SC>10 y caja<=1: k basica al empezar SC 62.7% caja 76.2% | estructurales basicas SC 16.17 caja 21.15
+[sombra] resto          : k basica al empezar SC 62.1% caja 71.3% | estructurales basicas SC 21.83 caja 22.25
+[sombra] SC>10 y caja<=1: LPs 67 | al empezar SC tiene 12.17 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 22.62
+[sombra] resto          : LPs 17439 | al empezar SC tiene 5.44 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 10.22
+[sombra] LPs con caja=0 y SC>0: 129, pivotes SC 1041 (primales 1, de paso cero 0)
+[sombra] LPs=17506 | piv/LP SC 10.27 caja 9.15 | us/LP SC 177.91 caja 105.19 | caja pivotea menos 20.1% igual 42.3% mas 37.8% | optimos SC 17446 caja 17451
+[sombra] SC   pivotes por LP: 0:35.7% 1:5.1% 2:3.0% 3:3.4% 4-5:6.8% 6-9:13.6% 10-19:23.0% 20+:9.9%
+[sombra] caja pivotes por LP: 0:35.6% 1:4.4% 2:2.9% 3:3.1% 4-5:5.8% 6-9:10.7% 10-19:20.8% 20+:17.0%
+[sombra] en los 6215 LPs sin pivotes de la caja, SC hace: 0:98.0% 1:0.8% 2:0.2% 3:0.3% 4-5:0.2% 6-9:0.4% 10-19:0.2% 20+:0.4%
+[dfb] vueltas del bucle=205507  (11.73 por resolucion, contra 10.26 pivotes)
+[dfb] compute_basics=309437  (1.73 por pivote)
+[dfb] estados: solves=17523  optimal=99.6%  infeasible=0.5%  iterlimit=0.1%  otros(singular/unbounded)=0.0%  | warm=16869 cold=654 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] LU tableau: refrescos por tableau=24701, guardia fallo en d=0 x_B=0, lambda final=0
+[dfb] LU diferida: refactorizaciones=0 (0.00 por resolucion)

@@ -1,0 +1,6 @@
+44200 89.9965920001 -47.7048186759 -47.7048186759
+[abcaja] DFB  : LPs=1221783 | optimo certificado=630336  optimo sin certificado=546756  vacio probado=18157  no optimo=26534 | saltadas=811476
+[abcaja] caja : LPs=1208720 | optimo certificado=672078  optimo sin certificado=518485  vacio probado=18157  no optimo=0 | saltadas=798005
+[abcaja] nodos=101014 | contraccion media DFB=0.33808 caja=0.33808 | nodos vaciados DFB=18157 caja=18157 | gana DFB=20 caja=16
+[abcaja] costo DFB  : pasada 23.067 s  pivotes=4713635  us/LP=18.88  piv/LP=3.86  us/piv=4.894
+[abcaja] costo caja : pasada 38.152 s  pivotes=4035986  us/LP=31.57  piv/LP=3.34  us/piv=9.453

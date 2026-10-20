@@ -1,0 +1,6 @@
+31226 89.9977550001 -47.7037464864 -47.7037464864
+[abcaja] DFB  : LPs=854943 | optimo certificado=434562  optimo sin certificado=388815  vacio probado=12479  no optimo=19087 | saltadas=559575
+[abcaja] caja : LPs=842242 | optimo certificado=429597  optimo sin certificado=400165  vacio probado=12479  no optimo=1 | saltadas=553189
+[abcaja] nodos=70102 | contraccion media DFB=0.33744 caja=0.33744 | nodos vaciados DFB=12479 caja=12479 | gana DFB=9 caja=29
+[abcaja] costo DFB  : pasada 25.415 s  pivotes=3403798  us/LP=29.73  piv/LP=3.99  us/piv=7.467
+[abcaja] costo caja : pasada 32.748 s  pivotes=3356082  us/LP=38.89  piv/LP=3.99  us/piv=9.758

@@ -1,0 +1,22 @@
+3 12.0124 0 2 0 0 0
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=17  vacios probados por DFB=0 (0.0% de los nodos)  LPs=2501  pivotes=153921
+[dfb] piv/LP=61.55  degen=51.0%  degen-enmascarados=48.3%  LPs perturbados=1493  pivotes de limpieza=16
+[dfb] filas de la relajacion: 550.48 por linealizacion (17 llamadas)
+[sombra] al terminar cada LP, SC deja 118.54 estructurales basicas, 23.69 de ellas en una cota (20%)
+[sombra] SC>10 y caja<=1: k basica al empezar SC 90.9% caja 94.2% | estructurales basicas SC 107.62 caja 95.99
+[sombra] resto          : k basica al empezar SC 99.3% caja 97.9% | estructurales basicas SC 118.15 caja 114.33
+[sombra] SC>10 y caja<=1: LPs 120 | al empezar SC tiene 176.51 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 63.89
+[sombra] resto          : LPs 2381 | al empezar SC tiene 220.92 basicas fuera de cota y 0.00 costos reducidos de signo malo | piv/LP SC 61.35
+[sombra] LPs con caja=0 y SC>0: 121, pivotes SC 5260 (primales 0, de paso cero 0)
+[sombra] LPs=2501 | piv/LP SC 61.47 caja 38.72 | us/LP SC 3091.00 caja 942.33 | caja pivotea menos 49.5% igual 21.6% mas 29.1% | optimos SC 2498 caja 2057
+[sombra] SC   pivotes por LP: 0:28.8% 1:1.0% 2:0.8% 3:0.8% 4-5:1.0% 6-9:3.0% 10-19:7.7% 20+:57.3%
+[sombra] caja pivotes por LP: 0:25.7% 1:5.0% 2:7.1% 3:4.0% 4-5:2.1% 6-9:4.6% 10-19:4.7% 20+:47.2%
+[sombra] en los 641 LPs sin pivotes de la caja, SC hace: 0:81.2% 1:1.8% 2:0.8% 3:1.5% 4-5:1.3% 6-9:1.5% 10-19:3.8% 20+:8.6%
+[dfb] vueltas del bucle=158295  (63.25 por resolucion, contra 61.50 pivotes)
+[dfb] compute_basics=34361  (0.23 por pivote)
+[dfb] estados: solves=2503  optimal=99.9%  infeasible=0.2%  iterlimit=0.0%  otros(singular/unbounded)=0.1%  | warm=2482 cold=21 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=17 tableau=0
+[dfb] LU tableau: refrescos por tableau=0, guardia fallo en d=0 x_B=0, lambda final=0
+[dfb] LU diferida: refactorizaciones=0 (0.00 por resolucion)

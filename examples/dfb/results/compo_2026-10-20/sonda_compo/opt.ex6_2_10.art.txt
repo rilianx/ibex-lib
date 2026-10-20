@@ -1,0 +1,6 @@
+97698 89.9999320001 -3.05197616817 -3.05197616817
+[abcaja] DFB  : LPs=1059111 | optimo certificado=143076  optimo sin certificado=875597  vacio probado=30303  no optimo=10135 | saltadas=580029
+[abcaja] caja : LPs=1089555 | optimo certificado=179224  optimo sin certificado=880028  vacio probado=30303  no optimo=0 | saltadas=539450
+[abcaja] nodos=144496 | contraccion media DFB=0.40633 caja=0.40633 | nodos vaciados DFB=30303 caja=30303 | gana DFB=4 caja=43
+[abcaja] costo DFB  : pasada 9.856 s  pivotes=2650059  us/LP=9.31  piv/LP=2.51  us/piv=3.719
+[abcaja] costo caja : pasada 20.968 s  pivotes=2029894  us/LP=19.25  piv/LP=1.87  us/piv=10.330
