@@ -1775,3 +1775,10 @@ para los dos motores): implementada, resultados inconsistentes (DiscreteBoundary
 SC 174 → 6.5 piv/LP pero 705 de 736 óptimos sin certificado y la caja ×27 más
 lenta por pasada; Brown-30 SC 2 → 17 piv/LP). Hay algo mal o mal entendido:
 NO usar hasta depurar.
+- Sonda con `DFBH_CAJA_TOPE=igual` (12 instancias, afín y compo): el costo por
+  pasada SC/caja cambia < 5 %; los LPs sin óptimo de la caja caen a 0 en casi
+  todas (Geneig-icse afín 377 → 8; compo 3429 → 2000; Bratu-0120 compo 93 → 0)
+  y los nodos que SC gana bajan (Geneig-icse afín 129 → 26 de 1710; Bratu afín
+  28 → 6). **La robustez de `tab:samebox` era en buena parte el tope de 100.**
+  Barrido de 60 s en curso (`d60t`, 2888): `cajatope` (caja con tope igual) y
+  `scx` (SC), ambos con los binarios `_x` del mismo fuente.

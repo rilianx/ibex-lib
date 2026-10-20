@@ -1,0 +1,8 @@
+81522 40.4662410001 7049.25197121 7049.25197121
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] piv/LP=1.56  degen=11.6%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[abcaja] DFB  : LPs=843403 | optimo certificado=169044  optimo sin certificado=672310  vacio probado=857  no optimo=1192 | saltadas=590312
+[abcaja] caja : LPs=818544 | optimo certificado=183145  optimo sin certificado=634542  vacio probado=857  no optimo=0 | saltadas=613979
+[abcaja] nodos=80394 | contraccion media DFB=0.06799 caja=0.06799 | nodos vaciados DFB=857 caja=857 | gana DFB=58 caja=28
+[abcaja] costo DFB  : pasada 5.480 s  pivotes=1619488  us/LP=6.50  piv/LP=1.93  us/piv=3.384
+[abcaja] costo caja : pasada 13.886 s  pivotes=969452  us/LP=16.97  piv/LP=1.19  us/piv=14.323
