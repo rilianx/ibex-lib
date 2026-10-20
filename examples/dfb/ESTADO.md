@@ -1858,3 +1858,17 @@ compo, cota más cercana) en curso.
   piso de redondeo en filas casi puntuales, que compo produce y el afín no.
   Arreglo candidato (sin probar): piso de la tolerancia primal a la escala del
   error de calcular x_B, no 1e-15 relativo.
+- **Piso de tolerancia al error de la fila (`DFB_SX_PISO=error`, K=100,
+  apagado por omisión; `results/compo_2026-10-20/piso/`).** Compo, 60 s,
+  seed 1:
+
+  | | infactibles | piv/LP SC | pasada SC/SoPlex | tiempo, celdas |
+  |---|---|---|---|---|
+  | Trigo1-0020sp, base → piso | 59.6 % → 0.3 % | 22.0 → 8.2 | 6.19 → 1.23 | 10.3 → 6.3 s, 653 → 655 |
+  | Discrete-Integralf2-21 | 18.4 % → 0.7 % | 21.4 → 12.8 | 2.34 → 1.34 | 2.90 → 2.04 s, 5 → 5 |
+  | Katsurabis-14 | igual | 46.2 | 3.74 | igual (no era esto) |
+
+  bearing (opt, el caso que motivó la tolerancia por ancho): 60 s en ambas
+  semillas con y sin piso, mismo óptimo, 21.8–22.8 mil celdas: no conclusivo
+  (instancia caótica, excluida de las medias). Falta el barrido de
+  confirmación (afín y compo, ambos programas).
