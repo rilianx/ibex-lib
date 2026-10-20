@@ -1886,3 +1886,19 @@ compo, cota más cercana) en curso.
   caras degeneradas** — Katsurabis-14, CCR2-14/16, Yamamua1-0016,
   DiscreteBoundary-0200: en los LPs que SoPlex resuelve sin pivotear, SC hace
   20+ pivotes en buena parte.
+- **Filas antiparalelas de compo (2026-10-20).** XTaylor escribe cada ecuación
+  como dos filas de un lado con normales opuestas (a·x ≤ u, −a·x ≤ −l), a
+  distancia m/3 o similar: la fusión de gemelas (consecutivas e idénticas) no
+  las ve. BroydenBanded-100: 100 pares de 300 filas; Katsurabis-14 34,
+  CCR2-14 10, Trigo1-0020sp 33. La relajación en sí está bien condicionada
+  (cond(A) ≈ 6); el mal condicionamiento es de las bases que incluyen ambas
+  filas (s_i + s_j = 0).
+- **ERROR de nombre:** la opción de fusión de paralelas se llamaba
+  `DFBH_FILAS`, que ya existía (cosecha de cotas de otras filas, cara):
+  encenderla encendía la cosecha. Eso explica los resultados «inconsistentes»
+  anteriores (DiscreteBoundary, Brown). Renombrada a
+  `DFBH_FILAS_PARALELAS=paralelas|quita`.
+- Con la fusión bien (BroydenBanded-100 compo, piso, seed 1, 30 s): mismas
+  celdas (7) en 28.8 s contra 50.1 s; pasada SC 39.8 → 17.1 s, SC/SoPlex 6.75
+  → 3.10; piv/LP SC 92.7 → 39.4 (SoPlex 6.9); infactibles 12.1 % → 3.8 %.
+  SoPlex casi no cambia con la fusión. Queda ×3 por pivotes (degeneración 66 %).

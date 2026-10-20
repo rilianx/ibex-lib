@@ -623,7 +623,7 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         for (int i = 0; i < m0; ++i) fuente.push_back(i);
     }
 
-    /* FILAS PARALELAS (`DFBH_FILAS=paralelas|quita`, 2026-10-20). La relajacion
+    /* FILAS PARALELAS (`DFBH_FILAS_PARALELAS=paralelas|quita`, 2026-10-20). La relajacion
      * `compo` suma a la fila afin de cada restriccion las de XTaylor, casi
      * paralelas a ella, y el LP se vuelve muy degenerado (Katsurabis-14 con
      * compo: 53 % de pivotes degenerados y 64 piv/LP contra 10 con el afin).
@@ -634,7 +634,9 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
      * 1e-6) se deja la mas apretada sobre la caja (ancho relativo de la holgura
      * sobre el rango de la fila); esto si cambia la relajacion. Se compara solo
      * entre filas con el mismo soporte. Vale para los dos motores. */
-    static const char* filas_env = getenv("DFBH_FILAS");
+    /* (Se llamaba `DFBH_FILAS`, que ya era la COSECHA de cotas de otras filas:
+     * encenderla encendia tambien esa cosecha, cara y sin relacion.) */
+    static const char* filas_env = getenv("DFBH_FILAS_PARALELAS");
     static const bool filas_par = filas_env && (std::string(filas_env) == "paralelas" || std::string(filas_env) == "quita");
     static const bool filas_quita = filas_env && std::string(filas_env) == "quita";
     static const double filas_tol = getenv("DFBH_FILAS_TOL") ? atof(getenv("DFBH_FILAS_TOL")) : 1e-9;
