@@ -1807,3 +1807,11 @@ compo, cota más cercana) en curso.
   contra SC conteo con compo ×0.77–0.80, mismas celdas (Bratu ×0.3,
   DiscreteBoundary-0200 ×0.21; pierde solo Yamamua1-0018sp ×1.74). Queda ×2–3
   en DiscreteBoundary-0200, Katsurabis-14, Discrete-Integralf2-21.
+- **Causa de fondo del orden (2026-10-20):** el orden por conteo (omisión en
+  sistemas) cae a «la más lejana» cuando el motor es el revisado (el tableau
+  no está al día), o sea en TODAS las relajaciones grandes (afín > 30 filas:
+  26 sistemas; compo: 104 de 126 medidos). La más lejana es el peor orden para
+  el warm start dual en m grande. Nueva opción `DFBH_ORDEN=costo_o_cerca`
+  (conteo con tableau, más cercana con el revisado). Bratu-0120 afín: 10.3 →
+  7.5 piv/LP, 7.5 → 7.0 s, mismas celdas. Barrido `d60coc` (sistemas, afín y
+  compo, 968 corridas) en curso.

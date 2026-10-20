@@ -1271,18 +1271,24 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
      * `DFB_SX_PIVOTEO`, que elige la ESTRATEGIA DE PIVOTEO. Son dos ejes
      * independientes: esto decide QUE cota va despues, aquello COMO se resuelve.
      * `dual` se acepta como sinonimo por compatibilidad. */
+    /* `DFBH_ORDEN=costo_o_cerca` (orden 4, 2026-10-20): el conteo donde hay
+     * tableau y la MAS CERCANA con el motor revisado. El orden 3 cae a la mas
+     * lejana con el revisado (abajo), que en relajaciones grandes es el peor
+     * orden para el warm start dual: con compo, Bratu-0120 pasa de 61 a 11
+     * piv/LP y Katsurabis-14 de 64 a 48 con la mas cercana. */
     static const int   orden = (ord_env && std::string(ord_env)=="cerca") ? 0 :
                                (ord_env && std::string(ord_env)=="lejos") ? 1 :
-                               (ord_env && std::string(ord_env)=="nat")   ? 2 : 3;
+                               (ord_env && std::string(ord_env)=="nat")   ? 2 :
+                               (ord_env && std::string(ord_env)=="costo_o_cerca") ? 4 : 3;
     /* La caja negra no tiene tableau: el orden 3 lee el de DFB, que en la sonda
      * `DFBH_ABCAJA` es el de la pasada anterior. Por omision usa el de la mas
      * lejana; `DFBH_ORDEN_CAJA=cerca|lejos|nat` le da un orden propio sin
      * tocar el de DFB (los brazos del banco fijan `DFBH_ORDEN` y no cambian). */
     static const char* ordc_env = getenv("DFBH_ORDEN_CAJA");
-    static const int   orden_caja = !ordc_env ? (orden == 3 ? 1 : orden)
+    static const int   orden_caja = !ordc_env ? ((orden == 3 || orden == 4) ? 1 : orden)
                                : std::string(ordc_env)=="cerca" ? 0
                                : std::string(ordc_env)=="nat"   ? 2 : 1;
-    const int ord = motor_caja ? orden_caja : orden;
+    const int ord = motor_caja ? orden_caja : (orden == 4 ? (sx.es_revisado() ? 0 : 3) : orden);
     static const bool  no_salteo = (getenv("DFBH_NOSKIP") != NULL);
 
     /* --- CORTE TEMPRANO (anytime) ---
