@@ -1,0 +1,3 @@
+[sombra] al terminar cada LP, SC deja 68.68 estructurales basicas, 0.78 de ellas en una cota (2%)
+[sombra] LPs=15623 | piv/LP SC 43.57 caja 9.71 | us/LP SC 1376.56 caja 267.22 | caja pivotea menos 80.9% igual 5.4% mas 13.9% | optimos SC 13697 caja 15623
+[sombra] en los 903 LPs sin pivotes de la caja, SC hace: 0:1.0% 1:0.3% 2:1.2% 3:0.9% 4-5:2.3% 6-9:5.1% 10-19:18.7% 20+:70.9%

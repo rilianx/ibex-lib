@@ -1872,3 +1872,17 @@ compo, cota más cercana) en curso.
   semillas con y sin piso, mismo óptimo, 21.8–22.8 mil celdas: no conclusivo
   (instancia caótica, excluida de las medias). Falta el barrido de
   confirmación (afín y compo, ambos programas).
+- **Peores instancias con el piso (`peores/`, 34 instancias × semillas, 60 s).**
+  Cierra la brecha donde la causa era el redondeo: sistemas compo Trigo
+  ×2.02 → ×1.06, Discrete-Integralf2-21 ×2.19 → ×1.17; opt compo haldmads
+  ×1.80 → ×1.36, concon ×1.34 → ×1.18, hs099 ×1.41 → ×1.33. Afín sin
+  cambios. Cambios de árbol: disc2 (opt compo) celdas ×1.9; ex7_2_3 seed 1
+  (caótica) 81 → 198 mil celdas. Quedan dos mecanismos más:
+  (a) **bases mal condicionadas** — BroydenBanded-100/120/140 con compo
+  (×2–4.6, m ≈ 309): aun con el piso 13 % de declaraciones de vacío, ahora con
+  violaciones reales; en el 81 % la fila tiene una entrante de buen signo pero
+  |a| bajo el umbral relativo amax·1e-11, con max |a| de la fila ~5e8. SC
+  pivotea 81/LP contra 7 de SoPlex (que escala). (b) **punto de partida en
+  caras degeneradas** — Katsurabis-14, CCR2-14/16, Yamamua1-0016,
+  DiscreteBoundary-0200: en los LPs que SoPlex resuelve sin pivotear, SC hace
+  20+ pivotes en buena parte.
