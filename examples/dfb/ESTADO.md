@@ -1743,3 +1743,6 @@ con `IBEX_LP_REP=col`, ibexopt de fábrica): SC/prod sistemas celdas 0.70–0.76
 cpu 0.66–0.68, 364/325; opt celdas 0.92–0.97, cpu 0.80–0.82, 872/865. Caja
 sin presolve/prod: sistemas celdas 0.71–0.77, cpu 0.71–0.72; opt cpu
 0.92–0.96. Párrafo del paper con números.
+- Fila «same bound order» a 3600 s (SC cerca `l3600sc` contra `d3600p`):
+  celdas ×1.00, cpu ×0.98, 93/93 (SC termina CCR2-28 s1 en 339 s; la caja
+  termina CCR2-30 s2 en 799 s y SC no). `tab:long` completa, sin pendientes.
