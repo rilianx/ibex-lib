@@ -999,6 +999,38 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
         }
         static const bool dbg = (getenv("DFB_SX_BFRTDBG") != NULL);
         static long dbg_vacias = 0, dbg_noalcanza = 0, dbg_n = 0;
+        /* DIAGNOSTICO DE INFACTIBILIDAD (`DFB_SX_INFDBG=k`, 2026-10-20): cada k
+         * declaraciones, la fila que la decidio y por que no hubo entrante. */
+        static const long infdbg = getenv("DFB_SX_INFDBG") ? atol(getenv("DFB_SX_INFDBG")) : 0;
+        if (infdbg > 0 && bfrt_cand.empty()) {
+            static long ninf = 0, n_estr = 0, n_holg = 0;
+            static double s_relw = 0.0;
+            ++ninf;
+            const int cb = basic[r_out];
+            const double lo = z[cb].lb(), hi = z[cb].ub();
+            const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
+            const double tol = tol_primal(lo, hi, esc);
+            const double viol = below ? lo - xB[r_out] : xB[r_out] - hi;
+            if (cb < nx) ++n_estr; else ++n_holg;
+            if (hi > lo) s_relw += viol / (hi - lo);
+            if (((ninf - 1) % infdbg) == 0) {
+                int nnb = 0, nchico = 0, nsigno = 0; double amx = 0.0, amx_signo = 0.0;
+                const std::vector<int>& ix2 = tidx[r_out]; const std::vector<double>& vl2 = tval[r_out];
+                for (size_t t = 0; t < ix2.size(); ++t) {
+                    const int c = ix2[t]; if (c >= na) break; if (rowof[c] >= 0) continue;
+                    ++nnb; const double a = vl2[t], av = std::fabs(a); if (av > amx) amx = av;
+                    const bool sube = atupper[c] ? (a > 0.0) : (a < 0.0);
+                    if (below != sube) { ++nsigno; continue; }
+                    if (av > amx_signo) amx_signo = av;
+                    if (av < std::max(amax * 1e-11, PIV_TOL)) ++nchico;
+                }
+                fprintf(stderr, "[infdbg] #%ld %s %d | x=%.17g [%.17g, %.17g] ancho %.3g | viol %.3g tol %.3g (viol/ancho %.3g) | "
+                        "no basicas en la fila %d: signo malo %d, buen signo pero |a| chico %d (max |a| buen signo %.3g, max |a| %.3g) | "
+                        "acumulado: estructurales %ld holguras %ld\n",
+                        ninf, cb < nx ? "estructural" : "holgura", cb, xB[r_out], lo, hi, hi - lo,
+                        viol, tol, hi > lo ? viol / (hi - lo) : -1.0, nnb, nsigno, nchico, amx_signo, amx, n_estr, n_holg);
+            }
+        }
         if (bfrt_cand.empty()) {
             if (dbg && (++dbg_vacias % 1000) == 1) fprintf(stderr, "[bfrtdbg] sin candidatas (%ld)\n", dbg_vacias);
             infeasible = true; return false;

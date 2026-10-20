@@ -1844,3 +1844,17 @@ compo, cota más cercana) en curso.
 - **`costo_o_cerca` es la omisión de `ibexsolve_dfb` desde 2026-10-20.** En
   cola (`cadena_sis.sh`): SC a 3600 s en sistemas (`l3600coc`, 96) y ablación
   de sistemas con el orden nuevo (`abls`, 11 brazos, 5324 corridas).
+- **Causa de las infactibilidades falsas con compo (2026-10-20,
+  `DFB_SX_INFDBG=k`, `results/compo_2026-10-20/infana.py`).** Trigo1-0020sp
+  con compo: 13 832 declaraciones de vacío en 15 s, 96 % en holguras; el 98 %
+  en filas cuyo intervalo de holgura mide < 1e-10 relativo (mediana 4e-13 en
+  |x| ≈ 20: casi un punto); violación mediana 14 ulps de |x| (p90 22): es
+  redondeo; tolerancia en el piso 1e-15(1+|x|) ≈ 5 ulps en el 74 %. La fila
+  violada no tiene ninguna no básica de buen signo → INFEASIBLE → el
+  certificado falla (el LP no es vacío) → reintento en frío → lo mismo.
+  Discrete-Integralf2-21 con compo igual (ancho 2.6e-14, violación mediana 75
+  ulps). Con afín, y en Katsurabis-14 con cualquiera, pocas declaraciones y con
+  violaciones grandes (genuinas). La tolerancia escalada por caja baja hasta el
+  piso de redondeo en filas casi puntuales, que compo produce y el afín no.
+  Arreglo candidato (sin probar): piso de la tolerancia primal a la escala del
+  error de calcular x_B, no 1e-15 relativo.
