@@ -1,0 +1,281 @@
+# SoPlex version 4.0.2
+
+# should lifting be used to reduce range of nonzero matrix coefficients?
+# range {true, false}, default false
+bool:lifting = false
+
+# should LP be transformed to equality form before a rational solve?
+# range {true, false}, default false
+bool:eqtrans = false
+
+# should dual infeasibility be tested in order to try to return a dual solution even if primal infeasible?
+# range {true, false}, default false
+bool:testdualinf = false
+
+# should a rational factorization be performed after iterative refinement?
+# range {true, false}, default true
+bool:ratfac = true
+
+# should the decomposition based dual simplex be used to solve the LP?
+# range {true, false}, default false
+bool:decompositiondualsimplex = false
+
+# should the degeneracy be computed for each basis?
+# range {true, false}, default false
+bool:computedegen = false
+
+# should the dual of the complementary problem be used in the decomposition simplex?
+# range {true, false}, default false
+bool:usecompdual = false
+
+# Should violations of the original problem be explicitly computed in the decomposition simplex?
+# range {true, false}, default false
+bool:explicitviol = false
+
+# should cycling solutions be accepted during iterative refinement?
+# range {true, false}, default false
+bool:acceptcycling = false
+
+# apply rational reconstruction after each iterative refinement?
+# range {true, false}, default true
+bool:ratrec = true
+
+# round scaling factors for iterative refinement to powers of two?
+# range {true, false}, default true
+bool:powerscaling = true
+
+# continue iterative refinement with exact basic solution if not optimal?
+# range {true, false}, default false
+bool:ratfacjump = false
+
+# use bound flipping also for row representation?
+# range {true, false}, default false
+bool:rowboundflips = false
+
+# should persistent scaling be used?
+# range {true, false}, default true
+bool:persistentscaling = true
+
+# should perturbation be applied to the entire problem?
+# range {true, false}, default false
+bool:fullperturbation = false
+
+# re-optimize the original problem to get a proof (ray) of infeasibility/unboundedness?
+# range {true, false}, default false
+bool:ensureray = true
+
+# objective sense (-1 - minimize, +1 - maximize)
+# range [-1,1], default 1
+int:objsense = -1
+
+# type of computational form (0 - auto, 1 - column representation, 2 - row representation)
+# range [0,2], default 0
+int:representation = 0
+
+# type of algorithm (0 - primal, 1 - dual)
+# range [0,1], default 1
+int:algorithm = 1
+
+# type of LU update (0 - eta update, 1 - Forrest-Tomlin update)
+# range [0,1], default 1
+int:factor_update_type = 1
+
+# maximum number of LU updates without fresh factorization (0 - auto)
+# range [0,2147483647], default 0
+int:factor_update_max = 0
+
+# iteration limit (-1 - no limit)
+# range [-1,2147483647], default -1
+int:iterlimit = 2840
+
+# refinement limit (-1 - no limit)
+# range [-1,2147483647], default -1
+int:reflimit = -1
+
+# stalling refinement limit (-1 - no limit)
+# range [-1,2147483647], default -1
+int:stallreflimit = -1
+
+# display frequency
+# range [1,2147483647], default 200
+int:displayfreq = 200
+
+# verbosity level (0 - error, 1 - warning, 2 - debug, 3 - normal, 4 - high, 5 - full)
+# range [0,5], default 3
+int:verbosity = 0
+
+# simplifier (0 - off, 1 - auto)
+# range [0,1], default 1
+int:simplifier = 0
+
+# scaling (0 - off, 1 - uni-equilibrium, 2 - bi-equilibrium, 3 - geometric, 4 - iterated geometric, 5 - least squares, 6 - geometric-equilibrium)
+# range [0,6], default 2
+int:scaler = 2
+
+# crash basis generated when starting from scratch (0 - none, 1 - weight, 2 - sum, 3 - vector)
+# range [0,3], default 0
+int:starter = 0
+
+# pricing method (0 - auto, 1 - dantzig, 2 - parmult, 3 - devex, 4 - quicksteep, 5 - steep)
+# range [0,5], default 0
+int:pricer = 0
+
+# method for ratio test (0 - textbook, 1 - harris, 2 - fast, 3 - boundflipping)
+# range [0,3], default 3
+int:ratiotester = 3
+
+# mode for synchronizing real and rational LP (0 - store only real LP, 1 - auto, 2 - manual)
+# range [0,2], default 0
+int:syncmode = 0
+
+# mode for reading LP files (0 - floating-point, 1 - rational)
+# range [0,1], default 0
+int:readmode = 0
+
+# mode for iterative refinement strategy (0 - floating-point solve, 1 - auto, 2 - exact rational solve)
+# range [0,2], default 1
+int:solvemode = 0
+
+# mode for a posteriori feasibility checks (0 - floating-point check, 1 - auto, 2 - exact rational check)
+# range [0,2], default 1
+int:checkmode = 1
+
+# type of timer (1 - cputime, aka. usertime, 2 - wallclock time, 0 - no timing)
+# range [0,2], default 1
+int:timer = 0
+
+# mode for hyper sparse pricing (0 - off, 1 - auto, 2 - always)
+# range [0,2], default 1
+int:hyperpricing = 1
+
+# minimum number of stalling refinements since last pivot to trigger rational factorization
+# range [0,2147483647], default 2
+int:ratfac_minstalls = 2
+
+# maximum number of conjugate gradient iterations in least square scaling
+# range [0,2147483647], default 50
+int:leastsq_maxrounds = 50
+
+# mode for solution polishing (0 - off, 1 - max basic slack, 2 - min basic slack)
+# range [0,2], default 0
+int:solution_polishing = 0
+
+# the number of iterations before the decomposition simplex initialisation solve is terminated
+# range [1,2147483647], default 100
+int:decomp_iterlimit = 100
+
+# maximum number of rows that are added to the reduced problem when using the decomposition based simplex
+# range [1,2147483647], default 500
+int:decomp_maxaddedrows = 500
+
+# the frequency that the decomposition based simplex status output is displayed.
+# range [1,2147483647], default 50
+int:decomp_displayfreq = 50
+
+# the verbosity of decomposition based simplex (0 - error, 1 - warning, 2 - debug, 3 - normal, 4 - high, 5 - full).
+# range [1,5], default 0
+int:decomp_verbosity = 0
+
+# print condition number during the solve (0 - off, 1 - ratio estimate , 2 - sum estimate, 3 - product estimate, 4 - exact)
+# range [0,4], default 0
+int:printcondition = 0
+
+# primal feasibility tolerance
+# range [0.00000000e+00,1.00000000e+00], default 1.00000000e-06
+real:feastol = 1.00000001e-06
+
+# dual feasibility tolerance
+# range [0.00000000e+00,1.00000000e+00], default 1.00000000e-06
+real:opttol = 1.00000001e-06
+
+# general zero tolerance
+# range [0.00000000e+00,1.00000000e+00], default 1.00000000e-16
+real:epsilon_zero = 1.00000000e-16
+
+# zero tolerance used in factorization
+# range [0.00000000e+00,1.00000000e+00], default 1.00000000e-20
+real:epsilon_factorization = 1.00000000e-20
+
+# zero tolerance used in update of the factorization
+# range [0.00000000e+00,1.00000000e+00], default 1.00000000e-16
+real:epsilon_update = 1.00000000e-16
+
+# pivot zero tolerance used in factorization
+# range [0.00000000e+00,1.00000000e+00], default 1.00000001e-10
+real:epsilon_pivot = 1.00000001e-10
+
+# infinity threshold
+# range [1.00000000e+10,1.00000001e+100], default 1.00000001e+100
+real:infty = 1.00000001e+100
+
+# time limit in seconds
+# range [0.00000000e+00,1.00000001e+100], default 1.00000001e+100
+real:timelimit = 1.00000000e+02
+
+# lower limit on objective value
+# range [-1.00000000e+100,1.00000001e+100], default -1.00000000e+100
+real:objlimit_lower = -1.00000000e+100
+
+# upper limit on objective value
+# range [-1.00000000e+100,1.00000001e+100], default 1.00000001e+100
+real:objlimit_upper = 1.00000001e+100
+
+# working tolerance for feasibility in floating-point solver during iterative refinement
+# range [1.00000000e-12,1.00000000e+00], default 1.00000001e-09
+real:fpfeastol = 1.00000001e-09
+
+# working tolerance for optimality in floating-point solver during iterative refinement
+# range [1.00000000e-12,1.00000000e+00], default 1.00000001e-09
+real:fpopttol = 1.00000001e-09
+
+# maximum increase of scaling factors between refinements
+# range [1.00000000e+00,1.00000001e+100], default 1.00000001e+25
+real:maxscaleincr = 1.00000001e+25
+
+# lower threshold in lifting (nonzero matrix coefficients with smaller absolute value will be reformulated)
+# range [0.00000000e+00,1.00000001e-01], default 9.76562001e-04
+real:liftminval = 9.76562001e-04
+
+# lower threshold in lifting (nonzero matrix coefficients with smaller absolute value will be reformulated)
+# range [1.00000000e+01,1.00000001e+100], default 1.02400000e+03
+real:liftmaxval = 1.02400000e+03
+
+# sparse pricing threshold (#violations < dimension * SPARSITY_THRESHOLD activates sparse pricing)
+# range [0.00000000e+00,1.00000000e+00], default 6.00000000e-01
+real:sparsity_threshold = 6.00000000e-01
+
+# threshold on number of rows vs. number of columns for switching from column to row representations in auto mode
+# range [0.00000000e+00,1.00000001e+100], default 1.20000000e+00
+real:representation_switch = 1.20000000e+00
+
+# geometric frequency at which to apply rational reconstruction
+# range [1.00000000e+00,1.00000001e+100], default 1.20000000e+00
+real:ratrec_freq = 1.20000000e+00
+
+# minimal reduction (sum of removed rows/cols) to continue simplification
+# range [0.00000000e+00,1.00000000e+00], default 1.00000001e-04
+real:minred = 1.00000001e-04
+
+# refactor threshold for nonzeros in last factorized basis matrix compared to updated basis matrix
+# range [1.00000000e+00,1.00000000e+02], default 1.00000000e+01
+real:refac_basis_nnz = 1.00000000e+01
+
+# refactor threshold for fill-in in current factor update compared to fill-in in last factorization
+# range [1.00000000e+00,1.00000000e+02], default 5.00000000e+00
+real:refac_update_fill = 5.00000000e+00
+
+# refactor threshold for memory growth in factorization since last refactorization
+# range [1.00000000e+00,1.00000000e+01], default 1.50000000e+00
+real:refac_mem_factor = 1.50000000e+00
+
+# accuracy of conjugate gradient method in least squares scaling (higher value leads to more iterations)
+# range [1.00000000e+00,1.00000001e+100], default 1.00000000e+03
+real:leastsq_acrcy = 1.00000000e+03
+
+# objective offset to be used
+# range [-1.00000000e+100,1.00000001e+100], default 0.00000000e+00
+real:obj_offset = 0.00000000e+00
+
+# initial random seed used for perturbation
+# range [0, 4294967295], default 0
+uint:random_seed = 0

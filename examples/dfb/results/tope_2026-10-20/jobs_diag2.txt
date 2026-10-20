@@ -1,0 +1,15 @@
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch base
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch base
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch caja_sinesc
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch caja_sinesc
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch sc_escala
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch sc_escala
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch sc_cerca
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch sc_cerca
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch sc_lejos
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch sc_lejos
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch pert1e5
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch pert1e5
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch pert1e3
+/home/iaraya/ibex2024/benchs/solver/non-polynom/Bratu-0120.bch pert1e3
+/home/iaraya/ibex2024/benchs/solver/polynom/Katsurabis-14.bch dump

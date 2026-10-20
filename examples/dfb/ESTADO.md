@@ -1790,3 +1790,15 @@ NO usar hasta depurar.
 - Paper: §6 nueva subsección «A larger relaxation» (`tab:compo`, mecanismo,
   tope), robustez con tono bajo en samebox/discusión/conclusión, frase sobre
   compo en resumen y contribuciones.
+
+**Barrido `d60t` completo (2026-10-20, `results/tope_2026-10-20/`): caja con
+tope igual (`cajatope`) y SC (`scx`), binarios `_x`.** La caja con el tope
+de SC explora las mismas celdas que con 100 en los dos bancos (×1.000) con el
+mismo tiempo; SC `_x` = SC viejo (celdas ×1.000, cpu ×1.01). `tab:main` no
+cambia. Diagnósticos etapa 2 en compo (`diag2`, Katsurabis-14 y Bratu-0120):
+SoPlex sin escalado igual; `DFB_SX_SCALE=1` destruye la contracción (ya
+sabido); perturbación 1e-5/1e-3 igual; **`DFBH_ORDEN=cerca` en SC: Bratu-0120
+61.5 → 10.9 piv/LP (pasada 8.2 → 2.3 s, SoPlex 1.07), Katsurabis-14 63.6 →
+47.6**. El orden por conteo engaña con compo (no ve las básicas que la
+reubicación deja fuera de cota: 73 por LP). Brazo `sccompocerca` (sistemas,
+compo, cota más cercana) en curso.
