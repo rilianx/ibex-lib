@@ -1782,3 +1782,11 @@ NO usar hasta depurar.
   28 → 6). **La robustez de `tab:samebox` era en buena parte el tope de 100.**
   Barrido de 60 s en curso (`d60t`, 2888): `cajatope` (caja con tope igual) y
   `scx` (SC), ambos con los binarios `_x` del mismo fuente.
+- `tab:samebox` rehecha con el tope igualado (`samebox2`, 60 s, seed 1): solo
+  cambia Geneig-icse (caja sin óptimo 377 → 8; gana SC 129 → 26 contra 9);
+  CCR2-9 66/2, Brown-18 1/1, Bellido 2/6 iguales con los dos topes. Barrido
+  `d60t`: la caja con tope igual explora exactamente las mismas celdas que con
+  100 en los dos bancos (×1.000, mismo tiempo): `tab:main` no cambia.
+- Paper: §6 nueva subsección «A larger relaxation» (`tab:compo`, mecanismo,
+  tope), robustez con tono bajo en samebox/discusión/conclusión, frase sobre
+  compo en resumen y contribuciones.
