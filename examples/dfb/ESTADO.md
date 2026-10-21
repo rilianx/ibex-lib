@@ -2062,3 +2062,16 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   BroydenBanded-120 ×0.50). Fallas: T=15 en Geneig-icse afín ×2.18 de SC (SPx
   pierde cotas: SC era ×0.46 de SPx) y hhfair1 ×1.36; T=30 en hhfair1 ×1.41,
   concon compo ×1.35 de SPx, Katsurabis-14 afín ×1.34 de SPx.
+- **Híbrido T=30 en los dos bancos (`d60h`, `h_hib_*`).** CPU (> 0.1, > 1,
+  > 5 s), celdas ≈ 1.00 en todo:
+
+  | | / clase SoPlex | / SPxSolver | / SC | terminadas (híbrido / SC / SPx / clase) |
+  |---|---|---|---|---|
+  | opt afín | 0.85 0.86 0.89 | 0.93 0.93 0.96 | 1.02 1.03 1.01 | 874 / 875 / 868 / 865 |
+  | opt compo | 0.90 0.90 0.89 | 0.98 0.98 0.96 | 0.97 0.96 0.93 | 878 / 875 / 878 / 871 |
+  | sistemas afín | 0.94 0.93 0.94 | 0.98 0.98 0.97 | 1.00 1.00 1.00 | 362 / 362 / 362 / 362 |
+  | sistemas compo | 0.94 0.91 0.90 | 1.01 1.01 1.01 | 0.91 0.87 0.85 | 372 / 364 / 372 / 367 |
+
+  El híbrido es igual o mejor que cada motor solo en todas las
+  configuraciones (salvo opt afín, ×1.02 de SC). Peores contra la clase:
+  DiscreteBoundary-0200 compo ×2.66, Katsurabis-14 afín ×1.24, ex7_2_3 ×1.29.
