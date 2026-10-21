@@ -2129,3 +2129,10 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   El predictor es bueno pero cuando HC4 vacía la caja la pasada habría
   terminado pronto igual: se ahorran pocos LPs. No se adopta por defecto.
   Resultados en `results/correcciones_2026-10-20/hc4mid/`.
+- **Cerrar el ciclo sin re-linealizar (`DFBH_HC4RED=r` + `DFBH_CIRC=3`):**
+  tras cada HC4 que contrae se reabren las cotas ya hechas con la misma
+  relajación. r=0.5 ×1.076, r=0.9 ×1.003; las celdas son las mismas que sin
+  ciclo en todas las instancias: no elimina ninguna caja más. Es lo esperable:
+  la factibilidad del poliedro ∩ caja no depende del objetivo, así que el LP
+  siguiente de la pasada, que ya corre sobre la caja que dejó HC4, es el test
+  barato de eliminación; volver a las cotas anteriores solo repite pivotes.
