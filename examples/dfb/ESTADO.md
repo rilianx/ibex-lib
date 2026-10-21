@@ -1999,3 +1999,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   instancias probadas. Omisión de `ibexsolve_dfb` e `ibexreplay` cambiada; la
   caja sigue en su mejor valor (1e-6 en sistemas). Brazos de SC en sistemas del
   barrido `d60y` medidos con 1e-6 guardados en `d60y_sol_t6`; se repiten.
+- **Punto 4a terminado (`d60y`, `results/final_2026-10-21.csv`, brazos
+  `y_*`).** SC/caja en igualdad, celdas / cpu (> 0.1, > 1, > 5 s), terminadas:
+  opt afín 0.99–1.00 / 0.84 0.84 0.86, 875/865; opt compo 0.99 / 0.92 0.94
+  0.95, 875/871; sistemas afín 0.98–0.99 / 0.94 0.94 0.95, 362/362; sistemas
+  compo 0.96–0.98 / 1.10 1.14 1.20, 360/367. Compo / afín: SC opt ×1.12–1.19
+  cpu con celdas ×0.67–0.75; SC sistemas ×1.07–1.14 con celdas ×0.45–0.54;
+  caja sistemas ×0.86–0.97. Mejor de cada programa: opt SC afín (×0.75–0.81 de
+  la caja con compo); sistemas, SC afín / caja compo ×0.90–0.95 de tiempo con
+  ×1.7 celdas, 362/367. SC sistemas compo con 1e-9 es ×1.03–1.04 más lento que
+  con 1e-6 (afín al revés: ×0.98).
