@@ -52,6 +52,20 @@ int main(int argc, char** argv) {
      * silencio a la MAS LEJANA con el revisado, el peor orden para el warm
      * start dual en relajaciones grandes. `DFBH_ORDEN` lo cambia. */
     if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "costo_o_cerca", 0);
+    /* CORRECCIONES POR OMISION (2026-10-20; cada una se apaga desde fuera):
+     *  - DFB_SX_RAYO=fila: el certificado de vacio con la fila infactible de B^-1;
+     *  - DFB_SX_PISO=error: piso de la tolerancia primal al error de la fila;
+     *  - DFBH_FILAS_PARALELAS=paralelas: fusion de filas proporcionales (compo);
+     *  - tolerancias de SC iguales a las de la caja negra en sistemas (1e-6),
+     *    sin el tope por ancho; tope de iteraciones de la caja igual al de SC. */
+    if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
+    if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
+    if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
+    if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", "1e-6", 0);
+    if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-6", 0);
+    if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
+    if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "igual", 0);
+
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
     string lr = "xn", lin = "art", bis = "lsmear"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;
     for (int i = 2; i < argc; ++i) {

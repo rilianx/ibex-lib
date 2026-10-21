@@ -91,6 +91,19 @@ int main(int argc, char** argv) {
      * del solver. En los 240 problemas: cpu x0.98 / x0.97 / x0.95, mismas
      * celdas. `DFBH_ORDEN` definida manda como antes (`costo` es el anterior). */
     if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "cerca", 0);
+    /* CORRECCIONES POR OMISION (2026-10-20; cada una se apaga desde fuera):
+     *  - DFB_SX_RAYO=fila: el certificado de vacio con la fila infactible de B^-1;
+     *  - DFB_SX_PISO=error: piso de la tolerancia primal al error de la fila;
+     *  - DFBH_FILAS_PARALELAS=paralelas: fusion de filas proporcionales (compo);
+     *  - tolerancias de SC iguales a las de la caja negra en optimizacion (1e-9),
+     *    sin el tope por ancho; tope de iteraciones de la caja igual al de SC. */
+    if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
+    if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
+    if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
+    if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", "1e-9", 0);
+    if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-9", 0);
+    if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
+    if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "igual", 0);
     // Menú interactivo para configurar las opciones
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});

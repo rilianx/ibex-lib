@@ -199,9 +199,13 @@ const double PIV_TOL  = 1e-9;   /* pivote minimo aceptable */
  * por debajo de la tolerancia: el paso dual no ve nada que reparar, el primal
  * tampoco (la reubicacion ya dejo los signos bien) y el bucle declara OPTIMAL
  * en un punto que no lo es. `DFB_SX_FEASTOL` para medir ese eje. */
-const double FEAS_TOL = getenv("DFB_SX_FEASTOL") ? atof(getenv("DFB_SX_FEASTOL")) : 1e-9;
+/* Las tolerancias se leen al PRIMER USO (2026-10-20), no al cargar el programa,
+ * para que cada programa pueda fijar su omision en `main` con `setenv`. */
+inline double feas_tol_() { static const double v = getenv("DFB_SX_FEASTOL") ? atof(getenv("DFB_SX_FEASTOL")) : 1e-9; return v; }
+#define FEAS_TOL (feas_tol_())
 /* `DFB_SX_DUALTOL` (2026-10-20): para igualarla a la OPTTOL de la caja negra. */
-const double DUAL_TOL = getenv("DFB_SX_DUALTOL") ? atof(getenv("DFB_SX_DUALTOL")) : 1e-9;
+inline double dual_tol_() { static const double v = getenv("DFB_SX_DUALTOL") ? atof(getenv("DFB_SX_DUALTOL")) : 1e-9; return v; }
+#define DUAL_TOL (dual_tol_())
 /* TOLERANCIA A ESCALA DE LA CAJA (`DFB_SX_TOLANCHO=tau`, apagada con 0).
  * Medido en `bearing` (2026-09-30): con cajas de ~5e-8 de ancho y cotas de
  * magnitud ~7, `FEAS_TOL*(1+|cota|)` es ~13 % del ancho, y el dual puro
@@ -209,7 +213,8 @@ const double DUAL_TOL = getenv("DFB_SX_DUALTOL") ? atof(getenv("DFB_SX_DUALTOL")
  * primal probaba vacio en intervalos. Se acota la tolerancia por `tau` veces
  * el ancho de la basica, con un piso de redondeo. */
 /* Omision 1e-3 desde 2026-09-30; `DFB_SX_TOLANCHO=0` la apaga. */
-const double TOL_ANCHO = getenv("DFB_SX_TOLANCHO") ? atof(getenv("DFB_SX_TOLANCHO")) : 1e-3;
+inline double tol_ancho_() { static const double v = getenv("DFB_SX_TOLANCHO") ? atof(getenv("DFB_SX_TOLANCHO")) : 1e-3; return v; }
+#define TOL_ANCHO (tol_ancho_())
 /* PISO DE LA TOLERANCIA AL ERROR DE LA FILA (`DFB_SX_PISO=error`, 2026-10-20).
  * La tolerancia escalada por caja baja hasta 1e-15 relativo en holguras casi
  * puntuales (compo), por debajo del redondeo de calcular x_B: SC declaraba

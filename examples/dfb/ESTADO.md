@@ -1972,3 +1972,13 @@ compo, cota más cercana) en curso.
   1.5 × 1.25 × 1.4 ≈ 2.6. Remedios: (1) cómo termina SC dentro de la cara
   óptima; (3) x_B incremental (existía, apagado: cambiaba el árbol por
   redondeo) y fila del pivote hiperdispersa.
+
+**Correcciones por omisión (2026-10-20, binarios `_y`).** `ibexsolve_dfb`,
+`ibexopt` e `ibexreplay` fijan en `main`, si no vienen de fuera:
+`DFB_SX_RAYO=fila`, `DFB_SX_PISO=error`, `DFBH_FILAS_PARALELAS=paralelas`,
+`DFB_SX_FEASTOL`/`DFB_SX_DUALTOL` = 1e-6 (sistemas) o 1e-9 (opt),
+`DFB_SX_TOLANCHO=0`, `DFBH_CAJA_TOPE=igual`; y `DFBH_ORDEN=costo_o_cerca`
+(sistemas) / `cerca` (opt). Las tolerancias de SC se leen ahora al primer uso
+(antes al cargar el programa, y el `setenv` de `main` no tenía efecto).
+Verificado: mismas celdas que con las opciones explícitas (Katsurabis-14,
+Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
