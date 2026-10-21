@@ -1,6 +1,7 @@
 #include "soplex.h"
 #include "ibex_CajaSPx.h"
 #include <vector>
+#include <string>
 #include <cstdlib>
 #include <cstdio>
 using namespace soplex;
@@ -70,6 +71,9 @@ void CajaSPx::cargar(int n, int m, const double* lb, const double* ub, const dou
     /* la regla de representacion de la clase SoPlex (REPRESENTATION_AUTO, 1.2) */
     if ((n + 1) * 1.2 >= (m + 1)) { C.sx.setRep(SPxSolver::COLUMN); C.sx.setType(SPxSolver::LEAVE); }
     else                          { C.sx.setRep(SPxSolver::ROW);    C.sx.setType(SPxSolver::ENTER); }
+    /* `DFBH_CAJA_TOPE=igual`: el tope de iteraciones de SC (20m+200) en vez del de Ibex (100) */
+    static const bool tope_igual = getenv("DFBH_CAJA_TOPE") && std::string(getenv("DFBH_CAJA_TOPE")) == "igual";
+    C.sx.setTerminationIter(tope_igual ? 20*m + 200 : 100);
     n_ = n; m_ = m;
 }
 void CajaSPx::cota(int i, double lb, double ub) {

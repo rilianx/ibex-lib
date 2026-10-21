@@ -2046,3 +2046,9 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   la caja tiene que recibir la relajación fusionada aunque el motor se decida
   después de linealizar. Katsurabis-14 compo, seed 1: SC 14.3 s, híbrido
   (T=60) 7.1 s, la clase SoPlex 7.8 s, mismas celdas (171–177).
+- Tamaño de la relajación por instancia (`filas_m2/`, `tamano.py`): contra la
+  clase SoPlex, SC gana en todos los tamaños con el afín (opt ≤ 60 filas,
+  sistemas hasta > 120); con compo empata desde ~30 filas en opt y ~15 en
+  sistemas, y pierde ×1.54 sobre 120 en sistemas. La caja SPxSolver ahora usa
+  también el tope de SC con `DFBH_CAJA_TOPE=igual`. Barrido `d60s2` en curso:
+  SPxSolver directo, los dos programas, afín y compo (2888 corridas).

@@ -1,0 +1,1 @@
+[dfb] filas de la relajacion: 5.86 por linealizacion (14 llamadas)
