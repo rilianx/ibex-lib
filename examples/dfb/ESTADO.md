@@ -1982,3 +1982,8 @@ compo, cota más cercana) en curso.
 (antes al cargar el programa, y el `setenv` de `main` no tenía efecto).
 Verificado: mismas celdas que con las opciones explícitas (Katsurabis-14,
 Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
+- **Punto 3: tope de tolerancia por ancho en el optimizador** (`p3/`, 11
+  problemas × 4 semillas, `ibexopt_y` con y sin `DFB_SX_TOLANCHO=1e-3`). Sin el
+  tope: mismos óptimos (ex14_2_7 ≈ 0 dentro de 1e-6), hhfair1 cpu ×0.45 y
+  celdas ×0.41, concon ×0.91, launch ×1.23 (celdas ×1.37), el resto ×0.97–1.01;
+  bearing termina 2 de 4 contra 1 de 4 (caótica). Se mantiene sin tope.
