@@ -2033,3 +2033,6 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   DiscreteBoundary-0200 ×1.46, pocos nodos); afín media ×1.03 (Geneig-icse
   ×1.14 con celdas ×1.16: el primal le cambia el árbol aunque cueste menos por
   LP). El primal fijo: compo ×1.01, afín ×1.07.
+- `ibexsolve_dfb` con `--lin=compo` fija ahora `DFBH_WARM=medir` por omisión
+  (con el afín sigue el dual). Verificación en curso: brazo `sc_compo` de
+  sistemas (`d60w`, 484 corridas).

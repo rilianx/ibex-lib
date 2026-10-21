@@ -89,6 +89,9 @@ int main(int argc, char** argv) {
     if (lr != "xn" && lr != "dfbhull") { cerr << "--lr debe ser xn o dfbhull" << endl; return 1; }
     if (lin != "xt" && lin != "art" && lin != "compo") { cerr << "--lin debe ser art, xt o compo" << endl; return 1; }
     if (!tol_externa && lin == "compo") { setenv("DFB_SX_FEASTOL", "1e-6", 1); setenv("DFB_SX_DUALTOL", "1e-6", 1); }
+    /* Con compo, el arranque tibio se elige midiendo (`DFBH_WARM=medir`); con el
+     * afin, dual (el primal le cambia el arbol a Geneig-icse). */
+    if (lin == "compo" && !getenv("DFBH_WARM") && !getenv("DFB_SX_PIVOTEO")) setenv("DFBH_WARM", "medir", 0);
     if (bis != "lsmear" && bis != "smearsumrel" && bis != "lsmeardfb") { cerr << "-b debe ser lsmear, smearsumrel o lsmeardfb" << endl; return 1; }
     if (bis == "lsmeardfb" && lr != "dfbhull") { cerr << "-b lsmeardfb requiere --lr=dfbhull" << endl; return 1; }
 
