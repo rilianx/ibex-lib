@@ -2036,3 +2036,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
 - `ibexsolve_dfb` con `--lin=compo` fija ahora `DFBH_WARM=medir` por omisión
   (con el afín sigue el dual). Verificación en curso: brazo `sc_compo` de
   sistemas (`d60w`, 484 corridas).
+- **Verificación del arranque tibio medido con compo (`d60w`, `w_sc_compo`).**
+  SC/caja en sistemas compo: celdas 0.98–1.00, cpu 1.03 1.05 1.06, 364/367
+  (antes 1.07–1.14); contra SC compo sin medir ×0.92–0.96.
+- **Contractor híbrido (`DFBH_HIBRIDO=T`, 2026-10-21).** Con más de T filas en
+  la relajación (la del nodo anterior), la pasada la resuelve SPxSolver directo
+  (la caja `DFBH_CAJA_SPX`), con el mismo orden de cota más cercana, la misma
+  relajación fusionada y el mismo certificado; si no, SC. Corrección necesaria:
+  la caja tiene que recibir la relajación fusionada aunque el motor se decida
+  después de linealizar. Katsurabis-14 compo, seed 1: SC 14.3 s, híbrido
+  (T=60) 7.1 s, la clase SoPlex 7.8 s, mismas celdas (171–177).

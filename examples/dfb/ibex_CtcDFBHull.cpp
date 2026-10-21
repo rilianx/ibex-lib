@@ -545,6 +545,8 @@ CtcDFBHull::~CtcDFBHull() {
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
     if (DFBSimplex::n_nodos_rev)
         fprintf(stderr, "[dfb] motor por nodo: revisado=%ld tableau=%ld\n", DFBSimplex::n_nodos_rev, DFBSimplex::n_nodos_tab);
+        if (n_hib_caja + n_hib_sc > 0)
+            fprintf(stderr, "[dfb] hibrido: pasadas con SoPlex directo=%ld con SC=%ld\n", n_hib_caja, n_hib_sc);
         if (warm_medir())
             fprintf(stderr, "[dfb] warm medir: nodos dual=%ld primal=%ld | costo por LP (prom. movil) dual %.1f us, primal %.1f us\n",
                     g_ws_nodos[0], g_ws_nodos[1], 1e6*g_ws_ema[0], 1e6*g_ws_ema[1]);
@@ -697,7 +699,8 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
             if (viva[i]) { fuente[k] = fuente[i]; lados[k] = lados[i]; ++k; }
         m = k;
     }
-    if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA") || DFB_ENV("DFBH_SOMBRA"))) {
+    /* con `DFBH_HIBRIDO` el motor se decide despues de linealizar: se recarga siempre */
+    if (m < m0 && (motor_caja || DFB_ENV("DFBH_ABCAJA") || DFB_ENV("DFBH_SOMBRA") || DFB_ENV("DFBH_HIBRIDO"))) {
         /* La caja negra resuelve sobre `mylinearsolver`: se recarga con las
          * filas fusionadas para que los multiplicadores sigan siendo fila a
          * fila los de `A`. */
@@ -3297,6 +3300,7 @@ Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) co
     return new BxpDFBCortes();
 }
 
+long CtcDFBHull::n_hib_caja = 0, CtcDFBHull::n_hib_sc = 0;
 bool CtcDFBHull::motor_caja = getenv("DFBH_MOTOR") && std::string(getenv("DFBH_MOTOR")) == "caja";
 
 __attribute__((noinline)) void CtcDFBHull::pasada_ab_caja(IntervalVector& b) { una_pasada(b); }
@@ -4393,9 +4397,25 @@ void CtcDFBHull::contract_nucleo(IntervalVector& box, ContractContext& context) 
             z = zsave;
         }
         {
+            /* CONTRACTOR HIBRIDO (`DFBH_HIBRIDO=T`, 2026-10-21): si la relajacion
+             * del nodo anterior tenia mas de T filas, la pasada la resuelve el
+             * simplex de SoPlex manejado directamente (SPxSolver, sin la clase
+             * SoPlex ni verificacion), con el mismo orden y el mismo certificado;
+             * si no, SC. En relajaciones chicas domina el costo fijo por llamada
+             * (gana el tableau de SC); en las grandes, los pivotes (gana SoPlex). */
+            static const int hib = getenv("DFBH_HIBRIDO") ? atoi(getenv("DFBH_HIBRIDO")) : 0;
+            static bool hib_conf = false;
+            if (hib > 0 && !hib_conf) {
+                setenv("DFBH_CAJA_SPX", "1", 0); setenv("DFBH_CAJA_DIRECTA", "1", 0);
+                setenv("DFBH_CAJA_SINLIBRES", "1", 0); setenv("DFBH_ORDEN_CAJA", "cerca", 0);
+                hib_conf = true;
+            }
+            const bool hib_caja = hib > 0 && !abcaja && !motor_caja && m_afin > hib;
+            if (hib_caja) { motor_caja = true; ++n_hib_caja; } else if (hib > 0) ++n_hib_sc;
             const long p0 = n_pivots; const double t0 = ahora_s();
             if (abcaja) pasada_ab_sc(box); else una_pasada(box);
             if (abcaja) { abc_t[0] += ahora_s() - t0; abc_piv[0] += n_pivots - p0; }
+            if (hib_caja) motor_caja = false;
         }
         if (abcaja && caja_ab.size() == box.size()) {
             double per0 = 0.0, p[2] = {0.0, 0.0};

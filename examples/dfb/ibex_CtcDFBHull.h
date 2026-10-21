@@ -385,6 +385,7 @@ private:
      * en intervalos gamma = lambda^T Abar. Es Neumaier-Shcherbina escrito en la
      * forma homogenea; la unica diferencia con DFB es quien produce lambda. */
     static bool motor_caja;
+    static long n_hib_caja, n_hib_sc;   //!< pasadas del contractor hibrido (`DFBH_HIBRIDO`)
     std::vector<double> lam_caja, x_caja;
     int it_caja;
     IntervalVector caja_cotas = IntervalVector(1);   // cotas cargadas en SoPlex (`DFBH_CAJA_COTAS=cambio`)
