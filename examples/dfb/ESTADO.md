@@ -2108,3 +2108,8 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   ruido de árbol (Bratu-0175 afín 0.58 / 0.94 / 0.80); se queda 60. En estas
   peores de sistemas compo, SC con tope 60 (0.69) iguala a SPxSolver (0.69) y
   al híbrido (0.69).
+- **Tope proporcional 2m (`DFBH_LPCAP_M=2`, peores).** Peor que el fijo de 60
+  en todo: sistemas compo ×0.89 (60: ×0.69), opt compo ×0.98 (0.92), sistemas
+  afín ×0.97 (0.95), opt afín ×1.09 (1.07). En las grandes 2m corta poco
+  (BroydenBanded ×0.66–0.79 contra 0.41–0.50) y en las chicas corta de más
+  (himmelbk ×1.14, ex14_2_7 ×1.10). Se queda 60.

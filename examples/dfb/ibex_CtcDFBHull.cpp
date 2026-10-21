@@ -1279,7 +1279,11 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
      * pivotes por LP (contra ~3 en la caja raiz), asi que aca un tope si muerde.
      * Cortar es valido: la cota se certifica desde el lambda que haya. */
     static const int lpcap = getenv("DFBH_LPCAP") ? atoi(getenv("DFBH_LPCAP")) : 0;
-    const int tope = lpcap > 0 ? lpcap : 20*m + 200;
+    /* `DFBH_LPCAP_M=k` (2026-10-21): tope de k*m pivotes por LP, proporcional al
+     * tamano de la relajacion (cualquier base certifica: cortar da una cota
+     * valida, mas debil). */
+    static const double lpcap_m = getenv("DFBH_LPCAP_M") ? atof(getenv("DFBH_LPCAP_M")) : 0.0;
+    const int tope = lpcap_m > 0.0 ? std::max(1, (int)(lpcap_m * m)) : (lpcap > 0 ? lpcap : 20*m + 200);
     /* Base COMPARTIDA: un solo simplex para las 2n cotas, en vez de 2n
      * ejemplares sembrados. En la caja raiz la siembra ganaba x0.75; con LPs
      * mucho mas duras el balance puede cambiar. */
