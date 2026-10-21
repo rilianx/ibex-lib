@@ -2087,3 +2087,17 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   Katsurabis-14 ×0.67; neutro en Geneig-icse, transistor-icse, CCR2-14;
   Bratu-0120 ×1.12 (2.6 s). Barrido en curso con tope 60 (`d60c`, 2888:
   `cap_art`, `cap_compo`).
+- **Tope de 60 pivotes por LP en los dos bancos (`d60c`, `c_cap_*`).** CPU
+  (> 0.1, > 1, > 5 s), celdas ≈ 1.00:
+
+  | | / SC | / clase SoPlex | / SPxSolver | / híbrido | terminadas tope / SC |
+  |---|---|---|---|---|---|
+  | opt afín | 1.00 1.01 1.00 | 0.84 0.85 0.87 | 0.91 0.91 0.94 | 0.98 | 875 / 875 |
+  | opt compo | 1.00 0.99 0.97 | 0.92 0.94 0.95 | 1.01 1.02 1.01 | 1.03–1.05 | 881 / 875 |
+  | sistemas afín | 0.99 0.99 0.99 | 0.93 0.93 0.93 | 0.98 0.97 0.96 | 1.00 | 362 / 362 |
+  | sistemas compo | 0.97 0.95 0.91 | 1.01 1.00 0.99 | 1.09 1.10 1.08 | 1.07–1.10 | 365 / 364 |
+
+  Neutro con el afín (no se activa en relajaciones chicas); con compo ayuda a
+  SC (BroydenBanded ×0.41–0.44, DiscreteBoundary-0200 ×0.42) pero no alcanza
+  a SPxSolver ni al híbrido en sistemas compo. Peores: hhfair1 opt afín ×1.73,
+  Yamamua1-0018sp compo ×3.84 contra SPx.
