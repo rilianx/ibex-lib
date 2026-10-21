@@ -2019,3 +2019,8 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   En opt con compo, 1e-6 cambia el árbol en los dos sentidos (concon ×0.60,
   launch ×0.64, hydro ×0.76; hs099 ×1.74, haldmads ×1.17; media ×0.94): se
   deja 1e-9, como la caja en opt.
+- **Sistemas con las omisiones finales (`d60z`, brazos `z_sc_*`).** SC/caja:
+  afín celdas 0.98–0.99, cpu 0.94 0.93 0.94, 362/362; compo celdas 0.96–1.01,
+  cpu 1.07 1.12 1.14, 364/367 (antes 1.10–1.20 y 360/367). Peores con compo:
+  DiscreteBoundary-0200 ×2.46, Katsurabis-14 ×2.16, CCR2-9 ×2.15,
+  BroydenBanded-100/140 ×1.56–1.64, transistor-icse ×1.55.
