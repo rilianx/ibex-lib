@@ -2080,3 +2080,10 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   clase SoPlex sin presolve 0.60 / 0.53 (antes 0.62 / 0.56); SPxSolver 0.80 /
   0.71 (igual); Gurobi 0.26 / 0.20; HiGHS 0.18 / 0.11 (eigmaxc con HiGHS
   falló). SC más barato que SPxSolver en 26/36 sistemas y 30/35 opt.
+- **Tope de pivotes por LP con compo (2026-10-21, `cap/`, `DFBH_LPCAP`).**
+  Con el afín el truncamiento no pagaba (ESTADO §6), pero con compo sí: SC
+  sistemas compo, media ×0.76 (tope 30) y ×0.71 (tope 60); BroydenBanded
+  ×0.40–0.46 con celdas ×1.8–2.7, DiscreteBoundary-0200 ×0.42 con celdas ×0.58,
+  Katsurabis-14 ×0.67; neutro en Geneig-icse, transistor-icse, CCR2-14;
+  Bratu-0120 ×1.12 (2.6 s). Barrido en curso con tope 60 (`d60c`, 2888:
+  `cap_art`, `cap_compo`).
