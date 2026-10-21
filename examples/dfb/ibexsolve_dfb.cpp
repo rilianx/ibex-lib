@@ -104,6 +104,8 @@ int main(int argc, char** argv) {
     System* eqs = (sys.nb_var == nb_eq) ? new System(sys, System::EQ_ONLY) : NULL;
 
     CtcHC4 hc4(sys.ctrs, 0.01);
+    CtcHC4 hc4diag(sys.ctrs, 0.01);
+    if (getenv("DFBH_PIVDIAG") || getenv("DFBH_HC4RED") || getenv("DFBH_HC4VAR") || getenv("DFBH_HC4ACUM")) CtcDFBHull::hc4_diag = &hc4diag;
     CtcHC4 hc4acid(sys.ctrs, 0.1, true);
     AcidSonda acid(sys, hc4acid);
     CtcNewton* newton = eqs ? new CtcNewton(eqs->f_ctrs, 5e8, eps, 1.e-4) : NULL;

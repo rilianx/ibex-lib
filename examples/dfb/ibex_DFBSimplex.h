@@ -223,6 +223,9 @@ public:
     double bound() const { return bnd; }
 
     int iterations() const { return iters; }
+    /** \brief Primer pivote dual del ultimo LP: columna que salio (-1 si no hubo) y su violacion relativa al ancho. */
+    int primer_columna() const { return primer_c; }
+    double primer_violacion() const { return primer_viol_rel; }
 
     /* Contadores globales de diagnostico. */
     static long n_solves;
@@ -355,7 +358,8 @@ public:
 
 private:
     int m, nx, na, nc;
-    int r_inf = -1;   /* fila de la basica que hizo declarar INFEASIBLE (`DFB_SX_RAYO=fila`) */
+    int r_inf = -1;
+    int primer_c = -1; double primer_viol_rel = 0.0;   /* fila de la basica que hizo declarar INFEASIBLE (`DFB_SX_RAYO=fila`) */
 
     /* Relajacion ESCALADA, dispersa por filas. */
     std::vector<std::vector<std::pair<int,double> > > arow;

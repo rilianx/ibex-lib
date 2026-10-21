@@ -2849,6 +2849,38 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     paso, k, lado, testigo()[k], nb.lb(), nb.ub(), z[k].lb(), z[k].ub());
         z[k] &= nb;
         const double d1 = z[k].diam();
+        /* DIAGNOSTICO DEL PRIMER PIVOTE (`DFBH_PIVDIAG`, 2026-10-21): tras
+         * contraer la cota k, HC4 sobre una copia de la caja; se agrupa por la
+         * violacion relativa del primer pivote dual del LP y se cuenta en cuantos
+         * casos la propagacion vacia la caja. */
+        static const bool pivdiag_on = getenv("DFBH_PIVDIAG") != NULL;
+        if (pivdiag_on && hc4_diag && !motor_caja && k < nb_var) {
+            static long cnt[8][4] = {{0}};   /* [cubeta][0 LPs que contraen, 1 HC4 vacia, 2 sale holgura, 3 HC4 vacia y sale holgura] */
+            static long ctr_cnt[6][2] = {{0}}; /* por contraccion relativa de la cota: [cubeta][LPs, vacia] */
+            static long ntot = 0;
+            if (d1 < d0) {
+                IntervalVector xb(nb_var);
+                for (int i = 0; i < nb_var; ++i) xb[i] = z[i];
+                bool vacia = false;
+                try { hc4_diag->contract(xb); vacia = xb.is_empty(); } catch (...) { vacia = false; }
+                const int pc = sk.primer_columna(); const double pv = sk.primer_violacion();
+                const int b = pc < 0 ? 0 : pv < 1e-3 ? 1 : pv < 1e-2 ? 2 : pv < 1e-1 ? 3 : pv < 1.0 ? 4 : pv < 10.0 ? 5 : 6;
+                const bool holg = pc >= nb_var;
+                cnt[b][0]++; if (vacia) cnt[b][1]++; if (holg) cnt[b][2]++; if (vacia && holg) cnt[b][3]++;
+                const double rc = d0 > 0.0 ? (d0 - d1) / d0 : 0.0;
+                const int bc = rc < 1e-3 ? 0 : rc < 1e-2 ? 1 : rc < 1e-1 ? 2 : rc < 0.5 ? 3 : rc < 0.9 ? 4 : 5;
+                ctr_cnt[bc][0]++; if (vacia) ctr_cnt[bc][1]++;
+                if ((++ntot % 5000) == 0) {
+                    const char* nb_[] = {"sin pivote","<1e-3","<1e-2","<1e-1","<1",  "<10",">=10"};
+                    fprintf(stderr, "[pivdiag] %ld LPs que contraen | por violacion del primer pivote (LPs, %% HC4 vacia, %% sale holgura):", ntot);
+                    for (int q = 0; q < 7; ++q) if (cnt[q][0]) fprintf(stderr, " %s: %ld %.1f%% %.0f%%;", nb_[q], cnt[q][0], 100.0*cnt[q][1]/cnt[q][0], 100.0*cnt[q][2]/cnt[q][0]);
+                    const char* nc_[] = {"<0.1%","<1%","<10%","<50%","<90%",">=90%"};
+                    fprintf(stderr, " | por contraccion de la cota (LPs, %% vacia):");
+                    for (int q = 0; q < 6; ++q) if (ctr_cnt[q][0]) fprintf(stderr, " %s: %ld %.1f%%;", nc_[q], ctr_cnt[q][0], 100.0*ctr_cnt[q][1]/ctr_cnt[q][0]);
+                    fprintf(stderr, "\n");
+                }
+            }
+        }
         if (traza_cotas) {
             const char* en[] = {"OPTIMAL","INFEASIBLE","UNBOUNDED","ITER_LIMIT","SINGULAR","?","?","?"};
             fprintf(stderr, "    paso=%-3d x%-3d %s  %-10s piv=%-3d | z antes=[%.12g,%.12g] "
@@ -3029,7 +3061,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             disparar = (d0 > 0.0 && d0 < POS_INFINITY && (1.0 - d1/d0) > hc4_red);
         else if (hc4_cada > 0)
             disparar = ((paso % hc4_cada) == (hc4_cada-1));
-        if (disparar && sonda_ctc) {
+        Ctc* ctc_mid = sonda_ctc ? sonda_ctc : hc4_diag;   /* en el solver de sistemas, el HC4 del enganche */
+        if (disparar && ctc_mid) {
             IntervalVector bx(nb_var);
             for (int i = 0; i < nb_var; ++i) bx[i] = z[i];
             /* PROPAGACION INCREMENTAL. `hc4` se construye con
@@ -3062,13 +3095,13 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
              * alto el caso no ocurre, siempre hay al menos una que cruzo. */
             static const bool hc4_full = (getenv("DFBH_HC4FULL") != NULL);
             if (hc4_full || prop.empty()) {
-                sonda_ctc->contract(bx);
+                ctc_mid->contract(bx);
                 tocadas.clear();
                 std::fill(acum_var.begin(), acum_var.end(), 1.0);
             } else {
                 ContractContext ctx(bx);
                 ctx.impact = prop;
-                sonda_ctc->contract(bx, ctx);
+                ctc_mid->contract(bx, ctx);
                 /* se limpian SOLO las propagadas */
                 for (int i = 0; i < nb_var; ++i)
                     if (prop[i]) { tocadas.remove(i); acum_var[i] = 1.0; }
@@ -3305,6 +3338,7 @@ Bxp* BxpDFBCortes::copy(const IntervalVector& box, const BoxProperties& prop) co
 }
 
 long CtcDFBHull::n_hib_caja = 0, CtcDFBHull::n_hib_sc = 0;
+Ctc* CtcDFBHull::hc4_diag = NULL;
 bool CtcDFBHull::motor_caja = getenv("DFBH_MOTOR") && std::string(getenv("DFBH_MOTOR")) == "caja";
 
 __attribute__((noinline)) void CtcDFBHull::pasada_ab_caja(IntervalVector& b) { una_pasada(b); }

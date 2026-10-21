@@ -972,6 +972,15 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
         }
     }
     if (r_out < 0) return false;      /* factible primal */
+    /* Primer pivote dual del LP (`DFBH_PIVDIAG`): que basica sale y cuanto viola. */
+    if (primer_c < 0) {
+        const int c = basic[r_out];
+        const double lo = z[c].lb(), hi = z[c].ub();
+        const double v = below ? lo - xB[r_out] : xB[r_out] - hi;
+        const double w = hi - lo;
+        primer_c = c;
+        primer_viol_rel = (w > 0.0 && w < POS_INFINITY) ? v / w : POS_INFINITY;
+    }
 
     /* x_B(r) = -sum_N a_rj x_j, asi que d x_B(r)/d x_j = -a_rj. Si la basica
      * esta por DEBAJO hay que subirla: sirve una no basica en su cota inferior
@@ -2167,6 +2176,7 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     if (perf::on()) ++perf::n_solve;
     ++n_solves;
     r_inf = -1;
+    primer_c = -1; primer_viol_rel = 0.0;
     g_tol_nodo = (rev && tol_rev_() > 0.0) ? tol_rev_() : 0.0;
     {
         static const bool piso_err = getenv("DFB_SX_PISO") && std::string(getenv("DFB_SX_PISO")) == "error";

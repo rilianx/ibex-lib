@@ -112,6 +112,7 @@ public:
 
 class CtcDFBHull : public Ctc {
 public:
+    static Ctc* hc4_diag;   //!< HC4 para el diagnostico del primer pivote (`DFBH_PIVDIAG`)
     static int modo_cortes;            //!< `DFBH_CORTES`: 0 apagado, 1 en el nodo, 2 tambien las hijas, 3 solo las hijas
     static long n_cortes_gen, n_cortes_filas, n_cortes_llam;   //!< generados; filas agregadas; llamadas con cortes
     /** \param goal_var  indice de la variable objetivo del sistema extendido,

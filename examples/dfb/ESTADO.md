@@ -2113,3 +2113,19 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   afín ×0.97 (0.95), opt afín ×1.09 (1.07). En las grandes 2m corta poco
   (BroydenBanded ×0.66–0.79 contra 0.41–0.50) y en las chicas corta de más
   (himmelbk ×1.14, ex14_2_7 ×1.10). Se queda 60.
+
+## 2026-10-21 — Primer pivote como predictor (DFBH_PIVDIAG) y HC4 a mitad de pasada
+
+- **Diagnóstico (`DFBH_PIVDIAG`, 12 sistemas).** La violación relativa del
+  primer pivote no predice nada. Lo que sí predice que HC4 vacíe la caja es la
+  contracción de la cota recién calculada: con ≥50 % de reducción HC4 vacía la
+  caja en Yamamua 70–91 %, Katsurabis 27–45 %, CCR2-14 compo 27 %, Geneig
+  9–12 %, contra 1–8 % de base.
+- **Disparador `DFBH_HC4RED=r` (HC4 a mitad de pasada cuando una cota se
+  contrae más que r), ahora enganchado al resolvedor de sistemas.** 12
+  instancias × 2 semillas, -t 60: r=0.5 cpu ×1.014, r=0.9 ×0.989 (media
+  geométrica). Solo Bratu-0120 gana de verdad (×0.82–0.84, celdas ×0.88);
+  el resto está entre 0.96 y 1.04 (Brown-18 ×1.19 con 0.5 es ruido de 0.3 s).
+  El predictor es bueno pero cuando HC4 vacía la caja la pasada habría
+  terminado pronto igual: se ahorran pocos LPs. No se adopta por defecto.
+  Resultados en `results/correcciones_2026-10-20/hc4mid/`.
