@@ -62,6 +62,11 @@ int main(int argc, char** argv) {
     if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
     if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
     if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
+    /* Tolerancia por relajacion (2026-10-21): 1e-9 con el afin (mas fina =
+     * mas contraccion por pasada) y 1e-6 con compo (sus filas casi paralelas
+     * cuestan pivotes sin ganar contraccion); se decide tras leer `--lin`. */
+    const bool tol_externa = getenv("DFB_SX_FEASTOL") || getenv("DFB_SX_DUALTOL");
+    if (!getenv("DFB_SX_FLIPINC"))        setenv("DFB_SX_FLIPINC", "1", 0);
     if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", "1e-9", 0);
     if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-9", 0);
     if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
@@ -83,6 +88,7 @@ int main(int argc, char** argv) {
     }
     if (lr != "xn" && lr != "dfbhull") { cerr << "--lr debe ser xn o dfbhull" << endl; return 1; }
     if (lin != "xt" && lin != "art" && lin != "compo") { cerr << "--lin debe ser art, xt o compo" << endl; return 1; }
+    if (!tol_externa && lin == "compo") { setenv("DFB_SX_FEASTOL", "1e-6", 1); setenv("DFB_SX_DUALTOL", "1e-6", 1); }
     if (bis != "lsmear" && bis != "smearsumrel" && bis != "lsmeardfb") { cerr << "-b debe ser lsmear, smearsumrel o lsmeardfb" << endl; return 1; }
     if (bis == "lsmeardfb" && lr != "dfbhull") { cerr << "-b lsmeardfb requiere --lr=dfbhull" << endl; return 1; }
 

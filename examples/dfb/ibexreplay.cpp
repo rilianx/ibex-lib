@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
         const char* tol = "1e-9";
         if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
         if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
+        if (!getenv("DFB_SX_FLIPINC"))        setenv("DFB_SX_FLIPINC", "1", 0);
         if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
         if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", tol, 0);
         if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", tol, 0);

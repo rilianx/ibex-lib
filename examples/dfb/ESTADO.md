@@ -2009,3 +2009,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   la caja con compo); sistemas, SC afín / caja compo ×0.90–0.95 de tiempo con
   ×1.7 celdas, 362/367. SC sistemas compo con 1e-9 es ×1.03–1.04 más lento que
   con 1e-6 (afín al revés: ×0.98).
+- **Remedios 1 y 2 (2026-10-21, `r12/`, `optc/`).** (2) Cambios de cota
+  incrementales en el revisado (`DFB_SX_FLIPINC=1`): mismas celdas, ×0.94–0.98
+  → **por omisión** en los tres programas. (1) Tolerancia por motor
+  (`DFB_SX_TOL_REVISADO=1e-6`): compo ×0.91 pero Bratu-0210 afín ×3.0 con la
+  misma celda (cada pasada contrae menos y el punto fijo con HC4 hace 20
+  pasadas en vez de 4) → no se adopta. En su lugar **tolerancia por
+  relajación** en `ibexsolve_dfb`: 1e-6 con `--lin=compo`, 1e-9 con el afín.
+  En opt con compo, 1e-6 cambia el árbol en los dos sentidos (concon ×0.60,
+  launch ×0.64, hydro ×0.76; hs099 ×1.74, haldmads ×1.17; media ×0.94): se
+  deja 1e-9, como la caja en opt.

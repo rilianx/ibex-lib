@@ -77,6 +77,7 @@ long DFBSimplex::n_optimal    = 0;
 long DFBSimplex::n_infeasible = 0;
 long DFBSimplex::n_iterlimit  = 0;
 long DFBSimplex::n_rayo_fila  = 0;
+long DFBSimplex::n_flipinc    = 0;
 long DFBSimplex::n_warm       = 0;
 long DFBSimplex::n_cold       = 0;
 long DFBSimplex::n_fact_fallo = 0;
@@ -202,10 +203,16 @@ const double PIV_TOL  = 1e-9;   /* pivote minimo aceptable */
 /* Las tolerancias se leen al PRIMER USO (2026-10-20), no al cargar el programa,
  * para que cada programa pueda fijar su omision en `main` con `setenv`. */
 inline double feas_tol_() { static const double v = getenv("DFB_SX_FEASTOL") ? atof(getenv("DFB_SX_FEASTOL")) : 1e-9; return v; }
-#define FEAS_TOL (feas_tol_())
+/* TOLERANCIA POR MOTOR (`DFB_SX_TOL_REVISADO=t`, 2026-10-21): en los nodos del
+ * motor revisado (relajaciones grandes) factibilidad y optimalidad valen `t`; en
+ * los del tableau, las de siempre. Con compo, BroydenBanded prefiere 1e-6; con el
+ * afin, Geneig-icse (tableau) pierde contraccion con 1e-6. */
+inline double tol_rev_() { static const double v = getenv("DFB_SX_TOL_REVISADO") ? atof(getenv("DFB_SX_TOL_REVISADO")) : 0.0; return v; }
+double g_tol_nodo = 0.0;   /* > 0: la del motor revisado, puesta al empezar cada solve */
+#define FEAS_TOL (g_tol_nodo > 0.0 ? g_tol_nodo : feas_tol_())
 /* `DFB_SX_DUALTOL` (2026-10-20): para igualarla a la OPTTOL de la caja negra. */
 inline double dual_tol_() { static const double v = getenv("DFB_SX_DUALTOL") ? atof(getenv("DFB_SX_DUALTOL")) : 1e-9; return v; }
-#define DUAL_TOL (dual_tol_())
+#define DUAL_TOL (g_tol_nodo > 0.0 ? g_tol_nodo : dual_tol_())
 /* TOLERANCIA A ESCALA DE LA CAJA (`DFB_SX_TOLANCHO=tau`, apagada con 0).
  * Medido en `bearing` (2026-09-30): con cajas de ~5e-8 de ancho y cotas de
  * magnitud ~7, `FEAS_TOL*(1+|cota|)` es ~13 % del ancho, y el dual puro
@@ -346,11 +353,16 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
 
     calcular_escalas(Abar);
 
+    acol.clear();
     arow.assign(m, std::vector<std::pair<int,double> >());
     for (int j = 0; j < m; ++j)
         for (int c = 0; c < na; ++c) {
             const double v = rscale[j] * Abar[j][c] * cscale[c];
             if (v != 0.0) arow[j].push_back(std::make_pair(c, v));
+            if (v != 0.0 && rev) {
+                if ((int)acol.size() != na) acol.assign(na, std::vector<std::pair<int,double> >());
+                acol[c].push_back(std::make_pair(j, v));
+            }
         }
     zs.resize(na);
 
@@ -1152,13 +1164,45 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
         }
 
         if (!bfrt_flip.empty()) {
-            for (size_t t = 0; t < bfrt_flip.size(); ++t) {
-                const int c = bfrt_flip[t];
-                atupper[c] = atupper[c] ? 0 : 1;
+            /* CAMBIOS DE COTA INCREMENTALES (`DFB_SX_FLIPINC=1`, 2026-10-21, solo
+             * revisado): x_B -= B^-1 sum_j Abar_j dx_j con las columnas
+             * cambiadas, en vez de recalcular x_B entero (producto por Abar
+             * completo + FTRAN). */
+            static const bool flipinc = getenv("DFB_SX_FLIPINC") && std::string(getenv("DFB_SX_FLIPINC")) == "1";
+            bool hecho_inc = false;
+            if (flipinc && rev && !xb_sucio && (int)acol.size() == na) {
+                std::fill(vbuf.begin(), vbuf.begin() + m, 0.0);
+                bool ok = true;
+                for (size_t t = 0; t < bfrt_flip.size() && ok; ++t) {
+                    const int c = bfrt_flip[t];
+                    const double nuevo = atupper[c] ? z[c].lb() : z[c].ub();   /* aun sin cambiar */
+                    if (nuevo == POS_INFINITY || nuevo == NEG_INFINITY) { ok = false; break; }
+                    const double dx = nuevo - xN[c];
+                    const std::vector<std::pair<int,double> >& col = acol[c];
+                    for (size_t u = 0; u < col.size(); ++u) vbuf[col[u].first] -= col[u].second * dx;
+                }
+                if (ok) {
+                    for (size_t t = 0; t < bfrt_flip.size(); ++t) {
+                        const int c = bfrt_flip[t];
+                        atupper[c] = atupper[c] ? 0 : 1;
+                        xN[c] = atupper[c] ? z[c].ub() : z[c].lb();
+                        xhat[c] = xN[c];
+                    }
+                    fact.ftran_vec(&vbuf[0], &lam_buf[0]);
+                    for (int r = 1; r <= m; ++r) xB[r] += lam_buf[r-1];
+                    ++n_flipinc;
+                    hecho_inc = true;
+                }
+            }
+            if (!hecho_inc) {
+                for (size_t t = 0; t < bfrt_flip.size(); ++t) {
+                    const int c = bfrt_flip[t];
+                    atupper[c] = atupper[c] ? 0 : 1;
+                }
+                xb_sucio = true;
+                compute_basics(z);          /* las cotas cambiadas mueven x_B */
             }
             n_flips += (long)bfrt_flip.size();
-            xb_sucio = true;
-            compute_basics(z);          /* las cotas cambiadas mueven x_B */
         }
     } else {
         const std::vector<int>&    ix = tidx[r_out];
@@ -2123,6 +2167,7 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     if (perf::on()) ++perf::n_solve;
     ++n_solves;
     r_inf = -1;
+    g_tol_nodo = (rev && tol_rev_() > 0.0) ? tol_rev_() : 0.0;
     {
         static const bool piso_err = getenv("DFB_SX_PISO") && std::string(getenv("DFB_SX_PISO")) == "error";
         static const double piso_k = getenv("DFB_SX_PISO_K") ? atof(getenv("DFB_SX_PISO_K")) : 100.0;

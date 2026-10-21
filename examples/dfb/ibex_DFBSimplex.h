@@ -230,6 +230,7 @@ public:
     static long n_optimal;
     static long n_infeasible;
     static long n_iterlimit;
+    static long n_flipinc;     //!< cambios de cota actualizados incrementalmente (`DFB_SX_FLIPINC=1`)
     static long n_rayo_fila;   //!< LPs vacios certificados con la fila infactible (`DFB_SX_RAYO=fila`)
     static long n_warm;      //!< resoluciones que reusaron la base
     static long n_cold;      //!< resoluciones que arrancaron en frio
@@ -358,6 +359,8 @@ private:
 
     /* Relajacion ESCALADA, dispersa por filas. */
     std::vector<std::vector<std::pair<int,double> > > arow;
+    /* columnas de la relajacion escalada (solo motor revisado, para `DFB_SX_FLIPINC`) */
+    std::vector<std::vector<std::pair<int,double> > > acol;
 
     /**
      * \brief Escalas de filas y columnas (equilibrado en norma infinito).
