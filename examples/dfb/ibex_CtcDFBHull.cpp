@@ -2463,6 +2463,32 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
 
             Interval suma(0.0);
             for (int c = 0; c < na; ++c) suma += gamma[c] * z[c];
+            /* `DFBH_RAYODBG=k` (2026-10-20): cada k rayos que NO certifican, los
+             * terminos de la suma por ancho, la violacion y el lado de la basica. */
+            {
+                static const long rdbg = getenv("DFBH_RAYODBG") ? atol(getenv("DFBH_RAYODBG")) : 0;
+                if (rdbg > 0 && st == DFBSimplex::INFEASIBLE && !motor_caja) {
+                    static long nf = 0, nok = 0;
+                    if (suma.contains(0.0)) ++nf; else ++nok;
+                    if (suma.contains(0.0) && ((nf - 1) % rdbg) == 0) {
+                        std::vector<std::pair<double,int> > t;
+                        double wtot = 0.0;
+                        for (int c = 0; c < na; ++c) { const Interval tc = gamma[c] * z[c]; const double w = tc.diam(); wtot += w; if (w > 0) t.push_back(std::make_pair(w, c)); }
+                        std::sort(t.rbegin(), t.rend());
+                        int nzl = 0; double lmax = 0.0;
+                        const std::vector<double>& lm = sk.lambda();
+                        for (int j = 0; j < m; ++j) if (lm[j] != 0.0) { ++nzl; lmax = std::max(lmax, std::fabs(lm[j])); }
+                        fprintf(stderr, "[rayodbg] falla #%ld (certifican %ld) | m=%d nnz(lambda)=%d max|lambda|=%.3g | suma=[%.6g, %.6g] ancho total %.3g | mayores terminos:",
+                                nf, nok, m, nzl, lmax, suma.lb(), suma.ub(), wtot);
+                        for (size_t q = 0; q < t.size() && q < 5; ++q) {
+                            const int c = t[q].second;
+                            fprintf(stderr, " %s%d gamma=[%.4g,%.4g] z=[%.6g,%.6g] ancho %.3g;", c < nb_var ? "x" : "s", c < nb_var ? c : c - nb_var,
+                                    gamma[c].lb(), gamma[c].ub(), z[c].lb(), z[c].ub(), t[q].first);
+                        }
+                        fprintf(stderr, "\n");
+                    }
+                }
+            }
             if (motor_caja && st == DFBSimplex::INFEASIBLE && getenv("DFBH_CAJA_DBG")) {
                 static int dbg2 = 0;
                 if (dbg2++ < 3) fprintf(stderr, "[caja] suma=[%.6g,%.6g]\n", suma.lb(), suma.ub());

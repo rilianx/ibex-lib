@@ -230,6 +230,7 @@ public:
     static long n_optimal;
     static long n_infeasible;
     static long n_iterlimit;
+    static long n_rayo_fila;   //!< LPs vacios certificados con la fila infactible (`DFB_SX_RAYO=fila`)
     static long n_warm;      //!< resoluciones que reusaron la base
     static long n_cold;      //!< resoluciones que arrancaron en frio
     static long n_fact_fallo; //!< veces que la factorizacion no sirvio
@@ -353,6 +354,7 @@ public:
 
 private:
     int m, nx, na, nc;
+    int r_inf = -1;   /* fila de la basica que hizo declarar INFEASIBLE (`DFB_SX_RAYO=fila`) */
 
     /* Relajacion ESCALADA, dispersa por filas. */
     std::vector<std::vector<std::pair<int,double> > > arow;

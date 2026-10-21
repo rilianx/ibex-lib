@@ -1950,3 +1950,13 @@ compo, cota más cercana) en curso.
   (`DFB_SX_DEGHIST=1`: BroydenBanded primal 4.7 %, CCR 5.4 %). SÍ separa la
   degeneración de los pasos primales (BroydenBanded 85–88 %, CCR 9 %), pero es
   un resultado, solo se ve probando.
+- **ERROR del certificado de vacío de SC (2026-10-20).** Al declarar
+  INFEASIBLE, SC entregaba como λ la fila de B⁻¹ de `k` (el multiplicador del
+  objetivo), no la fila de la básica que hizo declarar la infactibilidad: solo
+  certificaba cuando coincidían (por eso «siempre hay otra fila de B⁻¹ que
+  certifica», `DFBH_OTRORAYO`). Opción `DFB_SX_RAYO=fila` (fila `r_inf`).
+  Mismas cajas (`DFBH_ABCAJA`, 20 s, seed 1), SC sin óptimo viejo → fila:
+  Yamamua1-0016 compo 12 251 → 0 (vacíos 390/745 → 149/149, gana 0/356 →
+  7/10); afín 823 → 0; Bellido afín 152 → 0; CCR2-9 afín 110 → 2;
+  Katsurabis-14 afín 22 → 5, compo 56 → 34. Explica los «LPs not optimal» de
+  SC en `tab:samebox` (Bellido 152, CCR2-9 110): eran este error.

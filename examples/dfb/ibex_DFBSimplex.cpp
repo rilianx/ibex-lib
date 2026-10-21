@@ -76,6 +76,7 @@ long DFBSimplex::n_pivots     = 0;
 long DFBSimplex::n_optimal    = 0;
 long DFBSimplex::n_infeasible = 0;
 long DFBSimplex::n_iterlimit  = 0;
+long DFBSimplex::n_rayo_fila  = 0;
 long DFBSimplex::n_warm       = 0;
 long DFBSimplex::n_cold       = 0;
 long DFBSimplex::n_fact_fallo = 0;
@@ -1062,7 +1063,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
         }
         if (bfrt_cand.empty()) {
             if (dbg && (++dbg_vacias % 1000) == 1) fprintf(stderr, "[bfrtdbg] sin candidatas (%ld)\n", dbg_vacias);
-            infeasible = true; return false;
+            r_inf = r_out; infeasible = true; return false;
         }
         std::sort(bfrt_cand.begin(), bfrt_cand.end(), cand_menor);
 
@@ -1115,7 +1116,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
                             bfrt_cand[t].c, bfrt_cand[t].a, d[bfrt_cand[t].c], bfrt_cand[t].rango,
                             (int)atupper[bfrt_cand[t].c], z[bfrt_cand[t].c].lb(), z[bfrt_cand[t].c].ub(), xN[bfrt_cand[t].c]);
             }
-            infeasible = true; return false;
+            r_inf = r_out; infeasible = true; return false;
         }
 
         /* Desempate de Harris en el quiebre elegido. */
@@ -1226,7 +1227,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
             }
         }
     }
-    if (j_in < 0) { infeasible = true; return false; }
+    if (j_in < 0) { r_inf = r_out; infeasible = true; return false; }
 
     if (std::fabs(d[j_in]) < DUAL_TOL) { ++n_piv_degen; ++racha_degen; } else racha_degen = 0;
     if (perturbado && std::fabs(d[j_in]) <= 3.0*pert_eps) ++n_piv_degen_pert;
@@ -2116,6 +2117,7 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     perf::Cron _c(&perf::t_total);
     if (perf::on()) ++perf::n_solve;
     ++n_solves;
+    r_inf = -1;
     {
         static const bool piso_err = getenv("DFB_SX_PISO") && std::string(getenv("DFB_SX_PISO")) == "error";
         static const double piso_k = getenv("DFB_SX_PISO_K") ? atof(getenv("DFB_SX_PISO_K")) : 100.0;
@@ -2492,7 +2494,18 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
         y_tab.resize(m);
         for (int r = 0; r < m; ++r) y_tab[r] = -ylam[r] * rscale[r];
     }
-    if (!(lu_tableau && !rev && y_desde_tableau(k, maximize))
+    /* RAYO DE FARKAS DE LA FILA INFACTIBLE (`DFB_SX_RAYO=fila`, 2026-10-20).
+     * Al declarar INFEASIBLE, el multiplicador que prueba el vacio es la fila
+     * `r_inf` de B^-1 (la basica que ninguna no basica puede corregir), no la
+     * fila de `k`, que es lo que se entregaba: ese solo certificaba cuando
+     * coincidian. Yamamua1-0016 con compo: el 27 % de los LPs eran vacios
+     * que el certificado no aceptaba. */
+    static const bool rayo_fila = getenv("DFB_SX_RAYO") && std::string(getenv("DFB_SX_RAYO")) == "fila";
+    if (rayo_fila && st == INFEASIBLE && r_inf >= 1 && r_inf <= m && asegurar_fact()) {
+        fact.btran_row(r_inf - 1, &lam_buf[0]);
+        for (int j = 0; j < m; ++j) y[j] = lam_buf[j];
+        ++n_rayo_fila;
+    } else if (!(lu_tableau && !rev && y_desde_tableau(k, maximize))
         && !y_desde_factorizacion(k, maximize)) {
         ++n_fact_fallo;
         for (int r = 0; r < m; ++r) y[r] = -ylam[r];
