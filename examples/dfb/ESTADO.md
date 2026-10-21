@@ -2075,3 +2075,8 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   El híbrido es igual o mejor que cada motor solo en todas las
   configuraciones (salvo opt afín, ×1.02 de SC). Peores contra la clase:
   DiscreteBoundary-0200 compo ×2.66, Katsurabis-14 afín ×1.24, ex7_2_3 ×1.29.
+- **Banco de pasadas con SC corregido (`banco2/`, `ibexreplay_h2`, afín).**
+  SC/caja por pasada (sistemas / opt), misma contracción y mismos vacíos:
+  clase SoPlex sin presolve 0.60 / 0.53 (antes 0.62 / 0.56); SPxSolver 0.80 /
+  0.71 (igual); Gurobi 0.26 / 0.20; HiGHS 0.18 / 0.11 (eigmaxc con HiGHS
+  falló). SC más barato que SPxSolver en 26/36 sistemas y 30/35 opt.
