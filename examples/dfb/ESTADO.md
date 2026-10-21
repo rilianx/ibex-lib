@@ -1991,3 +1991,11 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   corridas: `sc_art`, `caja_art`, `sc_compo`, `caja_compo`; binarios `_y`;
   la caja con las mismas correcciones del contractor, tolerancia de su
   programa, sin presolve, tope igual).
+- **Tolerancia de SC en sistemas: 1e-9 sin tope (2026-10-21).** Con 1e-6 (la
+  de la caja) SC perdía contracción con el afín: Geneig-icse 295 → 577 celdas,
+  CCR2-9 955 → 1313, Bratu-0210 ×3 tiempo (`tolv/`). Lo que arreglaba
+  BroydenBanded con compo era quitar el tope por ancho, no 1e-6 (1e-9 sin tope:
+  7 celdas, 30.5 s; 1e-6: 28.6 s). 1e-9 sin tope es igual o mejor en las siete
+  instancias probadas. Omisión de `ibexsolve_dfb` e `ibexreplay` cambiada; la
+  caja sigue en su mejor valor (1e-6 en sistemas). Brazos de SC en sistemas del
+  barrido `d60y` medidos con 1e-6 guardados en `d60y_sol_t6`; se repiten.

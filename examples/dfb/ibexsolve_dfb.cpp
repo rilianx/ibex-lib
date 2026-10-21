@@ -56,13 +56,14 @@ int main(int argc, char** argv) {
      *  - DFB_SX_RAYO=fila: el certificado de vacio con la fila infactible de B^-1;
      *  - DFB_SX_PISO=error: piso de la tolerancia primal al error de la fila;
      *  - DFBH_FILAS_PARALELAS=paralelas: fusion de filas proporcionales (compo);
-     *  - tolerancias de SC iguales a las de la caja negra en sistemas (1e-6),
-     *    sin el tope por ancho; tope de iteraciones de la caja igual al de SC. */
+     *  - tolerancias de SC en 1e-9 sin el tope por ancho (2026-10-21: con 1e-6,
+     *    la de la caja, SC perdia contraccion con el afin; lo que arreglaba
+     *    BroydenBanded era quitar el tope); tope de iteraciones de la caja igual al de SC. */
     if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
     if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
     if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
-    if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", "1e-6", 0);
-    if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-6", 0);
+    if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", "1e-9", 0);
+    if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-9", 0);
     if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
     if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "igual", 0);
 

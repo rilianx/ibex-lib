@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
         if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "cerca", 0);
     } else if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "costo_o_cerca", 0);
     {
-        const char* tol = opt ? "1e-9" : "1e-6";
+        const char* tol = "1e-9";
         if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
         if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
         if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
