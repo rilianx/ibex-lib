@@ -2101,3 +2101,10 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   SC (BroydenBanded ×0.41–0.44, DiscreteBoundary-0200 ×0.42) pero no alcanza
   a SPxSolver ni al híbrido en sistemas compo. Peores: hhfair1 opt afín ×1.73,
   Yamamua1-0018sp compo ×3.84 contra SPx.
+- **Topes de 40 y 50 en las peores (`capv/`).** Media /SC sin tope, tope
+  40 / 50 / 60: sistemas compo 0.74 / 0.69 / 0.69; opt compo 0.96 / 0.96 /
+  0.92; sistemas afín 0.91 / 0.97 / 0.95; opt afín 1.06 / 1.06 / 1.07
+  (hhfair1 ×1.7 con cualquiera). Sin tendencia entre 40 y 60 más allá del
+  ruido de árbol (Bratu-0175 afín 0.58 / 0.94 / 0.80); se queda 60. En estas
+  peores de sistemas compo, SC con tope 60 (0.69) iguala a SPxSolver (0.69) y
+  al híbrido (0.69).
