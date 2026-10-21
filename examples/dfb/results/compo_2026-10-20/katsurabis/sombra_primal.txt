@@ -1,0 +1,9 @@
+[deghist] 5000 LPs | basicas en una cota al empezar: 12.0%
+[deghist] 10000 LPs | basicas en una cota al empezar: 15.0%
+[deghist] 15000 LPs | basicas en una cota al empezar: 13.9%
+167 19.1897 2 1 0 4 0
+[dfb] piv/LP=33.19  degen=54.1%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[sombra] al terminar cada LP, SC deja 24.04 estructurales basicas, 4.52 de ellas en una cota (19%)
+[sombra] LPs=18183 | piv/LP SC 33.20 caja 17.35 | us/LP SC 587.61 caja 234.20 | caja pivotea menos 35.9% igual 26.4% mas 37.9% | optimos SC 18078 caja 18153
+[sombra] en los 1895 LPs sin pivotes de la caja, SC hace: 0:75.9% 1:9.9% 2:5.0% 3:3.1% 4-5:2.8% 6-9:1.8% 10-19:1.1% 20+:0.9%
+[dfb] estados: solves=18192  optimal=99.5%  infeasible=0.3%  iterlimit=0.3%  otros(singular/unbounded)=0.2%  | warm=17595 cold=597 fact_fallo=4

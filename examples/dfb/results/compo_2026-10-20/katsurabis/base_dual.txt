@@ -1,0 +1,10 @@
+[deghist] 5000 LPs | basicas en una cota al empezar: 6.7%
+[deghist] 10000 LPs | basicas en una cota al empezar: 8.5%
+[deghist] 15000 LPs | basicas en una cota al empezar: 8.2%
+175 16.4521 2 1 0 4 0
+[dfb] piv/LP=28.60  degen=52.3%  degen-enmascarados=7.2%  LPs perturbados=2921  pivotes de limpieza=0
+[sombra] bases de SoPlex instaladas en SC: 15530, fallidas 1
+[sombra] al terminar cada LP, SC deja 24.85 estructurales basicas, 4.77 de ellas en una cota (20%)
+[sombra] LPs=15666 | piv/LP SC 28.60 caja 19.19 | us/LP SC 478.26 caja 256.37 | caja pivotea menos 58.9% igual 16.0% mas 25.3% | optimos SC 15629 caja 15631
+[sombra] en los 1641 LPs sin pivotes de la caja, SC hace: 0:100.0% 1:0.0% 2:0.0% 3:0.0% 4-5:0.0% 6-9:0.0% 10-19:0.0% 20+:0.0%
+[dfb] estados: solves=15666  optimal=99.8%  infeasible=0.3%  iterlimit=0.1%  otros(singular/unbounded)=0.0%  | warm=15530 cold=136 fact_fallo=0

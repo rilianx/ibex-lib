@@ -1960,3 +1960,15 @@ compo, cota más cercana) en curso.
   7/10); afín 823 → 0; Bellido afín 152 → 0; CCR2-9 afín 110 → 2;
   Katsurabis-14 afín 22 → 5, compo 56 → 34. Explica los «LPs not optimal» de
   SC en `tab:samebox` (Bellido 152, CCR2-9 110): eran este error.
+- **Katsurabis-14 con compo y todas las correcciones (`katsurabis/`).** Pasada
+  SC/SoPlex: dual ×3.24, primal+devex ×2.70. Se descompone en tres factores
+  que se multiplican (primal): (1) punto de partida ×1.5 — desde la base final
+  de SoPlex, SC baja de 33 a 22 piv/LP, y en los LPs que SoPlex resuelve sin
+  pivotear SC tampoco pivotea (100 %, contra 76 % desde su propia base);
+  (2) reglas de pivoteo desde la misma base ×1.25 (22 contra 17.7);
+  (3) costo por pivote ×1.4 (19.4 contra 14.0 µs): `DFB_SX_PERF=1` da el
+  test de razón dual 26–40 % (BTRAN + fila ρᵀĀ), recálculo de x_B desde cero
+  14–18 % (0.5–0.6 por pivote; SoPlex lo actualiza), pivote 28–37 %.
+  1.5 × 1.25 × 1.4 ≈ 2.6. Remedios: (1) cómo termina SC dentro de la cara
+  óptima; (3) x_B incremental (existía, apagado: cambiaba el árbol por
+  redondeo) y fila del pivote hiperdispersa.

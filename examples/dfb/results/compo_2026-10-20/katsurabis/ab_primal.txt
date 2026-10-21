@@ -1,0 +1,11 @@
+[deghist] 5000 LPs | basicas en una cota al empezar: 12.0%
+[deghist] 10000 LPs | basicas en una cota al empezar: 15.0%
+[deghist] 15000 LPs | basicas en una cota al empezar: 13.9%
+167 19.5404 2 1 0 4 0
+[dfb] piv/LP=25.19  degen=35.7%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[abcaja] DFB  : LPs=18183 | optimo certificado=15657  optimo sin certificado=2430  vacio probado=30  no optimo=66 | saltadas=14307
+[abcaja] caja : LPs=18100 | optimo certificado=15678  optimo sin certificado=2392  vacio probado=30  no optimo=0 | saltadas=14390
+[abcaja] nodos=571 | contraccion media DFB=0.13390 caja=0.13374 | nodos vaciados DFB=30 caja=30 | gana DFB=185 caja=64
+[abcaja] costo DFB  : pasada 11.697 s  pivotes=603332  us/LP=643.29  piv/LP=33.19  us/piv=19.388
+[abcaja] costo caja : pasada 4.337 s  pivotes=310563  us/LP=239.60  piv/LP=17.16  us/piv=13.965
+[dfb] estados: solves=18192  optimal=99.5%  infeasible=0.3%  iterlimit=0.3%  otros(singular/unbounded)=0.2%  | warm=17595 cold=597 fact_fallo=4
