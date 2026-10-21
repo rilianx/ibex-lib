@@ -1987,3 +1987,7 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   tope: mismos óptimos (ex14_2_7 ≈ 0 dentro de 1e-6), hhfair1 cpu ×0.45 y
   celdas ×0.41, concon ×0.91, launch ×1.23 (celdas ×1.37), el resto ×0.97–1.01;
   bearing termina 2 de 4 contra 1 de 4 (caótica). Se mantiene sin tope.
+- **Punto 4a en curso: bancos a 60 s con las correcciones** (`d60y`, 5776
+  corridas: `sc_art`, `caja_art`, `sc_compo`, `caja_compo`; binarios `_y`;
+  la caja con las mismas correcciones del contractor, tolerancia de su
+  programa, sin presolve, tope igual).
