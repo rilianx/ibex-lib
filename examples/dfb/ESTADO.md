@@ -2052,3 +2052,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   sistemas, y pierde ×1.54 sobre 120 en sistemas. La caja SPxSolver ahora usa
   también el tope de SC con `DFBH_CAJA_TOPE=igual`. Barrido `d60s2` en curso:
   SPxSolver directo, los dos programas, afín y compo (2888 corridas).
+- **SC contra SPxSolver directo con las correcciones (`d60s2`, `s_spx_*`).**
+  SC/SPx: opt afín cpu 0.91–0.92, 875/868; opt compo 1.00–1.03, 875/878;
+  sistemas afín 0.97–0.98, 362/362; sistemas compo 1.12–1.17, 364/372.
+  SPx/clase SoPlex: ×0.89–0.96. Por tamaño, SC gana solo hasta ~15 filas
+  (×0.88–0.96); 15–30 empata; con compo pierde desde 15–30 (×1.1–1.5).
+- **Híbrido con T=15 y T=30 (`hib/`, 16 instancias × 2 semillas).** En casi
+  todas toma el mejor de los dos motores (Katsurabis-14 compo ×0.49 de SC,
+  BroydenBanded-120 ×0.50). Fallas: T=15 en Geneig-icse afín ×2.18 de SC (SPx
+  pierde cotas: SC era ×0.46 de SPx) y hhfair1 ×1.36; T=30 en hhfair1 ×1.41,
+  concon compo ×1.35 de SPx, Katsurabis-14 afín ×1.34 de SPx.
