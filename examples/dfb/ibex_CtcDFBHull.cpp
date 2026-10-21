@@ -35,6 +35,14 @@ double adapt_umbral() {
     return u;
 }
 double& adapt_ema() { static double e = -1.0; return e; }
+/* Estado de `DFBH_WARM=medir` (2026-10-21): costo por LP (promedio movil) de
+ * cada arranque tibio, 0 = dual (reubica) y 1 = primal con devex; nodos con
+ * cada uno; estrategia del nodo en curso. */
+double g_ws_ema[2] = {-1.0, -1.0};
+long g_ws_nodos[2] = {0, 0};
+long g_ws_total = 0;
+int g_ws_estr = -1;
+bool warm_medir() { static const bool v = getenv("DFBH_WARM") && std::string(getenv("DFBH_WARM")) == "medir"; return v; }
 long& adapt_nodos(bool dual) { static long n[2] = {0, 0}; return n[dual ? 1 : 0]; }
 }
 
@@ -537,6 +545,9 @@ CtcDFBHull::~CtcDFBHull() {
             n_goal_lp, n_nodes ? (double)n_goal_lp/n_nodes : 0.0, n_sens_extra);
     if (DFBSimplex::n_nodos_rev)
         fprintf(stderr, "[dfb] motor por nodo: revisado=%ld tableau=%ld\n", DFBSimplex::n_nodos_rev, DFBSimplex::n_nodos_tab);
+        if (warm_medir())
+            fprintf(stderr, "[dfb] warm medir: nodos dual=%ld primal=%ld | costo por LP (prom. movil) dual %.1f us, primal %.1f us\n",
+                    g_ws_nodos[0], g_ws_nodos[1], 1e6*g_ws_ema[0], 1e6*g_ws_ema[1]);
         if (adapt_umbral() > 0.0)
             fprintf(stderr, "[dfb] adaptativo (umbral %.2f): nodos dual=%ld primal=%ld, cambios de lado por LP (prom. movil)=%.2f\n",
                     adapt_umbral(), adapt_nodos(true), adapt_nodos(false), adapt_ema());
@@ -1214,7 +1225,32 @@ void CtcDFBHull::una_pasada_reusada(IntervalVector& box) {
     sin_recarga = false;
 }
 
+namespace {
+/* Mide el costo por LP de cada pasada y lo carga a la estrategia de arranque
+ * tibio del nodo (`DFBH_WARM=medir`). */
+struct GuardiaWarm {
+    bool on; double t0; long lp0;
+    GuardiaWarm(bool o) : on(o), t0(o ? ahora_s() : 0.0), lp0(o ? DFBSimplex::n_solves : 0) {}
+    ~GuardiaWarm() {
+        if (!on || g_ws_estr < 0) return;
+        const long lps = DFBSimplex::n_solves - lp0;
+        if (lps <= 0) return;
+        const double c = (ahora_s() - t0) / lps;
+        double& e = g_ws_ema[g_ws_estr];
+        e = (e < 0.0) ? c : 0.9 * e + 0.1 * c;
+    }
+};
+}
 void CtcDFBHull::una_pasada(IntervalVector& box) {
+    if (warm_medir() && !motor_caja) {
+        static bool puesto = false;
+        if (!puesto) {   /* devex primal en los dos motores, antes del primer paso primal */
+            if (!getenv("DFB_SX_DEVEXP"))  setenv("DFB_SX_DEVEXP", "1", 0);
+            if (!getenv("DFB_SX_DEVEXPT")) setenv("DFB_SX_DEVEXPT", "1", 0);
+            puesto = true;
+        }
+    }
+    GuardiaWarm _gw(warm_medir() && !motor_caja);
     const int m = (m_uso > 0 && m_uso < A.nb_rows()) ? m_uso : A.nb_rows();
     const int na = nb_var + m;
     const int nc = 2*nb_var;
@@ -1416,6 +1452,24 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             DFBSimplex::rev_primal = dual ? def_rev_primal : true;
             DFBSimplex::motor_umbral = dual ? 30 : 15;
             ++adapt_nodos(dual);
+        }
+        if (warm_medir() && !motor_caja) {
+            static bool def_leido = false, def_rev_primal = false;
+            if (!def_leido) { def_rev_primal = DFBSimplex::rev_primal; def_leido = true; }
+            static const long W = getenv("DFBH_WARM_EXPLORA") ? atol(getenv("DFBH_WARM_EXPLORA")) : 5;
+            static const long R = getenv("DFBH_WARM_CADA") ? atol(getenv("DFBH_WARM_CADA")) : 25;
+            const long nn = ++g_ws_total;
+            int est;
+            if (nn <= 2*W || g_ws_ema[0] < 0.0 || g_ws_ema[1] < 0.0) est = (int)(nn % 2);
+            else {
+                const int mejor = (g_ws_ema[0] <= g_ws_ema[1]) ? 0 : 1;
+                est = (nn % R == 0) ? 1 - mejor : mejor;
+            }
+            g_ws_estr = est;
+            DFBSimplex::pivoteo_dual = (est == 0);
+            DFBSimplex::dual_puro = (est == 0);
+            DFBSimplex::rev_primal = (est == 0) ? def_rev_primal : true;
+            ++g_ws_nodos[est];
         }
         if (!motor_caja) sx.load(Af, nb_var);
         t_carga = cronometro ? ahora_s() : 0.0;

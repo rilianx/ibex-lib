@@ -2024,3 +2024,12 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   cpu 1.07 1.12 1.14, 364/367 (antes 1.10–1.20 y 360/367). Peores con compo:
   DiscreteBoundary-0200 ×2.46, Katsurabis-14 ×2.16, CCR2-9 ×2.15,
   BroydenBanded-100/140 ×1.56–1.64, transistor-icse ×1.55.
+- **Remedio 3: arranque tibio elegido midiendo (`DFBH_WARM=medir`,
+  2026-10-21, `wm/`).** Alterna dual y primal+devex en los primeros 10 nodos,
+  mide el costo por LP (promedio móvil) y usa el más barato, volviendo a probar
+  el otro cada 25 nodos. Contra el dual (2 semillas, 60 s): compo media ×0.89
+  (CCR2-9 ×0.52, CCR2-12/14 ×0.73–0.78, transistor-icse ×0.79, Katsurabis-14
+  ×0.92; BroydenBanded ×1.11–1.13 en vez del ×2.25–2.5 del primal fijo;
+  DiscreteBoundary-0200 ×1.46, pocos nodos); afín media ×1.03 (Geneig-icse
+  ×1.14 con celdas ×1.16: el primal le cambia el árbol aunque cueste menos por
+  LP). El primal fijo: compo ×1.01, afín ×1.07.

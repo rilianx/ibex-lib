@@ -1,0 +1,2 @@
+4429 30.7852 0 40 0 0 0
+[dfb] warm medir: nodos dual=244 primal=5029 | costo por LP (prom. movil) dual 182.5 us, primal 51.7 us

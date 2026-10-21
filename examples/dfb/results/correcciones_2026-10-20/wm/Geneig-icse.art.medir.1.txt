@@ -1,0 +1,2 @@
+417 7.56962 0 10 0 0 0
+[dfb] warm medir: nodos dual=1339 primal=769 | costo por LP (prom. movil) dual 66.9 us, primal 82.4 us

@@ -1,0 +1,2 @@
+4323 30.7601 0 41 0 0 0
+[dfb] warm medir: nodos dual=298 primal=5153 | costo por LP (prom. movil) dual 158.3 us, primal 64.5 us
