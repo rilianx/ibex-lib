@@ -2183,3 +2183,14 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   9.9, resto 6.9 → 7.3), pero aun así el tiempo baja solo ×0.96: los pivotes
   del primer LP pesan poco en el tiempo total. Techo de cualquier mejora del
   primer LP (tope, base guardada, mejor primera cota): unos pocos %. No se adopta.
+- **Un solo motor y limpieza (2026-10-22, binarios `_r`).** Por decisión de
+  Ignacio: SC usa solo el motor revisado por omisión (`DFB_SX_MOTOR=auto`
+  vuelve al híbrido por umbral, `tableau` al tableau). Se quitó el piso de
+  tolerancia (`DFB_SX_PISO`): solo actuaba con el tope por ancho, apagado desde
+  el 2026-10-21, y se calculaba igual en cada resolución. Verificado: `_r` da
+  las mismas celdas que `_v` con `DFB_SX_MOTOR=revisado` (Geneig-icse,
+  Bellido, Katsurabis-14, ex6_1_1, hhfair1). Geneig-icse con el revisado:
+  427–429 celdas contra 301–375 con el tableau (×1.08 tiempo), aún mejor que
+  SoPlex (519–537). En cola tras `cadena_v` (`$M/cadena_r.sh`): banco de
+  pasadas (`banco3`), SC base y compo + híbrido (`d60r`, 5776), 3600 s de SC
+  (`l3600r2`, 192) y ablación con la nueva base (`d60r`, 9 brazos, 12 996).

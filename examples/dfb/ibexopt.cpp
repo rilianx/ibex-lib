@@ -93,12 +93,10 @@ int main(int argc, char** argv) {
     if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "cerca", 0);
     /* CORRECCIONES POR OMISION (2026-10-20; cada una se apaga desde fuera):
      *  - DFB_SX_RAYO=fila: el certificado de vacio con la fila infactible de B^-1;
-     *  - DFB_SX_PISO=error: piso de la tolerancia primal al error de la fila;
      *  - DFBH_FILAS_PARALELAS=paralelas: fusion de filas proporcionales (compo);
      *  - tolerancias de SC iguales a las de la caja negra en optimizacion (1e-9),
      *    sin el tope por ancho; tope de iteraciones de la caja igual al de SC. */
     if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
-    if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
     if (!getenv("DFB_SX_FLIPINC"))        setenv("DFB_SX_FLIPINC", "1", 0);
     if (!getenv("DFBH_CAJA_TOL"))         setenv("DFBH_CAJA_TOL", "1e-9", 0);   /* la mejor de la caja en opt (hibrido) */
     if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);

@@ -54,13 +54,11 @@ int main(int argc, char** argv) {
     if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "costo_o_cerca", 0);
     /* CORRECCIONES POR OMISION (2026-10-20; cada una se apaga desde fuera):
      *  - DFB_SX_RAYO=fila: el certificado de vacio con la fila infactible de B^-1;
-     *  - DFB_SX_PISO=error: piso de la tolerancia primal al error de la fila;
      *  - DFBH_FILAS_PARALELAS=paralelas: fusion de filas proporcionales (compo);
      *  - tolerancias de SC en 1e-9 sin el tope por ancho (2026-10-21: con 1e-6,
      *    la de la caja, SC perdia contraccion con el afin; lo que arreglaba
      *    BroydenBanded era quitar el tope); tope de iteraciones de la caja igual al de SC. */
     if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
-    if (!getenv("DFB_SX_PISO"))           setenv("DFB_SX_PISO", "error", 0);
     if (!getenv("DFBH_FILAS_PARALELAS"))  setenv("DFBH_FILAS_PARALELAS", "paralelas", 0);
     /* Tolerancia por relajacion (2026-10-21): 1e-9 con el afin (mas fina =
      * mas contraccion por pasada) y 1e-6 con compo (sus filas casi paralelas

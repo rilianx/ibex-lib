@@ -88,14 +88,17 @@ long DFBSimplex::n_filas_rev = 0;
 /* `DFB_SX_MOTOR=revisado`: simplex dual revisado, sin tableau explicito (ver
  * `es_revisado`). Exige la LU al dia en cada pivote, asi que fuerza
  * `DFB_SX_LU=actualizada`. */
+/* Omision `revisado` desde 2026-10-22: con el resto de los componentes, el
+ * revisado solo empata con el hibrido en sistemas y gana en opt (> 5 s x0.95);
+ * el tableau solo es x1.09-1.13 en sistemas. `DFB_SX_MOTOR=auto` vuelve al
+ * hibrido por umbral (`DFB_SX_MOTOR_M`), `tableau` al tableau. */
 static bool leer_motor_revisado() {
     const char* v = getenv("DFB_SX_MOTOR");
-    return v != NULL && std::string(v) == "revisado";
+    return v == NULL || std::string(v) == "revisado";
 }
-/* Omision `auto` (umbral 30) desde 2026-10-05; `DFB_SX_MOTOR=tableau` lo apaga. */
 static bool leer_motor_auto() {
     const char* v = getenv("DFB_SX_MOTOR");
-    return v == NULL || std::string(v) == "auto";
+    return v != NULL && std::string(v) == "auto";
 }
 bool DFBSimplex::motor_revisado = leer_motor_revisado();
 bool DFBSimplex::motor_auto = leer_motor_auto();
@@ -222,15 +225,7 @@ inline double dual_tol_() { static const double v = getenv("DFB_SX_DUALTOL") ? a
 /* Omision 1e-3 desde 2026-09-30; `DFB_SX_TOLANCHO=0` la apaga. */
 inline double tol_ancho_() { static const double v = getenv("DFB_SX_TOLANCHO") ? atof(getenv("DFB_SX_TOLANCHO")) : 1e-3; return v; }
 #define TOL_ANCHO (tol_ancho_())
-/* PISO DE LA TOLERANCIA AL ERROR DE LA FILA (`DFB_SX_PISO=error`, 2026-10-20).
- * La tolerancia escalada por caja baja hasta 1e-15 relativo en holguras casi
- * puntuales (compo), por debajo del redondeo de calcular x_B: SC declaraba
- * vacios LPs factibles (Trigo1-0020sp: 66 % de las resoluciones). Con esta
- * opcion el piso de la holgura de la fila i es K*eps*sum_j |a_ij| max|x_j|
- * (`DFB_SX_PISO_K`, omision 100), una cota del error de su actividad. */
-std::vector<double> g_piso_extra;
-inline double piso_de(int c) { return (c >= 0 && c < (int)g_piso_extra.size()) ? g_piso_extra[c] : 0.0; }
-inline double tol_primal(double lo, double hi, double esc, double extra = 0.0) {
+inline double tol_primal(double lo, double hi, double esc) {
     double tol = FEAS_TOL * esc;
     if (TOL_ANCHO > 0.0) {
         const double w = hi - lo;
@@ -238,8 +233,7 @@ inline double tol_primal(double lo, double hi, double esc, double extra = 0.0) {
             const double ta = TOL_ANCHO * w;
             if (ta < tol) tol = ta;
         }
-        double piso = 1e-15 * esc;
-        if (extra > piso) piso = extra;
+        const double piso = 1e-15 * esc;
         if (tol < piso) tol = piso;
     }
     return tol;
@@ -960,7 +954,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
         const double lo = z[c].lb(), hi = z[c].ub();
         const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ?
                                   std::fabs(lo) : std::fabs(hi));
-        const double tol = tol_primal(lo, hi, esc, piso_de(c));
+        const double tol = tol_primal(lo, hi, esc);
         if (xB[r] < lo - tol) {
             const double v0 = dse_abs ? (lo - xB[r]) : (lo - xB[r]) / esc;
             const double v = devex ? v0*v0/((int)peso.size()>r ? peso[r] : 1.0) : v0;
@@ -1065,7 +1059,7 @@ bool DFBSimplex::dual_step_comun(const IntervalVector& z, bool& infeasible) {
             const int cb = basic[r_out];
             const double lo = z[cb].lb(), hi = z[cb].ub();
             const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
-            const double tol = tol_primal(lo, hi, esc, piso_de(cb));
+            const double tol = tol_primal(lo, hi, esc);
             const double viol = below ? lo - xB[r_out] : xB[r_out] - hi;
             if (cb < nx) ++n_estr; else ++n_holg;
             if (hi > lo) s_relw += viol / (hi - lo);
@@ -2161,7 +2155,7 @@ DFBSimplex::Status DFBSimplex::solve(int k, bool maximize,
             ++nb;
             const double lo = zs[c].lb(), hi = zs[c].ub();
             const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ? std::fabs(lo) : std::fabs(hi));
-            const double tol = tol_primal(lo, hi, esc, piso_de(c));
+            const double tol = tol_primal(lo, hi, esc);
             if (std::fabs(xB[r] - lo) <= tol || std::fabs(hi - xB[r]) <= tol) ++nc;
         }
         fin_nxbas = nb; fin_nxcota = nc;
@@ -2178,24 +2172,6 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     r_inf = -1;
     primer_c = -1; primer_viol_rel = 0.0;
     g_tol_nodo = (rev && tol_rev_() > 0.0) ? tol_rev_() : 0.0;
-    {
-        static const bool piso_err = getenv("DFB_SX_PISO") && std::string(getenv("DFB_SX_PISO")) == "error";
-        static const double piso_k = getenv("DFB_SX_PISO_K") ? atof(getenv("DFB_SX_PISO_K")) : 100.0;
-        if (piso_err) {
-            g_piso_extra.assign(na, 0.0);
-            for (int j = 0; j < m; ++j) {
-                double mag = 0.0;
-                const std::vector<std::pair<int,double> >& a = arow[j];
-                for (size_t t = 0; t < a.size(); ++t) {
-                    const int c = a[t].first;
-                    if (c >= nx) continue;
-                    const double xm = std::max(std::fabs(z[c].lb()), std::fabs(z[c].ub()));
-                    if (xm < POS_INFINITY) mag += std::fabs(a[t].second) * xm;
-                }
-                if (nx + j < na) g_piso_extra[nx + j] = piso_k * 2.220446049250313e-16 * mag;
-            }
-        }
-    }
     perturbado = false;
     racha_degen = 0; pert_hecha = false;
     /* Cada resolucion arranca con `x_B` sucio: el objetivo cambio y la
@@ -2327,7 +2303,7 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
             const int c = basic[r];
             const double lo = zz[c].lb(), hi = zz[c].ub();
             const double esc = 1.0 + ((std::fabs(lo) > std::fabs(hi)) ? std::fabs(lo) : std::fabs(hi));
-            const double tol = tol_primal(lo, hi, esc, piso_de(c));
+            const double tol = tol_primal(lo, hi, esc);
             if (xB[r] < lo - tol || xB[r] > hi + tol) {
                 ++pinf;
                 /* `DFB_SX_INFHIST=1`: tamano relativo de esas violaciones */
@@ -2359,7 +2335,7 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
                 const int c = basic[r];
                 const double lo = zz[c].lb(), hi = zz[c].ub();
                 const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
-                const double tol = tol_primal(lo, hi, esc, piso_de(c));
+                const double tol = tol_primal(lo, hi, esc);
                 if (std::fabs(xB[r] - lo) <= tol || std::fabs(xB[r] - hi) <= tol) ++enc;
             }
             acc += (double) enc / m; ++nlp;

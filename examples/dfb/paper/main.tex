@@ -134,7 +134,7 @@ single feasibility LP on a fixed relaxation, without rigorous certification.
 The self-certifying simplex is designed for the certificate: in the homogeneous form every
 basis can be made dual feasible by relocating nonbasic variables, so each of the
 $2n$ bound problems, and each problem after the box contracts, starts dual
-feasible; the $2n$ problems share one tableau; and the multipliers of the
+feasible; the $2n$ problems share one basis; and the multipliers of the
 current basis give a valid certificate at every bound and, with the dual
 method, at every iteration. Bound tightening by optimization is also central in
 MINLP solvers~\cite{belotti2009branching,gleixner2017three}, where rigor is not
@@ -150,11 +150,10 @@ bound problem by relocating its nonbasic variables, a standard property of
 boxed LPs~\cite{koberstein2005dual}. A simplex built on this needs no
 verification of its solutions, no refactorization before declaring an optimum
 and no phase~1, and solves the $2n$ problems, and each problem after the box
-contracts, on one tableau (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
+contracts, on one basis (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
 \item The simplex itself: one basis shared by the $2n$ problems, a warm start
-between bounds chosen per program, the bounds ordered by the work read from the
-tableau, merged proportional rows, a hybrid tableau/revised engine, the
-long-step dual ratio test, devex pricing, a cost perturbation against dual
+between bounds chosen per program, merged proportional rows, a revised engine
+on the LU factorization of SoPlex, the long-step dual ratio test, devex pricing, a cost perturbation against dual
 degeneracy, and a limit on the pivots of each LP that the certificate makes
 harmless, with an ablation of each component (Section~\ref{sec:simplex}).
 \item Properties of the certificate: validity for any multipliers and any
@@ -327,11 +326,10 @@ factorization, recomputes its vectors and verifies the solution; after the
 call, the contractor verifies it once more through the certificate. SC needs
 none of this. An inaccurate $\lambda$ yields a weaker bound, never an invalid
 one, so the final basis is used as it is, and the error of the factorization is
-controlled only as far as pivoting requires: a refactorization every 50 pivots
-in the revised engine, a drift guard in the tableau engine. Dual feasibility for
-free (Proposition~\ref{prop:start}) removes the phase~1 that a solver runs when
-the objective changes or the box contracts, and lets the $2n$ problems share one
-tableau. Section~\ref{sec:bank} measures what each of these removals is worth
+controlled only as far as pivoting requires: a refactorization every 50
+pivots. Dual feasibility for free (Proposition~\ref{prop:start}) removes the
+phase~1 that a solver runs when the objective changes or the box contracts,
+and lets the $2n$ problems share one basis. Section~\ref{sec:bank} measures what each of these removals is worth
 against SoPlex.
 
 \subsection{One pass over the bounds}
@@ -352,16 +350,15 @@ Two rules decide which LPs are solved and in which order. A bound is
 \emph{skipped} when a primal point obtained earlier in the pass already
 attains it, since its LP would return that value; this rule and the order by
 distance to the last primal point come from the polytope-hull contractor of
-Ibex~\cite{baharev2009distillation}. The tableau suggests a better order: for
-$x_k$ basic in row $r$, the number of nonbasic columns whose reduced cost for
-the objective $\pm z_k$ would have the wrong sign is the number of
-infeasibilities that the next LP must repair, and can be counted in
-$O(\mathrm{nnz}(\text{row } r))$ without pivoting. SC takes the bound with the
-smallest count when it has the tableau (Section~\ref{sec:engines}); in the
-revised engine, and in the optimizer, whose primal warm start keeps the
-previous vertex (below), it takes the bound nearest to the last primal point,
-whose optimum lies closest to it. The black boxes have no tableau and use the
-nearest bound first, their best order.
+Ibex~\cite{baharev2009distillation}. SC takes the bound nearest to the last
+primal point, whose optimum lies closest to it; the black boxes use the same
+order, which is also their best. With an explicit tableau
+(Section~\ref{sec:engines}) a finer order is available: for $x_k$ basic in
+row $r$, the number of nonbasic columns whose reduced cost for the objective
+$\pm z_k$ would have the wrong sign is the number of infeasibilities that the
+next LP must repair, and can be counted in $O(\mathrm{nnz}(\text{row } r))$
+without pivoting; it saves a few percent with the tableau engine, but nothing
+that the revised engine does not save by itself.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
 empty and the pass stops. If an LP ends without an optimal basis, its bound is
@@ -553,59 +550,45 @@ infinite side; a nonbasic variable always sits at a finite bound, the other
 one if the bound indicated by its reduced cost is infinite, and at zero if it
 is free.
 
-\subsection{Two engines}\label{sec:engines}
+\subsection{The engine}\label{sec:engines}
 
-The iteration above can be implemented in two ways, which differ in how
-$B^{-1}$ is represented; SC has both and chooses per node by the number of
-rows.
+SC keeps a sparse LU factorization $B = LU$, computed by the factorization
+code of SoPlex, and obtains each iteration's vectors by triangular solves:
+FTRAN solves $Ly=\Abar_{:q}$ and then $U\alpha_q = y$, BTRAN solves $U^Tw=e_r$
+and then $L^T\rho_r=w$. Since the basis changes by one column per iteration,
+the factors are not recomputed but updated: in the Forrest--Tomlin
+update~\cite{forrest1972updated} the new column replaces column $r$ of $U$,
+which breaks its triangular shape; a permutation moves it to the end, and one
+row elimination, stored as a sparse row transformation appended to $L$,
+restores the triangle. The update reuses the vector $y$ of the last FTRAN, so
+it costs about one more solve. Updates make the factors grow, and SC
+refactorizes $B$ from scratch every 50 pivots. The FTRAN of the entering
+column is computed once per iteration and serves three purposes: the devex
+weights, the Forrest--Tomlin update and the update of $x_B$, which is
+recomputed from scratch every 32 pivots to limit drift. The reduced costs and
+$\lambda$ are updated with the pivot row as above. An iteration costs one
+FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and the update, all
+proportional to the number of nonzeros involved.
 
-\paragraph{Tableau engine.} On small relaxations, below the threshold given at the end of this section, the simplex keeps the whole tableau
-$T = B^{-1}\Abar$ explicitly, row by row in sparse form, together with
-$\lambda$, $d$ and $x_B$. The pivot row and column are then read from $T$,
-with no linear system to solve, and a pivot is a Gauss--Jordan elimination:
-each row $t$ with $\alpha_{tq}\neq 0$ is replaced by
-$T_{t:} - (\alpha_{tq}/\alpha_{rq})\,T_{r:}$, at a cost of
-$O(\mathrm{nnz}(\alpha_q)\,\mathrm{nnz}(\alpha_r))$. Errors accumulate in the
-updated rows, so the tableau must be recomputed from $\Abar$ from time to
-time; instead of a fixed period, a guard compares $\lambda$, $d$ and $x_B$ with
-their definition and triggers the recomputation only when it detects drift.
-
-\paragraph{Revised engine.} For larger relaxations the dense rows of $T$
-would cost $O(m(n+m))$ per pivot. The revised engine keeps instead a sparse
-LU factorization $B = LU$, computed by the factorization code of SoPlex, and
-obtains each iteration's vectors by triangular solves: FTRAN solves $Ly=\Abar_{:q}$
-and then $U\alpha_q = y$, BTRAN solves $U^Tw=e_r$ and then $L^T\rho_r=w$. Since
-the basis changes by one column per iteration, the factors are not recomputed
-but updated: in the Forrest--Tomlin update~\cite{forrest1972updated} the new
-column replaces column $r$ of $U$, which breaks its triangular shape; a
-permutation moves it to the end, and one row elimination, stored as a sparse
-row transformation appended to $L$, restores the triangle. The update reuses
-the vector $y$ of the last FTRAN, so it costs about one more solve. Updates
-make the factors grow, and SC refactorizes $B$ from scratch every 50 pivots.
-The FTRAN of the entering column is computed once per iteration and serves
-three purposes: the devex weights, the Forrest--Tomlin update and the update of
-$x_B$, which is recomputed from scratch every 32 pivots to limit drift. The
-reduced costs and $\lambda$ are updated with the pivot row as above.
-
-A revised iteration costs one FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and
-the update, all proportional to the number of nonzeros involved, instead of a
-pass over the tableau. Below a threshold the tableau is cheaper; above it the
-revised engine is. The threshold is 30 rows in the solver of systems of
-equations, and 15 rows in the optimizer, where the warm start is primal; both
-were chosen on the systems of equations and on the 139 optimization problems
-used for tuning (Section~\ref{sec:experiments}). In the final configuration
-the tableau alone is 9--13\% slower on systems of equations and 3--4\% on
-optimization problems, while the revised engine alone is as fast
-(Table~\ref{tab:ablation}): the threshold now protects against the tableau on
-large relaxations more than it gains on small ones.
-\todo{con la configuracion final el revisado solo empata o gana (opt $>5$\,s
-$\times0.95$): decidir si se mantiene el umbral o se simplifica a un motor}
+\paragraph{An explicit tableau.} The LPs of a pass are small, and an
+alternative is to keep the whole tableau $T = B^{-1}\Abar$ explicitly, row by
+row in sparse form, together with $\lambda$, $d$ and $x_B$. The pivot row and
+column are then read from $T$, with no linear system to solve, and a pivot is
+a Gauss--Jordan elimination: each row $t$ with $\alpha_{tq}\neq 0$ is replaced
+by $T_{t:} - (\alpha_{tq}/\alpha_{rq})\,T_{r:}$, at a cost of
+$O(\mathrm{nnz}(\alpha_q)\,\mathrm{nnz}(\alpha_r))$, and a guard that compares
+$\lambda$, $d$ and $x_B$ with their definition triggers a recomputation from
+$\Abar$ when it detects drift. Our first versions used it on relaxations of up
+to 30 rows, and the revised engine above them. With the other components in
+place, the tableau no longer pays: the revised engine alone is as fast as that
+combination on systems of equations and slightly faster on optimization
+problems, and the tableau alone is 9--13\% slower on systems of equations
+(Table~\ref{tab:ablation}). SC therefore has a single engine.
 
 \subsection{Certification}
 
-When an LP terminates, $\lambda$ is read from the final basis: in the tableau
-engine it is maintained explicitly, and in the revised engine it is updated
-with the pivot row. The certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
+When an LP terminates, $\lambda$ is read from the final basis, where it is
+kept updated with the pivot row. The certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
 once per bound in outward-rounded interval arithmetic, over the rows with
 $\lambda_i\neq 0$, and $\iv{C}_k$ and $\iv{R}$ follow in $O(n+m)$
 (Definition~\ref{def:cert}). When a dual iteration finds a basic variable out
@@ -766,7 +749,7 @@ contracted between two bounds, relocation restores dual feasibility without a
 phase~1. That a boxed LP needs no dual phase~1 is a standard
 observation~\cite{koberstein2005dual}; what we use is that it holds across the
 $2n$ objectives and the contractions of the box, which is what allows one
-tableau to be shared by the $2n$ problems. The
+basis to be shared by the $2n$ problems. The
 case of a box change was exploited by Yamamura and
 coworkers~\cite{yamamura2001dual,yamamura2006dual} to resume an LP emptiness test
 after a bisection; Proposition~\ref{prop:start} extends it to a change of
@@ -776,8 +759,8 @@ finite. Slacks of one-sided rows, and variables with an unbounded domain, may
 not have it. In the implementation such a nonbasic variable is placed on its
 finite bound, which leaves its reduced cost with the wrong sign, or at zero if
 it is free. The iteration loop removes these dual infeasibilities with primal
-steps, and uses dual steps while some basic variable is out of its bounds; the
-revised engine of the solver of systems of equations takes no primal steps, and
+steps, and uses dual steps while some basic variable is out of its bounds; in
+the solver of systems of equations SC takes no primal steps, and
 an LP that ends with such a variable gives a valid, possibly weaker bound. The
 certificate is unaffected, since it is valid for any $\lambda$; only the
 monotonicity of Proposition~\ref{prop:mono} is lost in such an LP until the
@@ -830,6 +813,10 @@ what Section~\ref{sec:experiments} isolates.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
+
+\todo{las cifras de esta seccion son de SC con el motor hibrido
+(tableau hasta 30 filas); se rehacen con el motor revisado solo: banco de
+pasadas, tablas principal, de tamano, del hibrido, 3600\,s y ablacion (en cola)}
 
 \paragraph{A controlled comparison.}
 To measure the contribution of the simplex, and not of the rest of the
@@ -1341,7 +1328,7 @@ systems, compo       & 0.93 0.91 0.92 & 1.01 1.01 1.00 & 0.93 0.91 0.90\\
 
 Table~\ref{tab:ablation} changes one component of SC at a time, inside the
 search, with the affine relaxation. The search trees change by less than 2\%
-in every row. Three components carry the time. The hybrid engine: with the
+in every row. Three components carry the time. The engine: with the explicit
 tableau alone, SC is 9--13\% slower on systems of equations and finishes six
 fewer runs, and 3--4\% slower on optimization problems; the revised engine
 alone is as fast. The long-step ratio test: 4--6\% on systems of equations,
