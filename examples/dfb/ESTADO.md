@@ -2204,3 +2204,15 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   arrastrada por hhfair1 ×0.68 (celdas ×0.67, árbol caótico); sin ella ≈ ×0.97.
   Mismo techo que `DFBH_CAP0`: el primer LP es caro en pivotes pero pesa poco
   en el tiempo del nodo. No se adopta.
+- **¿Predice el conteo de infactibles el costo del primer LP?
+  (`DFB_SX_PRIMDIAG=1`, con herencia, 20 instancias, seed 1,
+  `results/final_2026-10-21/primdiag/`).** Dentro de una misma base, sí y en
+  forma gruesa (heredada en Katsurabis-14: 1–2 infactibles → 2 pivotes, 3–5 →
+  6, 6–10 → 11, 11–20 → 18). Para elegir entre la heredada y la de holguras,
+  no: la de holguras empieza con menos infactibles en muchos nodos
+  (Katsurabis-14 80 %, Bratu-0120 72 %, CCR2-14 compo 66 %) y aun así necesita
+  más pivotes en todas las instancias (Katsurabis-14 48.5 contra 14.5,
+  Bellido 9.6/3.8, hhfair1 27.8/3.7, Geneig-icse 30.2/3.9; con compo
+  Katsurabis-14 49/42, CCR2-14 28/25). La base de holguras está lejos del
+  óptimo y cada pivote destapa infactibles nuevas. La regla «si la heredada
+  tiene muchas, partir de holguras» empeoraría: se hereda siempre.

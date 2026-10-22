@@ -1,0 +1,3 @@
+[primdiag] holguras: LPs=206 piv/LP=41.0 infactibles al empezar=32.8 (holguras 32.8) | piv/LP por infactibles: 0:0.0(1) 11-20:17.5(47) >20:48.2(158)
+[primdiag] heredada: LPs=17 piv/LP=21.8 infactibles al empezar=37.8 (holguras 54.0) | piv/LP por infactibles: 0:0.7(6) 11-20:6.5(2) >20:39.2(9)
+[primdiag] heredada con MAS infactibles que holguras: 47.1% de los nodos (piv/LP en ellos 40.3); iguales 0.0%

@@ -239,6 +239,36 @@ inline double tol_primal(double lo, double hi, double esc) {
     return tol;
 }
 long g_ps_sin_entrante = 0, g_ps_pivote_fallido = 0, g_ps_unbounded = 0;
+/* DIAGNOSTICO DEL ARRANQUE DEL PRIMER LP DE CADA NODO (`DFB_SX_PRIMDIAG=1`,
+ * 2026-10-22): basicas infactibles al empezar con la base que se usa (heredada
+ * o de holguras) y las que tendria la base de holguras, contra los pivotes
+ * reales. Pregunta: predice el conteo los pivotes, y en cuantos nodos la base
+ * de holguras seria mejor que la heredada. */
+bool g_pd_primero = false, g_pd_heredada = false, g_pd_pend = false;
+int  g_pd_inf = 0, g_pd_infh = 0;
+struct PrimDiag {
+    /* [heredada][cubeta del conteo actual]: LPs y pivotes */
+    long n[2][6] = {{0}}, piv[2][6] = {{0}};
+    long peor = 0, peor_piv = 0, nher = 0, iguales = 0;
+    double sum_inf[2] = {0,0}, sum_infh[2] = {0,0};
+    static int cub(int v) { return v == 0 ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 10 ? 3 : v <= 20 ? 4 : 5; }
+    ~PrimDiag() {
+        if (!n[0][0] && !nher && !piv[0][0]) {}
+        const char* et[6] = {"0","1-2","3-5","6-10","11-20",">20"};
+        for (int h = 0; h < 2; ++h) {
+            long N = 0, P = 0; for (int b = 0; b < 6; ++b) { N += n[h][b]; P += piv[h][b]; }
+            if (!N) continue;
+            fprintf(stderr, "[primdiag] %s: LPs=%ld piv/LP=%.1f infactibles al empezar=%.1f (holguras %.1f) | piv/LP por infactibles:",
+                    h ? "heredada" : "holguras", N, (double)P/N, sum_inf[h]/N, sum_infh[h]/N);
+            for (int b = 0; b < 6; ++b) if (n[h][b]) fprintf(stderr, " %s:%.1f(%ld)", et[b], (double)piv[h][b]/n[h][b], n[h][b]);
+            fprintf(stderr, "\n");
+        }
+        if (nher) fprintf(stderr, "[primdiag] heredada con MAS infactibles que holguras: %.1f%% de los nodos (piv/LP en ellos %.1f); iguales %.1f%%\n",
+                          100.0*peor/nher, peor ? (double)peor_piv/peor : 0.0, 100.0*iguales/nher);
+    }
+};
+PrimDiag& primdiag() { static PrimDiag d; return d; }
+bool primdiag_on() { static const bool v = getenv("DFB_SX_PRIMDIAG") != NULL; return v; }
 long g_ds_pivote_fallido = 0;   /* costo reducido que se considera nulo */
 const double HARRIS_BAND = 1e-3; /* banda relativa del desempate de Harris */
 }
@@ -321,6 +351,7 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
      * escalado y la factorizacion en el sin escalar; con `DFB_SX_SCALE=1` no
      * coinciden. */
     static const bool conservar = (getenv("DFB_SX_BASENODOS") != NULL) && !escalar;
+    g_pd_primero = true; g_pd_heredada = false;
     const bool mismas_dim = conservar && base_lista &&
                             m == Abar.nb_rows() && na == Abar.nb_cols() &&
                             nx == nx_;
@@ -425,7 +456,7 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
         for (int r = 1; r <= m; ++r) cols_buf[r-1] = basic[r];
         fact_ok = fact.set_basis(cols_buf);
         base_lista = fact_ok;
-        if (fact_ok) { ++n_base_heredada; xb_sucio = true; }
+        if (fact_ok) { ++n_base_heredada; xb_sucio = true; g_pd_heredada = true; }
         /* Con el motor revisado (2026-10-22) basta la LU: no hay tableau que
          * reconstruir, y heredar cuesta una factorizacion. */
         if (fact_ok && !rev) {
@@ -2296,6 +2327,38 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
     /* El estado inicial, con 0 pivotes, ya es una parada valida: da la cota
      * trivial. Es el primer punto de la curva anytime. */
     registrar_traza(k, maximize);
+    if (primdiag_on() && g_pd_primero && m > 0) {
+        if (xb_sucio) compute_basics(zz);
+        int pinf = 0;
+        for (int r = 1; r <= m; ++r) {
+            const int c = basic[r];
+            const double lo = zz[c].lb(), hi = zz[c].ub();
+            const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
+            const double tol = tol_primal(lo, hi, esc);
+            if (xB[r] < lo - tol || xB[r] > hi + tol) ++pinf;
+        }
+        /* base de holguras: estructurales en su cota inferior, x_k en la que
+         * pide el objetivo; la holgura de cada fila sale de la ecuacion */
+        int pinfh = 0;
+        for (int j = 0; j < m; ++j) {
+            double acc = 0.0, vs = 0.0;
+            const std::vector<std::pair<int,double> >& a = arow[j];
+            for (size_t t = 0; t < a.size(); ++t) {
+                const int c = a[t].first;
+                if (c == nx + j) { vs = a[t].second; continue; }
+                if (c >= nx) continue;
+                const double xv = (c == k && maximize) ? zz[c].ub() : zz[c].lb();
+                acc += a[t].second * xv;
+            }
+            if (vs == 0.0) continue;
+            const double sv = -acc / vs;
+            const double lo = zz[nx+j].lb(), hi = zz[nx+j].ub();
+            const double esc = 1.0 + std::max(std::fabs(lo), std::fabs(hi));
+            const double tol = tol_primal(lo, hi, esc);
+            if (sv < lo - tol || sv > hi + tol) ++pinfh;
+        }
+        g_pd_inf = pinf; g_pd_infh = pinfh; g_pd_pend = true;
+    }
     if (medir_inicio) {
         /* infactibilidades del punto de partida (solo lectura: `compute_basics`
          * es la misma cuenta que haria el bucle) */
@@ -2492,6 +2555,12 @@ DFBSimplex::Status DFBSimplex::solve_nucleo(int k, bool maximize,
      * INFEASIBLE y UNBOUNDED cortan sin pivotear y SINGULAR viene de un pivote
      * que no se pudo aplicar. */
     if (st != OPTIMAL && st != ITER_LIMIT) base_lista = false;
+    if (g_pd_pend) {
+        PrimDiag& D = primdiag(); const int h = g_pd_heredada ? 1 : 0, b = PrimDiag::cub(g_pd_inf);
+        ++D.n[h][b]; D.piv[h][b] += iters; D.sum_inf[h] += g_pd_inf; D.sum_infh[h] += g_pd_infh;
+        if (h) { ++D.nher; if (g_pd_inf > g_pd_infh) { ++D.peor; D.peor_piv += iters; } else if (g_pd_inf == g_pd_infh) ++D.iguales; }
+        g_pd_pend = false; g_pd_primero = false;
+    }
     if (st == OPTIMAL)          ++n_optimal;
     else if (st == INFEASIBLE)  ++n_infeasible;
     else if (st == ITER_LIMIT)  ++n_iterlimit;
