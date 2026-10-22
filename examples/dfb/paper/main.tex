@@ -121,9 +121,8 @@ What changes with a self-certifying simplex is \emph{where the multipliers come 
 usable certificate is available}. In the approaches above, multipliers are a
 by-product of an external solver and certification is a post-processing step;
 its cost and fragility lead to applying it to a few promising
-variables~\cite{domes2012rigorous}, to recomputing it only periodically and
-reusing it in between~\cite{reyes2023preconditioning}, or to abandoning the pass
-when it fails (Ibex). The dual-simplex warm start of Yamamura et al.\ concerns a
+variables~\cite{domes2012rigorous}, or to recomputing it only periodically and
+reusing it in between~\cite{reyes2023preconditioning}. The dual-simplex warm start of Yamamura et al.\ concerns a
 single feasibility LP on a fixed relaxation, without rigorous certification.
 The self-certifying simplex is designed for the certificate: in the homogeneous form every
 basis can be made dual feasible by relocating nonbasic variables, so each of the
@@ -817,7 +816,10 @@ To measure the contribution of the simplex, and not of the rest of the
 contractor, we compare engines inside the \emph{same} contractor. All run
 the same pass over the $2n$ bounds, on the same merged relaxation, with the
 same skipping rule, the same certificate and the same policy when an LP yields
-no certificate: that bound is not contracted and the pass continues. They
+no certificate: that bound is not contracted and the pass continues. (The
+polytope-hull contractor of Ibex~2.8.9 abandoned the pass when the LP solver
+reported infeasibility without a verifiable ray, and the node was not pruned;
+this has since been corrected.\todo{version o commit de Ibex con el arreglo}) They
 differ only in where the multipliers come from:
 \begin{itemize}
 \item \emph{SC}: the multipliers of the final basis of the self-certifying simplex;
@@ -1373,20 +1375,6 @@ without merging rows              & \todo{} & & & & & &\\
 \bottomrule
 \end{tabular}
 \end{table}
-
-\paragraph{Relation to the polytope-hull contractor of Ibex.}
-Against the contractor distributed with Ibex, run in its strongest
-configuration on each program (SoPlex in column representation in the solver
-of systems of equations, the default in the optimizer), our contractor with SC
-explores 0.70--0.76 times the cells on systems of equations in 0.66--0.68 of
-the time, and finishes 364 runs against 325; on optimization problems it
-explores 0.92--0.97 times the cells in 0.80--0.82 of the time, with 872 runs
-finished against 865. Most of that gap comes from the contractor and not from
-the engine: when the LP solver reports infeasibility without a verifiable ray,
-the contractor of Ibex abandons the pass, and the node is not pruned. The
-black-box engine inside our contractor already explores 0.71--0.77 of the
-cells on systems of equations in 0.71--0.72 of the time.
-\todo{rehacer con la configuracion final}
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
