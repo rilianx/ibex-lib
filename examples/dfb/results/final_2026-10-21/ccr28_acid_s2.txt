@@ -1,0 +1,12 @@
+[acid] llamadas=2000 nbcidvar=54 vacias=678
+[acid] llamadas=4000 nbcidvar=39 vacias=1670
+[acid] llamadas=6000 nbcidvar=78 vacias=2459
+[acid] llamadas=8000 nbcidvar=114 vacias=2816
+[acid] llamadas=10000 nbcidvar=109 vacias=3275
+[acid] llamadas=12000 nbcidvar=48 vacias=3297
+[acid] llamadas=14000 nbcidvar=23 vacias=3305
+[acid] llamadas=16000 nbcidvar=57 vacias=3350
+[acid] llamadas=18000 nbcidvar=62 vacias=3620
+[acid] llamadas=20000 nbcidvar=44 vacias=3620
+[acid] llamadas=22000 nbcidvar=53 vacias=3983
+24245 394.309 2 6033 0 70 0

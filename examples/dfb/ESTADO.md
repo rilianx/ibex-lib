@@ -2223,3 +2223,15 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   afín parcial (312/484): cpu 1.01 / 1.04 / 1.05 (Bratu ×1.16–1.18,
   DiscreteBoundary-0200 ×1.66). Corrió con 12 núcleos ocupados contra 8 de la
   referencia. Se cierra: no se adopta.
+- **3600 s con la configuración final, SC (híbrido de motores, `_v`) contra
+  SoPlex completo y SPxSolver parcial (2026-10-22, `l3600v`).** Sistemas
+  SC/SoPlex: celdas 1.04, cpu 1.01, 94/94; opt: celdas 1.00, cpu 0.83, 96/88
+  (SoPlex no termina hs101 ni hs112). Peores en sistemas:
+  - CCR2-28 s1 ×2.96 (683 693 celdas, 2 849 s contra 24 245 / 403 s con s2):
+    el ajuste adaptativo de ACID otra vez (`DFBH_ACIDTRACE=2000`,
+    `results/final_2026-10-21/ccr28_acid*.txt`): con s1 `nbcidvar` cae de
+    53–88 a 7–12 desde la llamada ~20 000 y no se recupera; con s2 se mueve
+    entre 39 y 114 y la búsqueda termina en ~22 000 llamadas.
+  - Brown-30 y Brown-30-1 ×1.6: corridas de 1–2.5 s; SoPlex con s2 explora 67
+    celdas en 0.94 s y los demás motores 71 en 2.5 s. Es el árbol de una
+    semilla de SoPlex, no el costo de SC (contra SPxSolver, ×1.00).
