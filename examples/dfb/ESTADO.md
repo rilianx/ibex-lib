@@ -2216,3 +2216,10 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   Katsurabis-14 49/42, CCR2-14 28/25). La base de holguras está lejos del
   óptimo y cada pivote destapa infactibles nuevas. La regla «si la heredada
   tiene muchas, partir de holguras» empeoraría: se hereda siempre.
+- **Herencia en el banco de 60 s (`DFB_SX_BASENODOS=1`, 4 núcleos, detenido a
+  pedido; `results/final_2026-10-21/herencia60.csv`), contra SC revisado de
+  `abl21`.** Opt afín completo: celdas 0.98–1.01, cpu 0.995 / 0.99 / 0.96,
+  877/874 (hhfair1 ×0.68, linear ×0.69; concon ×1.42, hydro ×1.39). Sistemas
+  afín parcial (312/484): cpu 1.01 / 1.04 / 1.05 (Bratu ×1.16–1.18,
+  DiscreteBoundary-0200 ×1.66). Corrió con 12 núcleos ocupados contra 8 de la
+  referencia. Se cierra: no se adopta.
