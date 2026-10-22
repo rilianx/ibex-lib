@@ -1,0 +1,44 @@
+== sol
+sol sinpert    / base   cells 0.995/0.993/0.984  cpu 1.000/1.002/0.998  (n=254/164/95)  runs 364/362  solved 182/181
+sol tibio      / base   cells 1.015/1.007/1.011  cpu 1.001/0.991/0.989  (n=254/164/95)  runs 364/362  solved 182/181
+sol sinlargo   / base   cells 1.010/1.017/1.024  cpu 1.050/1.038/1.061  (n=254/164/95)  runs 362/362  solved 181/181
+sol sindevex   / base   cells 1.003/1.005/1.007  cpu 0.998/1.001/1.003  (n=254/164/95)  runs 362/362  solved 181/181
+     mejores: Yamamua1-0012 x0.98, CountercurrentReactors2-9 x0.98, Yamamua1-0022sp x0.98, Design x0.99, Trigexp2-13 x0.99, I5 x0.99
+     peores : Bratu-0070 x2.50, Bratu-0080 x2.80, Bratu-0090 x3.06, Bratu-0120 x4.55, Bratu-0100 x4.57, Bratu-0150 x4.79
+sol tableau    / base   cells 1.002/1.003/1.000  cpu 1.126/1.130/1.093  (n=248/158/89)  runs 356/362  solved 178/181
+sol revisado   / base   cells 1.002/1.004/1.006  cpu 0.991/0.995/0.989  (n=254/164/95)  runs 364/362  solved 182/181
+     mejores: Brown-30-1 x0.59, Brown-30 x0.60, CountercurrentReactors2-12 x0.96, Design x0.98, CountercurrentReactors2-10 x0.99, Bratu-0120 x0.99
+     peores : Yamamua1-0028sp x1.02, CountercurrentReactors2-14 x1.02, CountercurrentReactors2-18 x1.03, ponts-geo x1.03, Katsura-14 x1.03, Yamamua1-0016sp x1.05
+sol sinfusion  / base   cells 1.000/0.999/1.000  cpu 0.995/0.990/1.003  (n=254/164/95)  runs 362/362  solved 181/181
+     mejores: CountercurrentReactors2-12 x0.96, Fredtest x0.96, CountercurrentReactors2-16 x0.97, Design x0.98, Yamamura1-0040sp x0.98, Rose x0.98
+     peores : Yamamua1-0014sp x1.02, Trigexp2-11 x1.02, CountercurrentReactors2-18 x1.02, exnewton x1.03, CountercurrentReactors2-14 x1.03, Trigo1-0012 x1.05
+sol sinparalelas / base   cells 1.000/1.000/1.000  cpu 0.996/0.996/0.996  (n=254/164/95)  runs 362/362  solved 181/181
+sol sinpiso    / base   cells 1.000/1.000/1.000  cpu 0.998/0.999/1.000  (n=254/164/95)  runs 362/362  solved 181/181
+sol sinrayo    / base   cells 1.000/1.001/1.001  cpu 1.006/1.005/1.005  (n=254/164/95)  runs 362/362  solved 181/181
+     mejores: Yamamua1-0032sp x0.98, Yamamura1-0040sp x0.98, Geneig-icse x0.98, Bratu-0090 x0.98, CountercurrentReactors2-9 x0.98, Rose x0.99
+     peores : CountercurrentReactors2-14 x1.03, Yamamura1-0020sp x1.03, CountercurrentReactors2-16 x1.05, ponts-geo x1.06, Katsurabis-14 x1.08, Bratu-0175 x1.26
+sol sintope    / base   cells 1.001/1.002/1.002  cpu 1.004/1.006/1.009  (n=254/164/95)  runs 362/362  solved 181/181
+sol lejos      / base   cells 1.003/1.004/1.003  cpu 1.025/1.021/1.020  (n=254/164/95)  runs 362/362  solved 181/181
+sol otroorden  / base   cells 1.006/1.010/1.014  cpu 1.003/1.003/1.024  (n=254/164/95)  runs 362/362  solved 181/181
+== opt
+opt sinpert    / base   cells 1.000/1.000/1.000  cpu 1.001/1.002/1.004  (n=458/257/105)  runs 875/875  solved 218/218
+opt tibio      / base   cells 0.992/0.983/0.949  cpu 1.041/1.044/0.993  (n=457/256/104)  runs 873/875  solved 217/218
+opt sinlargo   / base   cells 1.000/0.983/0.949  cpu 1.001/0.989/0.955  (n=456/255/103)  runs 876/875  solved 218/218
+opt sindevex   / base   cells 0.996/0.985/0.954  cpu 0.992/0.984/0.957  (n=456/255/103)  runs 868/875  solved 215/218
+     mejores: himmel16 x0.78, launch x0.99, ex7_2_3 x0.99, hhfair1 x0.99, ex14_2_4 x0.99, ex6_2_8 x0.99
+     peores : disc2 x1.17, ramsey x1.23, srcpm x1.37, linear x1.47, batch x1.63, hydro x1.99
+opt tableau    / base   cells 0.998/0.992/0.978  cpu 1.026/1.036/1.005  (n=457/256/104)  runs 874/875  solved 218/218
+opt revisado   / base   cells 0.986/0.981/0.947  cpu 0.994/0.988/0.946  (n=457/256/104)  runs 874/875  solved 217/218
+     mejores: ship-1 x0.98, haldmads x0.98, himmelbk x0.99, ex14_2_4 x0.99, himmel16 x0.99, hydro x0.99
+     peores : hs110 x1.01, aircraftb x1.01, eigmaxc x1.01, ex8_4_4bis x1.02, ex8_4_5bis x1.02, dualc1 x1.03
+opt sinfusion  / base   cells 1.000/1.000/1.000  cpu 1.001/1.001/1.002  (n=458/257/105)  runs 875/875  solved 218/218
+     mejores: himmel16 x0.61, immun x0.67, ramseybis x0.74, ex14_2_4 x0.79, hs099 x0.87, concon x0.89
+     peores : ex5_3_2 x1.17, ramsey x1.21, dixchlng x1.29, ex8_5_1bis x1.34, linear x1.36, hydro x2.07
+opt sinparalelas / base   cells 0.989/0.982/0.969  cpu 1.034/1.036/1.009  (n=452/251/99)  runs 868/875  solved 216/218
+opt sinpiso    / base   cells 1.000/1.000/1.000  cpu 0.997/0.998/0.997  (n=458/257/105)  runs 875/875  solved 218/218
+opt sinrayo    / base   cells 1.000/0.999/0.999  cpu 1.004/1.004/1.003  (n=458/257/105)  runs 874/875  solved 217/218
+     mejores: linear x0.82, hs099 x0.88, launch x0.98, ex5_3_2 x0.99, ship-1 x0.99, immun x0.99
+     peores : srcpm x1.02, hhfair x1.03, batch x1.05, dualc1 x1.05, ramsey x1.06, hydro x1.51
+opt sintope    / base   cells 1.003/1.002/0.992  cpu 1.002/1.004/0.997  (n=458/257/105)  runs 875/875  solved 217/218
+opt lejos      / base   cells 1.002/1.005/0.980  cpu 1.038/1.049/1.037  (n=458/257/105)  runs 878/875  solved 217/218
+opt otroorden  / base   cells 1.005/1.005/0.957  cpu 1.014/1.027/0.976  (n=457/256/104)  runs 877/875  solved 218/218

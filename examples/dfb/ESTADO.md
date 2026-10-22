@@ -2146,3 +2146,29 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   piso de tolerancia, sin rayo de fila, sin tope, lejos, arranque del otro
   programa, orden del otro programa); luego 3600 s (`l3600v`, SC / clase
   SoPlex / SPxSolver × 192, el banco de `d3600p`).
+- **Ablación con la configuración final (`abl21`, 2026-10-22,
+  `results/final_2026-10-21/abl21.csv`, `abl21_tab.txt`).** Contra SC completo;
+  sistemas: celdas, cpu >0.1/>1/>5 s, terminadas (base 362/484); opt: cpu, resueltos (base 218):
+
+  | brazo | sis celdas | sis cpu | sis fin | opt cpu | opt resueltos |
+  |---|---|---|---|---|---|
+  | sin perturbación | 0.99 | 1.00 1.00 1.00 | 364 | 1.00 1.00 1.00 | 218 |
+  | arranque del otro | 1.01 | 1.00 0.99 0.99 | 364 | 1.04 1.04 0.99 | 217 |
+  | sin long-step | 1.01–1.02 | 1.05 1.04 1.06 | 362 | 1.00 0.99 0.96 | 218 |
+  | sin devex | 1.00 | 1.00 1.00 1.00 | 362 | 0.99 0.98 0.96 | 215 |
+  | solo tableau | 1.00 | 1.13 1.13 1.09 | 356 | 1.03 1.04 1.01 | 218 |
+  | solo revisado | 1.00 | 0.99 1.00 0.99 | 364 | 0.99 0.99 0.95 | 217 |
+  | sin fusión gemelas | 1.00 | 1.00 0.99 1.00 | 362 | 1.00 1.00 1.00 | 218 |
+  | sin filas paralelas | 1.00 | 1.00 1.00 1.00 | 362 | 1.03 1.04 1.01 | 216 |
+  | sin piso | 1.00 | 1.00 1.00 1.00 | 362 | 1.00 1.00 1.00 | 218 |
+  | sin rayo de fila | 1.00 | 1.01 1.01 1.01 | 362 | 1.00 1.00 1.00 | 217 |
+  | sin tope 60 | 1.00 | 1.00 1.01 1.01 | 362 | 1.00 1.00 1.00 | 217 |
+  | lejos | 1.00 | 1.03 1.02 1.02 | 362 | 1.04 1.05 1.04 | 217 |
+  | orden del otro | 1.01 | 1.00 1.00 1.02 | 362 | 1.01 1.03 0.98 | 218 |
+
+  Las dos fusiones se cubren entre sí: la de filas paralelas funde también las
+  gemelas (misma normal, proporción 1), por eso apagar una sola no cambia nada
+  en sistemas. En cola tras los 3600 s: `sinfusiones` (las dos apagadas).
+  Lo que cambió respecto de la tabla del paper: perturbación y devex quedan
+  neutros; el motor revisado solo ya no pierde (opt >5 s ×0.95, celdas ×0.95);
+  el arranque del otro programa no cuesta en sistemas.
