@@ -71,6 +71,10 @@ int main(int argc, char** argv) {
     if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", "1e-9", 0);
     if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
     if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "igual", 0);
+    /* Tope de 60 pivotes por LP en SC (2026-10-21): cualquier base certifica, asi
+     * que cortar da una cota valida. Las cajas negras siguen con 20m+200: una caja
+     * cortada por iteraciones no deja certificado y pierde la cota entera. */
+    if (!getenv("DFBH_LPCAP") && !getenv("DFBH_LPCAP_M")) setenv("DFBH_LPCAP", "60", 0);
 
     if (argc < 2) { cerr << "uso: ibexsolve_dfb archivo.bch [--lr=xn|dfbhull] [-e eps] [-t s] [--seed=s] [--bfs]" << endl; return 1; }
     string lr = "xn", lin = "art", bis = "lsmear"; bool sols = false; double eps = 1e-3, timeout = -1, seed = 1.0; bool bfs = false;

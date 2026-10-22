@@ -2136,3 +2136,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   la factibilidad del poliedro ∩ caja no depende del objetivo, así que el LP
   siguiente de la pasada, que ya corre sobre la caja que dejó HC4, es el test
   barato de eliminación; volver a las cotas anteriores solo repite pivotes.
+- **Tope de 60 pivotes por LP por omisión (2026-10-21)** en `ibexsolve_dfb`,
+  `ibexopt` e `ibexreplay` (binarios `_v`). Solo SC: las cajas negras siguen
+  con 20m+200, porque una caja cortada por iteraciones no deja certificado y
+  pierde la cota entera. `DFBH_LPCAP=0` vuelve a 20m+200.
+- **En cola (`$M/cadena_v.sh`):** ablación con la configuración final
+  (`abl21`, 14 brazos × 1444: base, sin perturbación, sin long-step, sin
+  devex, solo tableau, solo revisado, sin fusión, sin filas paralelas, sin
+  piso de tolerancia, sin rayo de fila, sin tope, lejos, arranque del otro
+  programa, orden del otro programa); luego 3600 s (`l3600v`, SC / clase
+  SoPlex / SPxSolver × 192, el banco de `d3600p`).
