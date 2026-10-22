@@ -90,18 +90,12 @@ therefore treat the LP solver as a black box and certify its output a
 posteriori: the dual solution is turned into a safe bound by the
 Neumaier--Shcherbina procedure~\cite{neumaier2004safe}, and an infeasibility
 claim is accepted only if the returned Farkas ray passes the same verification.
-This design has two costs. The first is easy to miss and turns out to be the
-larger one: the $2n$ LPs of a node are small and closely related, typically
-two or three pivots apart, and each is a separate call to a general-purpose
-solver, which sets up its vectors, refactorizes the basis before declaring an
-optimum and verifies its solution; on these LPs that work exceeds the pivots
-themselves (Section~\ref{sec:experiments}). The second is in the bounds. When
-the verification fails, which happens when the dual is inaccurate or the
-solver works in an unfavourable representation, the bound is lost; when the
-solver reports infeasibility without a verifiable ray, the pass is abandoned
-and the node survives. On our benchmark these losses, and not the quality of
-the relaxation, explain most of the pruning gap between contractors that share
-the same polytope (Section~\ref{sec:experiments}).
+This design has a cost that is easy to miss: the $2n$ LPs of a node are small
+and closely related, typically two or three pivots apart, and each is a
+separate call to a general-purpose solver, which sets up its vectors,
+refactorizes the basis before declaring an optimum and verifies its solution;
+on these LPs that work exceeds the pivots themselves
+(Section~\ref{sec:experiments}).
 
 \paragraph{Positioning.} The certificate we use is not new. That \emph{any}
 multiplier vector yields a valid bound once the residual is evaluated in
