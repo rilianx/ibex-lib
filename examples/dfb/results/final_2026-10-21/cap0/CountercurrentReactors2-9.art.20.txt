@@ -1,0 +1,3 @@
+955 1.22707 0 15 0 0 0
+[primerdiag] primero: LPs=1068 piv/LP=5.9 cortados=0 contraccion media=0.003 | resto: LPs=10259 piv/LP=1.9 contraccion media=0.098 | primero = 24.5% de los pivotes
+[primerdiag] hist primero (LPs%/pivotes%): 0:9/0 1-5:29/13 6-10:53/67 11-20:11/22 21-40:0/0 41-60:0/0 >60:0/0

@@ -1,0 +1,3 @@
+3118 13.9124370001 0.212460017232 0.212460017232
+[primerdiag] primero: LPs=7946 piv/LP=19.2 cortados=5870 contraccion media=0.065 | resto: LPs=176855 piv/LP=2.1 contraccion media=0.134 | primero = 29.4% de los pivotes
+[primerdiag] hist primero (LPs%/pivotes%): 0:0/0 1-5:0/0 6-10:1/1 11-20:100/100 21-40:0/0 41-60:0/0 >60:0/0

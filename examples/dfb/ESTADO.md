@@ -2172,3 +2172,14 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   Lo que cambió respecto de la tabla del paper: perturbación y devex quedan
   neutros; el motor revisado solo ya no pierde (opt >5 s ×0.95, celdas ×0.95);
   el arranque del otro programa no cuesta en sistemas.
+- **Primer LP de la pasada (`DFBH_PRIMERDIAG`, `DFBH_CAP0=c`, 2026-10-22,
+  `results/final_2026-10-21/cap0/`, 20 instancias, semilla 1, -t 60).** El
+  primer LP cuesta 3–9× los pivotes de los demás (sistemas afín 6–52, compo
+  21–55, opt 1–27) y es el 4–36 % de los pivotes (Brown-18 93 %); contrae en
+  promedio como los demás. Con tope solo para él: c=10 cpu ×0.99, c=20 ×0.97,
+  c=30 ×1.03 (media geométrica), todo por variación de celdas (hhfair1 ×0.49
+  con 20 y ×1.23 con 30, himmel16 ×0.64 con 10). Los pivotes cortados casi no
+  reaparecen en la cota siguiente (Katsurabis-14 afín, c=10: primero 51.8 →
+  9.9, resto 6.9 → 7.3), pero aun así el tiempo baja solo ×0.96: los pivotes
+  del primer LP pesan poco en el tiempo total. Techo de cualquier mejora del
+  primer LP (tope, base guardada, mejor primera cota): unos pocos %. No se adopta.

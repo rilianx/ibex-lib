@@ -35,6 +35,37 @@ double adapt_umbral() {
     return u;
 }
 double& adapt_ema() { static double e = -1.0; return e; }
+/* DIAGNOSTICO DEL PRIMER LP DE LA PASADA (`DFBH_PRIMERDIAG=1`, 2026-10-22):
+ * pivotes y contraccion del LP del paso 0 contra los demas; histograma de
+ * pivotes del primero. Se imprime al salir. */
+bool primerdiag_on() { static const bool v = getenv("DFBH_PRIMERDIAG") != NULL; return v; }
+struct PrimerDiag {
+    long n[2] = {0,0}, piv[2] = {0,0}, corte[2] = {0,0}, nc[2] = {0,0};
+    double ctr[2] = {0,0};
+    long hist[7] = {0,0,0,0,0,0,0};   /* 0, 1-5, 6-10, 11-20, 21-40, 41-60, >60 */
+    long hpiv[7] = {0,0,0,0,0,0,0};
+    ~PrimerDiag() {
+        if (!n[0] && !n[1]) return;
+        fprintf(stderr, "[primerdiag] primero: LPs=%ld piv/LP=%.1f cortados=%ld contraccion media=%.3f | resto: LPs=%ld piv/LP=%.1f contraccion media=%.3f | primero = %.1f%% de los pivotes\n",
+                n[0], (double)piv[0]/std::max(1L,n[0]), corte[0], ctr[0]/std::max(1L,nc[0]),
+                n[1], (double)piv[1]/std::max(1L,n[1]), ctr[1]/std::max(1L,nc[1]),
+                100.0*piv[0]/std::max(1L,piv[0]+piv[1]));
+        const char* et[7] = {"0","1-5","6-10","11-20","21-40","41-60",">60"};
+        fprintf(stderr, "[primerdiag] hist primero (LPs%%/pivotes%%):");
+        for (int i = 0; i < 7; ++i) fprintf(stderr, " %s:%.0f/%.0f", et[i], 100.0*hist[i]/std::max(1L,n[0]), 100.0*hpiv[i]/std::max(1L,piv[0]));
+        fprintf(stderr, "\n");
+    }
+};
+PrimerDiag& primerdiag() { static PrimerDiag d; return d; }
+void primerdiag_piv(bool primero, int it, bool cortado) {
+    PrimerDiag& d = primerdiag(); const int i = primero ? 0 : 1;
+    ++d.n[i]; d.piv[i] += it; if (cortado) ++d.corte[i];
+    if (primero) {
+        const int b = it == 0 ? 0 : it <= 5 ? 1 : it <= 10 ? 2 : it <= 20 ? 3 : it <= 40 ? 4 : it <= 60 ? 5 : 6;
+        ++d.hist[b]; d.hpiv[b] += it;
+    }
+}
+void primerdiag_ctr(bool primero, double c) { PrimerDiag& d = primerdiag(); const int i = primero ? 0 : 1; ++d.nc[i]; d.ctr[i] += c; }
 /* Estado de `DFBH_WARM=medir` (2026-10-21): costo por LP (promedio movil) de
  * cada arranque tibio, 0 = dual (reubica) y 1 = primal con devex; nodos con
  * cada uno; estrategia del nodo en curso. */
@@ -1693,6 +1724,12 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             if (lim < 2) lim = 2;
             if (paso >= lim) tope_paso = b_resto;
         }
+        /* TOPE SOLO PARA EL PRIMER LP DE LA PASADA (`DFBH_CAP0=c`, 2026-10-22).
+         * Es el mas largo: arranca de la base que dejo el nodo padre (o en frio)
+         * y no de la de la cota anterior. Cortarlo da una cota valida (cualquier
+         * base certifica) y deja una base intermedia para la cota siguiente. */
+        static const int cap0 = getenv("DFBH_CAP0") ? atoi(getenv("DFBH_CAP0")) : 0;
+        if (cap0 > 0 && paso == 0) tope_paso = std::min(tope_paso, cap0);
 
         /* SONDA DE SALIDA TEMPRANA POR EXITO.
          *
@@ -1871,6 +1908,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
         const long pc0 = DFBSimplex::n_primal_cero, pt0 = DFBSimplex::n_primal_total;
         DFBSimplex::Status st = motor_caja ? resolver_caja(k, lado == 1, z)
                                            : sk.solve(k, lado == 1, z, tope_paso, true);
+        if (primerdiag_on() && !motor_caja) primerdiag_piv(paso == 0, sk.iterations(), st == DFBSimplex::ITER_LIMIT);
         if (sombra && !motor_caja) {
             /* SOMBRA (`DFBH_SOMBRA=1`, 2026-10-19): el MISMO LP (cota, sentido, caja)
              * se resuelve tambien con la caja negra, en la misma cadena de LPs, para
@@ -2849,6 +2887,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     paso, k, lado, testigo()[k], nb.lb(), nb.ub(), z[k].lb(), z[k].ub());
         z[k] &= nb;
         const double d1 = z[k].diam();
+        if (primerdiag_on() && !motor_caja && d0 > 0.0 && d0 < POS_INFINITY) primerdiag_ctr(paso == 0, 1.0 - d1/d0);
         /* DIAGNOSTICO DEL PRIMER PIVOTE (`DFBH_PIVDIAG`, 2026-10-21): tras
          * contraer la cota k, HC4 sobre una copia de la caja; se agrupa por la
          * violacion relativa del primer pivote dual del LP y se cuenta en cuantos
