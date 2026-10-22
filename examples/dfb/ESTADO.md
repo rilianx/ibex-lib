@@ -2194,3 +2194,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   SoPlex (519–537). En cola tras `cadena_v` (`$M/cadena_r.sh`): banco de
   pasadas (`banco3`), SC base y compo + híbrido (`d60r`, 5776), 3600 s de SC
   (`l3600r2`, 192) y ablación con la nueva base (`d60r`, 9 brazos, 12 996).
+- **Herencia de la base entre nodos con el motor revisado (`DFB_SX_BASENODOS=1`,
+  2026-10-22, `results/final_2026-10-21/herencia/`, 20 instancias × 2
+  semillas, binarios `_bn`).** Con el revisado heredar cuesta una LU (se salta
+  la reconstrucción del tableau). El primer LP baja mucho (Katsurabis-14 51 →
+  17 pivotes, Geneig-icse 30 → 6, hhfair1 27 → 8, Brown-18 18 → 0.8) y el
+  resto no cambia, pero el tiempo no: sistemas ×1.00 (Bratu-0120 ×1.15,
+  Geneig-icse ×1.14 con celdas ×1.27; Katsurabis-14 ×0.93–0.96), opt ×0.93
+  arrastrada por hhfair1 ×0.68 (celdas ×0.67, árbol caótico); sin ella ≈ ×0.97.
+  Mismo techo que `DFBH_CAP0`: el primer LP es caro en pivotes pero pesa poco
+  en el tiempo del nodo. No se adopta.

@@ -1,0 +1,3 @@
+1262 5.11238800001 -87.1590017518 -87.1590017518
+[dfb] estados: solves=58784  optimal=99.3%  infeasible=0.8%  iterlimit=0.0%  otros(singular/unbounded)=0.1%  | warm=58337 cold=447 fact_fallo=1
+[primerdiag] primero: LPs=2553 piv/LP=7.8 cortados=0 contraccion media=0.133 | resto: LPs=56228 piv/LP=4.2 contraccion media=0.175 | primero = 7.8% de los pivotes

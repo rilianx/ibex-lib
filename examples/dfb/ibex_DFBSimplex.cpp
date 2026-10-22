@@ -425,8 +425,10 @@ void DFBSimplex::load(const Matrix& Abar, int nx_) {
         for (int r = 1; r <= m; ++r) cols_buf[r-1] = basic[r];
         fact_ok = fact.set_basis(cols_buf);
         base_lista = fact_ok;
-        if (fact_ok) {
-            ++n_base_heredada;
+        if (fact_ok) { ++n_base_heredada; xb_sucio = true; }
+        /* Con el motor revisado (2026-10-22) basta la LU: no hay tableau que
+         * reconstruir, y heredar cuesta una factorizacion. */
+        if (fact_ok && !rev) {
             /* RECONSTRUCCION DEL TABLEAU para la base heredada, con la `Abar`
              * nueva. Fila `i` de `T` = (fila `i` de `B^-1`) * [Abar | I]. Se
              * acumula denso sobre `nc` y se comprime. */

@@ -336,8 +336,10 @@ normal, so merging halves $m$ on square systems, and the combined relaxation
 of Section~\ref{sec:experiments} writes some rows twice, with opposite signs,
 far apart in the matrix. The contractor then makes one pass over the up to
 $2n$ bounds with a single simplex: each LP starts from the final basis of the
-previous one. Every bound is contracted as soon as it is certified, so the
-next LP already sees the smaller box.
+previous one. Every bound is contracted as soon as it is certified. Since the
+bound of an optimal LP is attained by the polytope, this does not change the
+optima of the following LPs; it tightens only the certificates of LPs that stop
+before their optimum (below).
 
 Two rules decide which LPs are solved and in which order. A bound is
 \emph{skipped} when a primal point obtained earlier in the pass already

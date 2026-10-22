@@ -1,0 +1,3 @@
+271 4.91597 2 1 0 4 0
+[dfb] estados: solves=18336  optimal=99.6%  infeasible=0.3%  iterlimit=0.3%  otros(singular/unbounded)=0.0%  | warm=18282 cold=54 fact_fallo=0
+[primerdiag] primero: LPs=631 piv/LP=17.4 cortados=36 contraccion media=0.059 | resto: LPs=17705 piv/LP=8.3 contraccion media=0.101 | primero = 7.0% de los pivotes
