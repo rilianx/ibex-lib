@@ -8,6 +8,8 @@ def P(kind,r):
 D=collections.defaultdict(dict)
 for k,n,arm,s,r in list(csv.reader(open(os.path.expanduser('~/ibex2024/examples/dfb/results/final_2026-10-21.csv'))))[1:]:
     D[(k,n)][(arm,s)]=P(k,r)
+for k,n,arm,s,r in list(csv.reader(open(os.path.expanduser('~/ibex2024/examples/dfb/results/final_2026-10-21/d60r.csv'))))[1:]:
+    if arm=='base': D[(k,n)][('r_sc_art',s)]=P(k,r)
 for f in []:
     if f.endswith('.csv'):
         k=f.split('.')[0]; n,arm,s,r=open(M+'/ordcaja/'+f).read().strip().split(',',3); D[(k,n)][(arm,s)]=P(k,r)
@@ -27,7 +29,7 @@ def perfil(kind,bb,mode):
             if ref<=0.1: continue
             R.append((tx/m,ty/m))
     return R
-SC={'sol':'c_cap_art','opt':'c_cap_art'}
+SC={'sol':'r_sc_art','opt':'r_sc_art'}
 mode=sys.argv[4] if len(sys.argv)>4 else 'min'
 for kind,bb in (('sol',sys.argv[1]),('opt',sys.argv[2])):
     R=perfil(kind,bb,mode); N=len(R)

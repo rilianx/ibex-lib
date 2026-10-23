@@ -2235,3 +2235,14 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   - Brown-30 y Brown-30-1 ×1.6: corridas de 1–2.5 s; SoPlex con s2 explora 67
     celdas en 0.94 s y los demás motores 71 en 2.5 s. Es el árbol de una
     semilla de SoPlex, no el costo de SC (contra SPxSolver, ×1.00).
+- **Cifras con SC de un solo motor (2026-10-23; `banco3/`, `d60r.csv`,
+  `l3600.csv`, `tablas_r.py`).** Banco: SC/clase 0.62 / 0.55, SPx 0.82 / 0.73,
+  Gurobi 0.27 / 0.21, HiGHS 0.19 / 0.12 (antes 0.60 / 0.53 con el tableau en
+  las chicas). 60 s afín: opt SC/clase cpu 0.83 0.83 0.84, 217/214; SC/SPx 0.90;
+  sistemas SC/clase 0.92 0.91 0.91, 365/362; SC/SPx 0.96 0.96 0.94 (mejor que
+  con dos motores: 0.93 y 0.96–0.98). Compo: opt 0.92–0.95 / 1.00–1.02;
+  sistemas 0.98–0.99 / 1.07–1.08. Híbrido ≈ SC con el afín (1.01–1.02), 3–9 %
+  mejor con compo. 3600 s: sistemas SC/clase celdas 0.99 cpu 0.96, 93/94,
+  SC/SPx 0.99, 93/94 (SC no termina CCR2-26 s1); opt SC/clase 0.85, 96/88,
+  SC/SPx 0.95, 96/95. Paper actualizado; pendiente la ablación (pausada,
+  3 712 / 12 996) y la tabla de mismas cajas.
