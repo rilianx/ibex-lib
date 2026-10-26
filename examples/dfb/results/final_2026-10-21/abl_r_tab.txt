@@ -1,0 +1,26 @@
+== sol base fin (365, 182)
+tableau      cells 1.000/0.999/0.993 cpu 1.143/1.144/1.113 fin (356, 178)
+     peores [(3.07, 'Bratu-0090'), (4.6, 'Bratu-0120'), (4.63, 'Bratu-0100'), (4.89, 'Bratu-0150')]  mejores [(0.87, 'Geneigbis'), (0.93, 'exnewton'), (0.96, 'ExtendedWood-08')]
+auto         cells 0.998/0.996/0.994 cpu 1.015/1.011/1.018 fin (362, 181)
+sinlargo     cells 1.006/1.011/1.018 cpu 1.034/1.026/1.045 fin (362, 181)
+sinpert      cells 0.994/0.990/0.978 cpu 0.989/0.988/0.978 fin (365, 182)
+sindevex     cells 1.003/1.004/1.007 cpu 0.995/0.998/1.003 fin (363, 181)
+sintope      cells 1.000/1.001/1.001 cpu 1.005/1.005/1.005 fin (364, 181)
+sinfusiones  cells 1.021/1.017/1.025 cpu 1.324/1.215/1.233 fin (362, 181)
+     peores [(2.02, 'Bratu-0070'), (2.13, 'Bratu-0175'), (2.33, 'Bratu-0200'), (5.13, 'Geneig-icse')]  mejores [(0.76, 'Brown-30'), (0.76, 'Brown-30-1'), (0.99, 'exnewton')]
+lejos        cells 0.999/0.997/0.994 cpu 1.008/0.999/1.008 fin (362, 181)
+     peores [(1.09, 'Katsurabis-14'), (1.1, 'Bratu-0090'), (1.11, 'Bratu-0200'), (1.14, 'DiscreteBoundary-0200')]  mejores [(0.59, 'Brown-30-1'), (0.6, 'Brown-30'), (0.89, 'Geneigbis')]
+tibio        cells 1.012/1.001/1.004 cpu 1.010/0.991/0.994 fin (364, 182)
+== opt base fin (874, 217)
+tableau      cells 1.005/1.007/1.015 cpu 1.027/1.042/1.038 fin (874, 218)
+     peores [(1.47, 'linear'), (1.63, 'batch'), (2.02, 'hydro'), (2.09, 'ex7_2_3')]  mejores [(0.58, 'haldmads'), (0.86, 'dixchlng'), (0.92, 'dipigri')]
+auto         cells 1.007/1.015/1.037 cpu 1.000/1.005/1.031 fin (875, 218)
+sinlargo     cells 1.007/0.999/0.985 cpu 1.012/1.007/0.987 fin (875, 218)
+sinpert      cells 1.000/1.000/1.000 cpu 1.002/1.004/1.006 fin (874, 217)
+sindevex     cells 1.002/1.010/1.004 cpu 1.002/1.009/1.008 fin (870, 217)
+sintope      cells 1.006/1.007/1.002 cpu 1.005/1.008/1.007 fin (876, 217)
+sinfusiones  cells 0.999/0.992/0.990 cpu 1.060/1.067/1.066 fin (863, 214)
+     peores [(1.21, 'ramsey'), (1.31, 'linear'), (1.39, 'himmel16'), (1.67, 'hydro')]  mejores [(0.76, 'haldmads'), (0.93, 'launch'), (0.96, 'dixchlng')]
+lejos        cells 1.031/1.010/1.009 cpu 1.063/1.045/1.051 fin (874, 218)
+     peores [(1.32, 'linear'), (1.38, 'himmel16'), (1.42, 'ex7_2_3'), (1.83, 'hydro')]  mejores [(0.63, 'haldmads'), (0.81, 'ex14_2_4'), (0.93, 'launch')]
+tibio        cells 1.009/1.015/1.015 cpu 1.036/1.040/1.040 fin (877, 218)

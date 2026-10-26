@@ -519,8 +519,9 @@ primal steps. The multipliers, and hence the certificate, always come from the
 true costs. The value of $\varepsilon$ is not critical: between $10^{-9}$ and
 $10^{-5}$ the results are the same, and perturbing only after a run of
 degenerate pivots, as LP solvers do on stalling, gives no further gain. With
-the other components in place, the perturbation changes the time of the whole
-solver by less than 1\% (Table~\ref{tab:ablation}).
+the other components in place and the affine relaxation, the perturbation no
+longer pays: without it the whole solver is 1--2\% faster on systems of
+equations and unchanged on optimization problems (Table~\ref{tab:ablation}).
 
 \paragraph{Primal steps.} In a primal iteration the basis is primal feasible
 and some nonbasic variable has a reduced cost of the wrong sign; it enters
@@ -576,9 +577,8 @@ $O(\mathrm{nnz}(\alpha_q)\,\mathrm{nnz}(\alpha_r))$, and a guard that compares
 $\lambda$, $d$ and $x_B$ with their definition triggers a recomputation from
 $\Abar$ when it detects drift. Our first versions used it on relaxations of up
 to 30 rows, and the revised engine above them. With the other components in
-place, the tableau no longer pays: the revised engine alone is as fast as that
-combination on systems of equations and slightly faster on optimization
-problems, and the tableau alone is 9--13\% slower on systems of equations
+place, the tableau no longer pays: that combination is 1--2\% slower than the
+revised engine alone on systems of equations, and the tableau alone 11--14\%
 (Table~\ref{tab:ablation}). SC therefore has a single engine.
 
 \subsection{Certification}
@@ -810,7 +810,7 @@ what Section~\ref{sec:experiments} isolates.
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
 
-\todo{ablacion con SC de un solo motor pausada (3\,712 de 12\,996 corridas); la tabla de ablacion y la de mismas cajas son de la version de dos motores}
+\todo{la tabla de mismas cajas es de la version de dos motores}
 
 \paragraph{A controlled comparison.}
 To measure the contribution of the simplex, and not of the rest of the
@@ -1345,35 +1345,31 @@ systems, compo       & 0.93 0.91 0.92 & 1.00 1.00 1.00 & 0.92 0.91 0.89\\
 \subsection{Ablation}\label{sec:ablation}
 
 Table~\ref{tab:ablation} changes one component of SC at a time, inside the
-search, with the affine relaxation. The search trees change by less than 2\%
-in every row. Three components carry the time. The engine: with the explicit
-tableau alone, SC is 9--13\% slower on systems of equations and finishes six
-fewer runs, and 3--4\% slower on optimization problems; the revised engine
-alone is as fast. The long-step ratio test: 4--6\% on systems of equations,
-neutral on optimization problems, whose LPs are shorter. And the order and
-warm start that suit each program: on optimization problems the farthest bound
-first is 4--5\% slower and the dual warm start 4\%; on systems of equations
-the farthest bound first is 2--3\% slower, and the primal warm start and the
-nearest bound first in every engine cost the same. The cost perturbation and
-devex change the time by less than 1\%; they act on the degenerate LPs of the
-larger relaxations. Above 5\,s on optimization problems several rows (without
-devex, without long step, the revised engine alone) are 4--5\% faster with
-5\% fewer cells, which reflects a few problems whose search trees vary widely
-between runs. The limit of 60 pivots per LP is not reached with the affine
-relaxation. Merging proportional rows \todo{brazo con las dos fusiones
-apagadas en curso; apagar solo una no cambia nada, porque la fusion de filas
-proporcionales cubre a las gemelas}.
+search, with the affine relaxation. The search trees change by less than 3\%
+in every row. Four components carry the time. Merging proportional rows is the
+largest: without it SC is 22--32\% slower on systems of equations, with three
+fewer runs finished, and 6--7\% slower on optimization problems, with three
+fewer problems solved; the twin rows of each equation double $m$, and on
+Geneig-icse the run takes five times longer. The engine: with the explicit
+tableau instead of the revised engine, SC is 11--14\% slower on systems of
+equations, with nine fewer runs finished, and 3--4\% slower on optimization
+problems; using the tableau only up to 30 rows, as our earlier versions did,
+costs 1--2\%. The long-step ratio test saves 3--5\% on systems of equations and
+is neutral on optimization problems, whose LPs are shorter. And on optimization
+problems the order and the warm start: the farthest bound first is 5--6\%
+slower and the dual warm start 4\%; on systems of equations both choices cost
+the same. Devex and the limit of 60 pivots per LP change the time by less than
+1\%, and without the cost perturbation SC is 1--2\% faster on systems of
+equations: with the affine relaxation, these rules act on few LPs.
 
 \begin{table}[t]
 \centering
 \caption{Ablation, affine relaxation: each row changes one component of SC.
 Ratios against full SC: cells and CPU on systems of equations for runs above
-0.1, 1 and 5\,s, runs finished out of 484 (full SC: 362), CPU on optimization
-problems above 0.1\,s and problems solved in all seeds (full SC: 218). The
+0.1, 1 and 5\,s, runs finished out of 484 (full SC: 365), CPU on optimization
+problems above 0.1\,s and problems solved in all seeds (full SC: 217). The
 warm-start row gives each program the warm start of the other: primal on
-systems of equations, dual on optimization problems; the order row gives each
-the order of the other: the nearest bound first in every engine on systems of
-equations, the count read from the tableau on optimization problems.}
+systems of equations, dual on optimization problems.}
 \label{tab:ablation}
 \begin{tabular}{lccccccc}
 \toprule
@@ -1381,16 +1377,15 @@ equations, the count read from the tableau on optimization problems.}
 \cmidrule(lr){2-6}\cmidrule(lr){7-8}
 configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
-tableau engine only               & 1.00 & 1.13 & 1.13 & 1.09 & 356 & 1.03 & 218\\
-revised engine only               & 1.00 & 0.99 & 1.00 & 0.99 & 364 & 0.99 & 217\\
-without long-step ratio test      & 1.01 & 1.05 & 1.04 & 1.06 & 362 & 1.00 & 218\\
-farthest-bound order              & 1.00 & 1.03 & 1.02 & 1.02 & 362 & 1.04 & 217\\
-order of the other program        & 1.01 & 1.00 & 1.00 & 1.02 & 362 & 1.01 & 218\\
-warm start of the other program   & 1.02 & 1.00 & 0.99 & 0.99 & 364 & 1.04 & 217\\
-without cost perturbation         & 1.00 & 1.00 & 1.00 & 1.00 & 364 & 1.00 & 218\\
-without devex                     & 1.00 & 1.00 & 1.00 & 1.00 & 362 & 0.99 & 215\\
-without the limit of 60 pivots    & 1.00 & 1.00 & 1.01 & 1.01 & 362 & 1.00 & 217\\
-without merging rows              & \todo{} & & & & & &\\
+without merging rows              & 1.02 & 1.32 & 1.22 & 1.23 & 362 & 1.06 & 214\\
+explicit tableau                  & 1.00 & 1.14 & 1.14 & 1.11 & 356 & 1.03 & 218\\
+tableau up to 30 rows             & 1.00 & 1.02 & 1.01 & 1.02 & 362 & 1.00 & 218\\
+without long-step ratio test      & 1.01 & 1.03 & 1.03 & 1.05 & 362 & 1.01 & 218\\
+farthest-bound order              & 1.00 & 1.01 & 1.00 & 1.01 & 362 & 1.06 & 218\\
+warm start of the other program   & 1.01 & 1.01 & 0.99 & 0.99 & 364 & 1.04 & 218\\
+without cost perturbation         & 0.99 & 0.99 & 0.99 & 0.98 & 365 & 1.00 & 217\\
+without devex                     & 1.00 & 1.00 & 1.00 & 1.00 & 363 & 1.00 & 217\\
+without the limit of 60 pivots    & 1.00 & 1.01 & 1.01 & 1.01 & 364 & 1.01 & 217\\
 \bottomrule
 \end{tabular}
 \end{table}

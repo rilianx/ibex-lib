@@ -2246,3 +2246,12 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   SC/SPx 0.99, 93/94 (SC no termina CCR2-26 s1); opt SC/clase 0.85, 96/88,
   SC/SPx 0.95, 96/95. Paper actualizado; pendiente la ablación (pausada,
   3 712 / 12 996) y la tabla de mismas cajas.
+- **Ablación con SC de un solo motor (2026-10-23, `d60r.csv`,
+  `abl_r_tab.txt`; parte con 14 núcleos).** Contra SC revisado (365 corridas
+  en sistemas, 217 problemas en opt): sin fusiones (ninguna de las dos)
+  sistemas cpu 1.32 / 1.22 / 1.23, 362, opt 1.06, 214 (Geneig-icse ×5.1,
+  Bratu ×2); tableau solo 1.14 / 1.14 / 1.11, 356, opt 1.03; tableau hasta 30
+  filas 1.01–1.02, opt 1.00–1.03; sin long-step 1.03–1.05, opt 1.01; lejos
+  sistemas 1.00–1.01, opt 1.05–1.06; arranque del otro sistemas 0.99–1.01,
+  opt 1.04; sin perturbación sistemas 0.98–0.99 (mejor sin ella), opt 1.00;
+  sin devex 1.00; sin tope 60 1.005. Paper actualizado.
