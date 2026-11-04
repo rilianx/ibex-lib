@@ -97,42 +97,47 @@ refactorizes the basis before declaring an optimum and verifies its solution;
 on these LPs that work exceeds the pivots themselves
 (Section~\ref{sec:experiments}).
 
-\paragraph{Positioning.} The certificate we use is not new. That \emph{any}
+We take the opposite approach and design the simplex around the certificate.
+With the relaxation written in a homogeneous form, with one interval-bounded
+slack per row, \emph{any} multiplier vector yields a valid bound on the box and
+on every sub-box, so the simplex never needs to be correct: it verifies
+nothing, and it does not refactorize before declaring an optimum. Every basis
+can also be made dual feasible by relocating its nonbasic variables, so each of
+the $2n$ bound problems, and each problem after the box contracts, starts dual
+feasible without a phase~1 (the search for a feasible starting basis); the
+$2n$ problems share one basis; and with the dual method the current basis
+certifies a bound at every iteration, so an LP can be stopped at any time
+without losing it. We call this simplex \emph{self-certifying} (SC).
+
+\paragraph{Positioning.} The certificate itself is not new. That any
 multiplier vector yields a valid bound once the residual is evaluated in
 interval arithmetic is the principle of Neumaier and
 Shcherbina~\cite{neumaier2004safe}. Domes and Neumaier~\cite{domes2012rigorous}
 applied it to filtering with linear relaxations: they solve the bound LPs with
 an external solver, collect the multipliers, and solve the preconditioned
 interval system row by row. In previous work~\cite{reyes2023preconditioning} we
-wrote the relaxation in the homogeneous form used here, with one auxiliary
-variable per row, and showed that the optimal preconditioner for an interval
-Gauss--Seidel projection is given by the dual solutions of the bound LPs; the
-equivalent valid inequalities appear in the optimization-based bound
-tightening of Gleixner et al.~\cite{gleixner2017three}, and both works reuse
-them in sub-boxes. The present paper continues that line: there the
-multipliers were still computed by an external LP solver, and the
-preconditioner was recomputed only periodically to amortize its cost. On the solver side, Yamamura and
+wrote the relaxation in the homogeneous form used here and showed that the
+optimal preconditioner for an interval Gauss--Seidel projection is given by the
+dual solutions of the bound LPs; the equivalent valid inequalities appear in
+the optimization-based bound tightening of Gleixner et
+al.~\cite{gleixner2017three}, and both works reuse them in sub-boxes. In all
+these approaches the multipliers are a by-product of an external solver and
+certification is a post-processing step, whose cost leads to applying it to a
+few promising variables~\cite{domes2012rigorous}, or to recomputing it only
+periodically and reusing it in between~\cite{reyes2023preconditioning}. What
+changes with SC is \emph{where the multipliers come from and how often a usable
+certificate is available}: the simplex itself produces them, at every basis.
+On the solver side, Yamamura and
 coworkers~\cite{yamamura2001dual,yamamura2006dual} observed that, after a
 bisection, the optimal tableau of the parent remains dual feasible for the
 child, so that an LP emptiness test can be resumed by the dual simplex method
-with few or no pivots per box.
-
-What changes with a self-certifying simplex is \emph{where the multipliers come from and how often a
-usable certificate is available}. In the approaches above, multipliers are a
-by-product of an external solver and certification is a post-processing step;
-its cost and fragility lead to applying it to a few promising
-variables~\cite{domes2012rigorous}, or to recomputing it only periodically and
-reusing it in between~\cite{reyes2023preconditioning}. The dual-simplex warm start of Yamamura et al.\ concerns a
-single feasibility LP on a fixed relaxation, without rigorous certification.
-The self-certifying simplex is designed for the certificate: in the homogeneous form every
-basis can be made dual feasible by relocating nonbasic variables, so each of the
-$2n$ bound problems, and each problem after the box contracts, starts dual
-feasible; the $2n$ problems share one basis; and the multipliers of the
-current basis give a valid certificate at every bound and, with the dual
-method, at every iteration. Bound tightening by optimization is also central in
-MINLP solvers~\cite{belotti2009branching,gleixner2017three}, where rigor is not
-required; the heuristic of skipping bounds already attained by a primal point,
-used by Ibex, comes from Baharev, Achterberg and R\'ev~\cite{baharev2009distillation}.
+with few or no pivots per box; their warm start concerns a single feasibility
+LP on a fixed relaxation, without rigorous certification, and SC extends it to
+the $2n$ objectives of the bound problems. Bound tightening by optimization is
+also central in MINLP solvers~\cite{belotti2009branching,gleixner2017three},
+where rigor is not required; the heuristic of skipping bounds already attained
+by a primal point, used by Ibex, comes from Baharev, Achterberg and
+R\'ev~\cite{baharev2009distillation}.
 
 \paragraph{Contributions.}
 \begin{itemize}
