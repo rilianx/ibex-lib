@@ -1,0 +1,451 @@
+
+== ship-1: óptimo 8.93395e-08, 580 nodos (complete); loup final en el nodo 580
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  100        1.04327               no         0                0            open
+     1  100        1.04327               no         0                0            open
+     2  100        1.29188               no         0                0            open
+     3  100        1.04327               no         0                0            open
+     4  99         1.04327               no         0                0            open
+     5  99         1.04327               no         0                0            open
+     6  99         1.04327               no         0                0            open
+     7  50         1.04327               no         0                0.626327     open
+     8  50         1.04327               no         0                0.574262     open
+     9  50         1.04327               no         0                0.821158     open
+    10  50         1.04327               no         0                0            open
+    11  49.5       1.04327               no         0                0            open
+    20  12.4       1.08906               no         0                0            open
+    30  1.56       1.08906               no         0                0            open
+    40  0.391      1.08835               no         0                0            open
+    50  0.0977     1.08906               no         0                0            open
+    60  0.0244     1.08192               no         0                0            open
+    70  0.0061     1.08906               no         0                0            open
+    80  0.00153    1.08906               no         0                0            open
+    90  0.000381   1.08906               no         0                0            open
+   100  9.54e-05   1.08906               no         0                0            open
+   110  2.38e-05   1.08906               no         0                0            open
+   120  5.96e-06   1.08905               no         0                0            open
+   130  1.49e-06   1.08906               no         0                0            open
+   140  3.73e-07   1.08906               no         0                0            open
+   150  9.31e-08   1.08906               no         0                0            open
+   160  2.33e-08   1.08906               no         0                0            open
+   170  1e-08      1.08906               no         0                0            open
+   180  2.91e-09   1.08906               no         0                1.94129e-09  open
+   190  1.44e-09   1.08906               no         0                0            open
+   200  7.2e-10    1.08906               no         0                0            open
+   210  3.13e-10   1.08906               no         0                0            open
+   220  9.09e-11   1.08906               no         0                6.06654e-11  open
+   230  4.5e-11    1.08906               no         0                0            open
+   240  2.25e-11   1.08906               no         0                0            open
+   250  9.77e-12   1.08906               no         0                0            open
+   260  2.84e-12   1.08906               no         0                1.89579e-12  open
+   270  1.42e-12   1.08906               no         0                0            open
+   280  7.11e-13   1.08906               no         0                0            open
+   290  3.05e-13   1.08906               no         0                0            open
+   300  9.95e-14   1.08906               no         0                5.92436e-14  open
+   310  4.26e-14   1.08906               no         0                2.96218e-14  open
+   320  4.26e-14   1.0892                no         0                0            open
+   330  4.26e-14   1.0892                no         0                0            open
+   340  4.26e-14   1.0892                no         0                0            open
+   350  4.26e-14   1.0892                no         0                0            open
+   360  4.26e-14   1.0892                no         0                0            open
+   370  4.26e-14   1.0892                no         0                0            open
+   380  4.26e-14   1.0892                no         0                0            open
+   390  4.26e-14   1.0892                no         0                0            open
+  -> el buscador encuentra el óptimo a profundidad None del camino
+
+== eigencco: óptimo 8.48993e-30, 1640 nodos (complete); loup final en el nodo 1640
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  2e+08      -                     no         0                0            open
+     1  2e+08      -                     no         0                0            open
+     2  2e+08      -                     no         0                0            open
+     3  2e+08      -                     no         0                0            open
+     4  2e+08      -                     no         0                -            pruned
+     5  2e+08      -                     no         0                -            pruned
+     6  2e+08      -                     no         0                -            pruned
+     7  2e+08      -                     no         0                -            pruned
+     8  2e+08      -                     no         0                -            pruned
+     9  2e+08      -                     no         0                -            pruned
+    10  2e+08      -                     no         0                -            pruned
+    11  2e+08      -                     no         0                -            pruned
+    20  2e+08      -                     no         0                0            open
+    30  2e+08      -                     no         0                0            open
+    40  2e+08      -                     no         0                -            pruned
+    50  2e+08      -                     no         0                0            open
+    60  2e+08      -                     no         0                0            open
+    70  2e+08      -                     no         0                0            open
+    80  2e+08      -                     no         0                0            open
+    90  2e+08      -                     no         0                0            open
+   100  2e+08      -                     no         0                0            open
+   110  2e+08      -                     no         0                0            open
+   120  2e+08      -                     no         0                0            open
+   130  2e+08      -                     no         0                0            open
+   140  2e+08      -                     no         0                0            open
+   150  2e+08      -                     no         0                0            open
+   160  2e+08      -                     no         0                0            open
+   170  2e+08      -                     no         0                0            open
+   180  2e+08      -                     no         0                0            open
+   190  2e+08      -                     no         0                0            open
+   200  2e+08      -                     no         0                0            open
+   210  2e+08      -                     no         0                0            open
+   220  2e+08      -                     no         0                0            open
+   230  2e+08      -                     no         0                0            open
+   240  2e+08      -                     no         0                0            open
+   250  2e+08      -                     no         0                0            open
+   260  2e+08      -                     no         0                0            open
+   270  2e+08      -                     no         0                0            open
+   280  2e+08      -                     no         0                0            open
+   290  2e+08      -                     no         0                0            open
+   300  2e+08      -                     no         0                0            open
+   310  2e+08      -                     no         0                0            open
+   320  2e+08      -                     no         0                0            open
+   330  2e+08      3.59593e+16           no         0                0            open
+   340  2e+08      3.59593e+16           no         0                0            open
+   350  2e+08      3.59598e+16           no         0                0            open
+   360  2e+08      3.59599e+16           no         0                0            open
+   370  2e+08      3.59599e+16           no         0                0            open
+   380  2e+08      3.59598e+16           no         0                0            open
+   390  2e+08      3.59597e+16           no         0                0            open
+  -> el buscador encuentra el óptimo a profundidad None del camino
+
+== makela3: óptimo 1.001e-09, 2078 nodos (complete); loup final en el nodo 2078
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         0                0            open
+     1  inf        -                     no         0                1.79769e+308  open
+     2  inf        -                     no         0                0            open
+     3  inf        -                     no         0                1.79769e+308  open
+     4  inf        -                     no         0                0            open
+     5  inf        -                     no         0                1.79769e+308  open
+     6  inf        -                     no         0                0            open
+     7  inf        -                     no         0                1.79769e+308  open
+     8  inf        -                     no         0                0            open
+     9  inf        -                     no         0                1.79769e+308  open
+    10  inf        -                     no         0                0            open
+    11  inf        -                     no         0                1.79769e+308  open
+    20  inf        -                     no         0                0            open
+    30  inf        -                     no         0                0            open
+    40  inf        -                     no         0                -            pruned
+    46  1.33e+08  ningún hijo abierto contiene x*: fin
+  -> el buscador encuentra el óptimo a profundidad None del camino
+
+== ex8_2_4: óptimo -1.39925e+09, 1810 nodos (complete); loup final en el nodo 1798
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  2e+08      -                     no         -1.402e+09       -1.402e+09   open
+     1  2e+08      -                     no         -1.40199e+09     -1.40198e+09  open
+     2  2e+08      -                     no         -1.40193e+09     -1.40173e+09  open
+     3  2e+08      -                     no         -1.40193e+09     -1.40191e+09  open
+     4  2e+08      -                     no         -1.40193e+09     -1.40193e+09  open
+     5  2e+08      -                     no         -1.40193e+09     -1.40191e+09  open
+     6  2e+08      -                     no         -1.40121e+09     -1.39883e+09  open
+     7  2e+08      -                     no         -1.4002e+09      -1.36372e+09  open
+     8  2e+08      -                     no         -1.4002e+09      -1.3971e+09  open
+     9  2e+08      -                     no         -1.4002e+09      -1.40018e+09  open
+    10  2e+08      -                     no         -1.4002e+09      -1.39994e+09  open
+    11  2e+08      -                     no         -1.4002e+09      -1.36271e+09  open
+    20  2e+08      -                     no         -1.4002e+09      -1.4002e+09  open
+    30  2e+08      -                     no         -1.4002e+09      -1.40017e+09  open
+    40  2e+08      -                     no         -1.40007e+09     -1.40004e+09  open
+    50  2e+08      -                     no         -1.40007e+09     -2.79854     open
+    60  1e+08      -                     no         -1.40007e+09     -1.39921e+09  open
+    70  1e+08      -                     no         -1.40007e+09     -1.39921e+09  open
+    80  1e+08      -                     no         -1.40007e+09     -1.40007e+09  open
+    90  1e+08      -                     no         -1.40007e+09     -1.37665e+09  open
+   100  1e+08      -                     no         -1.40007e+09     -1.40007e+09  open
+   110  5e+07      -                     no         -1.40007e+09     -1.40007e+09  open
+   120  5e+07      -                     no         -1.40007e+09     -1.391e+09   open
+   130  5e+07      -                     no         -1.40007e+09     -1.40007e+09  open
+   140  5e+07      -                     no         -1.40007e+09     -1.39912e+09  open
+   150  5e+07      -                     no         -1.40007e+09     -1.39912e+09  open
+   160  2.5e+07    -                     no         -1.40004e+09     -1.40007e+09  open
+   170  2.5e+07    -                     no         -1.40004e+09     -1.40001e+09  open
+   180  2.5e+07    -                     no         -1.40004e+09     -1.40004e+09  open
+   190  2.5e+07    -                     no         -1.39992e+09     -1.39992e+09  open
+   200  2.5e+07    -                     no         -1.39992e+09     -1.39992e+09  open
+   210  2.5e+07    -                     no         -1.39992e+09     5.39308e+307  open
+   220  1.25e+07   -                     no         -1.39989e+09     -1.39755e+09  open
+   230  1.25e+07   -                     no         -1.39989e+09     -1.39755e+09  open
+   240  1.25e+07   -                     no         -1.39983e+09     -1.39981e+09  open
+   250  1.25e+07   -                     no         -1.39983e+09     -1.36378e+09  open
+   260  1.25e+07   -                     no         -1.39983e+09     -1.39981e+09  open
+   270  6.25e+06   -                     no         -1.39982e+09     -1.39982e+09  open
+   280  6.25e+06   -                     no         -1.39982e+09     -1.39981e+09  open
+   290  6.25e+06   -                     no         -1.39982e+09     -1.39982e+09  open
+   300  6.25e+06   -                     no         -1.39979e+09     -1.39979e+09  open
+   310  6.25e+06   -                     no         -1.39979e+09     -1.39979e+09  open
+   320  3.12e+06   -                     no         -1.39978e+09     -1.39978e+09  open
+   330  3.12e+06   -                     no         -1.39978e+09     -1.3992e+09  open
+   340  3.12e+06   -                     no         -1.39978e+09     -1.39978e+09  open
+   350  3.12e+06   -                     no         -1.39977e+09     -1.39971e+09  open
+   360  3.12e+06   -                     no         -1.39977e+09     -1.39971e+09  open
+   370  3.12e+06   -                     no         -1.39977e+09     5.39308e+307  open
+   380  1.56e+06   -                     no         -1.39976e+09     -1.39974e+09  open
+   390  1.56e+06   -                     no         -1.39976e+09     -1.39974e+09  open
+  -> el buscador encuentra el óptimo a profundidad None del camino
+
+== polak1: óptimo 2.71828, 706 nodos (complete); loup final en el nodo 704
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         1                1            open
+     1  inf        -                     no         1                1.79769e+308  open
+     2  inf        -                     no         2.71828          2.71828      open
+     3  inf        -                     no         2.71828          1.79769e+308  open
+     4  inf  ningún hijo abierto contiene x*: fin
+  -> el buscador encuentra el óptimo a profundidad 4 del camino
+
+== polak2: óptimo 54.5982, 1920 nodos (complete); loup final en el nodo 1918
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         1                1            open
+     1  inf        -                     no         1                1.79769e+308  open
+     2  inf        -                     no         54.5982          54.5982      open
+     3  inf        -                     no         54.5982          1.79769e+308  open
+     4  inf        -                     no         54.5982          54.5982      open
+     5  inf        -                     no         54.5982          1.79769e+308  open
+     6  inf        -                     no         54.5982          54.5982      open
+     7  inf        -                     no         54.5982          1.79769e+308  open
+     8  inf        -                     no         54.5982          54.5982      open
+     9  inf        -                     no         54.5982          1.79769e+308  open
+    10  inf        -                     no         54.5982          54.5982      open
+    11  inf        -                     no         54.5982          1.79769e+308  open
+    20  inf        -                     no         54.5982          -            pruned
+    30  3.24e+09   -                     no         54.5982          69884.8      open
+    33  3.24e+09  ningún hijo abierto contiene x*: fin
+  -> el buscador encuentra el óptimo a profundidad 33 del camino
+
+== polak4: óptimo 1.002e-09, 1770 nodos (complete); loup final en el nodo 1766
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         -0.01            300000       open
+     1  inf        -                     no         -0.01            1.79769e+308  open
+     2  inf        -                     no         -0.01            -0.01        open
+     3  inf        -                     no         -0.01            1.79769e+308  open
+     4  inf        -                     no         -0.01            1.79769e+308  open
+     5  1.8e+308   -                     no         -0.01            8.98847e+307  open
+     6  8.99e+307  -                     no         -0.01            4.49423e+307  open
+     7  4.49e+307  -                     no         -0.01            2.24712e+307  open
+     8  2.25e+307  -                     no         -0.01            1.12356e+307  open
+     9  1.12e+307  -                     no         -0.01            5.61779e+306  open
+    10  5.62e+306  -                     no         -0.01            2.8089e+306  open
+    11  2.81e+306  -                     no         -0.01            1.40445e+306  open
+    20  5.49e+303  -                     no         -0.01            2.74306e+303  open
+    30  5.36e+300  -                     no         -0.01            2.67877e+300  open
+    40  5.23e+297  4.8269e+297           no         -0.01            2.61599e+297  open
+    50  5.11e+294  4.71377e+294          no         -0.01            2.55468e+294  open
+    60  4.99e+291  4.60329e+291          no         -0.01            2.4948e+291  open
+    70  4.87e+288  4.4954e+288           no         -0.01            2.43633e+288  open
+    80  4.76e+285  4.39004e+285          no         -0.01            2.37923e+285  open
+    90  4.65e+282  4.28715e+282          no         -0.01            2.32346e+282  open
+   100  4.54e+279  4.18667e+279          no         -0.01            2.26901e+279  open
+   110  4.43e+276  4.08855e+276          no         -0.01            2.21583e+276  open
+   120  4.33e+273  3.99272e+273          no         -0.01            2.16389e+273  open
+   130  4.23e+270  3.89914e+270          no         -0.01            2.11318e+270  open
+   140  4.13e+267  3.80775e+267          no         -0.01            2.06365e+267  open
+   150  4.03e+264  3.71851e+264          no         -0.01            2.01528e+264  open
+   160  3.94e+261  3.63136e+261          no         -0.01            1.96805e+261  open
+   170  3.84e+258  3.54625e+258          no         -0.01            1.92192e+258  open
+   180  3.75e+255  3.46313e+255          no         -0.01            1.87688e+255  open
+   190  3.67e+252  3.38197e+252          no         -0.01            1.83289e+252  open
+   200  3.58e+249  3.3027e+249           no         -0.01            1.78993e+249  open
+   210  3.5e+246   3.22529e+246          no         -0.01            1.74798e+246  open
+   220  3.41e+243  3.1497e+243           no         -0.01            1.70701e+243  open
+   230  3.33e+240  3.07588e+240          no         -0.01            1.667e+240   open
+   240  3.26e+237  3.00379e+237          no         -0.01            1.62793e+237  open
+   250  3.18e+234  2.93339e+234          no         -0.01            1.58978e+234  open
+   260  3.11e+231  2.86464e+231          no         -0.01            1.55252e+231  open
+   270  3.03e+228  2.7975e+228           no         -0.01            1.51613e+228  open
+   280  2.96e+225  2.73193e+225          no         -0.01            1.4806e+225  open
+   290  2.89e+222  2.6679e+222           no         -0.01            1.4459e+222  open
+   300  2.82e+219  2.60537e+219          no         -0.01            1.41201e+219  open
+   310  2.76e+216  2.54431e+216          no         -0.01            1.37891e+216  open
+   320  2.69e+213  2.48468e+213          no         -0.01            1.34659e+213  open
+   330  2.63e+210  2.42644e+210          no         -0.01            1.31503e+210  open
+   340  2.57e+207  2.36957e+207          no         -0.01            1.28421e+207  open
+   350  2.51e+204  2.31403e+204          no         -0.01            1.25411e+204  open
+   360  2.45e+201  2.2598e+201           no         -0.01            1.22472e+201  open
+   370  2.39e+198  2.20684e+198          no         -0.01            1.19602e+198  open
+   380  2.34e+195  2.15511e+195          no         -0.01            1.16798e+195  open
+   390  2.28e+192  2.1046e+192           no         -0.01            1.14061e+192  open
+  -> el buscador encuentra el óptimo a profundidad None del camino
+
+== concon: óptimo -6230.8, 598 nodos (complete); loup final en el nodo 590
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         -4.20036e+07     -            pruned
+     1  inf        -                     no         -4.20036e+07     -            pruned
+     2  inf        -                     no         -4.20036e+07     -            pruned
+     3  inf        -                     no         -4.20036e+07     -            pruned
+     4  1.8e+307   -                     no         -4.20036e+07     -            pruned
+     5  2e+305     -                     no         -4.20036e+07     -            pruned
+     6  2e+304     -                     no         -4.20036e+07     -            pruned
+     7  2e+303     -                     no         -4.20036e+07     -            pruned
+     8  2e+302     -                     no         -4.20036e+07     -            pruned
+     9  2e+301     -                     no         -4.20036e+07     -            pruned
+    10  2e+300     -                     no         -4.20036e+07     -            pruned
+    11  2e+299     -                     no         -4.20036e+07     -            pruned
+    20  2e+290     -                     no         -4.20036e+07     -            pruned
+    30  2e+280     -                     no         -4.20036e+07     -            pruned
+    40  2e+270     -                     no         -4.20036e+07     -            pruned
+    50  2e+260     -                     no         -4.20036e+07     -            pruned
+    60  2e+250     -                     no         -4.20036e+07     -            pruned
+    70  2e+240     -                     no         -4.20036e+07     -            pruned
+    80  2e+230     -                     no         -4.20036e+07     -            pruned
+    90  2e+220     -                     no         -4.20036e+07     -            pruned
+   100  2e+210     -                     no         -4.20036e+07     -            pruned
+   110  2e+200     -                     no         -4.20036e+07     -            pruned
+   120  2e+190     -                     no         -4.20036e+07     -            pruned
+   130  2e+180     -                     no         -4.20036e+07     -            pruned
+   140  2e+170     -                     no         -4.20036e+07     -            pruned
+   150  2e+160     -                     no         -4.20036e+07     -            pruned
+   160  2e+150     -                     no         -4.20036e+07     -            pruned
+   170  2e+140     -                     no         -4.20036e+07     -            pruned
+   180  2e+130     -                     no         -4.20036e+07     -            pruned
+   190  2e+120     -                     no         -4.20036e+07     -            pruned
+   200  2e+110     -                     no         -4.20036e+07     -            pruned
+   210  2e+100     -                     no         -4.20036e+07     -            pruned
+   220  2e+90      -                     no         -4.20036e+07     -            pruned
+   230  2e+80      -                     no         -4.20036e+07     -            pruned
+   240  2e+70      -                     no         -4.20036e+07     -            pruned
+   250  2e+60      -                     no         -4.20036e+07     -            pruned
+   260  1.99e+50   -                     no         -4.20036e+07     -            pruned
+   270  7.04e+34   -                     no         -4.20036e+07     -            pruned
+   280  1.82e+21   -                     no         -4.20036e+07     -            pruned
+   290  1.26e+08   -                     no         -2.27998e+07     1.50035e+08  open
+   292  1e+08      -6230.8               SI         -5.35611e+06     -            pruned
+  -> el buscador encuentra el óptimo a profundidad 292 del camino
+
+== hs116: óptimo 97.6341, 98 nodos (complete); loup final en el nodo 94
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  1e+03      -                     no         50               86.5523      open
+     1  1e+03      -                     no         52.587           50           open
+     2  1e+03      -                     no         52.5937          52.587       open
+     3  1e+03      -                     no         68.92            52.5937      open
+     4  1e+03      -                     no         68.92            68.9233      open
+     5  1e+03      -                     no         68.92            -            pruned
+     6  1e+03      -                     no         68.92            68.92        open
+     7  1e+03      -                     no         68.92            174.334      open
+     8  1e+03      -                     no         68.921           140.361      open
+     9  765        -                     no         68.921           159.461      open
+    10  765        -                     no         68.921           100.968      open
+    11  765        -                     no         69.6259          114.191      open
+    20  46.5       -                     no         97.5387          98.5142      open
+    24  11.8       97.7297               SI         97.5866          -            pruned
+  -> el buscador encuentra el óptimo a profundidad 24 del camino
+
+== dixchlng: óptimo 2.48378e-28, 698 nodos (complete); loup final en el nodo 602
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  2e+08      -                     no         -1.2078e+18      -1.2078e+18  open
+     1  2e+08      -                     no         -1.1979e+18      6.25e+32     open
+     2  2e+08      -                     no         -1.1979e+18      6.25e+32     open
+     3  2e+08      -                     no         -1.1583e+18      3.90625e+31  open
+     4  2e+08      -                     no         -1.1583e+18      3.90625e+31  open
+     5  2e+08      -                     no         -1.13355e+18     2.4414e+30   open
+     6  2e+08      -                     no         -1.13355e+18     2.44141e+30  open
+     7  2e+08      -                     no         -1.12117e+18     1.52587e+29  open
+     8  2e+08      -                     no         -1.12117e+18     1.52588e+29  open
+     9  2e+08      -                     no         -1.11499e+18     9.53659e+27  open
+    10  2e+08      -                     no         -1.11499e+18     9.53674e+27  open
+    11  2e+08      -                     no         -1.11189e+18     5.96007e+26  open
+    20  2e+08      -                     no         -1.10899e+18     9.09384e+21  open
+    30  2e+08      -                     no         -1.10882e+18     -1.10877e+18  open
+    40  2e+08      -                     no         -1.1088e+18      -1.1088e+18  open
+    50  2e+08      -                     no         -9.009e+17       1.1875e+33   open
+    60  2e+08      -                     no         -6.138e+17       1.13249e+27  open
+    70  2e+08      -                     no         -6.138e+17       1.07941e+21  open
+    80  2e+08      -                     no         -6.138e+17       -4.72683e+17  open
+    90  2e+08      -                     no         -6.138e+17       -6.138e+17   open
+   100  2e+08      -                     no         -2.178e+17       4.63867e+30  open
+   110  2e+08      -                     no         -2.178e+17       4.42378e+24  open
+   120  2e+08      -                     no         -2.178e+17       4.00105e+18  open
+   130  2e+08      -                     no         -2.178e+17       -2.178e+17   open
+   140  2e+08      -                     no         -2.178e+17       -2.178e+17   open
+   149  1e+08      2.44676e-28           SI         -17.5545         -            pruned
+  -> el buscador encuentra el óptimo a profundidad 149 del camino
+
+== eigmaxc: óptimo -10.7462, 300 nodos (complete); loup final en el nodo 298
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        -                     no         -inf             0            open
+     1  inf        -                     no         -1.79769e+306    -            pruned
+     2  1.8e+306   -                     no         -8.98847e+303    -            pruned
+     3  8.99e+303  -                     no         -4.49423e+301    -            pruned
+     4  4.49e+301  -                     no         -2.24712e+299    -            pruned
+     5  2.25e+299  -                     no         -1.12356e+297    -            pruned
+     6  1.12e+297  -                     no         -5.61779e+294    -            pruned
+     7  5.62e+294  -                     no         -2.8089e+292     -            pruned
+     8  2.81e+292  -                     no         -1.40445e+290    -            pruned
+     9  1.4e+290   -                     no         -7.02224e+287    -            pruned
+    10  7.02e+287  -                     no         -3.51112e+285    -            pruned
+    11  3.51e+285  -                     no         -1.75556e+283    -            pruned
+    20  6.86e+264  -                     no         -3.42883e+262    -            pruned
+    30  6.7e+241   -                     no         -3.34846e+239    -            pruned
+    40  6.54e+218  -                     no         -3.26998e+216    -            pruned
+    50  6.39e+195  -                     no         -3.19334e+193    -            pruned
+    60  6.24e+172  -                     no         -3.1185e+170     -            pruned
+    70  6.09e+149  -                     no         -3.04541e+147    -            pruned
+    80  5.95e+126  -                     no         -2.97403e+124    -            pruned
+    90  5.81e+103  -                     no         -2.90433e+101    -            pruned
+   100  5.67e+80   -                     no         -2.83626e+78     -            pruned
+   110  5.54e+57   -                     no         -2.76978e+55     -            pruned
+   120  5.41e+34   -                     no         -2.70487e+32     -            pruned
+   130  5.28e+11   -                     no         -2.64147e+09     -            pruned
+   137  2.97  ningún hijo abierto contiene x*: fin
+  -> el buscador encuentra el óptimo a profundidad 137 del camino
+
+== ex7_3_4: óptimo 6.27463, 124 nodos (complete); loup final en el nodo 102
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  2e+08      -                     no         9.31323e-09      -9.31323e-09  open
+     1  2e+08      -                     no         9.31323e-09      10           open
+     2  2e+08      -                     no         9.31323e-09      5e+07        open
+     3  2e+08      -                     no         9.31323e-09      2.5e+07      open
+     4  2e+08      -                     no         9.31323e-09      1.25e+07     open
+     5  2e+08      -                     no         9.31323e-09      6.25e+06     open
+     6  2e+08      -                     no         9.31323e-09      3.125e+06    open
+     7  2e+08      -                     no         9.31323e-09      1.5625e+06   open
+     8  2e+08      -                     no         9.31323e-09      781250       open
+     9  2e+08      -                     no         9.31323e-09      390625       open
+    10  2e+08      -                     no         9.31323e-09      195313       open
+    11  2e+08      -                     no         9.31323e-09      195313       open
+    20  2e+08      -                     no         9.31323e-09      6103.52      open
+    30  1.8e+08    -                     no         9.31323e-09      381.47       open
+    31  1.08e+08   6.27463               SI         9.31323e-09      -            pruned
+  -> el buscador encuentra el óptimo a profundidad 31 del camino
+
+== ex8_1_6bis: óptimo -10.086, 176 nodos (complete); loup final en el nodo 176
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  1e+100     -5.03891e-198         no         -10.8494         -            pruned
+     1  1e+99      -1.51577e-195         no         -10.8494         -            pruned
+     2  5e+97      -2.01556e-193         no         -10.8494         -            pruned
+     3  5e+96      -2.19664e-191         no         -10.8494         -            pruned
+     4  2.5e+95    -8.06226e-189         no         -10.8494         -            pruned
+     5  2.5e+94    -8.78655e-187         no         -10.8494         -            pruned
+     6  1.25e+93   -3.2249e-184          no         -10.8494         -            pruned
+     7  1.25e+92   -9.70094e-182         no         -10.8494         -            pruned
+     8  6.25e+90   -1.28996e-179         no         -10.8494         -            pruned
+     9  6.25e+89   -3.88038e-177         no         -10.8494         -            pruned
+    10  3.13e+88   -5.15984e-175         no         -10.8494         -            pruned
+    11  3.13e+87   -1.55215e-172         no         -10.8494         -            pruned
+    20  9.77e+76   -5.28368e-152         no         -10.8494         -            pruned
+    30  3.05e+65   -5.41049e-129         no         -10.8494         -            pruned
+    40  9.54e+53   -5.54034e-106         no         -10.8494         -            pruned
+    50  2.98e+42   -5.67331e-83          no         -10.8494         -            pruned
+    60  9.31e+30   -5.80947e-60          no         -10.8494         -            pruned
+    70  2.91e+19   -5.9489e-37           no         -10.8494         -            pruned
+    80  9.09e+07   -5.86902e-14          no         -10.8494         -            pruned
+    83  4.55e+04   -10.086               SI         -10.8494         -            pruned
+  -> el buscador encuentra el óptimo a profundidad 83 del camino
+
+== matrix2: óptimo 3.89956e-08, 4511092 nodos (complete); loup final en el nodo 4511092
+  prof  ancho      loup del buscador     encuentra  lb(hijo con x*)  lb(hermano)  hermano
+     0  inf        2.95477e+20           no         0                -            pruned
+     1  1.43e+10   2.91089e+20           no         0                0            open
+     2  7.1e+09    4.85475e+19           no         0                5.47687e+18  open
+     3  7.1e+09    3.3516e+19            no         0                3.57823e+17  open
+     4  5.23e+09   2.82029e+19           no         0                6.84609e+18  open
+     5  5.23e+09   7.68273e+18           no         0                5.00515e+18  open
+     6  2.77e+09   7.68273e+18           no         0                9.93785e+17  open
+     7  2.77e+09   7.68273e+18           no         0                1.91876e+18  open
+     8  2.77e+09   8.5091e+18            no         0                1.71152e+18  open
+     9  2.77e+09   2.62049e+18           no         0                1.91876e+18  open
+    10  1.62e+09   2.62049e+18           no         0                2.62034e+17  open
+    11  1.62e+09   2.62049e+18           no         0                7.0807e+16   open
+    20  5.36e+08   1.88431e+17           no         0                4.27071e+15  open
+    30  1.1e+08    1.21416e+16           no         0                -            pruned
+    40  0.0075     2.37606e-05           no         0                1.40657e-05  open
+    50  0.00139    1.39657e-06           no         0                2.59314e-07  open
+    60  0.000305   -                     no         1.20653e-08      5.68384e-08  open
+    70  8.72e-05  ningún hijo abierto contiene x*: fin
+  -> el buscador encuentra el óptimo a profundidad None del camino

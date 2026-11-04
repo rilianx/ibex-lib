@@ -71,3 +71,36 @@ the final upper bound appears within the last nodes:
 None gets worse with the optimum (> 1.2x). In time, only 10 gain more than
 20% (1 s floor): most of these trees are fast anyway; the ones that matter
 are matrix2 (208 s), ex8_2_4 (25 s), eigencco (8 s), launch (5 s).
+
+## Why does the final upper bound appear so late? (`python/ub_path.py`)
+
+For each instance with headroom, the path of boxes from the root to the
+optimum x* (the search's bisector, the search's contraction, ACID fixed): at
+each level, whether the loup finder (Ipopt at every call) reaches the optimum
+in that box, and the lower bound of the child containing x* vs its sibling's.
+`ub-path.txt` (+ launch and polak5, run first).
+
+    type                                        instances            loup finder reaches x* at
+    A  optimum ~0, lower bound ~0 everywhere    ship-1, eigencco,    never on the path (ship-1: still
+       (flat lb; termination needs a point      makela3, polak4,     1.09 at width 4e-14; matrix2:
+       within abs_eps_f=1e-7 of 0)              matrix2              none at width 9e-5)
+    B  lower bound misleads: x*'s region has    polak1, polak2,      depth 4 (polak1, polak5), 33
+       lb = optimum, siblings lower             polak5               (polak2), boxes still unbounded
+    C  path forced or best-first would follow   concon, eigmaxc,     depth 292, 137, 83, 31, 24, 5,
+       it (siblings pruned or with higher lb),  ex8_1_6bis, ex7_3_4, 149: the finder fails on huge
+       but the finder only succeeds deep         hs116, launch,       (often unbounded) boxes
+                                                dixchlng
+    D  lb nearly equal everywhere, finder       ex8_2_4              not by depth 30
+       fails high in the tree
+
+Only type B is a node-selection problem in the strict sense: the point is a
+few levels down in a region best-first leaves for last, and the finder gets
+it there. In A, C and D the bottleneck is the upper bounding on large boxes
+(or the absolute precision near 0); a node order can only reach the deep box
+sooner, which in C is already the forced path (concon: 292 levels, siblings
+pruned). Launch is C with a schedule issue: x* is 5 levels down on the
+lowest-lb path, but Ipopt runs every 100 loup-finder calls.
+
+Caveat: Ipopt at every call here; in the real search Ipopt runs at calls 0,
+10, 20, 50 and every 100, so "finder reaches x* at depth d" is an optimistic
+bound for the default schedule.
