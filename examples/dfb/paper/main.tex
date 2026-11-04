@@ -270,10 +270,16 @@ arithmetic. For $k\in\{1,\dots,n+m\}$ with $0\notin\iv{\gamma}_k$, the
 and the \emph{residual} is $\iv{R}(\lambda,\iv{z}) := \sum_{j}\iv{\gamma}_j\,\iv{z}_j$.
 \end{definition}
 
-A contraction step replaces $\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$;
-an emptiness test checks $0\notin\iv{R}(\lambda,\iv{z})$.
-Section~\ref{sec:simplex} explains how the simplex produces $\lambda$, and
-Section~\ref{sec:properties} why these steps are valid and when they are tight.
+The idea is a single line. Every point $z$ of the polytope satisfies
+$\Abar z=0$, hence $\gamma^T z=\lambda^T\Abar z=0$ for any $\lambda$, that is,
+$\gamma_k z_k=-\sum_{j\neq k}\gamma_j z_j$. Bounding the right-hand side over
+the box in interval arithmetic, and dividing by $\gamma_k$, encloses $z_k$; and
+if the residual $\iv{R}$ excludes zero, no point of the box can satisfy
+$\gamma^Tz=0$, so the polytope is empty. A contraction step therefore replaces
+$\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$, and an emptiness test
+checks $0\notin\iv{R}(\lambda,\iv{z})$. Section~\ref{sec:properties} states
+this formally (Proposition~\ref{prop:valid}) and shows when the enclosure is
+tight; Section~\ref{sec:simplex} explains how the simplex produces $\lambda$.
 
 \paragraph{Why not a rigorous simplex.}
 Validity does not depend on how $\lambda$ was computed: any multiplier vector
