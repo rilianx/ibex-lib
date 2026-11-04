@@ -389,11 +389,12 @@ pivots of a few LPs (Section~\ref{sec:experiments}). With an external LP
 solver the same would be possible, since the multipliers of the basis where it
 stops would also certify a bound, but the usual interface does not use them:
 SoPlex stores a solution when it reaches its iteration limit, yet Ibex treats
-the LP as unsolved, discards its bound and abandons the pass. With the limit of
-100 iterations that Ibex gives SoPlex, this happens in 377 of 61\,815 LPs on
-Geneig-icse. In our experiments the external solvers keep that policy, as in
-Ibex, but get the limit $20m+200$, which they almost never reach (8 LPs of
-68\,757 on the same system).
+the LP as unsolved, discards its bound and abandons the pass. By default Ibex
+limits SoPlex to 100 iterations per LP, and on Geneig-icse 377 of 61\,815 LPs
+reach that limit. In our experiments the external solvers keep the policy of
+Ibex, but we raise their limit from 100 to $20m+200$ iterations, where $m$ is
+the number of rows, so that they almost never reach it (8 LPs of 68\,757 on
+the same system).
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
