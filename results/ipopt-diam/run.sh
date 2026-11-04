@@ -1,0 +1,26 @@
+#!/bin/sh
+# Ipopt's width threshold (--ipopt-diam; IbexOpt calls Ipopt only on boxes
+# whose widest variable is at most 1e8) on lsmear-lffix, compo + ipoptxn.
+# One line of JSON per (instance, arm) in OUT; resumable.
+#   INSTANCES=list TLIM=600 BIN=build/bin/ibexopt-ml JOBS=16 results/ipopt-diam/run.sh
+#   python3 results/ipopt-diam/analyze.py
+# Arms (ARMS="d1e8 d1e12 dinf"): the threshold 1e8 (default), 1e12, none.
+cd "$(dirname "$0")/../.."
+BIN=${BIN:-build/bin/ibexopt-ml}
+OUT=${OUT:-results/ipopt-diam/runs.jsonl}
+TLIM=${TLIM:-600}; export TLIM
+$BIN --help 2>/dev/null | grep -q ipopt-diam || { echo "$BIN no conoce --ipopt-diam: recompila"; exit 1; }
+touch $OUT
+for arm in ${ARMS:-d1e8 d1e12 dinf}; do while read i; do echo "$arm $i"; done < ${INSTANCES:-results/node-selection/closed-instances.txt}; done |
+xargs -P ${JOBS:-8} -n2 sh -c '
+  arm=$0; i=$1; grep -q "\"instance\": \"$i\", \"arm\": \"$arm\"" '"$OUT"' && exit 0
+  case $arm in
+    d1e8)  d=1e8 ;;
+    d1e12) d=1e12 ;;
+    dinf)  d=1e300 ;;
+  esac
+  r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
+       --ipopt-diam $d --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
+  [ -z "$r" ] && r="{\"status\": \"killed\"}"
+  echo "{\"instance\": \"$i\", \"arm\": \"$arm\", \"result\": $r}" >> '"$OUT"'
+'
