@@ -2276,3 +2276,12 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   (1 192 LPs cortados aplicados), BroydenBanded-100 15 → 9 celdas pero 8.9 →
   10.7 s, DiscreteBoundary-0200 3.8 → 3.4 s, Bratu-0120 igual. Falta medir en
   los bancos, y las cajas con tope 60 + dual al cortar.
+- **Perturbación de costos apagada por omisión (2026-11-04).** `DFB_SX_PERTURB`
+  vale 0 si no se fija (antes 1e-7); `DFB_SX_PERTURB=1e-7` la vuelve a encender.
+  Motivo: ablación d60r/abl21, sistemas ×0.98–0.99 sin ella, opt ×1.00.
+  Binarios `_np` (con cajas negras; enlace: objetos de `make -n` + Caja*.o +
+  sx7ns/libsoplex.a + highsbuild/libhighs.a + gurobi120). Verificado: `_np`
+  = `_cc` con `DFB_SX_PERTURB=0` (Katsura-12 13 celdas, ex2_1_9 10 880 nodos).
+  Etapa 1 relanzada con `_np`: brazos cc, cc_compo y base_compo (base afín sin
+  perturbación = brazo `sinpert` de d60r). Las tablas del paper siguen medidas
+  con la perturbación encendida hasta remedir.
