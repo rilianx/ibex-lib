@@ -32,6 +32,10 @@
 #include <string>
 
 using namespace std;
+
+#ifdef __IBEX_WITH_IPOPT__
+namespace ibex { extern double ipopt_diam; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+#endif
 using namespace ibex;
 
 namespace {
@@ -308,6 +312,7 @@ int main(int argc, char** argv) {
 	args::Flag pc_light(parser, "pc-light", "With --oracle-score pc: probe with the search's contractor alone (no upper bounding) instead of fully processing both children.", {"pc-light"});
 	args::ValueFlag<int> acid_fixed(parser, "int", "Non-adaptive ACID: 3BCID on N variables at every node (capped at all of them: a large N means all, as in ACID's first tuning phase), no tuning. For comparisons between searches that would tune ACID differently.", {"acid-fixed"});
 	args::ValueFlag<double> late_loup(parser, "float", "Give the search this upper bound right after the root is processed (unlike --initial-loup, the root's contraction is unchanged).", {"late-loup"});
+	args::ValueFlag<double> ipopt_diam_arg(parser, "float", "With --loup ipopt*: Ipopt is only called on boxes whose widest variable is at most this wide. Default: 1e8.", {"ipopt-diam"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
 			+ MLOptimizerConfig::bisector_names() + ". Default: lsmear (what ibexopt uses).", {"bisector"});
@@ -417,6 +422,9 @@ int main(int argc, char** argv) {
 
 		if (grasp_alpha) MLOptimizerConfig::grasp_alpha = grasp_alpha.Get();
 		if (tabu_tenure) MLOptimizerConfig::tabu_tenure = tabu_tenure.Get();
+#ifdef __IBEX_WITH_IPOPT__
+		if (ipopt_diam_arg) ibex::ipopt_diam = ipopt_diam_arg.Get();
+#endif
 		if (ipopt_first) MLOptimizerConfig::ipopt_first = ipopt_first.Get();
 		MLOptimizerConfig::grasp_seed = (unsigned int) seed;
 
