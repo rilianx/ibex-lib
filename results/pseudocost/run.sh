@@ -10,6 +10,7 @@
 #   python3 results/pseudocost/analyze.py
 #   git add results/pseudocost/runs.jsonl && git commit -m "Benchmark pseudocostos" && git push fork ml-branching
 #
+# INSTANCES: the list to run (default: instances.txt).
 # Arms (ARMS="lffix pc pcr05" by default):
 #   lffix   lsmear-lffix
 #   pc      + pseudocosts, reliability 4, deviate when the mean says better
@@ -20,7 +21,7 @@ OUT=${OUT:-results/pseudocost/runs.jsonl}
 TLIM=${TLIM:-600}; export TLIM
 $BIN --help 2>/dev/null | grep -q pc-rel || { echo "$BIN no conoce --pc-rel: recompila"; exit 1; }
 touch $OUT
-for arm in ${ARMS:-lffix pc pcr05}; do while read i; do echo "$arm $i"; done < results/pseudocost/instances.txt; done |
+for arm in ${ARMS:-lffix pc pcr05}; do while read i; do echo "$arm $i"; done < ${INSTANCES:-results/pseudocost/instances.txt}; done |
 xargs -P ${JOBS:-8} -n2 sh -c '
   arm=$0; i=$1; grep -q "\"instance\": \"$i\", \"arm\": \"$arm\"" '"$OUT"' && exit 0
   case $arm in
