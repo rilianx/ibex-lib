@@ -45,29 +45,33 @@
 
 % =====================================================================
 \begin{abstract}
-Polytope-hull contractors bound each variable of an interval branch-and-bound
-node over a linear relaxation by solving $2n$ linear programs. Current
-implementations delegate them to a floating-point LP solver and recover rigor
-afterwards from its dual solution. These LPs are small and a few pivots
-apart, so a general-purpose solver spends more per call on setting up,
-refactorizing and verifying than on pivoting. We present a self-certifying
-simplex (SC) designed around the certificate instead: writing the relaxation
-as $\Abar z=0$ with interval-bounded slacks, any basis yields a valid bound on
-the box and every sub-box, so SC needs no verification, no refactorization
-before declaring an optimum and no phase~1, can stop an LP at any basis
-without losing its bound, and solves the $2n$ problems on one shared basis.
-Replaying the same polytope-hull passes inside the same contractor, with the
-same contraction, a pass of SC costs 0.55--0.62 times that of SoPlex as used
-by Ibex, 0.73--0.82 times that of its bare simplex driven directly, and
-0.12--0.27 times that of HiGHS and Gurobi. With the affine relaxation of Ibex,
-the whole solver is 16--17\% faster than with SoPlex on 240 global
+Interval branch-and-bound solvers compute rigorous enclosures of the solutions
+of nonlinear systems and of the global optimum of constrained problems. One of
+their most effective tools, the polytope-hull contractor, bounds each of the
+$n$ variables of a node over a linear relaxation by solving $2n$ linear
+programs (LPs). Current implementations delegate these LPs to a floating-point
+LP solver and recover rigor afterwards from its dual solution. The LPs are
+small and only a few pivots apart, so a general-purpose solver spends more per
+call on setting up, refactorizing and verifying than on pivoting. We present a
+self-certifying simplex (SC) designed around the certificate instead: with the
+relaxation written in a homogeneous form with interval-bounded slacks, any
+basis of the simplex method yields a valid bound on the box and on every
+sub-box. SC therefore verifies nothing, does not refactorize before declaring
+an optimum, needs no initial phase to find a feasible basis, can stop an LP at
+any basis without losing its bound, and solves the $2n$ problems on one shared
+basis. We evaluate it in Ibex, an open-source interval solver, against the LP
+solvers SoPlex, HiGHS and Gurobi inside the same contractor. On the same LPs,
+with the same contraction, a pass of SC costs 0.55--0.62 times that of SoPlex
+as Ibex uses it, 0.73--0.82 times that of the simplex of SoPlex driven
+directly, and 0.12--0.27 times that of HiGHS and Gurobi. With an affine
+relaxation, the whole solver is 16--17\% faster than with SoPlex on 240 global
 optimization problems and 8--9\% faster on 242 systems of equations (10\% and
-4--6\% against the bare simplex), with the same search trees. The gain belongs
-to small relaxations: it holds up to 15--30 rows, and on larger ones SoPlex
-needs fewer pivots. A hybrid contractor that hands the relaxations above 30
-rows to the bare simplex of SoPlex stays within 2\% of the better engine in
-every configuration, and with the larger relaxation of Ibex it is the best
-configuration on systems of equations.
+4--6\% against the simplex driven directly), with the same search trees. The
+gain belongs to small relaxations: it holds up to 15--30 rows, and on larger
+ones SoPlex needs fewer pivots. A hybrid contractor that hands the relaxations
+above 30 rows to SoPlex stays within 2\% of the better engine in every
+configuration, and with a relaxation that combines affine and Taylor-based
+rows it is the best configuration on systems of equations.
 \end{abstract}
 
 % =====================================================================
@@ -145,7 +149,8 @@ Neumaier--Shcherbina bound, and every basis becomes dual feasible for every
 bound problem by relocating its nonbasic variables, a standard property of
 boxed LPs~\cite{koberstein2005dual}. A simplex built on this needs no
 verification of its solutions, no refactorization before declaring an optimum
-and no phase~1, and solves the $2n$ problems, and each problem after the box
+and no phase~1 (the search for a feasible starting basis), and solves the $2n$
+problems, and each problem after the box
 contracts, on one basis (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
 \item The simplex itself: one basis shared by the $2n$ problems, a warm start
 between bounds chosen per program, merged proportional rows, a revised engine
