@@ -6,12 +6,15 @@ of a dataset, in search order.
 Per sample, the strong-branching key of each candidate (pruned children, then
 least open volume), relative to the sample's best: q_j = key_j - max key.
 History rules (only previous samples of the same instance are used):
-  pc-free  pseudocost from the nodes where j was actually bisected (the
-           base's choice): the observation a search gets for free.
-  pc-all   pseudocost from every probed candidate of previous samples (what
-           reliability branching gathers while it still probes).
-  rel-k    reliability branching: probe (true key) the candidates seen fewer
-           than k times, pseudocost (pc-all history) for the others.
+  pc       pseudocost: the mean q of the variable's earlier observations.
+  state    state-dependent pseudocost: a ridge regression fitted online, on
+           this instance's earlier observations, from the candidate's state
+           (LSmear rank and relative score, smear_sum_rel and rel_diam
+           relative) and its history (mean q, number of observations).
+  k        reliability: probe (true key) the candidates whose variable has
+           fewer than k observations.
+Observations are the probed candidates and the bisected one, as in a real
+search; "ideal" counts every candidate of every earlier sample (upper bound).
 Unseen variables and ties fall back to the base's own order (LSmear rank).
 Metric: per instance, sum of the chosen candidates' dive nodes over the
 base's choice (geo over instances), instances above 1, and the share of
@@ -50,55 +53,74 @@ def main():
     assert len(vars_) == len(R), (len(vars_), len(R))
     R["var"] = vars_
 
-    def run(rule, k=0):
+    # state features per candidate (comparative, from the 30 model features):
+    # lsmear rank / relmax, smear_sum_rel relmax, rel_diam relmax
+    ST = XA[:, [15, 16, 22, 28]]
+
+    def run(rule, k=0, ideal=False):
+        """rule: sb | pc | state.  k: reliability threshold (probe a candidate
+        whose variable has fewer than k observations).  ideal: every
+        candidate of every earlier sample counts as observed (an upper bound:
+        a real search only observes what it probes or bisects)."""
         rows = []; probed = 0; total = 0
         for inst, G in R.groupby("instance", sort=False):
-            free = defaultdict(list); full = defaultdict(list)
+            hist = defaultdict(list)          # var -> observed q
+            Xtr, ytr = [], []                 # (state + history) -> q
             for sid, S in G.groupby("sample", sort=True):
                 base = S[S.guard]
                 if base.empty:
-                    for _, x in S.iterrows(): full[x["var"]].append(x.q)
                     continue
                 b = base.iloc[0]
-                score = {}
+                def feats(x):
+                    h = hist[x["var"]]
+                    return list(ST[x.name]) + [np.mean(h) if h else 0.0, math.log1p(len(h))]
+                model = None
+                if rule == "state" and len(ytr) >= 20:
+                    A = np.array(Xtr); A1 = np.hstack([A, np.ones((len(A), 1))])
+                    w = np.linalg.lstsq(A1.T @ A1 + 1e-3 * np.eye(A1.shape[1]), A1.T @ np.array(ytr), rcond=None)[0]
+                    model = w
+                score = {}; obs = []
                 for _, x in S.iterrows():
                     total += 1
-                    h = free if rule == "pc-free" else full
-                    if rule == "rel" and len(full[x["var"]]) < k:
-                        score[x.name] = x.q; probed += 1
-                    elif h[x["var"]]:
-                        score[x.name] = float(np.mean(h[x["var"]]))
+                    if rule == "sb" or len(hist[x["var"]]) < k:
+                        score[x.name] = x.q; probed += 1; obs.append(x)
+                    elif rule == "pc" and hist[x["var"]]:
+                        score[x.name] = float(np.mean(hist[x["var"]]))
+                    elif rule == "state" and model is not None:
+                        score[x.name] = float(np.dot(model, feats(x) + [1.0]))
                     else:
                         score[x.name] = None
                 known = {i: v for i, v in score.items() if v is not None}
-                if rule == "sb":
-                    ch = S.q.idxmax(); probed += len(S)
-                elif known:
+                ch = b.name
+                if known:
                     best = max(known.values())
-                    # ties and unseen: the base's order (LSmear rank)
                     cand = [i for i, v in known.items() if v >= best - 1e-9]
                     ch = min(cand, key=lambda i: R.lsrank[i])
-                    # never prefer a seen variable over the base unless strictly better
                     if b.name in known and known[b.name] >= best - 1e-9:
                         ch = b.name
-                else:
-                    ch = b.name
                 rows.append((inst, R.y[ch], b.y))
-                # observations for later samples
-                for _, x in S.iterrows():
-                    full[x["var"]].append(x.q)
-                free[b["var"]].append(b.q)
+                # what the search observes: the probed candidates and the bisected one
+                seen = list(S.itertuples()) if ideal else obs + ([R.loc[ch]] if all(o.name != ch for o in obs) else [])
+                for x in seen:
+                    xx = R.loc[x.Index] if hasattr(x, "Index") else x
+                    Xtr.append(feats(xx)); ytr.append(xx.q)
+                    hist[xx["var"]].append(xx.q)
         T = pd.DataFrame(rows, columns=["inst", "y", "yb"])
         ratio = T.groupby("inst").apply(lambda g: g.y.sum() / g.yb.sum())
         return geo(ratio), (ratio > 1.0001).mean(), probed / max(total, 1)
 
     print("%d muestras, %d instancias" % (R["sample"].nunique(), R.instance.nunique()))
-    for name, rule, k in [("SB (sondea todo, referencia)", "sb", 0), ("pseudocosto gratis (solo lo bisectado)", "pc-free", 0),
-                          ("pseudocosto con historia completa", "pc-all", 0),
-                          ("reliability k=1", "rel", 1), ("reliability k=2", "rel", 2), ("reliability k=4", "rel", 4)]:
-        g, w, p = run(rule, k)
-        print("  %-40s suma/base %.3f   instancias >1 %3.0f%%   candidatas sondeadas %3.0f%%" % (name, g, 100 * w, 100 * p))
-
+    for name, rule, k, ideal in [
+            ("SB (sondea todo, referencia)", "sb", 0, False),
+            ("pseudocosto, historia ideal", "pc", 0, True),
+            ("estado, historia ideal", "state", 0, True),
+            ("pseudocosto + reliability k=2", "pc", 2, False),
+            ("pseudocosto + reliability k=4", "pc", 4, False),
+            ("estado + reliability k=1", "state", 1, False),
+            ("estado + reliability k=2", "state", 2, False),
+            ("estado + reliability k=4", "state", 4, False)]:
+        g, w, p = run(rule, k, ideal)
+        print("  %-36s suma/base %.3f   instancias >1 %3.0f%%   candidatas sondeadas %3.0f%%" % (name, g, 100 * w, 100 * p))
 
 if __name__ == "__main__":
     main()

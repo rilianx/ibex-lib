@@ -31,20 +31,25 @@ context), so it underestimates probes; end to end is the test that counts.
 
 ## Search history: pseudocosts and reliability branching
 
-`python/history_offline.py`: in search order, per instance, a variable's
-score is the mean of its relative strong-branching key at earlier samples
-(pseudocost). Reliability k: probe the candidates seen fewer than k times,
-pseudocost for the rest.
+`python/history_offline.py`: in search order, per instance, only earlier
+samples are used. pc: a variable's mean relative SB key so far. state: a
+ridge regression fitted online on this instance's observations, from the
+candidate's state (LSmear rank and relative score, smear_sum_rel, rel_diam)
+and its history (mean, count). Reliability k: probe the candidates whose
+variable has fewer than k observations. Observations are what a search sees
+(probed candidates and the bisected one); "ideal" counts every candidate of
+every earlier sample.
 
-    rule                                       sum/base  inst>1  probed
-    SB, probe everything                       0.860      4%     100%
-    pseudocost, free (bisected var only)       1.044     39%       0%
-    pseudocost, full history                   0.980     28%       0%
-    reliability k=1                            0.957     28%       2%
-    reliability k=2                            0.951     27%       3%
-    reliability k=4                            0.946     27%       5%
+    rule                                sum/base  inst>1  probed
+    SB, probe everything                0.861      4%     100%
+    pseudocost, ideal history           0.980     28%       0%
+    state, ideal history                0.989     30%       0%
+    pseudocost + reliability k=2        0.981     34%       3%
+    pseudocost + reliability k=4        0.971     31%       5%
+    state + reliability k=1/2/4         0.986 / 0.978 / 0.985
 
-History carries part of the signal: probing 5% of the candidates gets 0.946
-(SB, probing all, 0.860). Underestimate: the samples are ~150 per instance, a
-real search observes every node (each bisection is a free observation, each
-probe too), so its pseudocosts are built from far more data.
+(A first version counted unprobed candidates as observed and reported 0.946
+for k=4; this is the corrected accounting.) History carries a weak signal,
+and conditioning on the state does not add to the per-variable mean. The
+samples are ~150 per instance; a real search observes every node, so these
+pseudocosts are built from far less data than a solver's would be.
