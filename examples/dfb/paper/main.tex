@@ -322,22 +322,28 @@ bound, and \emph{primal feasible} if the basic variables lie within their
 bounds. This section describes how the simplex solves the $2n$ problems of a
 node; the design choices are evaluated in Section~\ref{sec:experiments}.
 
-\paragraph{What the certificate removes.} The certificate of
+\paragraph{What the certificate makes unnecessary.} Since the certificate of
 Section~\ref{sec:dfb} is valid for any $\lambda$ (Proposition~\ref{prop:valid}),
-and this shapes the simplex. A general-purpose LP solver must return a solution
-that is correct up to its tolerances: before declaring an optimum it
-refactorizes the basis to remove the error accumulated by the updates of its
-factorization, recomputes its vectors and verifies the solution; after the
-call, the contractor verifies it once more through the certificate. SC needs
-none of this. An inaccurate $\lambda$ yields a weaker bound, never an invalid
-one, so the final basis is used as it is, and the error of the factorization is
-controlled only as far as pivoting requires: a refactorization every 50
-pivots. Dual feasibility for free (Proposition~\ref{prop:start}) removes the
-phase~1 that a solver runs when the objective changes or the box contracts,
-and lets the $2n$ problems share one basis. Section~\ref{sec:bank} measures what each of these removals is worth
-against SoPlex.
+the simplex never has to return a correct solution, only a good basis. A
+general-purpose LP solver, before declaring an optimum, refactorizes the basis
+to remove the error accumulated by the updates of its factorization,
+recomputes its vectors and verifies the solution, and the contractor then
+verifies it once more through the certificate. SC uses the final basis as it
+is: an inaccurate $\lambda$ yields a weaker bound, never an invalid one, so the
+error of the factorization is controlled only as far as pivoting requires.
+Likewise, since every basis can be made dual feasible
+(Proposition~\ref{prop:start}), no phase~1 is needed when the objective changes
+or the box contracts, and the $2n$ problems can share one basis.
+Section~\ref{sec:bank} measures what these savings are worth against SoPlex.
 
-\subsection{One pass over the bounds}
+The rest of this section describes the simplex that results:
+how one pass solves the bounds of a node and in which order
+(Section~\ref{sec:pass}), how each LP starts from the previous one
+(Section~\ref{sec:warm}), the iterations (Section~\ref{sec:iter}), the
+factorization of the basis (Section~\ref{sec:engines}), and how the
+certificate is computed when an LP ends (Section~\ref{sec:certif}).
+
+\subsection{One pass over the bounds}\label{sec:pass}
 
 At each node the relaxation is computed, written in the
 form~\eqref{eq:homog}, and loaded once. Rows that are proportional, within a
@@ -381,7 +387,7 @@ its bound is lost. Ibex gives SoPlex a limit of 100 iterations, with which it
 abandons some LPs (377 of 61\,815 on Geneig-icse); we give the black boxes the
 limit $20m+200$, which they almost never reach.
 
-\subsection{Starting and warm-starting}
+\subsection{Starting and warm-starting}\label{sec:warm}
 
 The first LP of a pass has no previous basis. It starts from the slack basis
 $B=-I_m$, which is dual feasible for every $\mathrm{LP}_k$
@@ -468,7 +474,7 @@ average, and tries the other again every 25 nodes. Primal steps are also the
 fallback when relocation is impossible because the bound indicated by a
 reduced cost is infinite.
 
-\subsection{Simplex iterations}
+\subsection{Simplex iterations}\label{sec:iter}
 
 We recall the bounded-variable simplex in the notation of
 $\mathrm{LP}_k$~\eqref{eq:lpk}, following~\cite{koberstein2005dual}. Let $B$ be
@@ -595,7 +601,7 @@ place, the tableau no longer pays: that combination is 1--2\% slower than the
 revised engine alone on systems of equations, and the tableau alone 11--14\%
 (Table~\ref{tab:ablation}). SC therefore has a single engine.
 
-\subsection{Certification}
+\subsection{Certification}\label{sec:certif}
 
 When an LP terminates, $\lambda$ is read from the final basis, where it is
 kept updated with the pivot row. The certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
