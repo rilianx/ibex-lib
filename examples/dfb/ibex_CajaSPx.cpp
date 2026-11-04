@@ -73,7 +73,9 @@ void CajaSPx::cargar(int n, int m, const double* lb, const double* ub, const dou
     else                          { C.sx.setRep(SPxSolver::ROW);    C.sx.setType(SPxSolver::ENTER); }
     /* `DFBH_CAJA_TOPE=igual`: el tope de iteraciones de SC (20m+200) en vez del de Ibex (100) */
     static const bool tope_igual = getenv("DFBH_CAJA_TOPE") && std::string(getenv("DFBH_CAJA_TOPE")) == "igual";
-    C.sx.setTerminationIter(tope_igual ? 20*m + 200 : 100);
+    /* `DFBH_CAJA_TOPE=N` (numero): tope fijo de N iteraciones, p. ej. el de SC */
+    static const int tope_num = getenv("DFBH_CAJA_TOPE") ? atoi(getenv("DFBH_CAJA_TOPE")) : 0;
+    C.sx.setTerminationIter(tope_num > 0 ? tope_num : tope_igual ? 20*m + 200 : 100);
     n_ = n; m_ = m;
 }
 void CajaSPx::cota(int i, double lb, double ub) {
@@ -123,6 +125,16 @@ int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, 
             for (int j = 0; j < m_; ++j) lam[j] = y[j];
             for (int i = 0; i < n_; ++i) x[i] = z[i];
             res = 0;
+        }
+    } else if (st == SPxSolver::ABORT_ITER && getenv("DFBH_CORTE_CERT")) {
+        /* la base en que se corto tiene su dual, y cualquier dual certifica */
+        DVector y(m_);
+        bool ok = true;
+        try { s.getDual(y); } catch (const SPxException&) { ok = false; }
+        if (ok) {
+            if (C.escalado) C.esc.unscaleDual(s, y);
+            for (int j = 0; j < m_; ++j) lam[j] = y[j];
+            res = 4;
         }
     } else if (st == SPxSolver::INFEASIBLE) {
         DVector f(m_);

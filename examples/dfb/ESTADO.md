@@ -2265,3 +2265,14 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   nodo: la ganancia es de costo (Geneig-icse: pasada 2.56 contra 6.52 s).
   Paper: perturbación presentada como opción, con el comentario de que ya no
   paga.
+- **Los LPs cortados por el tope NO contraían (2026-11-04).** El contractor
+  aplicaba el test de vacío a cualquier estado, pero saltaba la contracción de
+  todo LP no OPTIMAL, incluidos los de SC cortados a los 60 pivotes: el tope solo
+  ahorraba pivotes. Nueva opción `DFBH_CORTE_CERT=1` (apagada por omisión):
+  la cota de un LP en ITER_LIMIT se aplica (su punto primal no entra al hull ni
+  al salteo); en las cajas negras, `DFBH_CORTE_CERT=1` lee el dual de la base en
+  que SoPlex / SPxSolver se cortó, y `DFBH_CAJA_TOPE=N` fija su tope en N.
+  Prueba (compo, seed 1, 60 s, binario `_cc`): Katsurabis-14 173 → 171 celdas
+  (1 192 LPs cortados aplicados), BroydenBanded-100 15 → 9 celdas pero 8.9 →
+  10.7 s, DiscreteBoundary-0200 3.8 → 3.4 s, Bratu-0120 igual. Falta medir en
+  los bancos, y las cajas con tope 60 + dual al cortar.

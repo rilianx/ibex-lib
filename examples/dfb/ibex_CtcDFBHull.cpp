@@ -38,6 +38,8 @@ double& adapt_ema() { static double e = -1.0; return e; }
 /* DIAGNOSTICO DEL PRIMER LP DE LA PASADA (`DFBH_PRIMERDIAG=1`, 2026-10-22):
  * pivotes y contraccion del LP del paso 0 contra los demas; histograma de
  * pivotes del primero. Se imprime al salir. */
+long n_corte_cert = 0;   /* LPs cortados por el tope cuya cota se aplico (DFBH_CORTE_CERT) */
+struct InformeCorte { ~InformeCorte() { if (getenv("DFBH_CORTE_CERT")) fprintf(stderr, "[corte_cert] LPs cortados por el tope cuya cota se aplico: %ld\n", n_corte_cert); } } informe_corte;
 bool primerdiag_on() { static const bool v = getenv("DFBH_PRIMERDIAG") != NULL; return v; }
 struct PrimerDiag {
     long n[2] = {0,0}, piv[2] = {0,0}, corte[2] = {0,0}, nc[2] = {0,0};
@@ -2747,13 +2749,21 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
         }
 
-        if (st != DFBSimplex::OPTIMAL) {
+        /* LP CORTADO POR EL TOPE (`DFBH_CORTE_CERT=1`, 2026-11-04): cualquier
+         * lambda certifica, asi que la cota de un LP que termino en ITER_LIMIT
+         * tambien se aplica. Su punto primal no es factible: no entra al hull
+         * ni al salteo. Antes se descartaba como cualquier LP sin optimo. */
+        static const bool corte_cert = DFB_ENV("DFBH_CORTE_CERT");
+        const bool optimo = (st == DFBSimplex::OPTIMAL);
+        if (!optimo && !(corte_cert && st == DFBSimplex::ITER_LIMIT)) {
             ++abc_cnt[motor_caja][4];
             if (traza_cotas)
                 fprintf(stderr, "    paso=%-3d x%-3d %s  estado=%d piv=%-3d | sin aplicar (no OPTIMAL)\n",
                         paso, k, lado ? "max" : "min", (int)st, sk.iterations());
             continue;
         }
+        if (!optimo) ++n_corte_cert;
+        if (optimo) {
         hubo_optimo = true;
         if (motor_caja) { for (int i = 0; i < nb_var && i < (int)x_caja.size(); ++i) xstar[i] = x_caja[i]; }
         else sk.primal_solution(z, xstar);
@@ -2764,6 +2774,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             hull_vacio = false;
         } else {
             for (int i = 0; i < nb_var; ++i) hull_primal[i] |= Interval(xstar[i]);
+        }
         }
 
         gs[idx] = gamma; gs_ok[idx] = 1;
@@ -3526,6 +3537,7 @@ DFBSimplex::Status CtcDFBHull::resolver_cajaspx(int k, bool maximizar, const Int
     const int r = cajas->resolver(k, maximizar, frio, &lam_caja[0], &x_caja[0], &it_caja);
     if (r == 0) return DFBSimplex::OPTIMAL;
     if (r == 1) return DFBSimplex::INFEASIBLE;
+    if (r == 4) return DFBSimplex::ITER_LIMIT;
     if (r == 2) caja_inf_sin_rayo = true;
     lam_caja.assign(m, 0.0);
     return DFBSimplex::SINGULAR;
@@ -3557,7 +3569,10 @@ DFBSimplex::Status CtcDFBHull::resolver_caja_directa(int k, bool maximizar, cons
         /* `DFBH_CAJA_TOPE=igual`: el mismo tope de iteraciones que SC (20m+200)
          * en vez del de Ibex (100), para comparar en igualdad de condiciones. */
         static const bool tope_igual = getenv("DFBH_CAJA_TOPE") && std::string(getenv("DFBH_CAJA_TOPE")) == "igual";
-        if (tope_igual) sx.setIntParam(soplex::SoPlex::ITERLIMIT, 20*m + 200, true);
+        /* `DFBH_CAJA_TOPE=N` (numero): tope fijo de N iteraciones, p. ej. el de SC */
+        static const int tope_num = getenv("DFBH_CAJA_TOPE") ? atoi(getenv("DFBH_CAJA_TOPE")) : 0;
+        if (tope_num > 0) sx.setIntParam(soplex::SoPlex::ITERLIMIT, tope_num, true);
+        else if (tope_igual) sx.setIntParam(soplex::SoPlex::ITERLIMIT, 20*m + 200, true);
         if (DFB_ENV("DFBH_CAJA_VERB")) sx.setIntParam(soplex::SoPlex::VERBOSITY, soplex::SoPlex::VERBOSITY_NORMAL, true);
         soplex::LPColSetReal cols(nb_var);
         soplex::DSVectorReal vacio(0);
@@ -3704,6 +3719,13 @@ fin_dump:
             for (int j = 0; j < m; ++j) lam_caja[j] = f[j];
             res = DFBSimplex::INFEASIBLE;
         } else caja_inf_sin_rayo = true;
+    } else if (st == soplex::SPxSolver::ABORT_ITER && DFB_ENV("DFBH_CORTE_CERT")) {
+        /* SoPlex guarda la solucion de la base en que se corto: su dual certifica */
+        soplex::DVectorReal y(m);
+        if (sx.getDualReal(y)) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = y[j];
+            res = DFBSimplex::ITER_LIMIT;
+        }
     }
     sx.changeObjReal(k, 0.0);
     if (reloj) cr_t[2] += ahora_s() - cr2;
