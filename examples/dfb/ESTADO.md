@@ -2285,3 +2285,9 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   Etapa 1 relanzada con `_np`: brazos cc, cc_compo y base_compo (base afín sin
   perturbación = brazo `sinpert` de d60r). Las tablas del paper siguen medidas
   con la perturbación encendida hasta remedir.
+- **Etapa 2: corte anytime con la cota aplicada (2026-11-04, `_cc`, perturbación
+  encendida, 20 instancias de diagnóstico × 2 semillas, afín).** Contra base:
+  cc celdas ×0.98 cpu ×1.02; τ=0.01 sin cota (como antes) celdas ×1.76 cpu ×1.55,
+  4 sin terminar más; τ=0.01 con cota ×0.97 / ×1.02; τ=0.05 ×0.98 / ×1.01;
+  τ=0.2 ×1.03 / ×1.02. Confirma que la pérdida vieja del corte anytime era
+  por botar la cota; con la cota aplicada el corte queda neutro, no gana.
