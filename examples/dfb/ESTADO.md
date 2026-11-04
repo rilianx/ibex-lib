@@ -2291,3 +2291,12 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   4 sin terminar más; τ=0.01 con cota ×0.97 / ×1.02; τ=0.05 ×0.98 / ×1.01;
   τ=0.2 ×1.03 / ×1.02. Confirma que la pérdida vieja del corte anytime era
   por botar la cota; con la cota aplicada el corte queda neutro, no gana.
+- **La cota de los LPs cortados se aplica por omisión (2026-11-04).** Decisión de
+  Ignacio: es contracción válida (cualquier λ certifica), no se mide aparte.
+  `DFBH_CORTE_CERT=0` la apaga. En las cajas negras leer el dual al cortar sigue
+  opcional (`DFBH_CORTE_CERT=1`); por omisión se comportan como Ibex. El
+  contador `[corte_cert]` se imprime siempre que haya LPs cortados. Verificado:
+  Katsurabis-14 afín, 711 cotas aplicadas por omisión, 0 con la opción en 0.
+  Configuración final de SC: sin perturbación + cota de LPs cortados. Los brazos
+  cc / cc_compo de la etapa 1 (`_np` + `DFBH_CORTE_CERT=1`) son exactamente esa
+  configuración; brazo base_compo retirado.

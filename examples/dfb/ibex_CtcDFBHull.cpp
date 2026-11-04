@@ -39,7 +39,7 @@ double& adapt_ema() { static double e = -1.0; return e; }
  * pivotes y contraccion del LP del paso 0 contra los demas; histograma de
  * pivotes del primero. Se imprime al salir. */
 long n_corte_cert = 0;   /* LPs cortados por el tope cuya cota se aplico (DFBH_CORTE_CERT) */
-struct InformeCorte { ~InformeCorte() { if (getenv("DFBH_CORTE_CERT")) fprintf(stderr, "[corte_cert] LPs cortados por el tope cuya cota se aplico: %ld\n", n_corte_cert); } } informe_corte;
+struct InformeCorte { ~InformeCorte() { if (n_corte_cert > 0) fprintf(stderr, "[corte_cert] LPs cortados por el tope cuya cota se aplico: %ld\n", n_corte_cert); } } informe_corte;
 bool primerdiag_on() { static const bool v = getenv("DFBH_PRIMERDIAG") != NULL; return v; }
 struct PrimerDiag {
     long n[2] = {0,0}, piv[2] = {0,0}, corte[2] = {0,0}, nc[2] = {0,0};
@@ -2749,11 +2749,14 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
         }
 
-        /* LP CORTADO POR EL TOPE (`DFBH_CORTE_CERT=1`, 2026-11-04): cualquier
-         * lambda certifica, asi que la cota de un LP que termino en ITER_LIMIT
-         * tambien se aplica. Su punto primal no es factible: no entra al hull
-         * ni al salteo. Antes se descartaba como cualquier LP sin optimo. */
-        static const bool corte_cert = DFB_ENV("DFBH_CORTE_CERT");
+        /* LP CORTADO POR EL TOPE (2026-11-04, encendido por omision;
+         * `DFBH_CORTE_CERT=0` lo apaga): cualquier lambda certifica, asi que la
+         * cota de un LP que termino en ITER_LIMIT tambien se aplica. Su punto
+         * primal no es factible: no entra al hull ni al salteo. Antes se
+         * descartaba como cualquier LP sin optimo. En las cajas negras leer el
+         * dual al cortar sigue siendo opcional (`DFBH_CORTE_CERT=1`): por
+         * omision se comportan como Ibex, que descarta el LP. */
+        static const bool corte_cert = !getenv("DFBH_CORTE_CERT") || std::string(getenv("DFBH_CORTE_CERT")) != "0";
         const bool optimo = (st == DFBSimplex::OPTIMAL);
         if (!optimo && !(corte_cert && st == DFBSimplex::ITER_LIMIT)) {
             ++abc_cnt[motor_caja][4];
@@ -3719,7 +3722,7 @@ fin_dump:
             for (int j = 0; j < m; ++j) lam_caja[j] = f[j];
             res = DFBSimplex::INFEASIBLE;
         } else caja_inf_sin_rayo = true;
-    } else if (st == soplex::SPxSolver::ABORT_ITER && DFB_ENV("DFBH_CORTE_CERT")) {
+    } else if (st == soplex::SPxSolver::ABORT_ITER && getenv("DFBH_CORTE_CERT") && std::string(getenv("DFBH_CORTE_CERT")) != "0") {
         /* SoPlex guarda la solucion de la base en que se corto: su dual certifica */
         soplex::DVectorReal y(m);
         if (sx.getDualReal(y)) {

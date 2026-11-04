@@ -126,7 +126,7 @@ int CajaSPx::resolver(int k, bool maximizar, bool frio, double* lam, double* x, 
             for (int i = 0; i < n_; ++i) x[i] = z[i];
             res = 0;
         }
-    } else if (st == SPxSolver::ABORT_ITER && getenv("DFBH_CORTE_CERT")) {
+    } else if (st == SPxSolver::ABORT_ITER && getenv("DFBH_CORTE_CERT") && std::string(getenv("DFBH_CORTE_CERT")) != "0") {
         /* la base en que se corto tiene su dual, y cualquier dual certifica */
         DVector y(m_);
         bool ok = true;
