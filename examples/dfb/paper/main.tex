@@ -259,8 +259,16 @@ by the inclusion property of interval arithmetic; the equation holds by
 construction of $s$.
 \end{proof}
 
+The certificate combines the $m$ rows of $\Abar z=0$ linearly, with one
+\emph{multiplier} per row, into a single equation $\gamma^Tz=0$ that every point
+of the polytope satisfies. Any vector of multipliers $\lambda\in\R^m$ gives a
+valid equation; the best ones for bounding $z_k$ are the dual solutions of the
+LP that minimizes or maximizes $z_k$ over the polytope
+(Section~\ref{sec:properties}), and the simplex of Section~\ref{sec:simplex}
+produces them.
+
 \begin{definition}[Certificate]\label{def:cert}
-For $\lambda\in\R^m$, let $\iv{\gamma}\in\IR^{n+m}$ be an interval vector that
+For a vector of multipliers $\lambda\in\R^m$, let $\iv{\gamma}\in\IR^{n+m}$ be an interval vector that
 contains $\gamma := \Abar^T\lambda$, computed in outward-rounded interval
 arithmetic. For $k\in\{1,\dots,n+m\}$ with $0\notin\iv{\gamma}_k$, the
 \emph{certified enclosure} of $z_k$ is
@@ -282,8 +290,8 @@ this formally (Proposition~\ref{prop:valid}) and shows when the enclosure is
 tight; Section~\ref{sec:simplex} explains how the simplex produces $\lambda$.
 
 \paragraph{Why not a rigorous simplex.}
-Validity does not depend on how $\lambda$ was computed: any multiplier vector
-gives a valid bound, and a poor one only gives a weaker bound. Rigor is
+Validity does not depend on how $\lambda$ was computed: any vector of
+multipliers gives a valid bound, and a poor one only gives a weaker bound. Rigor is
 therefore needed only in the final evaluation of $\iv{\gamma}$ and
 $\iv{C}_k$, not in the pivoting. Carrying intervals through the pivots
 instead pays the overestimation of interval Gaussian
