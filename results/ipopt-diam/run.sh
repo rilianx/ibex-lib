@@ -7,6 +7,9 @@
 # Arms (ARMS="d1e8 d1e12 dinf"): the threshold 1e8 (default), 1e12, 1e300;
 # dnone: no threshold at all, unbounded boxes included (Ipopt starts from the
 # point of the box closest to 0 when the box has no finite center).
+# x1e5, x1e4: threshold 1e8 and the box around Ipopt's point where the
+# correction search looks for a certified point widened from 1e-6 to 1e-5,
+# 1e-4 (--ipopt-expansion); nx1e5: no threshold and 1e-5.
 cd "$(dirname "$0")/../.."
 BIN=${BIN:-build/bin/ibexopt-ml}
 OUT=${OUT:-results/ipopt-diam/runs.jsonl}
@@ -21,9 +24,12 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     d1e12) d=1e12 ;;
     dinf)  d=1e300 ;;
     dnone) d=-1 ;;
+    x1e5)  d=1e8; x=--ipopt-expansion=1e-5 ;;
+    x1e4)  d=1e8; x=--ipopt-expansion=1e-4 ;;
+    nx1e5) d=-1;  x=--ipopt-expansion=1e-5 ;;
   esac
   r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
-       --ipopt-diam=$d --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
+       --ipopt-diam=$d $x --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
   [ -z "$r" ] && r="{\"status\": \"killed\"}"
   echo "{\"instance\": \"$i\", \"arm\": \"$arm\", \"result\": $r}" >> '"$OUT"'
 '

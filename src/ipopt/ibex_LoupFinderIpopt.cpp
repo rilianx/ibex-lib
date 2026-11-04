@@ -18,6 +18,7 @@
 #include "ibex_Timer.h"
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include "ibex_BscHijackGuard.h"
 
 
@@ -43,6 +44,9 @@ namespace ibex {
     std::vector<Vector> ipopt_sols;   // previous Ipopt solutions (for the distance)
   }
   double ipopt_diam=1.e8;
+  // half-width (relative when |v|>1) of the box around Ipopt's point that the
+  // correction search explores; <= 0: expansion_precisionB (1e-6)
+  double ipopt_expansion=-1;
   bool ipopt_defer=false;
   
   LoupFinderIpopt::LoupFinderIpopt(const System& sys,const System& normsys, const ExtendedSystem& extsys) : sys(sys), normsys(normsys), extsys(extsys), solution(sys.nb_var), the_box(sys.box), ipopt_box(sys.box) {
@@ -156,6 +160,7 @@ namespace ibex {
 	  log_forced = was_forced; log_loup_in = loup_in; log_time = ipopt_timer.get_time();
 	  log_value = optimalValue; log_status = (int) status; log_width = box.max_diam();
 	  log_dist = POS_INFINITY;
+	  log_inner=-1; log_corr_status=-1; log_corr_nodes=0; log_corr_time=0; log_corr_loup=POS_INFINITY; log_goal=POS_INFINITY; log_viol=POS_INFINITY;
 	  if (log_pending) {
 	    for (size_t k=0; k<ipopt_sols.size(); k++) {
 	      double d = 0;
@@ -172,12 +177,28 @@ namespace ibex {
 	  //        	std::cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
 	  //	  cout << " optimal_value ipopt "<< optimalValue << endl;
 	  //	  cout << " solution ipopt " << solution << endl;
-	  if( optimalValue< loup){
+	  // An Ipopt failure (status <= -10: invalid number, problem definition,
+	  // option...) leaves optimalValue and solution meaningless (value 0 at the
+	  // starting point): nothing to certify, and the correction search around
+	  // that point would burn its whole timeout for nothing.
+	  bool usable = (int) status > -10 && (int) status != 2 && (int) status != 4
+	                && std::isfinite(optimalValue);
+	  for (int i=0; usable && i<solution.size(); i++) usable = std::isfinite(solution[i]);
+	  if( usable && optimalValue< loup){
 	    
 	    for (int i=0; i< box.size(); i++) {
 	      bound_check_i(sys,solution,i);
 	    }
 	    //	    cout << " pt avant check "  << solution << endl;
+	    if (log_pending) {
+	      log_goal = normsys.goal_ub(solution);
+	      log_inner = normsys.is_inner(IntervalVector(solution));
+	      if (normsys.nb_ctr>0) {
+	        IntervalVector g = normsys.f_ctrs.eval_vector(IntervalVector(solution));
+	        log_viol = NEG_INFINITY;
+	        for (int k=0; k<g.size(); k++) log_viol = std::max(log_viol, g[k].ub());
+	      } else log_viol = NEG_INFINITY;
+	    }
 	    if (check(normsys,solution,loup,false))
 		  { 
 		    loup_point0=solution;
@@ -205,13 +226,15 @@ namespace ibex {
 	
       }
         
-      if (log_pending) {
+      if (log_pending && recursive_call) {   // not from inside the correction search
         log_pending = false;
         fprintf(ipopt_log(), "{\"call\": %d, \"depth\": %d, \"node_lb\": %.17g, \"loup_in\": %.17g, \"width\": %.6g, "
                 "\"forced\": %d, \"status\": %d, \"value\": %.17g, \"loup_out\": %.17g, \"improved\": %d, "
-                "\"dist\": %.6g, \"time\": %.6g}\n",
+                "\"dist\": %.6g, \"time\": %.6g, \"goal\": %.17g, \"inner\": %d, \"viol\": %.6g, "
+                "\"corr_status\": %d, \"corr_nodes\": %d, \"corr_time\": %.6g, \"corr_loup\": %.17g}\n",
                 ipopt_calls, log_depth, log_node_lb, log_loup_in, log_width, (int) log_forced,
-                log_status, log_value, loup, (int) (loup < log_loup_in), log_dist, log_time);
+                log_status, log_value, loup, (int) (loup < log_loup_in), log_dist, log_time,
+                log_goal, log_inner, log_viol, log_corr_status, log_corr_nodes, log_corr_time, log_corr_loup);
         fflush(ipopt_log());
       }
       if (loup < loup0)
@@ -587,6 +610,7 @@ namespace ibex {
       recursive_call=false;
       IntervalVector box = sys.box;
       double eps=expansion_precisionB;
+      if (ipopt_expansion > 0) eps = ipopt_expansion;
       //      if (sys.minlp) eps=0.01;
       IntervalVector boxsol(v.size());
       for ( int i=0; i< v.size() ; i++){
@@ -619,6 +643,8 @@ namespace ibex {
       }
       if (guard) guard->set_state(guard_state);
       recursive_call=true;
+      log_corr_status = (int) opt.get_status(); log_corr_nodes = opt.get_nb_cells();
+      log_corr_time = opt.get_time(); log_corr_loup = opt.get_loup();
       correction_nodes+=opt.get_nb_cells();
       correction_time+=opt.get_time();
       if (optimizer->trace)

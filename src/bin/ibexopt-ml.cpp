@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -313,6 +313,7 @@ int main(int argc, char** argv) {
 	args::ValueFlag<int> acid_fixed(parser, "int", "Non-adaptive ACID: 3BCID on N variables at every node (capped at all of them: a large N means all, as in ACID's first tuning phase), no tuning. For comparisons between searches that would tune ACID differently.", {"acid-fixed"});
 	args::ValueFlag<double> late_loup(parser, "float", "Give the search this upper bound right after the root is processed (unlike --initial-loup, the root's contraction is unchanged).", {"late-loup"});
 	args::ValueFlag<double> ipopt_diam_arg(parser, "float", "With --loup ipopt*: Ipopt is only called on boxes whose widest variable is at most this wide (negative: no threshold, unbounded boxes included). Default: 1e8.", {"ipopt-diam"});
+	args::ValueFlag<double> ipopt_expansion_arg(parser, "float", "With --loup ipopt*: half-width (relative to |x| when |x|>1) of the box around Ipopt's point in which a short nested search looks for a certified feasible point. Default: 1e-6.", {"ipopt-expansion"});
 	args::Flag ipopt_defer_arg(parser, "ipopt-defer", "With --loup ipopt*: a scheduled Ipopt call that falls on a box wider than --ipopt-diam waits for the next box narrow enough instead of being skipped.", {"ipopt-defer"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
@@ -425,6 +426,7 @@ int main(int argc, char** argv) {
 		if (tabu_tenure) MLOptimizerConfig::tabu_tenure = tabu_tenure.Get();
 #ifdef __IBEX_WITH_IPOPT__
 		if (ipopt_diam_arg) ibex::ipopt_diam = ipopt_diam_arg.Get();
+		if (ipopt_expansion_arg) ibex::ipopt_expansion = ipopt_expansion_arg.Get();
 		if (ipopt_defer_arg) ibex::ipopt_defer = true;
 #endif
 		if (ipopt_first) MLOptimizerConfig::ipopt_first = ipopt_first.Get();
