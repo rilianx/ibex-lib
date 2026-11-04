@@ -353,7 +353,7 @@ order, which is also their best. With an explicit tableau
 row $r$, the number of nonbasic columns whose reduced cost for the objective
 $\pm z_k$ would have the wrong sign is the number of infeasibilities that the
 next LP must repair, and can be counted in $O(\mathrm{nnz}(\text{row } r))$
-without pivoting; it saves a few percent with the tableau engine, but nothing
+without pivoting; it saved 0--2\% with the tableau engine, but nothing
 that the revised engine does not save by itself.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
