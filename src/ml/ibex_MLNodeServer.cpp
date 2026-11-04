@@ -21,6 +21,7 @@
 #include "ibex_Timer.h"
 
 #include <algorithm>
+#include <map>
 #include <cfenv>
 #include <cmath>
 #include <cstdint>
@@ -118,7 +119,7 @@ MLNodeServer::MLNodeServer(const System& sys,
 			init_ext_box(IntervalVector::empty(sys.nb_var+1)),
 			orig_box(IntervalVector::empty(sys.nb_var)),
 			oracle_calls(0), oracle_fallbacks(0),
-			model(NULL), oracle(false), oracle_depth(false), oracle_sb(false), oracle_max_depth(0), sb_ratio(0), sb_vol_only(false), sb_need_pruned(false), oracle_hc4(false), probe_dims(1), probe_parts(4), hc4_ctc(NULL), lp_ctc(NULL), dive_loup(POS_INFINITY), probe_ctc(PROBE_HC4), oracle_deviations(0), stats(new OpenStatistics()),
+			model(NULL), oracle(false), oracle_depth(false), oracle_sb(false), oracle_max_depth(0), sb_ratio(0), sb_vol_only(false), sb_need_pruned(false), pc_probes(0), oracle_hc4(false), probe_dims(1), probe_parts(4), hc4_ctc(NULL), lp_ctc(NULL), dive_loup(POS_INFINITY), oracle_pc(false), pc_rel(4), probe_ctc(PROBE_HC4), oracle_deviations(0), stats(new OpenStatistics()),
 			last_time(0), last_decisions(0), last_status("not run") {
 
 	RNG::srand((int) random_seed);
@@ -221,6 +222,34 @@ std::vector<std::pair<int,MLNodeServer::ProbeResult> > MLNodeServer::hc4_probes(
 		out.push_back(make_pair(cand[k], hc4_probe(ext_box, cand[k], partners, parts, ctc_kind)));
 	}
 	return out;
+}
+
+double MLNodeServer::split_key(const IntervalVector& parent, bool lpruned, const IntervalVector& l,
+		bool rpruned, const IntervalVector& r) const {
+	const int gv = const_cast<MLNodeServer*>(this)->ext_goal_var();
+	double lv[2] = { NEG_INFINITY, NEG_INFINITY };
+	const IntervalVector* kid[2] = { &l, &r };
+	bool pr[2] = { lpruned, rpruned };
+	for (int q=0; q<2; q++) {
+		if (pr[q]) continue;
+		double v = 0;
+		for (int j=0; j<parent.size(); j++) {
+			if (j==gv) continue;
+			double dp = parent[j].diam(), dk = (*kid[q])[j].diam();
+			if (!(dp>0) || dp==POS_INFINITY || dk==POS_INFINITY) continue;
+			v += std::log(std::max(dk, 1e-300) / dp);
+		}
+		lv[q] = v;
+	}
+	double m = std::max(lv[0], lv[1]);
+	if (m==NEG_INFINITY) return 0.0;
+	return std::min(1.0, std::exp(m) * (std::exp(lv[0]-m) + std::exp(lv[1]-m)));
+}
+
+void MLNodeServer::pc_observe(int var, double key) {
+	if ((int) pc_n.size() < nb_ext_var()) { pc_n.assign(nb_ext_var(), 0); pc_sum.assign(nb_ext_var(), 0.0); }
+	if (var<0 || var>=(int) pc_n.size() || !std::isfinite(key)) return;
+	pc_n[var]++; pc_sum[var] += key;
 }
 
 MLNodeServer::~MLNodeServer() {
@@ -1256,6 +1285,69 @@ void MLNodeServer::write_outcome(JsonOut& out, const char* status, double time,
 int MLNodeServer::decide(const Cell& c, const SampleParams& sp) {
 	if (oracle && oracle_max_depth>0 && (int) c.depth > oracle_max_depth)
 		return -1;                                   // deep: the bisector decides
+	if (oracle && oracle_pc) {
+		// Pseudocosts relative to the bisector: an observation of j is
+		// log(volume left by j / volume left by the bisector's variable), both
+		// probed at the same node, so that it does not depend on the depth or
+		// the region where it was taken. Deviate when j's mean is below
+		// log(ratio) (default ratio 1: j leaves less volume on average).
+		oracle_calls++;
+		vector<int> cand = candidates(c.box, sp.include_goal, sp.topk);   // LSmear order
+		if (cand.empty()) return -1;
+		if ((int) pc_n.size() < nb_ext_var()) { pc_n.assign(nb_ext_var(), 0); pc_sum.assign(nb_ext_var(), 0.0); }
+		int base_var = -1;
+		try { base_var = bsc.choose_var(c).var; } catch (NoBisectableVariableException&) { }
+		if (base_var<0) return -1;
+		const double eps = 1e-3;
+		double base_rem = -1;   // probed lazily, once per node
+		std::map<int,bool> fresh;   // probed at this node
+		int best = -1; double best_s = POS_INFINITY;
+		for (size_t k=0; k<cand.size(); k++) {
+			int j = cand[k];
+			if (j==base_var) continue;
+			double sc;
+			if (pc_n[j] < pc_rel) {
+				if (base_rem<0) {
+					DiveResult d = dive(c.box, base_var, 2, 0);
+					pc_probes++;
+					if (!d.valid) return -1;
+					base_rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+				}
+				DiveResult d = dive(c.box, j, 2, 0);
+				pc_probes++;
+				if (!d.valid) continue;
+				double rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+				sc = std::log((rem+eps)/(base_rem+eps));
+				pc_observe(j, sc);
+				fresh[j] = true;
+			} else
+				sc = pc_sum[j] / pc_n[j];
+			if (sc < best_s - 1e-9) { best = j; best_s = sc; }
+		}
+		if (best<0) { oracle_fallbacks++; return -1; }
+		double r = sb_ratio>0 ? sb_ratio : 1.0;
+		if (!(best_s < std::log(r) - 1e-9)) return -1;
+		if (!fresh[best]) {
+			// verify before deviating on a pseudocost alone: probe the pair here,
+			// so that a pseudocost gone stale (the variable chosen node after node
+			// becomes thin) is corrected by the nodes it is applied to
+			if (base_rem<0) {
+				DiveResult d = dive(c.box, base_var, 2, 0);
+				pc_probes++;
+				if (!d.valid) return -1;
+				base_rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+			}
+			DiveResult d = dive(c.box, best, 2, 0);
+			pc_probes++;
+			if (!d.valid) return -1;
+			double rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+			double sc = std::log((rem+eps)/(base_rem+eps));
+			pc_observe(best, sc);
+			if (!(sc < std::log(r) - 1e-9)) return -1;
+		}
+		oracle_deviations++;
+		return best;
+	}
 	if (oracle && oracle_hc4) {
 		std::vector<std::pair<int,ProbeResult> > pr = hc4_probes(c.box, probe_dims, probe_parts,
 				sp.include_goal, sp.topk, probe_ctc);

@@ -304,6 +304,7 @@ int main(int argc, char** argv) {
 	args::ValueFlag<int> ipopt_first(parser, "int", "With --loup ipoptxn: also call Ipopt at each of the first N loup-finder calls (a multi-start near the root). Default: 0.", {"ipopt-first"});
 	args::ValueFlag<double> dive_loup(parser, "float", "Dives (sampling, oracle) prune with this upper bound when it is lower than the search's: an optimum known in advance, so that the labels measure the branching alone. The search itself keeps its own loup.", {"dive-loup"});
 	args::Flag sb_need_pruned(parser, "sb-need-pruned", "With --sb-ratio: deviate from the bisector only when the probe prunes (or empties) strictly more than its choice; a smaller volume alone is not enough.", {"sb-need-pruned"});
+	args::ValueFlag<int> pc_rel(parser, "int", "With --oracle-score pc: probe a variable until it has N observations (reliability). Default: 4.", {"pc-rel"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
 			+ MLOptimizerConfig::bisector_names() + ". Default: lsmear (what ibexopt uses).", {"bisector"});
@@ -458,7 +459,8 @@ int main(int argc, char** argv) {
 			if (oracle_score.Get()=="depth") server->set_oracle_depth(true);
 			else if (oracle_score.Get()=="sb") server->set_oracle_sb(true);
 			else if (oracle_score.Get()=="hc4") server->set_oracle_hc4(true);
-			else if (oracle_score.Get()!="nodes") { cerr << "--oracle-score: nodes, depth, sb or hc4" << endl; delete server; delete sys; return 1; }
+			else if (oracle_score.Get()=="pc") server->set_oracle_pc(true, pc_rel ? pc_rel.Get() : 4);
+			else if (oracle_score.Get()!="nodes") { cerr << "--oracle-score: nodes, depth, sb, hc4 or pc" << endl; delete server; delete sys; return 1; }
 		}
 
 		if (model_file) {
@@ -533,6 +535,7 @@ int main(int argc, char** argv) {
 				out.kv("oracle_calls", server->oracle_calls);
 				out.kv("oracle_fallbacks", server->oracle_fallbacks);
 				out.kv("oracle_deviations", server->oracle_deviations);
+				out.kv("pc_probes", server->pc_probes);
 			}
 			if (server->guard_switched_at()>=-1) {
 				out.kv("guard_horizon", server->guard_horizon());

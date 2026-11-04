@@ -346,6 +346,25 @@ public:
 	 */
 	void set_sb_ratio(double r) { sb_ratio = r; }
 
+	/**
+	 * \brief Reliability branching with pseudocosts relative to the bisector
+	 * (--oracle-score pc).
+	 *
+	 * An observation of variable j is log(volume left by bisecting j / volume
+	 * left by bisecting the bisector's own choice), both probed at the same
+	 * node (bisect + full processing of both children, state restored): it
+	 * measures how much better than the bisector j tends to be, independently
+	 * of where in the tree it was taken. The candidates with fewer than \a k
+	 * observations are probed (with the bisector's variable, once per node);
+	 * the others use their mean. Deviate from the bisector only if the best
+	 * mean is below log(ratio) (set_sb_ratio(); 1 by default), and, when that
+	 * mean was not refreshed at this node, only if probing the pair here
+	 * confirms it (the probe joins the mean): a pseudocost applied node after
+	 * node goes stale as the variable thins, and would hijack the search.
+	 */
+	void set_oracle_pc(bool on, int k) { oracle_pc = on; pc_rel = k; }
+	long pc_probes;               //!< --oracle-score pc: probes made
+
 	/** \brief Dives prune with this loup when it is lower than the search's
 	 *  (an optimum known in advance). +oo: the search's own loup. */
 	void set_dive_loup(double l) { dive_loup = l; }
@@ -702,6 +721,14 @@ protected:
 	Ctc* hc4_ctc;                 //!< HC4 alone on the extended system, built on first use
 	Ctc* lp_ctc;                  //!< HC4 then polytope hull, built on first use
 	double dive_loup;             //!< see set_dive_loup()
+	bool oracle_pc;               //!< see set_oracle_pc()
+	int pc_rel;                   //!< reliability threshold
+	std::vector<double> pc_sum;   //!< per variable: sum of observed keys
+	std::vector<int> pc_n;        //!< per variable: number of observations
+	/** \brief Fraction of the parent's volume left by a split (goal var aside). */
+	double split_key(const IntervalVector& parent, bool lpruned, const IntervalVector& l,
+			bool rpruned, const IntervalVector& r) const;
+	void pc_observe(int var, double key);
 	int probe_ctc;                //!< see set_probe_ctc()
 	std::vector<void*> probe_owned;  //!< linearizers and hull behind lp_ctc
 	bool sb_vol_only;             //!< see set_sb_vol_only()
