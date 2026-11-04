@@ -46,32 +46,24 @@
 % =====================================================================
 \begin{abstract}
 Interval branch-and-bound solvers compute rigorous enclosures of the solutions
-of nonlinear systems and of the global optimum of constrained problems. One of
-their most effective tools, the polytope-hull contractor, bounds each of the
-$n$ variables of a node over a linear relaxation by solving $2n$ linear
-programs (LPs). Current implementations delegate these LPs to a floating-point
-LP solver and recover rigor afterwards from its dual solution. The LPs are
-small and only a few pivots apart, so a general-purpose solver spends more per
-call on setting up, refactorizing and verifying than on pivoting. We present a
-self-certifying simplex (SC) designed around the certificate instead: with the
-relaxation written in a homogeneous form with interval-bounded slacks, any
-basis of the simplex method yields a valid bound on the box and on every
-sub-box. SC therefore verifies nothing, does not refactorize before declaring
-an optimum, needs no initial phase to find a feasible basis, can stop an LP at
-any basis without losing its bound, and solves the $2n$ problems on one shared
-basis. We evaluate it in Ibex, an open-source interval solver, against the LP
-solvers SoPlex, HiGHS and Gurobi inside the same contractor. On the same LPs,
-with the same contraction, a pass of SC costs 0.55--0.62 times that of SoPlex
-as Ibex uses it, 0.73--0.82 times that of the simplex of SoPlex driven
-directly, and 0.12--0.27 times that of HiGHS and Gurobi. With an affine
-relaxation, the whole solver is 16--17\% faster than with SoPlex on 240 global
-optimization problems and 8--9\% faster on 242 systems of equations (10\% and
-4--6\% against the simplex driven directly), with the same search trees. The
-gain belongs to small relaxations: it holds up to 15--30 rows, and on larger
-ones SoPlex needs fewer pivots. A hybrid contractor that hands the relaxations
-above 30 rows to SoPlex stays within 2\% of the better engine in every
-configuration, and with a relaxation that combines affine and Taylor-based
-rows it is the best configuration on systems of equations.
+of nonlinear systems and of global optima. Their polytope-hull contractor
+bounds each of the $n$ variables of a node over a linear relaxation by solving
+$2n$ small linear programs (LPs), usually with a floating-point LP solver whose
+dual solution is certified afterwards. On such LPs a general-purpose solver
+spends more per call on setting up, refactorizing and verifying than on
+pivoting. We present a self-certifying simplex (SC) designed around the
+certificate: with the relaxation in a homogeneous form, any basis yields a
+valid bound on the box and its sub-boxes, so SC verifies nothing, does not
+refactorize before declaring an optimum, needs no phase to find a feasible
+basis, can stop an LP at any basis, and solves the $2n$ LPs on one shared
+basis. In the open-source interval solver Ibex, on the same LPs and with the
+same contraction, a pass of SC costs 0.55--0.62 times that of SoPlex, 0.73--0.82
+times that of the simplex of SoPlex driven directly, and 0.12--0.27 times that
+of HiGHS and Gurobi; the whole solver is 16--17\% faster on 240 global
+optimization problems and 8--9\% faster on 242 systems of equations, with the
+same search trees. The gain belongs to relaxations of up to 15--30 rows; a
+hybrid that hands larger ones to SoPlex stays within 2\% of the better engine
+everywhere.
 \end{abstract}
 
 % =====================================================================
