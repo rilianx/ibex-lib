@@ -59,7 +59,8 @@ basis, can stop an LP at any basis, and solves the $2n$ LPs on one shared
 basis. In the open-source interval solver Ibex, on the same LPs and with the
 same contraction, a pass of SC costs 0.55--0.62 times that of SoPlex, 0.73--0.82
 times that of the simplex of SoPlex driven directly, and 0.12--0.27 times that
-of HiGHS and Gurobi; the whole solver is 16--17\% faster on 240 global
+of HiGHS and Gurobi; with an affine relaxation, the whole solver is 16--17\%
+faster on 240 global
 optimization problems and 8--9\% faster on 242 systems of equations, with the
 same search trees. The gain belongs to relaxations of up to 15--30 rows; a
 hybrid that hands larger ones to SoPlex stays within 2\% of the better engine
