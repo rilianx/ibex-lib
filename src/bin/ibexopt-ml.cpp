@@ -528,6 +528,24 @@ int main(int argc, char** argv) {
 			out.kv("bisect_ratio", bisect_ratio);
 			out.kv("rule", model!=NULL ? model->description()
 					: string(MLOptimizerConfig::bisector_name(bisector)));
+			{
+				// when the upper bound reached its final value (within the
+				// solver's relative precision, 1e-3, and exactly): what node
+				// selection can hope to move earlier
+				const std::vector<MLNodeServer::LoupEvent>& H = server->loup_history;
+				double fin = server->get_loup();
+				long near_n=-1, last_n=-1; double near_t=-1, last_t=-1;
+				for (size_t k=0; k<H.size(); k++) {
+					if (near_n<0 && H[k].loup <= fin + 1e-3*std::fabs(fin)) { near_n = H[k].nodes; near_t = H[k].time; }
+					if (H[k].loup <= fin) { last_n = H[k].nodes; last_t = H[k].time; break; }
+				}
+				out.kv("loup_updates", (long) H.size()-1);
+				out.kv("loup_near_nodes", near_n);
+				out.kv("loup_near_time", near_t);
+				out.kv("loup_final_nodes", last_n);
+				out.kv("loup_final_time", last_t);
+				if (!server->acid_tuning().empty()) out.kv("acid_nbcidvar", (long) server->acid_tuning()[0].nbcidvar);
+			}
 			if (getenv("IBEX_ACID_TRACE")) for (size_t k=0; k<server->acid_tuning().size(); k++)
 				std::cerr << "acid " << k << " nbcidvar=" << server->acid_tuning()[k].nbcidvar
 				          << " nbcalls=" << server->acid_tuning()[k].nbcalls

@@ -1515,6 +1515,9 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 
 	update_uplo();
 
+	loup_history.clear();
+	{ LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e); }
+
 	const char* status = "complete";
 
 	// Note: this is Optimizer::optimize()'s loop, minus the reporting, plus the
@@ -1576,6 +1579,7 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 					double ymax = compute_ymax();
 					buffer.contract(ymax);
 					if (ymax <= NEG_INFINITY) { status="unbounded"; break; }
+					LoupEvent e = { (long) nb_cells, timer.get_time(), loup }; loup_history.push_back(e);
 				}
 
 				update_uplo();

@@ -374,6 +374,11 @@ public:
 	 *  (an optimum known in advance). +oo: the search's own loup. */
 	void set_dive_loup(double l) { dive_loup = l; }
 
+	/** \brief Upper-bound history of the last collect()/solve(): (nodes,
+	 *  seconds, loup) at the start and at every improvement. */
+	struct LoupEvent { long nodes; double time; double loup; };
+	std::vector<LoupEvent> loup_history;
+
 	/** \brief Current tuning state of the ACID contractors of the search. */
 	std::vector<CtcAcid::TuningState> acid_tuning() const {
 		std::vector<CtcAcid::TuningState> v;
