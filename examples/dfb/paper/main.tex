@@ -820,9 +820,9 @@ contractor, we compare engines inside the \emph{same} contractor. All run
 the same pass over the $2n$ bounds, on the same merged relaxation, with the
 same skipping rule, the same certificate and the same policy when an LP yields
 no certificate: that bound is not contracted and the pass continues. (The
-polytope-hull contractor of Ibex~2.8.9 abandoned the pass when the LP solver
-reported infeasibility without a verifiable ray, and the node was not pruned;
-this has since been corrected.\todo{version o commit de Ibex con el arreglo}) They
+polytope-hull contractor of Ibex~2.8.9 abandons the pass when the LP solver
+reports infeasibility without a verifiable ray or reaches its iteration limit;
+our contractor continues with the next bound, whatever the engine.) They
 differ only in where the multipliers come from:
 \begin{itemize}
 \item \emph{SC}: the multipliers of the final basis of the self-certifying simplex;
