@@ -4,7 +4,9 @@
 # One line of JSON per (instance, arm) in OUT; resumable.
 #   INSTANCES=list TLIM=600 BIN=build/bin/ibexopt-ml JOBS=16 results/ipopt-diam/run.sh
 #   python3 results/ipopt-diam/analyze.py
-# Arms (ARMS="d1e8 d1e12 dinf"): the threshold 1e8 (default), 1e12, none.
+# Arms (ARMS="d1e8 d1e12 dinf"): the threshold 1e8 (default), 1e12, 1e300;
+# dnone: no threshold at all, unbounded boxes included (Ipopt starts from the
+# point of the box closest to 0 when the box has no finite center).
 cd "$(dirname "$0")/../.."
 BIN=${BIN:-build/bin/ibexopt-ml}
 OUT=${OUT:-results/ipopt-diam/runs.jsonl}
@@ -18,9 +20,10 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     d1e8)  d=1e8 ;;
     d1e12) d=1e12 ;;
     dinf)  d=1e300 ;;
+    dnone) d=-1 ;;
   esac
   r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
-       --ipopt-diam $d --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
+       --ipopt-diam=$d --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
   [ -z "$r" ] && r="{\"status\": \"killed\"}"
   echo "{\"instance\": \"$i\", \"arm\": \"$arm\", \"result\": $r}" >> '"$OUT"'
 '

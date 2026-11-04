@@ -171,6 +171,7 @@ namespace ibex {
         LoupFinderIpopt& operator=(const LoupFinderIpopt&);
 
         bool log_pending=false, log_forced=false; double log_loup_in=0, log_time=0, log_value=0, log_width=0, log_dist=0, log_node_lb=0; int log_status=0, log_depth=0;  // IBEX_IPOPT_LOG
+        bool ipopt_pending=false;  // a scheduled call skipped on a wide box, see ipopt_defer
         int ipopt_calls=-1; // 
 
 

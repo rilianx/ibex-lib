@@ -43,6 +43,7 @@ namespace ibex {
     std::vector<Vector> ipopt_sols;   // previous Ipopt solutions (for the distance)
   }
   double ipopt_diam=1.e8;
+  bool ipopt_defer=false;
   
   LoupFinderIpopt::LoupFinderIpopt(const System& sys,const System& normsys, const ExtendedSystem& extsys) : sys(sys), normsys(normsys), extsys(extsys), solution(sys.nb_var), the_box(sys.box), ipopt_box(sys.box) {
 	try {
@@ -129,11 +130,17 @@ namespace ibex {
       IntervalVector loup_point0=loup_point;
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
+	bool scheduled = (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50);
+	bool narrow = (ipopt_diam < 0 || box.max_diam() <= ipopt_diam);   // ipopt_diam < 0: no threshold
+	// ipopt_defer: a scheduled call that falls on a box too wide is not lost,
+	// it waits for the next box narrow enough
+	if (ipopt_defer && scheduled && !narrow) ipopt_pending = true;
 	if (
-	    (box.max_diam() <= ipopt_diam)
+	    narrow
 	    &&
-	    (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50 || (force && box.max_diam()<= ipopt_diam) )
+	    (scheduled || (ipopt_defer && ipopt_pending) || force )
 	    ){
+	  ipopt_pending = false;
 	
 	  //	  cout << "nb_cells " <<  optimizer->get_nb_cells() << endl;
 	  bool was_forced = force;
@@ -302,6 +309,17 @@ namespace ibex {
         // initialize to the given starting point
 	//	ibex::Vector v = the_box.random();
 	ibex::Vector v = the_box.mid();
+	// an unbounded box has no finite center: start from the point of the
+	// interval closest to 0 (a finite one), so that Ipopt can run there too
+	for (int i=0; i<n; i++) {
+	  const Interval& xi = the_box[i];
+	  if (!std::isfinite(v[i]) || std::fabs(v[i]) > 1e300 || xi.is_unbounded()) {
+	    if (xi.contains(0)) v[i] = 0;
+	    else if (xi.lb() > 0) v[i] = std::isfinite(xi.lb()) ? xi.lb() + std::max(1.0, std::fabs(xi.lb())) * 1e-3 : 1.0;
+	    else v[i] = std::isfinite(xi.ub()) ? xi.ub() - std::max(1.0, std::fabs(xi.ub())) * 1e-3 : -1.0;
+	    if (!xi.contains(v[i])) v[i] = xi.lb() > 0 ? xi.lb() : xi.ub();
+	  }
+	}
 	//	cout << " force " << force << endl;
 	if (force)  v=solution;
 
