@@ -385,11 +385,12 @@ still certified with the multipliers of the last basis, and the pass goes on.
 can be stopped at any basis with a valid, possibly weaker, bound. SC stops each
 LP after 60 pivots. With the affine relaxation the limit is rarely reached and
 changes nothing; with larger relaxations it cuts the long chains of degenerate
-pivots of a few LPs (Section~\ref{sec:experiments}). A black box cannot do the
-same: an LP stopped by its iteration limit has no optimal dual solution, and
-its bound is lost. Ibex gives SoPlex a limit of 100 iterations, with which it
-abandons some LPs (377 of 61\,815 on Geneig-icse); we give the black boxes the
-limit $20m+200$, which they almost never reach.
+pivots of a few LPs (Section~\ref{sec:experiments}). An external LP solver
+cannot do the same: an LP stopped by its iteration limit has no optimal dual
+solution, and its bound is lost. Ibex gives SoPlex a limit of 100 iterations,
+with which it abandons some LPs (377 of 61\,815 on Geneig-icse); in our
+experiments the external solvers get the limit $20m+200$, which they almost
+never reach.
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
