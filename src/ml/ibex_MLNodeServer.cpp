@@ -119,7 +119,7 @@ MLNodeServer::MLNodeServer(const System& sys,
 			init_ext_box(IntervalVector::empty(sys.nb_var+1)),
 			orig_box(IntervalVector::empty(sys.nb_var)),
 			oracle_calls(0), oracle_fallbacks(0),
-			model(NULL), oracle(false), oracle_depth(false), oracle_sb(false), oracle_max_depth(0), sb_ratio(0), sb_vol_only(false), sb_need_pruned(false), pc_probes(0), oracle_hc4(false), probe_dims(1), probe_parts(4), hc4_ctc(NULL), lp_ctc(NULL), dive_loup(POS_INFINITY), oracle_pc(false), pc_rel(4), probe_ctc(PROBE_HC4), oracle_deviations(0), stats(new OpenStatistics()),
+			model(NULL), oracle(false), oracle_depth(false), oracle_sb(false), oracle_max_depth(0), sb_ratio(0), sb_vol_only(false), sb_need_pruned(false), pc_probes(0), oracle_hc4(false), probe_dims(1), probe_parts(4), hc4_ctc(NULL), lp_ctc(NULL), dive_loup(POS_INFINITY), oracle_pc(false), pc_rel(4), pc_light(false), probe_ctc(PROBE_HC4), oracle_deviations(0), stats(new OpenStatistics()),
 			last_time(0), last_decisions(0), last_status("not run") {
 
 	RNG::srand((int) random_seed);
@@ -244,6 +244,47 @@ double MLNodeServer::split_key(const IntervalVector& parent, bool lpruned, const
 	double m = std::max(lv[0], lv[1]);
 	if (m==NEG_INFINITY) return 0.0;
 	return std::min(1.0, std::exp(m) * (std::exp(lv[0]-m) + std::exp(lv[1]-m)));
+}
+
+double MLNodeServer::pc_probe(const IntervalVector& box, int var) {
+	if (var<0 || var>=box.size() || bsc.too_small(box, var)) return -1;
+	pc_probes++;
+	if (!pc_light) {
+		DiveResult d = dive(box, var, 2, 0);
+		if (!d.valid) return -1;
+		return split_key(box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+	}
+	// light: the search's contractor alone on both halves, the goal capped at
+	// the current ymax; no upper bounding, ACID's tuning put back
+	State st = save();
+	pair<IntervalVector,IntervalVector> h = box.bisect(var, default_bisect_ratio);
+	IntervalVector kid[2] = { h.first, h.second };
+	bool pr[2];
+	const int gv = ext_goal_var();
+	const double ymax = loup==POS_INFINITY ? POS_INFINITY : compute_ymax();
+	try {
+		for (int q=0; q<2; q++) {
+			kid[q][gv] &= Interval(NEG_INFINITY, ymax);
+			if (!kid[q].is_empty()) {
+				// as Optimizer::contract_and_bound, without the upper bounding:
+				// the impact (bisected variable and goal) keeps HC4 and ACID
+				// incremental, as in the search
+				Cell* cell = new_cell(kid[q], var, 1);
+				try {
+					ContractContext context(cell->prop);
+					context.impact.clear();
+					context.impact.add(var);
+					context.impact.add(gv);
+					ctc.contract(cell->box, context);
+				} catch (...) { delete cell; throw; }
+				kid[q] = cell->box;
+				delete cell;
+			}
+			pr[q] = kid[q].is_empty();
+		}
+	} catch (...) { restore(st); throw; }
+	restore(st);
+	return split_key(box, pr[0], kid[0], pr[1], kid[1]);
 }
 
 void MLNodeServer::pc_observe(int var, double key) {
@@ -1308,15 +1349,11 @@ int MLNodeServer::decide(const Cell& c, const SampleParams& sp) {
 			double sc;
 			if (pc_n[j] < pc_rel) {
 				if (base_rem<0) {
-					DiveResult d = dive(c.box, base_var, 2, 0);
-					pc_probes++;
-					if (!d.valid) return -1;
-					base_rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+					base_rem = pc_probe(c.box, base_var);
+					if (base_rem<0) return -1;
 				}
-				DiveResult d = dive(c.box, j, 2, 0);
-				pc_probes++;
-				if (!d.valid) continue;
-				double rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+				double rem = pc_probe(c.box, j);
+				if (rem<0) continue;
 				sc = std::log((rem+eps)/(base_rem+eps));
 				pc_observe(j, sc);
 				fresh[j] = true;
@@ -1332,15 +1369,11 @@ int MLNodeServer::decide(const Cell& c, const SampleParams& sp) {
 			// so that a pseudocost gone stale (the variable chosen node after node
 			// becomes thin) is corrected by the nodes it is applied to
 			if (base_rem<0) {
-				DiveResult d = dive(c.box, base_var, 2, 0);
-				pc_probes++;
-				if (!d.valid) return -1;
-				base_rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+				base_rem = pc_probe(c.box, base_var);
+				if (base_rem<0) return -1;
 			}
-			DiveResult d = dive(c.box, best, 2, 0);
-			pc_probes++;
-			if (!d.valid) return -1;
-			double rem = split_key(c.box, d.left_status!=OPEN, d.left, d.right_status!=OPEN, d.right);
+			double rem = pc_probe(c.box, best);
+			if (rem<0) return -1;
 			double sc = std::log((rem+eps)/(base_rem+eps));
 			pc_observe(best, sc);
 			if (!(sc < std::log(r) - 1e-9)) return -1;

@@ -15,11 +15,13 @@
 #   lffix   lsmear-lffix
 #   pc      + pseudocosts, reliability 4, deviate when the mean says better
 #   pcr05   + same, deviate only when the mean says at most half the volume
+#   pclight / pclightr05: the same two, probing with the search's contractor
+#           alone (--pc-light: no upper bounding in the probes)
 cd "$(dirname "$0")/../.."
 BIN=${BIN:-build/bin/ibexopt-ml}
 OUT=${OUT:-results/pseudocost/runs.jsonl}
 TLIM=${TLIM:-600}; export TLIM
-$BIN --help 2>/dev/null | grep -q pc-rel || { echo "$BIN no conoce --pc-rel: recompila"; exit 1; }
+$BIN --help 2>/dev/null | grep -q pc-light || { echo "$BIN no conoce --pc-light: recompila"; exit 1; }
 touch $OUT
 for arm in ${ARMS:-lffix pc pcr05}; do while read i; do echo "$arm $i"; done < ${INSTANCES:-results/pseudocost/instances.txt}; done |
 xargs -P ${JOBS:-8} -n2 sh -c '
@@ -28,6 +30,8 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     lffix) a="--bisector lsmear-lffix" ;;
     pc)    a="--oracle --oracle-score pc --pc-rel 4 --bisector lsmear-lffix" ;;
     pcr05) a="--oracle --oracle-score pc --pc-rel 4 --sb-ratio 0.5 --bisector lsmear-lffix" ;;
+    pclight)    a="--oracle --oracle-score pc --pc-rel 4 --pc-light --bisector lsmear-lffix" ;;
+    pclightr05) a="--oracle --oracle-score pc --pc-rel 4 --pc-light --sb-ratio 0.5 --bisector lsmear-lffix" ;;
   esac
   r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve $a --relax both --loup ipoptxn \
        --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)

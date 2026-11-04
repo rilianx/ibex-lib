@@ -363,6 +363,11 @@ public:
 	 * node goes stale as the variable thins, and would hijack the search.
 	 */
 	void set_oracle_pc(bool on, int k) { oracle_pc = on; pc_rel = k; }
+
+	/** \brief Pseudocost probes with the search's contractor alone (no upper
+	 *  bounding, goal capped at the current ymax) instead of a full
+	 *  processing of both children. */
+	void set_pc_light(bool b) { pc_light = b; }
 	long pc_probes;               //!< --oracle-score pc: probes made
 
 	/** \brief Dives prune with this loup when it is lower than the search's
@@ -723,6 +728,9 @@ protected:
 	double dive_loup;             //!< see set_dive_loup()
 	bool oracle_pc;               //!< see set_oracle_pc()
 	int pc_rel;                   //!< reliability threshold
+	bool pc_light;                //!< see set_pc_light()
+	/** \brief Volume left by bisecting \a var (see set_pc_light()); -1 if it cannot be. */
+	double pc_probe(const IntervalVector& box, int var);
 	std::vector<double> pc_sum;   //!< per variable: sum of observed keys
 	std::vector<int> pc_n;        //!< per variable: number of observations
 	/** \brief Fraction of the parent's volume left by a split (goal var aside). */

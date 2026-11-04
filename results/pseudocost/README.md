@@ -27,3 +27,20 @@ On the 32 both close: pc uses 0.83x the nodes (geo) but 1.05x the time;
 faster than lffix (>1.2x) on 1, slower on 7. pcr05: 0.91x nodes, 1.08x time.
 Gains in nodes (launch 226 -> 36, hs113 384 -> 266) are paid for by the
 probes (launch 7.6 -> 10.2 s, eigminc 0.1 -> 1.7 s). Not worth the full run.
+
+## Light probes (`--pc-light`)
+
+The probe without the upper bounding: the search's contractor alone on both
+halves, goal capped at ymax, with the impact context of the search (bisected
+variable + goal), ACID's tuning put back. It is not lighter. On the four hard
+instances (nodes, time, probes), vs the full probe:
+
+    instance   full                       light
+    ship-1     202   2.3 s  239           1052   4.7 s  1089
+    dnieper    12    6.8 s  236           14    14.5 s   238
+    schwefel5  752   0.5 s   33           740    0.6 s    33
+    mconcon    1268 11.5 s 1328           1064  10.0 s  1124
+
+The cost of a probe is the contraction itself (~28 ms per full probe on
+dnieper, ~2.5 search nodes), not the loup finder; building fresh cells for
+the light probe makes it worse. Not run on the 40 instances.
