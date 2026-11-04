@@ -544,6 +544,8 @@ int main(int argc, char** argv) {
 					if (H[k].loup <= fin) { last_n = H[k].nodes; last_t = H[k].time; break; }
 				}
 				out.kv("loup_updates", (long) H.size()-1);
+				if (getenv("IBEX_LOUP_POINT") && server->get_loup()<POS_INFINITY)
+					out.kv("loup_point", server->get_loup_point());
 				out.kv("loup_near_nodes", near_n);
 				out.kv("loup_near_time", near_t);
 				out.kv("loup_final_nodes", last_n);
