@@ -385,12 +385,15 @@ still certified with the multipliers of the last basis, and the pass goes on.
 can be stopped at any basis with a valid, possibly weaker, bound. SC stops each
 LP after 60 pivots. With the affine relaxation the limit is rarely reached and
 changes nothing; with larger relaxations it cuts the long chains of degenerate
-pivots of a few LPs (Section~\ref{sec:experiments}). An external LP solver
-cannot do the same: an LP stopped by its iteration limit has no optimal dual
-solution, and its bound is lost. Ibex gives SoPlex a limit of 100 iterations,
-with which it abandons some LPs (377 of 61\,815 on Geneig-icse); in our
-experiments the external solvers get the limit $20m+200$, which they almost
-never reach.
+pivots of a few LPs (Section~\ref{sec:experiments}). With an external LP
+solver the same would be possible, since the multipliers of the basis where it
+stops would also certify a bound, but the usual interface does not use them:
+SoPlex stores a solution when it reaches its iteration limit, yet Ibex treats
+the LP as unsolved, discards its bound and abandons the pass. With the limit of
+100 iterations that Ibex gives SoPlex, this happens in 377 of 61\,815 LPs on
+Geneig-icse. In our experiments the external solvers keep that policy, as in
+Ibex, but get the limit $20m+200$, which they almost never reach (8 LPs of
+68\,757 on the same system).
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
