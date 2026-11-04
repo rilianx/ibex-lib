@@ -1517,6 +1517,12 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 
 	loup_history.clear();
 	{ LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e); }
+	if (late_loup < loup) {
+		loup = late_loup;
+		buffer.contract(compute_ymax());
+		LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e);
+		update_uplo();
+	}
 
 	const char* status = "complete";
 

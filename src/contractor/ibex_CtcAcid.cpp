@@ -57,6 +57,10 @@ void CtcAcid::contract(IntervalVector& box, ContractContext& context) {
 	int nbinitcalls=50;                                // longueur du réglage
 	int factor = 20;                                   // détermine la période entre les débuts de 2 régalages  successifs : factor*nbinitcalls
 	int nbcall1= nbcalls% (factor*nbinitcalls);        // pour savoir si on est dans une phase de réglage (nbcall1 < nbinitcalls )
+	if (fixed_nbcidvar>=0) {                           // non adaptive: no tuning phase, always fixed_nbcidvar variables (at most all of them, once)
+		nbcidvar = fixed_nbcidvar < nb_CID_var ? fixed_nbcidvar : nb_CID_var;
+		nbcall1 = nbinitcalls+1;
+	}
 
 	IntervalVector initbox (box);
 

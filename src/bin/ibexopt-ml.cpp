@@ -306,6 +306,8 @@ int main(int argc, char** argv) {
 	args::Flag sb_need_pruned(parser, "sb-need-pruned", "With --sb-ratio: deviate from the bisector only when the probe prunes (or empties) strictly more than its choice; a smaller volume alone is not enough.", {"sb-need-pruned"});
 	args::ValueFlag<int> pc_rel(parser, "int", "With --oracle-score pc: probe a variable until it has N observations (reliability). Default: 4.", {"pc-rel"});
 	args::Flag pc_light(parser, "pc-light", "With --oracle-score pc: probe with the search's contractor alone (no upper bounding) instead of fully processing both children.", {"pc-light"});
+	args::ValueFlag<int> acid_fixed(parser, "int", "Non-adaptive ACID: 3BCID on N variables at every node (capped at all of them: a large N means all, as in ACID's first tuning phase), no tuning. For comparisons between searches that would tune ACID differently.", {"acid-fixed"});
+	args::ValueFlag<double> late_loup(parser, "float", "Give the search this upper bound right after the root is processed (unlike --initial-loup, the root's contraction is unchanged).", {"late-loup"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
 			+ MLOptimizerConfig::bisector_names() + ". Default: lsmear (what ibexopt uses).", {"bisector"});
@@ -445,6 +447,8 @@ int main(int argc, char** argv) {
 		if (oracle_depth_arg) server->set_oracle_max_depth(oracle_depth_arg.Get());
 		if (sb_ratio_arg) server->set_sb_ratio(sb_ratio_arg.Get());
 		if (dive_loup) server->set_dive_loup(dive_loup.Get());
+		if (acid_fixed) server->set_acid_fixed(acid_fixed.Get());
+		if (late_loup) server->set_late_loup(late_loup.Get());
 		if (sb_vol_only) server->set_sb_vol_only(true);
 		if (sb_need_pruned) server->set_sb_need_pruned(true);
 		if (probe_dims) server->set_probe_dims(probe_dims.Get());
@@ -545,6 +549,7 @@ int main(int argc, char** argv) {
 				out.kv("loup_final_nodes", last_n);
 				out.kv("loup_final_time", last_t);
 				if (!server->acid_tuning().empty()) out.kv("acid_nbcidvar", (long) server->acid_tuning()[0].nbcidvar);
+				if (acid_fixed) out.kv("acid_fixed", (long) acid_fixed.Get());
 			}
 			if (getenv("IBEX_ACID_TRACE")) for (size_t k=0; k<server->acid_tuning().size(); k++)
 				std::cerr << "acid " << k << " nbcidvar=" << server->acid_tuning()[k].nbcidvar

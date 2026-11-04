@@ -379,6 +379,17 @@ public:
 	struct LoupEvent { long nodes; double time; double loup; };
 	std::vector<LoupEvent> loup_history;
 
+	/** \brief Give the search this upper bound right after the root is
+	 *  processed (if lower than its own): the best any node selection can do,
+	 *  without changing how the root itself is contracted (an initial loup
+	 *  does, and can change the whole tree; see results/node-selection). */
+	void set_late_loup(double l) { late_loup = l; }
+	double late_loup = POS_INFINITY;
+
+	/** \brief Make the search's ACID non-adaptive: \a k variables at every
+	 *  call (-1: adaptive again). See CtcAcid::fixed_nbcidvar. */
+	void set_acid_fixed(int k) { for (size_t i=0; i<acid.size(); i++) acid[i]->fixed_nbcidvar = k; }
+
 	/** \brief Current tuning state of the ACID contractors of the search. */
 	std::vector<CtcAcid::TuningState> acid_tuning() const {
 		std::vector<CtcAcid::TuningState> v;

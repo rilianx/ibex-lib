@@ -113,6 +113,14 @@ public :
 	/** the average (on all tunings) of the  number of variables to be shaved  : result given at the end of the search*/
 	static double nbvarstat;
 
+	/**
+	 * \brief Non-adaptive mode: when >= 0, 3BCID is applied to this many
+	 * variables at every call (capped at all of them, each once) and no tuning
+	 * phase runs (-1, the default: adaptive). For experiments comparing searches whose different histories
+	 * would otherwise tune ACID differently.
+	 */
+	int fixed_nbcidvar = -1;
+
 	/** default ctratio value, set to 0.002. */
 	static constexpr double default_ctratio = 0.002;
 
