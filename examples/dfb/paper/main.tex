@@ -362,17 +362,20 @@ their optimum (below).
 
 Two rules decide which LPs are solved and in which order. A bound is
 \emph{skipped} when a primal point obtained earlier in the pass already
-attains it, since its LP would return that value; this rule and the order by
-distance to the last primal point come from the polytope-hull contractor of
-Ibex~\cite{baharev2009distillation}. SC takes the bound nearest to the last
-primal point, whose optimum lies closest to it; the black boxes use the same
-order, which is also their best. With an explicit tableau
-(Section~\ref{sec:engines}) a finer order is available: for $x_k$ basic in
-row $r$, the number of nonbasic columns whose reduced cost for the objective
-$\pm z_k$ would have the wrong sign is the number of infeasibilities that the
-next LP must repair, and can be counted in $O(\mathrm{nnz}(\text{row } r))$
-without pivoting; it saved 0--2\% with the tableau engine, but nothing
-that the revised engine does not save by itself.
+attains it, since its LP would return that value; this rule comes from the
+polytope-hull contractor of Ibex~\cite{baharev2009distillation}. Among the
+remaining bounds, the contractor of Ibex solves first the one farthest from the
+last primal point. SC solves first the nearest one: its optimum lies closest to
+the vertex where the previous LP ended, so the next LP needs fewer pivots. In
+the experiments of Section~\ref{sec:experiments}, the external LP solvers we
+compare with SC use the same order, which is also the best one for them. A
+finer order is available when the whole tableau is kept explicitly
+(Section~\ref{sec:engines}): for $x_k$ basic in row $r$, the number of
+nonbasic columns whose reduced cost for the objective $\pm z_k$ would have the
+wrong sign is the number of infeasibilities that the next LP must repair, and
+can be counted in $O(\mathrm{nnz}(\text{row } r))$ without pivoting. With an
+explicit tableau this order saved up to 2\%; with the revised engine of SC the
+nearest bound first does as well.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
 empty and the pass stops. If an LP ends without an optimal basis, its bound is
