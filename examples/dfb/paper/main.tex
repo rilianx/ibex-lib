@@ -35,7 +35,7 @@
 
 \title{A self-certifying simplex for rigorous\\ polytope-hull contraction in interval branch and bound}
 \author{Ignacio Araya \and \todo{coautores}}
-\date{\todo{borrador del 2026-10-22}}
+\date{\todo{borrador del 2026-11-04}}
 
 \begin{document}
 \maketitle
@@ -147,8 +147,9 @@ contracts, on one basis (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
 \item The simplex itself: one basis shared by the $2n$ problems, a warm start
 between bounds chosen per program, merged proportional rows, a revised engine
 on the LU factorization of SoPlex, the long-step dual ratio test, devex pricing, a cost perturbation against dual
-degeneracy, and a limit on the pivots of each LP that the certificate makes
-harmless, with an ablation of each component (Section~\ref{sec:simplex}).
+degeneracy as an option, and a limit on the pivots of each LP that the
+certificate makes harmless, with an ablation of each component
+(Section~\ref{sec:simplex}).
 \item Properties of the certificate: validity for any multipliers and any
 sub-box, exactness at an optimal basis, and, under the dual method, a valid
 lower bound that is nondecreasing along the iterations
@@ -508,8 +509,8 @@ relocation are $d = \mp\alpha_r$ on the nonbasic variables: exactly zero on
 every column that does not meet row $r$. Those columns give ratio zero in the
 dual ratio test, so they enter first and the dual objective does not move. On
 some systems (Virasoro, Katsura) 80--95\% of the dual pivots were
-degenerate. SC uses the
-standard remedy~\cite{koberstein2005dual}: after relocation, each zero
+degenerate. SC offers, as an
+option, the standard remedy~\cite{koberstein2005dual}: after relocation, each zero
 reduced cost is replaced by a random value in $[\varepsilon,2\varepsilon)$,
 $\varepsilon=10^{-7}$, with the sign that its current bound already
 satisfies. The basis stays dual feasible for the perturbed costs and the ties
@@ -518,10 +519,12 @@ recomputed, and the few columns that are then dual infeasible are fixed by
 primal steps. The multipliers, and hence the certificate, always come from the
 true costs. The value of $\varepsilon$ is not critical: between $10^{-9}$ and
 $10^{-5}$ the results are the same, and perturbing only after a run of
-degenerate pivots, as LP solvers do on stalling, gives no further gain. With
-the other components in place and the affine relaxation, the perturbation no
-longer pays: without it the whole solver is 1--2\% faster on systems of
-equations and unchanged on optimization problems (Table~\ref{tab:ablation}).
+degenerate pivots, as LP solvers do on stalling, gives no further gain. It is on in
+the configuration we measure, but with the other components in place and the
+affine relaxation it no longer pays: without it the whole solver is 1--2\%
+faster on systems of equations and unchanged on optimization problems
+(Table~\ref{tab:ablation}). In earlier versions of SC, with a worse bound
+order and warm start, it saved 3--4\% on systems of equations.
 
 \paragraph{Primal steps.} In a primal iteration the basis is primal feasible
 and some nonbasic variable has a reduced cost of the wrong sign; it enters
@@ -810,7 +813,6 @@ what Section~\ref{sec:experiments} isolates.
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
 
-\todo{la tabla de mismas cajas es de la version de dos motores}
 
 \paragraph{A controlled comparison.}
 To measure the contribution of the simplex, and not of the rest of the
@@ -902,13 +904,11 @@ against the LP hull. On identical boxes and with the same polytope, for every
 bound where SC contracts more than the polytope-hull contractor of Ibex, we
 solved the bound LP of the polytope over the input box with a fresh instance
 of SoPlex, used as an oracle. No valid contraction can go beyond this hull. Over
-3\,090 such bounds in four systems (Table~\ref{tab:hull}), SC attained the hull
-in 96\% of the cases and went beyond it in 27, all on boxes narrower than
-$2\cdot10^{-5}$ and by at most $3.4\cdot10^{-9}$ in absolute value
-($2.8\cdot10^{-10}$ relative to the bound): below the feasibility tolerance of
-the oracle, $10^{-9}$, whose own optimal point lay outside the input box in 21
-of these 27 bounds. No bound went beyond the hull by more than that tolerance.
-\todo{rehacer con la configuracion final}
+2\,834 such bounds in four systems (Table~\ref{tab:hull}), SC attained the hull
+in 98\% of the cases and went beyond it in 19, all within the feasibility
+tolerance of the oracle, $10^{-9}$; 18 of them are on Discrete-Integralf2-13,
+whose boxes become very narrow. No bound went beyond the hull by more than that
+tolerance.
 
 \begin{table}[t]
 \centering
@@ -921,12 +921,12 @@ the $10^{-9}$ tolerance of the oracle.}
 \toprule
 system & bounds & SC at hull & PH at hull & SC beyond\\
 \midrule
-Bratu-0060             &   892 &   870 &  40 &  0\\
-Discrete-Integralf2-13 & 1\,048 & 1\,025 &  59 & 22\\
-Geneig                 &   860 &   803 &   5 &  0\\
-Bellido                &   290 &   282 &  21 &  5\\
+Bratu-0060             &    891 &    886 &  38 &  1\\
+Discrete-Integralf2-13 & 1\,047 & 1\,029 &  62 & 18\\
+Geneig                 &    626 &    583 &   0 &  0\\
+Bellido                &    270 &    268 &  14 &  0\\
 \midrule
-total                  & 3\,090 & 2\,980 & 125 & 27\\
+total                  & 2\,834 & 2\,766 & 114 & 19\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1212,16 +1212,17 @@ is lost. SC has no such outcome by design: any basis certifies, and an LP that
 stops early yields a weaker bound, not a lost one. How often it happens depends
 on the iteration limit: with the limit that Ibex gives SoPlex (100), SoPlex
 ends 377 of 61\,815 LPs on Geneig-icse without an optimum, and with
-$20m+200$, 10. (On Brown, before free rows were passed to it empty, SoPlex
+$20m+200$, 8 of 68\,757. (On Brown, before free rows were passed to it empty, SoPlex
 failed with an internal exception in 90\% of the LPs; with the twin rows
 unmerged, a third of its LPs on Geneig-icse ended without an optimum.)
-\item \emph{Dual accuracy.} When both engines reach an optimum, the
-certificate built from the multipliers of SC is often slightly tighter. On
-CountercurrentReactors2-9 SC contracts more in 55 of 1\,061 nodes and SoPlex
-in 1, on Geneig-icse in 27 against 9; on Bellido SoPlex contracts more in 7
-nodes against 2, and on Brown-18 the two tie. The difference per node is small
-but compounds along the search (on Geneig-icse SC explores 0.80 of the cells
-of SoPlex); we have not isolated its cause.
+\item \emph{Dual accuracy.} When both engines reach an optimum, their
+certificates can still differ, because degenerate LPs have many optimal dual
+solutions and each engine stops at a different one. The differences go both
+ways and are small: SC contracts more in 46 of 1\,055 nodes on
+CountercurrentReactors2-9 and SoPlex in 22; on Geneig-icse SoPlex contracts
+more in 40 nodes and SC in 32; on Bellido SoPlex in 9 against 1; on Brown-18
+the two tie. The mean contraction is the same within $10^{-3}$, except on
+Brown-18.
 \end{enumerate}
 
 \begin{table}[t]
@@ -1237,10 +1238,10 @@ and LPs without an optimum.}
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}
 system & nodes & SC & BB & SC & BB & SC & BB\\
 \midrule
-Geneig-icse               & 1\,739 & 0.318 & 0.318 & 27 & 9 & 1 & 10\\
-CountercurrentReactors2-9 & 1\,061 & 0.041 & 0.041 & 55 & 1 & 2 &  0\\
-Brown-18                  &    113 & 0.314 & 0.305 &  1 & 1 & 0 &  0\\
-Bellido                   & 1\,200 & 0.281 & 0.281 &  2 & 7 & 0 &  0\\
+Geneig-icse               & 1\,934 & 0.318 & 0.317 & 32 & 40 & 2 & 8\\
+CountercurrentReactors2-9 & 1\,055 & 0.041 & 0.041 & 46 & 22 & 0 & 0\\
+Brown-18                  &    113 & 0.314 & 0.305 &  1 &  1 & 0 & 0\\
+Bellido                   & 1\,200 & 0.281 & 0.281 &  1 &  9 & 0 & 0\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1405,9 +1406,12 @@ box would otherwise require (Section~\ref{sec:bank}). About half of the gap
 with SoPlex as used by Ibex is its interface, and a careful integration of its
 simplex recovers it; the other half is in the simplex itself. The second source
 is the certificate at every basis: where the black box ends without an optimum
-the bound is lost, while the multipliers of SC still certify it, and where both
-reach an optimum the certificates of SC are slightly tighter, which compounds
-along the search (Geneig-icse, DiscreteBoundary-0200).
+the bound is lost, while the multipliers of SC still certify it. With the same
+iteration limit in every engine this is rare (Table~\ref{tab:samebox}), and
+per node the engines contract alike; along the search, small differences in
+either direction compound, and on Geneig-icse SC ends with 0.80 of the cells
+of SoPlex. The gain of SC is therefore mostly cost: on Geneig-icse a pass of
+SC costs 0.39 times that of SoPlex on the same boxes.
 
 \paragraph{Where it loses.} Both sources are worth most when LPs are short. A
 pass removes a fixed cost per call, so its weight falls as the pivots per LP

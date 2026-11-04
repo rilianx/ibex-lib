@@ -1,0 +1,2 @@
+[abhull] cotas donde DFB gana=626 | DFB pasa el hull exacto=0 (peor 0 del ancho; mas alla de la tolerancia del oraculo=0) | DFB en el hull=583  produccion en el hull=0
+325 2.81288 0 10 0 0 0

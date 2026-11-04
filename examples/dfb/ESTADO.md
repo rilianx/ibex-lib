@@ -2255,3 +2255,13 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   sistemas 1.00–1.01, opt 1.05–1.06; arranque del otro sistemas 0.99–1.01,
   opt 1.04; sin perturbación sistemas 0.98–0.99 (mejor sin ella), opt 1.00;
   sin devex 1.00; sin tope 60 1.005. Paper actualizado.
+- **Rigor y mismas cajas con SC de un solo motor (2026-11-04, `rigor_r/`,
+  `samebox_r/`, seed 1, 60 s).** Rigor: 2 834 cotas donde SC contrae más que
+  `CtcPolytopeHull`, SC en el hull 2 766 (98 %), lo pasa en 19 (18 en
+  Discrete-Integralf2-13), ninguna más allá de la tolerancia 1e-9 del oráculo.
+  Mismas cajas: nodos ganados SC/SoPlex Geneig-icse 32/40, CCR2-9 46/22,
+  Brown-18 1/1, Bellido 1/9; sin óptimo Geneig-icse 2/8; contracción media
+  igual salvo Brown-18. Con el revisado ya no hay ventaja de certificado por
+  nodo: la ganancia es de costo (Geneig-icse: pasada 2.56 contra 6.52 s).
+  Paper: perturbación presentada como opción, con el comentario de que ya no
+  paga.
