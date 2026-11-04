@@ -139,40 +139,31 @@ where rigor is not required; the heuristic of skipping bounds already attained
 by a primal point, used by Ibex, comes from Baharev, Achterberg and
 R\'ev~\cite{baharev2009distillation}.
 
-\paragraph{Contributions.}
+\paragraph{Contributions.} The paper makes four contributions.
 \begin{itemize}
-\item A design principle for the simplex of a polytope-hull contractor. In the
-homogeneous form of the relaxation any basis yields a valid certificate, the
-Neumaier--Shcherbina bound, and every basis becomes dual feasible for every
-bound problem by relocating its nonbasic variables, a standard property of
-boxed LPs~\cite{koberstein2005dual}. A simplex built on this needs no
-verification of its solutions, no refactorization before declaring an optimum
-and no phase~1, and solves the $2n$
-problems, and each problem after the box
-contracts, on one basis (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
-\item The simplex itself: one basis shared by the $2n$ problems, a warm start
-between bounds chosen per program, merged proportional rows, a revised engine
-on the LU factorization of SoPlex, the long-step dual ratio test, devex pricing, a cost perturbation against dual
-degeneracy as an option, and a limit on the pivots of each LP that the
-certificate makes harmless, with an ablation of each component
-(Section~\ref{sec:simplex}).
-\item Properties of the certificate: validity for any multipliers and any
-sub-box, exactness at an optimal basis, and, under the dual method, a valid
-lower bound that is nondecreasing along the iterations
-(Section~\ref{sec:properties}).
-\item A controlled evaluation in Ibex, on 242 systems of equations and 240
-optimization problems, in which the same contractor runs either SC or a
-black-box LP solver on the same LPs, feeding the same certificate: a rigor
-check against the LP hull; a bank of polytope-hull passes replayed outside
-the search, on which, with the same contraction, a pass of SC costs
-0.55--0.62 times that of SoPlex, 0.73--0.82 times that of its bare simplex
-driven directly and 0.12--0.27 times that of HiGHS and Gurobi, with an
-emulation that attributes the difference to the work the certificate makes
-unnecessary; the whole solver with two linear relaxations; and an analysis
-by the size of the relaxation, which confines the gain to relaxations of up to
-15--30 rows, explains why SoPlex wins on larger ones, and leads to a hybrid
-contractor that keeps the better engine at each size
-(Section~\ref{sec:experiments}).
+\item \emph{A design principle.} We show that the certificate, usually applied
+after the LP solver has finished, can instead shape the simplex method that
+computes the multipliers: since every basis certifies a bound and can be made
+dual feasible for free~\cite{koberstein2005dual}, the work that a
+general-purpose solver spends on making its answer correct is no longer
+needed (Sections~\ref{sec:simplex} and~\ref{sec:properties}).
+\item \emph{A simplex built on it.} We describe the components that make such
+a simplex competitive on the $2n$ bound problems of a node, from the order in
+which the bounds are solved and the way each LP starts from the previous one
+to the merging of redundant rows and the pivoting rules, and we measure what
+each of them contributes (Section~\ref{sec:simplex}).
+\item \emph{Properties of the certificate.} We prove that it is valid for any
+multipliers and on every sub-box, that it is exact at an optimal basis, and
+that under the dual method it gives a valid bound that never decreases along
+the iterations (Section~\ref{sec:properties}).
+\item \emph{A controlled evaluation.} We compare SC with SoPlex, HiGHS and
+Gurobi inside the same contractor of Ibex, on the same LPs and with the same
+certificate, so that only the engine changes. SC makes a pass of the
+contractor markedly cheaper with the same contraction, and the whole solver
+faster on both systems of equations and optimization problems. The analysis
+also shows where the approach stops paying, on large relaxations, explains
+why, and suggests a hybrid contractor that uses each engine where it is
+better (Section~\ref{sec:experiments}).
 \end{itemize}
 
 % =====================================================================
