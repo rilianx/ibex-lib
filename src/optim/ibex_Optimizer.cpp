@@ -22,6 +22,10 @@ using namespace std;
 
 namespace ibex {
 
+// the node being bounded, readable by a loup finder (see LoupFinderIpopt's log)
+double optimizer_node_lb = NEG_INFINITY;
+int optimizer_node_depth = -1;
+
 /*
  * TODO: redundant with ExtendedSystem.
  */
@@ -258,6 +262,8 @@ void Optimizer::contract_and_bound(Cell& c) {
 
 	c.prop.update(BoxEvent(c.box,BoxEvent::CHANGE));
 
+	optimizer_node_lb = y.lb();          // for loup finders that log their calls
+	optimizer_node_depth = (int) c.depth;
 	bool loup_ch=update_loup(tmp_box, c.prop);
 
 	// update of the upper bound of y in case of a new loup found

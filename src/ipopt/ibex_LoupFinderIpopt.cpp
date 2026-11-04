@@ -15,6 +15,9 @@
 #include <stdio.h>
 #include <limits>
 #include "ibex_LoupFinderIpopt.h"
+#include "ibex_Timer.h"
+#include <cstdio>
+#include <cstdlib>
 #include "ibex_BscHijackGuard.h"
 
 
@@ -27,6 +30,18 @@ using namespace std;
 
 namespace ibex {
   double expansion_precisionB=1.e-6;
+  extern double optimizer_node_lb;
+  extern int optimizer_node_depth;
+
+  namespace {
+    // IBEX_IPOPT_LOG=<file>: one JSON line per Ipopt call (what makes it pay off)
+    FILE* ipopt_log() {
+      static FILE* f = NULL; static bool init = false;
+      if (!init) { init = true; const char* p = getenv("IBEX_IPOPT_LOG"); if (p) f = fopen(p, "a"); }
+      return f;
+    }
+    std::vector<Vector> ipopt_sols;   // previous Ipopt solutions (for the distance)
+  }
   double ipopt_diam=1.e8;
   
   LoupFinderIpopt::LoupFinderIpopt(const System& sys,const System& normsys, const ExtendedSystem& extsys) : sys(sys), normsys(normsys), extsys(extsys), solution(sys.nb_var), the_box(sys.box), ipopt_box(sys.box) {
@@ -121,8 +136,30 @@ namespace ibex {
 	    ){
 	
 	  //	  cout << "nb_cells " <<  optimizer->get_nb_cells() << endl;
+	  bool was_forced = force;
+	  // the node being bounded: read now, the correction search below runs an
+	  // Optimizer of its own that overwrites these
+	  log_node_lb = optimizer_node_lb; log_depth = optimizer_node_depth;
+	  double loup_in = loup;
+	  Timer ipopt_timer; ipopt_timer.start();
 	  ApplicationReturnStatus status = app->OptimizeTNLP(this);
 	  force=0;  // after call , force is reset to 0
+	  ipopt_timer.stop();
+	  log_pending = ipopt_log()!=NULL;
+	  log_forced = was_forced; log_loup_in = loup_in; log_time = ipopt_timer.get_time();
+	  log_value = optimalValue; log_status = (int) status; log_width = box.max_diam();
+	  log_dist = POS_INFINITY;
+	  if (log_pending) {
+	    for (size_t k=0; k<ipopt_sols.size(); k++) {
+	      double d = 0;
+	      for (int i=0; i<solution.size(); i++) {
+	        double w = sys.box[i].diam(); if (!(w>0) || w>1e12) w = 1+std::fabs(solution[i]);
+	        d = std::max(d, std::fabs(solution[i]-ipopt_sols[k][i])/w);
+	      }
+	      log_dist = std::min(log_dist, d);
+	    }
+	    if (ipopt_sols.size()<500) ipopt_sols.push_back(solution);
+	  }
 	  //	  cout << " status " << status << endl;
 	  //	  if (status == Solve_Succeeded) {
 	  //        	std::cout << std::endl << std::endl << "*** The problem solved!" << std::endl;
@@ -161,6 +198,15 @@ namespace ibex {
 	
       }
         
+      if (log_pending) {
+        log_pending = false;
+        fprintf(ipopt_log(), "{\"call\": %d, \"depth\": %d, \"node_lb\": %.17g, \"loup_in\": %.17g, \"width\": %.6g, "
+                "\"forced\": %d, \"status\": %d, \"value\": %.17g, \"loup_out\": %.17g, \"improved\": %d, "
+                "\"dist\": %.6g, \"time\": %.6g}\n",
+                ipopt_calls, log_depth, log_node_lb, log_loup_in, log_width, (int) log_forced,
+                log_status, log_value, loup, (int) (loup < log_loup_in), log_dist, log_time);
+        fflush(ipopt_log());
+      }
       if (loup < loup0)
 	return std::make_pair(loup_point0, loup);
       else  throw NotFound();

@@ -23,3 +23,39 @@ No threshold: 222 close (matrix2 times out); slower on 6, among them robot
 
 1e12 is a small, significant, nearly free gain: Ipopt on boxes with +-1e8
 "infinite" bounds, not on the really unbounded ones.
+
+## When does Ipopt pay off? (`IBEX_IPOPT_LOG=<file>`: one line per Ipopt call)
+
+lsmear-lffix, --ipopt-diam 1e12, on the instances with node-selection
+headroom. For each: Ipopt calls in the whole search, the first call whose
+value is the optimum (within 1e-3), and the first call whose point is
+accepted as the new loup:
+
+    instance    nodes  calls  Ipopt returns the optimum      accepted
+    launch         24     3   call 0, depth 0                never
+    hs116         118    29   call 0, depth 0                never
+    ex8_2_4        42     4   call 41, depth 21              never
+    concon        610     1   call 300, depth 295            never
+    eigmaxc       304     1   call 156, depth 151            never
+    eigencco       12     2   call 10, depth 6               same call
+    ex7_3_4        34     2   call 10, depth 5               same call
+    dixchlng      110     4   call 50, depth 10              same call
+    ex8_1_6bis    176     2   call 89, depth 88              same call
+    polak5       3504     1   call 2847, depth 51            same call
+    polak4       1770     1   call 1300, depth 883           same call
+    polak2       1920     1   call 1914, depth 959           same call
+    makela3      2070     2   call 1953, depth 1035          same call
+    ship-1        680    28   never                          never
+
+Two separate failures:
+1. Ipopt is called almost never (1-4 times in thousands of nodes): the
+   schedule fires at loup-finder calls 0, 10, 20, 50 and every 100, but the
+   call is skipped if that node's box is wider than ipopt_diam, and it is not
+   retried at the next eligible node. With unbounded variables (polak,
+   makela3) the boxes at the scheduled calls are wide; Ipopt only runs when
+   forced (probing found a point below ymax), and then it finds the optimum
+   at once.
+2. Ipopt finds the optimum but its point is not accepted (launch and hs116
+   at the root): the point must be certified, which IbexOpt attempts with a
+   correction search around it (1 s of CPU); that fails, and the loup comes
+   much later from elsewhere.
