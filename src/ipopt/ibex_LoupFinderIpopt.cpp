@@ -47,6 +47,10 @@ namespace ibex {
   // half-width (relative when |v|>1) of the box around Ipopt's point that the
   // correction search explores; <= 0: expansion_precisionB (1e-6)
   double ipopt_expansion=-1;
+  // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
+  // widen to ipopt_expansion only when it gives no loup; <= 0: no first try
+  double ipopt_expansion_first=-1;
+  namespace { bool corr_first_try=false; }
   bool ipopt_defer=false;
   
   LoupFinderIpopt::LoupFinderIpopt(const System& sys,const System& normsys, const ExtendedSystem& extsys) : sys(sys), normsys(normsys), extsys(extsys), solution(sys.nb_var), the_box(sys.box), ipopt_box(sys.box) {
@@ -211,7 +215,13 @@ namespace ibex {
 	      //	      cout << " solution " << solution << endl;
 	      //	      cout << " optimal value " << optimalValue << " loup " << loup << endl;
 		  double ipoptloup=POS_INFINITY;
-		  correct_ipopt_sol(solution, ipoptloup);
+		  if (ipopt_expansion > 0 && ipopt_expansion_first > 0) {
+		    corr_first_try = true;
+		    correct_ipopt_sol(solution, ipoptloup);
+		    corr_first_try = false;
+		    if (!(ipoptloup < loup)) correct_ipopt_sol(solution, ipoptloup);
+		  } else
+		    correct_ipopt_sol(solution, ipoptloup);
 		  if (ipoptloup < loup)
 		    {
 		      loup_point0=solution;
@@ -610,7 +620,7 @@ namespace ibex {
       recursive_call=false;
       IntervalVector box = sys.box;
       double eps=expansion_precisionB;
-      if (ipopt_expansion > 0) eps = ipopt_expansion;
+      if (ipopt_expansion > 0 && !corr_first_try) eps = ipopt_expansion;
       //      if (sys.minlp) eps=0.01;
       IntervalVector boxsol(v.size());
       for ( int i=0; i< v.size() ; i++){
@@ -625,7 +635,7 @@ namespace ibex {
 
       opt.set_uplo(optimizer->get_uplo());
       opt.set_loup(optimizer->get_loup());
-      opt.timeout=1;
+      opt.timeout = corr_first_try ? ipopt_expansion_first : 1;
       //      cout << " boxsol " << boxsol << endl;
       // The nested search shares the enclosing one's bisector. A stateless
       // bisector does not mind; lsmear-guard would count the nested decisions
