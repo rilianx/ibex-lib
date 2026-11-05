@@ -129,3 +129,35 @@ exactly when the width drops to 1e8.
 
 Not yet checked on the instances where it could cost (Ipopt on huge boxes
 is slower and may fail): needs the full benchmark.
+
+## With the new Ipopt base (results/ipopt-diam), `headroom-ipoptfix.jsonl`
+
+Same measurement, both runs with `--ipopt-diam=-1 --ipopt-expansion=1e-5
+--ipopt-expansion-first=0.1` (EXTRA), 223 instances, 310 s.
+
+                     before   now
+    >= 50 nodes        94      82
+    ratio <= 0.9       25      12
+    ratio <= 0.8       22       8
+    ratio <= 0.5       19       8
+    ratio <= 0.2       15       5
+    time <= 0.8x       10       2
+
+What is left (ratio <= 0.8):
+
+    instance     nodes -> with optimum   time s          final loup at node
+    matrix2      4511030 -> 0            192.6 -> 0.0    4511030
+    ship-1           526 -> 0              1.0 -> 0.0        526
+    ex8_1_6bis       174 -> 2              0.0                174
+    eigmaxc          300 -> 30             1.4 -> 0.1         298
+    dixchlng         108 -> 20             0.3 -> 0.1          58
+    haldmads         340 -> 110            1.2 -> 0.5         186
+    ex8_1_5, ex8_1_4  (< 0.05 s)
+
+Most of the headroom measured before was Ipopt's threshold and correction.
+In time, only matrix2 and ship-1 remain, both type A (optimum ~0, flat lower
+bound: the final point must be within abs_eps_f=1e-7 of 0; on matrix2 Ipopt
+stops at 7.8e-5 after max_iter). On the instances that close, node selection
+for time-to-close has essentially nothing left; what is left is upper
+bounding near 0 (type A), the instances that do not close (unknown optimum),
+and the anytime behaviour.
