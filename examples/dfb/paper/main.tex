@@ -368,14 +368,7 @@ remaining bounds, the contractor of Ibex solves first the one farthest from the
 last primal point. SC solves first the nearest one: its optimum lies closest to
 the vertex where the previous LP ended, so the next LP needs fewer pivots. In
 the experiments of Section~\ref{sec:experiments}, the external LP solvers we
-compare with SC use the same order, which is also the best one for them. A
-finer order is available when the whole tableau is kept explicitly
-(Section~\ref{sec:engines}): for $x_k$ basic in row $r$, the number of
-nonbasic columns whose reduced cost for the objective $\pm z_k$ would have the
-wrong sign is the number of infeasibilities that the next LP must repair, and
-can be counted in $O(\mathrm{nnz}(\text{row } r))$ without pivoting. With an
-explicit tableau this order saved up to 2\%; with the revised engine of SC the
-nearest bound first does as well.
+compare with SC use the same order, which is also the best one for them.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
 empty and the pass stops. If an LP ends without an optimal basis, its bound is
@@ -418,38 +411,30 @@ primal steps, which is the usual warm start of an LP solver.
 \end{itemize}
 Both reach an optimal basis, so the certificate at termination is exact
 (Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
-empty is decided in the first LP, common to both. They differ only in cost,
-and which one is cheaper depends on how the optima of consecutive bounds are
-related. An optimal vertex is given by a basis and by the bound on which each
-nonbasic variable rests. Table~\ref{tab:sides} compares the optima of
-consecutive bounds over the benchmarks of Section~\ref{sec:experiments}: the
-basis changes by 10--17\% in both programs, but on systems of equations a
-median of 1.9 nonbasic variables per LP move to their opposite bound, against
-0.3 on optimization problems. The dual warm start moves them for free, since
-relocation is not a pivot; the primal warm start pays one iteration for each,
-and on systems of equations its iterations exceed those of the dual by about
-the number of side changes (a median difference of 1.9 per LP, for 1.9 side
-changes); on optimization
-problems, with the nearest bound first, it even needs fewer iterations than
-the dual (2.1 against 2.5). The two warm starts thus have different
-costs: the primal one pays one iteration per side change, the dual one a fixed
-cost per LP, since relocation changes the values of the nonbasic variables and
-the basic values must be recomputed from the factorization. On systems of
-equations side changes dominate, and the primal warm start makes 5.1 iterations
-per LP against 3.1; on optimization problems few sides change, the primal warm
-start pivots about as much, and it saves the fixed cost of relocation. In the
-whole solver the dual warm start is 4\% slower on optimization problems, and
-on systems of equations the two cost the same (Table~\ref{tab:ablation}): the
-iterations that the dual warm start saves are cheap ones.
-The side changes differ because of the rows. The box bounds of the variables
-change side in both programs (14\% and 8\% of the nonbasic variables);
-the slacks of the rows change side in 14\% of the cases on systems of equations
-and in 0.3\% on optimization problems. On systems every row comes from an
-equation and is a narrow slab: the interval of its slack is, on average, 13\%
-of the range of the row over the box, so that the optima of consecutive bounds
-often rest on opposite faces of a slab. On optimization problems the slack
-intervals cover 48\% of the range on average, and the few rows whose slack
-changes side are the narrow ones (8\%).
+empty is decided in the first LP, common to both. They differ only in cost.
+
+The cost depends on how far apart the optima of consecutive bounds are. An
+optimal vertex is given by a basis and by the bound on which each nonbasic
+variable rests, and a nonbasic variable that must move to its opposite bound
+costs the two warm starts differently: the primal one pays an iteration for it,
+the dual one moves it for free, since relocation is not a pivot. Relocation has
+its own cost, however, paid once per LP: it changes the values of the nonbasic
+variables, and the basic values must be recomputed from the factorization.
+So the primal warm start is cheaper when few variables change side, and the
+dual one when many do.
+
+How many change side depends on the rows. On systems of equations every row
+comes from an equation and is a narrow slab: the interval of its slack is, on
+average, 13\% of the range of the row over the box, so the optima of
+consecutive bounds often rest on opposite faces of a slab. On optimization
+problems the slack intervals cover 48\% of the range, and few rows change side.
+Table~\ref{tab:sides} measures it over the benchmarks of
+Section~\ref{sec:experiments}. The basis changes by 10--17\% in both programs,
+but a median of 1.9 nonbasic variables per LP change side on systems of
+equations, against 0.3 on optimization problems. The iterations follow: on
+systems the primal warm start makes 5.1 per LP against 3.1 for the dual one,
+about one more per side change; on optimization problems it makes 2.1
+against 2.5.
 
 \begin{table}[t]
 \centering
@@ -471,17 +456,24 @@ optimization & 9 (5--17)   & 17\% & 0.3 (0.2--0.5) & 4\% & 2.5 & 2.1\\
 \end{tabular}
 \end{table}
 
-SC
-uses the primal warm start in the optimizer, where the first LP of each pass is
-still solved by the dual method, and the dual warm start in the solver of
-systems of equations: at the same cost, it keeps the certified bound valid and
-nondecreasing at every iteration of every LP (Proposition~\ref{prop:mono}).
-With the larger relaxation of Section~\ref{sec:experiments}, neither warm start
-is better on every system, and SC chooses per run: it alternates the two on
-the first nodes, keeps the one with the lower cost per LP, measured as a moving
-average, and tries the other again every 25 nodes. Primal steps are also the
-fallback when relocation is impossible because the bound indicated by a
-reduced cost is infinite.
+In time, the two effects balance differently in each program. On
+optimization problems the primal warm start pivots as little as the dual one
+and saves the relocation: in the whole solver, the dual warm start is 4\%
+slower (Table~\ref{tab:ablation}). On systems of equations the two extra
+primal pivots per LP cost about as much as the relocation they avoid, and both
+warm starts take the same time. SC therefore uses the primal warm start in the
+optimizer, where the first LP of each pass is still solved by the dual method,
+and the dual warm start in the solver of systems of equations. There the two
+cost the same and the choice matters little; we keep the dual one so that the
+whole pass runs the dual method of its first LP, with primal steps only as a
+fallback. With the larger relaxation of
+Section~\ref{sec:experiments} neither warm start wins on every system, and SC
+chooses per run: it alternates the two on the first nodes, keeps the one with
+the lower cost per LP, measured as a moving average, and tries the other again
+every 25 nodes. With the primal warm start, primal steps are also the fallback
+when relocation is impossible because the bound indicated by a reduced cost is
+infinite; with the dual one, SC takes no primal steps
+(Section~\ref{sec:properties}).
 
 \subsection{Simplex iterations}\label{sec:iter}
 
@@ -529,29 +521,6 @@ of several short steps. Among the candidates at the chosen breakpoint we take
 the largest $|\alpha_{rj}|$ within a relative band (Harris' rule), which
 avoids tiny pivots.
 
-\paragraph{Dual degeneracy.} The bound problems are highly dual degenerate.
-With objective $\pm z_k$ and $z_k$ basic in row $r$, the reduced costs after
-relocation are $d = \mp\alpha_r$ on the nonbasic variables: exactly zero on
-every column that does not meet row $r$. Those columns give ratio zero in the
-dual ratio test, so they enter first and the dual objective does not move. On
-some systems (Virasoro, Katsura) 80--95\% of the dual pivots were
-degenerate. SC offers, as an
-option, the standard remedy~\cite{koberstein2005dual}: after relocation, each zero
-reduced cost is replaced by a random value in $[\varepsilon,2\varepsilon)$,
-$\varepsilon=10^{-7}$, with the sign that its current bound already
-satisfies. The basis stays dual feasible for the perturbed costs and the ties
-disappear; at the optimum of the perturbed problem the exact reduced costs are
-recomputed, and the few columns that are then dual infeasible are fixed by
-primal steps. The multipliers, and hence the certificate, always come from the
-true costs. The value of $\varepsilon$ is not critical: between $10^{-9}$ and
-$10^{-5}$ the results are the same, and perturbing only after a run of
-degenerate pivots, as LP solvers do on stalling, gives no further gain. It is on in
-the configuration we measure, but with the other components in place and the
-affine relaxation it no longer pays: without it the whole solver is 1--2\%
-faster on systems of equations and unchanged on optimization problems
-(Table~\ref{tab:ablation}). In earlier versions of SC, with a worse bound
-order and warm start, it saved 3--4\% on systems of equations.
-
 \paragraph{Primal steps.} In a primal iteration the basis is primal feasible
 and some nonbasic variable has a reduced cost of the wrong sign; it enters
 (Dantzig's rule: largest $|d_j|$), and the ratio test over the pivot column
@@ -559,8 +528,9 @@ $\alpha_q$ finds the first basic variable to reach a bound, or lets $z_q$ move
 to its own opposite bound. Pivots below a stability threshold are filtered
 out before choosing the leaving variable; without this filter a rejected
 pivot was indistinguishable from optimality, and 40\% of the reported optima
-were not dual feasible. SC takes primal steps in the primal warm start of the
-optimizer, and when a nonbasic variable cannot be relocated.
+were not dual feasible. SC takes primal steps only with the primal warm start:
+to reoptimize after each bound, and to repair the nonbasic variables that
+could not be relocated.
 
 \paragraph{Tolerances and infinite bounds.} The primal and dual feasibility
 tolerances are $10^{-9}$, relative to the magnitude of the value tested; with
@@ -571,7 +541,8 @@ wide accepts an empty polytope as feasible, which only delays the pruning, and
 weakens the contraction: with $10^{-6}$ and the affine relaxation, SC explores
 twice the cells on Geneig-icse. A tolerance too tight makes the warm-started
 simplex report infeasibility on boxes that are not empty; the ray then fails
-the residual test, and the bound is not contracted. Slacks may have an
+the residual test, and SC solves that LP again from the slack basis instead of
+discarding it. Slacks may have an
 infinite side; a nonbasic variable always sits at a finite bound, the other
 one if the bound indicated by its reduced cost is infinite, and at zero if it
 is free.
@@ -595,20 +566,6 @@ recomputed from scratch every 32 pivots to limit drift. The reduced costs and
 $\lambda$ are updated with the pivot row as above. An iteration costs one
 FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and the update, all
 proportional to the number of nonzeros involved.
-
-\paragraph{An explicit tableau.} The LPs of a pass are small, and an
-alternative is to keep the whole tableau $T = B^{-1}\Abar$ explicitly, row by
-row in sparse form, together with $\lambda$, $d$ and $x_B$. The pivot row and
-column are then read from $T$, with no linear system to solve, and a pivot is
-a Gauss--Jordan elimination: each row $t$ with $\alpha_{tq}\neq 0$ is replaced
-by $T_{t:} - (\alpha_{tq}/\alpha_{rq})\,T_{r:}$, at a cost of
-$O(\mathrm{nnz}(\alpha_q)\,\mathrm{nnz}(\alpha_r))$, and a guard that compares
-$\lambda$, $d$ and $x_B$ with their definition triggers a recomputation from
-$\Abar$ when it detects drift. Our first versions used it on relaxations of up
-to 30 rows, and the revised engine above them. With the other components in
-place, the tableau no longer pays: that combination is 1--2\% slower than the
-revised engine alone on systems of equations, and the tableau alone 11--14\%
-(Table~\ref{tab:ablation}). SC therefore has a single engine.
 
 \subsection{Certification}\label{sec:certif}
 
@@ -784,8 +741,8 @@ finite. Slacks of one-sided rows, and variables with an unbounded domain, may
 not have it. In the implementation such a nonbasic variable is placed on its
 finite bound, which leaves its reduced cost with the wrong sign, or at zero if
 it is free. The iteration loop removes these dual infeasibilities with primal
-steps, and uses dual steps while some basic variable is out of its bounds; in
-the solver of systems of equations SC takes no primal steps, and
+steps, and uses dual steps while some basic variable is out of its bounds; with
+the dual warm start SC takes no primal steps, and
 an LP that ends with such a variable gives a valid, possibly weaker bound. The
 certificate is unaffected, since it is valid for any $\lambda$; only the
 monotonicity of Proposition~\ref{prop:mono} is lost in such an LP until the
@@ -816,12 +773,7 @@ when its bound comes close to what it can still gain saves pivots but weakens
 the contraction more than it saves (Section~\ref{sec:discussion}). In the solver of systems of equations,
 where SC uses the dual warm start (Section~\ref{sec:simplex}), the property
 holds in every LP of the pass; in the optimizer it holds in the first LP of
-each pass. With the cost perturbation of
-Section~\ref{sec:simplex}, what is nondecreasing is the dual objective of the
-perturbed problem; the certified bound, computed with the true costs, differs
-from it by at most $2\varepsilon\sum_j\magn\iv{z}_j$, where
-$\magn\iv{z}_j=\max(|\inff\iv{z}_j|,|\supp\iv{z}_j|)$: about $10^{-7}$ times the
-magnitude of the box.
+each pass.
 
 \paragraph{Cost.}
 Certifying a bound costs the same in SC as the Neumaier--Shcherbina
@@ -887,8 +839,8 @@ SoPlex, and we report it alongside SoPlex in every comparison. The other two
 are HiGHS~1.15.1 and Gurobi~12.0.3, each on the same rows, sides and column
 bounds, with one thread, the dual simplex, the basis kept between LPs and no
 presolve; we use them only on the bank of passes, since a pass with them costs
-two to five times that of SoPlex (Table~\ref{tab:bank}). Every black box
-has the iteration limit $20m+200$ (Section~\ref{sec:simplex}).
+two to five times that of SoPlex (Table~\ref{tab:bank}). Both forms of
+SoPlex have the iteration limit $20m+200$ (Section~\ref{sec:simplex}).
 
 \paragraph{Setting.}
 Contractor and solvers are implemented in Ibex, with the two relaxations of
@@ -1379,16 +1331,14 @@ largest: without it SC is 22--32\% slower on systems of equations, with three
 fewer runs finished, and 6--7\% slower on optimization problems, with three
 fewer problems solved; the twin rows of each equation double $m$, and on
 Geneig-icse the run takes five times longer. The engine: with the explicit
-tableau instead of the revised engine, SC is 11--14\% slower on systems of
-equations, with nine fewer runs finished, and 3--4\% slower on optimization
-problems; using the tableau only up to 30 rows, as our earlier versions did,
-costs 1--2\%. The long-step ratio test saves 3--5\% on systems of equations and
+tableau of Section~\ref{sec:discussion} instead of the revised engine, SC is
+11--14\% slower on systems of equations, with nine fewer runs finished, and
+3--4\% slower on optimization problems. The long-step ratio test saves 3--5\% on systems of equations and
 is neutral on optimization problems, whose LPs are shorter. And on optimization
 problems the order and the warm start: the farthest bound first is 5--6\%
 slower and the dual warm start 4\%; on systems of equations both choices cost
 the same. Devex and the limit of 60 pivots per LP change the time by less than
-1\%, and without the cost perturbation SC is 1--2\% faster on systems of
-equations: with the affine relaxation, these rules act on few LPs.
+1\%: with the affine relaxation, these rules act on few LPs.
 
 \begin{table}[t]
 \centering
@@ -1407,11 +1357,9 @@ configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
 \midrule
 without merging rows              & 1.02 & 1.32 & 1.22 & 1.23 & 362 & 1.06 & 214\\
 explicit tableau                  & 1.00 & 1.14 & 1.14 & 1.11 & 356 & 1.03 & 218\\
-tableau up to 30 rows             & 1.00 & 1.02 & 1.01 & 1.02 & 362 & 1.00 & 218\\
 without long-step ratio test      & 1.01 & 1.03 & 1.03 & 1.05 & 362 & 1.01 & 218\\
 farthest-bound order              & 1.00 & 1.01 & 1.00 & 1.01 & 362 & 1.06 & 218\\
 warm start of the other program   & 1.01 & 1.01 & 0.99 & 0.99 & 364 & 1.04 & 218\\
-without cost perturbation         & 0.99 & 0.99 & 0.99 & 0.98 & 365 & 1.00 & 217\\
 without devex                     & 1.00 & 1.00 & 1.00 & 1.00 & 363 & 1.00 & 217\\
 without the limit of 60 pivots    & 1.00 & 1.01 & 1.01 & 1.01 & 364 & 1.01 & 217\\
 \bottomrule
@@ -1475,8 +1423,27 @@ the rest of the pass anyway. Cuts at the LP optima reduce the cells
 ($\times0.80$--$0.88$) at a higher cost (CPU $\times1.18$--$1.31$). A Lagrangian
 bound improved by monotonicity tightens the LP bound in most applications, but
 costs more than it saves (CPU $\times1.08$ to $\times3.5$). Inheriting the
-basis between nodes saves pivots ($\times0.78$--$0.96$) but rebuilding the
-tableau costs as much. The pattern is that doing more work inside a node does
+basis of the parent node costs only a factorization with the revised engine
+and cuts the pivots of the first LP of a node by a factor of three or more,
+but the first LP is a small part of the node: the time changes by less than
+4\% on optimization problems and grows by 1--5\% on systems of equations.
+
+Three components of earlier versions of SC were dropped for the same reason.
+Keeping the whole tableau $T=B^{-1}\Abar$ explicitly, row by row in sparse
+form, makes a pivot a Gauss--Jordan elimination with no linear system to
+solve; our first versions used it on relaxations of up to 30 rows, but with the
+other components in place it is 11--14\% slower than the revised engine on
+systems of equations (Table~\ref{tab:ablation}), and 1--2\% slower even when
+limited to 30 rows. With the tableau at hand, the bounds can also be ordered by
+the number of dual infeasibilities that the next LP must repair, which can be
+counted without pivoting; this saved up to 2\% with the tableau, and the
+nearest bound first does as well with the revised engine. Finally, the bound
+problems are highly dual degenerate: with $z_k$ basic in row $r$, every column
+that does not meet row $r$ has a zero reduced cost, and on some systems
+(Virasoro, Katsura) 80--95\% of the dual pivots were degenerate. Perturbing the
+zero reduced costs after relocation, the standard
+remedy~\cite{koberstein2005dual}, saved 3--4\% on systems of equations in
+earlier versions; with the other components it makes SC 1--2\% slower. The pattern is that doing more work inside a node does
 not change the search tree; what changed it was what is computed: the merged
 relaxation, the stability filter of the ratio test, the Farkas ray of the
 infeasible row, the tolerance.
@@ -1493,7 +1460,13 @@ expensive for every engine: the systems of 400 to 1\,000 variables of the
 benchmark exceed the limits of 60\,s and 6\,GB with all of them. Finally, the
 gain of SC is one of small relaxations: on the relaxations that make the best
 solver of systems of equations, SC alone is slower than the bare simplex of
-SoPlex, and the gain there comes from the hybrid.
+SoPlex, and the gain there comes from the hybrid. One use of the certificate
+is left open: when the warm-started simplex declares an infeasibility that the
+ray does not certify, SC solves the LP again from the slack basis
+(Section~\ref{sec:iter}), but the multipliers of the basis where it stopped,
+moved along the ray as long as the bound improves, already give a certified
+bound without that second LP. Only the second LP can prove the box empty,
+and these cases are rare; we have not tried it.
 
 % =====================================================================
 \section{Conclusion}

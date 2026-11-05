@@ -2300,3 +2300,7 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   Configuración final de SC: sin perturbación + cota de LPs cortados. Los brazos
   cc / cc_compo de la etapa 1 (`_np` + `DFBH_CORTE_CERT=1`) son exactamente esa
   configuración; brazo base_compo retirado.
+- **Paper, pendiente al pasar a la configuración final (cota de LPs cortados):**
+  en §4.2, justificar el arranque dual en sistemas también por la cota: un LP
+  cortado por el tope conserva con el dual una cota no menor que la de su
+  inicio (Prop. mono); con el primal la base cortada no es dual factible.
