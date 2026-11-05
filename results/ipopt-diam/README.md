@@ -128,5 +128,33 @@ Remaining problems:
 - dnieper is path-sensitive (it was 196 to >7000 nodes depending on the
   initial loup); the cascade moves it 434 -> 624.
 
+## matrix2 and the final arm
+
+matrix2 without threshold had two problems:
+1. Boxes "at infinity" (x in [9e307, 1.8e308]): the starting point closest
+   to 0 is itself ~1e308, the evaluations overflow, Ipopt fails at once.
+2. Forced calls start from the point another loup finder just found; in
+   matrix2 those are at ~1e20, and there Ipopt hangs inside one line search
+   (max_iter and max_cpu_time are only checked between iterations): the run
+   ignored its 310 s timeout.
+
+Fix: with `--ipopt-diam` negative, Ipopt is not called when its starting
+point (forced or not) has a coordinate beyond `--ipopt-start-max` (1e8).
+matrix2 closes in 125 s (base 130 s). `--ipopt-max-time` (Ipopt's
+max_cpu_time) also exists but does not help with that hang.
+
+Arm `final`: `--ipopt-diam=-1 --ipopt-expansion=1e-5
+--ipopt-expansion-first=0.1` with that binary. Closes 223/223 (total
+1632 s vs 1651 s for the base).
+
+    final vs   time diff [IC95]          nodes gmean  better  worse
+    d1e8       -0.014 [-0.031, -0.000]   0.763        19       6
+    d1e12      -0.000 [-0.010, +0.008]   0.838        10       3
+    dnone      +0.006 [-0.008, +0.018]   0.989         5       3
+
+Worse than the base by > 25% in nodes: ex14_1_7 (3990 -> 5200 nodes,
+15.8 -> 20.1 s), dnieper (434 -> 624), haldmads (398 -> 982), and three
+instances under 0.05 s (ackley_5, ex8_1_4, ex8_1_5).
+
 Recommended configuration: `--ipopt-diam=-1 --ipopt-expansion=1e-5
---ipopt-expansion-first=0.1`, once matrix2 is solved.
+--ipopt-expansion-first=0.1`.
