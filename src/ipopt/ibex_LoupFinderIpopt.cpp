@@ -149,11 +149,12 @@ namespace ibex {
 	  // no width threshold: what matters is where Ipopt starts. A box "at
 	  // infinity" (x in [9e307, 1.8e308]) has no reasonable starting point:
 	  // the evaluations overflow and Ipopt fails at once
+	  // A forced call starts from the point another loup finder just found,
+	  // which can be just as far (matrix2: 1e20, where Ipopt hangs in a line
+	  // search that max_cpu_time does not interrupt).
 	  narrow = true;
-	  if (!force) {
-	    ibex::Vector v = start_point(box);
-	    for (int i=0; i<v.size(); i++) if (!(std::fabs(v[i]) <= ipopt_start_max)) { narrow=false; break; }
-	  }
+	  ibex::Vector v = force ? solution : start_point(box);
+	  for (int i=0; i<v.size(); i++) if (!(std::fabs(v[i]) <= ipopt_start_max)) { narrow=false; break; }
 	}
 	// ipopt_defer: a scheduled call that falls on a box too wide is not lost,
 	// it waits for the next box narrow enough
