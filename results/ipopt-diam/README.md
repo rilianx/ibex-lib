@@ -59,3 +59,74 @@ Two separate failures:
    at the root): the point must be certified, which IbexOpt attempts with a
    correction search around it (1 s of CPU); that fails, and the loup comes
    much later from elsewhere.
+
+## Why the point is rejected, and the fixes (arms dnone, x1e5, c1e5, nc1e5)
+
+The IBEX_IPOPT_LOG line now also gives the goal at Ipopt's point, the inner
+test, the max violation in the normalized system and the correction search's
+status, nodes, time and loup.
+
+- launch: the point violates the equalities by 1e-4 (Ipopt's default
+  constr_viol_tol); the correction search in the box of +-1e-6 around it times
+  out (1 s) without a certified point. Tightening constr_viol_tol does not
+  change the returned point.
+- hs116: violation 1e-8, but the +-1e-6 box is proved infeasible at the root.
+- ex8_2_4, concon: the width threshold (fixed by dnone / 1e12). ex8_2_4 also
+  paid 1 s per call certifying Ipopt *failures* (status -13, value 0): the
+  correction now runs only on a usable Ipopt result (21 s -> 3.4 s already at
+  1e8).
+- eigmaxc: Ipopt only runs at the end; nothing to fix.
+
+Fixes:
+- `--ipopt-diam=-1`: no threshold; Ipopt starts from the point of the box
+  closest to 0 when the box is unbounded.
+- `--ipopt-expansion=1e-5`: the correction box is +-1e-5. launch 98 -> 2
+  nodes, hs116 118 -> 2. But a wider box certifies a slightly different point
+  even when the narrow one works (haldmads: 2.5927330 vs 2.5927322 at the first
+  call), the path diverges and haldmads goes 1.5 -> 2.7 s (seeds 1, 2, 4).
+- `--ipopt-expansion-first=0.1`: try the 1e-6 box first (0.1 s) and widen
+  only if it certifies nothing. haldmads and dipigri as in the base, launch
+  and hs116 at 2 nodes.
+
+Results, 223 instances, 310 s. Time metric: t/max(t_A,t_B), 1 s floor
+(less is better). Nodes: geometric mean of (nodes_A+1)/(nodes_B+1) over the
+instances both close, and instances with > 20% fewer / more nodes.
+
+    A      vs B       time diff [IC95]          nodes gmean  better  worse
+    c1e5   vs d1e8    -0.006 [-0.020, +0.006]   0.967         4       2
+    nc1e5  vs d1e8    -0.007 [-0.025, +0.012]   0.740        19       6
+    nc1e5  vs d1e12   +0.007 [-0.006, +0.021]   0.815        10       3
+    nc1e5  vs dnone   +0.014 [+0.004, +0.023]   0.966         5       3
+    dnone  vs d1e8    -0.018 [-0.002, +0.037]   0.771        17       5
+
+The time metric is dominated by noise here: most instances close in 1-5 s and
+the arms ran on different days (c1e5/nc1e5 after a container restart). The
+nc1e5 losses to dnone are instances with the same node count and ~20% more
+time (ex8_5_6, hs099, srcpm, ex6_2_12, himmel16, ex8_5_2); run back to back
+they are within 0-12%. Node counts are deterministic and say: no threshold
+is the big effect (0.77), the cascade adds launch and hs116 on top (0.97).
+
+Per instance (time s / nodes):
+
+    instance   d1e8          d1e12        dnone        c1e5         nc1e5
+    launch     4.93/104      1.96/24      3.29/54      0.12/2       0.08/2
+    hs116      0.56/118      0.59/118     0.64/118     0.01/2       0.01/2
+    ex8_2_4    21.51/1818    2.50/42      2.73/46      3.38/1872    2.72/42
+    eigencco   4.53/1188     0.65/12      0.68/12      4.43/1188    0.67/12
+    dixchlng   2.28/2038     0.27/110     0.35/110     2.65/2462    0.35/112
+    polak5     1.42/3504     1.32/3504    0.00/4       1.22/3504    0.00/4
+    makela3    1.73/2078     2.60/2070    0.00/0       2.00/2078    0.00/0
+    concon     0.63/610      0.52/610     0.02/10      0.51/610     0.02/10
+    dnieper    5.17/434      5.37/434     5.36/434     7.64/624     6.96/624
+    matrix2    130.3/4.57M   139.3/4.57M  timeout      143.6/4.57M  killed
+
+Remaining problems:
+- matrix2 without threshold: Ipopt fails (status -13, invalid number at the
+  starting point) on every wide box; no longer costs a correction search, but
+  the run still does not close in 310 s. A perturbed starting point is the
+  next thing to try.
+- dnieper is path-sensitive (it was 196 to >7000 nodes depending on the
+  initial loup); the cascade moves it 434 -> 624.
+
+Recommended configuration: `--ipopt-diam=-1 --ipopt-expansion=1e-5
+--ipopt-expansion-first=0.1`, once matrix2 is solved.
