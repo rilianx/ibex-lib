@@ -2304,3 +2304,10 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   en §4.2, justificar el arranque dual en sistemas también por la cota: un LP
   cortado por el tope conserva con el dual una cota no menor que la de su
   inicio (Prop. mono); con el primal la base cortada no es dual factible.
+- **Etapa 1 completa (2026-11-05, `d60cc`, configuración final: sin perturbación + cota de LPs cortados;
+  sin `excluidas_3600`; 60 s).** Contra los brazos de `d60r` (23-10, otro banco, misma máquina):
+  afín, final contra el SC de las tablas (perturbación encendida): sistemas cpu ×1.00 / ×1.00 / ×1.00,
+  365 = 365, celdas ×1.00; opt ×0.99 / ×1.00 / ×1.00, 874 = 874. Sólo la cota de los cortados (contra
+  `sinpert`): sistemas ×1.01–1.02, opt ×0.99. compo, final contra el de las tablas: sistemas ×1.03 / ×1.05 /
+  ×1.09, 366 = 366; opt ×1.00, 881 → 878. Las tablas afines del paper valen para la configuración final;
+  las de compo en sistemas quedan 3–9 % optimistas.
