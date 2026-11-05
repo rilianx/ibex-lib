@@ -317,6 +317,7 @@ int main(int argc, char** argv) {
 	args::ValueFlag<double> ipopt_expansion_first_arg(parser, "float", "With --ipopt-expansion: first try the default 1e-6 box with this CPU timeout (seconds), and widen only if it certifies nothing.", {"ipopt-expansion-first"});
 	args::ValueFlag<double> ipopt_start_max_arg(parser, "float", "With --ipopt-diam negative: Ipopt is not called on a box whose starting point has a coordinate larger than this in absolute value. Default: 1e8.", {"ipopt-start-max"});
 	args::ValueFlag<double> ipopt_max_time_arg(parser, "float", "With --loup ipopt*: CPU limit of one Ipopt call in seconds (Ipopt's max_cpu_time). Default: none.", {"ipopt-max-time"});
+	args::Flag bound_trace_arg(parser, "bound-trace", "With --solve: add \"bounds\": [[time, nodes, loup, uplo], ...] (start, each new loup, uplo moves at geometrically spaced times, end).", {"bound-trace"});
 	args::Flag ipopt_defer_arg(parser, "ipopt-defer", "With --loup ipopt*: a scheduled Ipopt call that falls on a box wider than --ipopt-diam waits for the next box narrow enough instead of being skipped.", {"ipopt-defer"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
@@ -562,6 +563,12 @@ int main(int argc, char** argv) {
 					if (H[k].loup <= fin) { last_n = H[k].nodes; last_t = H[k].time; break; }
 				}
 				out.kv("loup_updates", (long) H.size()-1);
+				if (bound_trace_arg) {
+					out.key("bounds"); out.arr();
+					const std::vector<MLNodeServer::BoundEvent>& B = server->bound_history;
+					for (size_t k=0; k<B.size(); k++) { out.arr(); out.val(B[k].time); out.val(B[k].nodes); out.val(B[k].loup); out.val(B[k].uplo); out.end_arr(); }
+					out.end_arr();
+				}
 				if (getenv("IBEX_LOUP_POINT") && server->get_loup()<POS_INFINITY)
 					out.kv("loup_point", server->get_loup_point());
 				out.kv("loup_near_nodes", near_n);

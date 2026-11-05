@@ -378,6 +378,10 @@ public:
 	 *  seconds, loup) at the start and at every improvement. */
 	struct LoupEvent { long nodes; double time; double loup; };
 	std::vector<LoupEvent> loup_history;
+	/** (nodes, time, loup, uplo) at the start, at each loup change and when the
+	 *  uplo moved, at most at geometrically spaced times (anytime metrics). */
+	struct BoundEvent { long nodes; double time; double loup; double uplo; };
+	std::vector<BoundEvent> bound_history;
 
 	/** \brief Give the search this upper bound right after the root is
 	 *  processed (if lower than its own): the best any node selection can do,

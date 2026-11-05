@@ -1517,6 +1517,9 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 
 	loup_history.clear();
 	{ LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e); }
+	bound_history.clear();
+	{ BoundEvent e = { (long) nb_cells, 0.0, loup, uplo }; bound_history.push_back(e); }
+	double next_bound_t = 0.01;
 	if (late_loup < loup) {
 		loup = late_loup;
 		buffer.contract(compute_ymax());
@@ -1590,6 +1593,17 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 
 				update_uplo();
 
+				{
+					const BoundEvent& last = bound_history.back();
+					double t = -1;
+					if (loup != last.loup) t = timer.get_time();
+					else if (uplo != last.uplo) { t = timer.get_time(); if (t < next_bound_t) t = -1; }
+					if (t >= 0) {
+						BoundEvent e = { (long) nb_cells, t, loup, uplo }; bound_history.push_back(e);
+						next_bound_t = std::max(0.01, t*1.05);
+					}
+				}
+
 				if (rp.timeout>0) timer.check(rp.timeout);
 
 			} catch (NoBisectableVariableException&) {
@@ -1606,6 +1620,7 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 	timer.stop();
 	last_time = timer.get_time();
 	last_decisions = (long) nb_cells / 2;
+	{ BoundEvent e = { (long) nb_cells, last_time, loup, uplo }; bound_history.push_back(e); }
 
 	// The buffer emptying is not the same thing as success. Optimizer::optimize()
 	// classifies that case further, and collapsing it into "complete" makes a run
