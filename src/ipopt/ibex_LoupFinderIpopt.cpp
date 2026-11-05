@@ -47,6 +47,10 @@ namespace ibex {
   // half-width (relative when |v|>1) of the box around Ipopt's point that the
   // correction search explores; <= 0: expansion_precisionB (1e-6)
   double ipopt_expansion=-1;
+  // with ipopt_diam < 0: Ipopt only starts from points with |x_i| <= this
+  double ipopt_start_max=1e8;
+  // CPU limit of one Ipopt call (Ipopt's max_cpu_time); <= 0: none
+  double ipopt_max_time=-1;
   // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
   // widen to ipopt_expansion only when it gives no loup; <= 0: no first try
   double ipopt_expansion_first=-1;
@@ -139,7 +143,18 @@ namespace ibex {
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
 	bool scheduled = (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50);
-	bool narrow = (ipopt_diam < 0 || box.max_diam() <= ipopt_diam);   // ipopt_diam < 0: no threshold
+	bool narrow;
+	if (ipopt_diam >= 0) narrow = box.max_diam() <= ipopt_diam;
+	else {
+	  // no width threshold: what matters is where Ipopt starts. A box "at
+	  // infinity" (x in [9e307, 1.8e308]) has no reasonable starting point:
+	  // the evaluations overflow and Ipopt fails at once
+	  narrow = true;
+	  if (!force) {
+	    ibex::Vector v = start_point(box);
+	    for (int i=0; i<v.size(); i++) if (!(std::fabs(v[i]) <= ipopt_start_max)) { narrow=false; break; }
+	  }
+	}
 	// ipopt_defer: a scheduled call that falls on a box too wide is not lost,
 	// it waits for the next box narrow enough
 	if (ipopt_defer && scheduled && !narrow) ipopt_pending = true;
@@ -157,6 +172,8 @@ namespace ibex {
 	  log_node_lb = optimizer_node_lb; log_depth = optimizer_node_depth;
 	  double loup_in = loup;
 	  Timer ipopt_timer; ipopt_timer.start();
+	  if (ipopt_max_time > 0) app->Options()->SetNumericValue("max_cpu_time", ipopt_max_time);
+	  if (getenv("IBEX_IPOPT_TRACE")) { std::cerr.precision(17); std::cerr << "call " << ipopt_calls << " force " << force << " start " << (force ? solution : start_point(box)) << " box " << box << std::endl; }
 	  ApplicationReturnStatus status = app->OptimizeTNLP(this);
 	  force=0;  // after call , force is reset to 0
 	  ipopt_timer.stop();
@@ -325,6 +342,23 @@ namespace ibex {
 
 
     // returns the initial point for the problem
+    // the center of the box; an unbounded box has no finite center: there,
+    // the point of the interval closest to 0 (a finite one), so that Ipopt
+    // can run there too
+    ibex::Vector LoupFinderIpopt::start_point(const IntervalVector& b) {
+	ibex::Vector v = b.mid();
+	for (int i=0; i<b.size(); i++) {
+	  const Interval& xi = b[i];
+	  if (!std::isfinite(v[i]) || std::fabs(v[i]) > 1e300 || xi.is_unbounded()) {
+	    if (xi.contains(0)) v[i] = 0;
+	    else if (xi.lb() > 0) v[i] = std::isfinite(xi.lb()) ? xi.lb() + std::max(1.0, std::fabs(xi.lb())) * 1e-3 : 1.0;
+	    else v[i] = std::isfinite(xi.ub()) ? xi.ub() - std::max(1.0, std::fabs(xi.ub())) * 1e-3 : -1.0;
+	    if (!xi.contains(v[i])) v[i] = xi.lb() > 0 ? xi.lb() : xi.ub();
+	  }
+	}
+	return v;
+    }
+
     bool LoupFinderIpopt::get_starting_point(int n, bool init_x, Number* x,
         bool init_z, Number* z_L, Number* z_U,
         int
@@ -341,22 +375,10 @@ namespace ibex {
 
         // initialize to the given starting point
 	//	ibex::Vector v = the_box.random();
-	ibex::Vector v = the_box.mid();
-	// an unbounded box has no finite center: start from the point of the
-	// interval closest to 0 (a finite one), so that Ipopt can run there too
-	for (int i=0; i<n; i++) {
-	  const Interval& xi = the_box[i];
-	  if (!std::isfinite(v[i]) || std::fabs(v[i]) > 1e300 || xi.is_unbounded()) {
-	    if (xi.contains(0)) v[i] = 0;
-	    else if (xi.lb() > 0) v[i] = std::isfinite(xi.lb()) ? xi.lb() + std::max(1.0, std::fabs(xi.lb())) * 1e-3 : 1.0;
-	    else v[i] = std::isfinite(xi.ub()) ? xi.ub() - std::max(1.0, std::fabs(xi.ub())) * 1e-3 : -1.0;
-	    if (!xi.contains(v[i])) v[i] = xi.lb() > 0 ? xi.lb() : xi.ub();
-	  }
-	}
+	ibex::Vector v = start_point(the_box);
 	//	cout << " force " << force << endl;
 	if (force)  v=solution;
 
-	//	cout << " v " << v << endl;
 	for (int i=0; i<n ; i++)
 	  x[i]=v[i];
         return true;

@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -315,6 +315,8 @@ int main(int argc, char** argv) {
 	args::ValueFlag<double> ipopt_diam_arg(parser, "float", "With --loup ipopt*: Ipopt is only called on boxes whose widest variable is at most this wide (negative: no threshold, unbounded boxes included). Default: 1e8.", {"ipopt-diam"});
 	args::ValueFlag<double> ipopt_expansion_arg(parser, "float", "With --loup ipopt*: half-width (relative to |x| when |x|>1) of the box around Ipopt's point in which a short nested search looks for a certified feasible point. Default: 1e-6.", {"ipopt-expansion"});
 	args::ValueFlag<double> ipopt_expansion_first_arg(parser, "float", "With --ipopt-expansion: first try the default 1e-6 box with this CPU timeout (seconds), and widen only if it certifies nothing.", {"ipopt-expansion-first"});
+	args::ValueFlag<double> ipopt_start_max_arg(parser, "float", "With --ipopt-diam negative: Ipopt is not called on a box whose starting point has a coordinate larger than this in absolute value. Default: 1e8.", {"ipopt-start-max"});
+	args::ValueFlag<double> ipopt_max_time_arg(parser, "float", "With --loup ipopt*: CPU limit of one Ipopt call in seconds (Ipopt's max_cpu_time). Default: none.", {"ipopt-max-time"});
 	args::Flag ipopt_defer_arg(parser, "ipopt-defer", "With --loup ipopt*: a scheduled Ipopt call that falls on a box wider than --ipopt-diam waits for the next box narrow enough instead of being skipped.", {"ipopt-defer"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
@@ -428,6 +430,8 @@ int main(int argc, char** argv) {
 #ifdef __IBEX_WITH_IPOPT__
 		if (ipopt_diam_arg) ibex::ipopt_diam = ipopt_diam_arg.Get();
 		if (ipopt_expansion_arg) ibex::ipopt_expansion = ipopt_expansion_arg.Get();
+		if (ipopt_max_time_arg) ibex::ipopt_max_time = ipopt_max_time_arg.Get();
+		if (ipopt_start_max_arg) ibex::ipopt_start_max = ipopt_start_max_arg.Get();
 		if (ipopt_expansion_first_arg) ibex::ipopt_expansion_first = ipopt_expansion_first_arg.Get();
 		if (ipopt_defer_arg) ibex::ipopt_defer = true;
 #endif
