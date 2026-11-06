@@ -68,6 +68,17 @@ namespace ibex {
     inline bool past_deadline() { if (ipopt_deadline_on && std::clock() > ipopt_deadline) throw IpoptDeadline(); return false; } }
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
+  // Guided restarts: at a node where Ipopt is not scheduled, an extra Ipopt
+  // run from a random point of the node's box, as long as these runs have
+  // used less than ipopt_guided (fraction) of the CPU time since the first
+  // call, and the box contains no previous Ipopt solution (a basin already
+  // visited) -- replaced by: of 10 random points of the box, the farthest
+  // from every previous Ipopt solution (maximin). The B&B order (lowest lower
+  // bound first) makes the node a promising region not yet discarded. ipopt_guided_local: Ipopt bounded by
+  // the node's box instead of the root box. <= 0: off.
+  double ipopt_guided=-1; bool ipopt_guided_local=false;
+  int ipopt_guided_calls=0, ipopt_guided_improved=0; double ipopt_guided_time=0;
+  namespace { bool guided_now=false; std::clock_t guided_t0=0; bool guided_started=false; std::mt19937 g_rng(7); }
   // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
   // widen to ipopt_expansion only when it gives no loup; <= 0: no first try
   double ipopt_expansion_first=-1;
@@ -177,14 +188,23 @@ namespace ibex {
 	  ibex::Vector v = force ? solution : start_point(box);
 	  for (int i=0; i<v.size(); i++) if (!(std::fabs(v[i]) <= ipopt_start_max)) { narrow=false; break; }
 	}
+	guided_now = false;
+	if (ipopt_guided > 0 && !scheduled && !force && narrow) {
+	  if (!guided_started) { guided_started = true; guided_t0 = std::clock(); }
+	  double elapsed = double(std::clock() - guided_t0) / CLOCKS_PER_SEC;
+	  if (ipopt_guided_time < ipopt_guided * elapsed) {
+	    guided_now = true;
+	  }
+	}
 	// ipopt_defer: a scheduled call that falls on a box too wide is not lost,
 	// it waits for the next box narrow enough
 	if (ipopt_defer && scheduled && !narrow) ipopt_pending = true;
 	if (
 	    narrow
 	    &&
-	    (scheduled || (ipopt_defer && ipopt_pending) || force )
+	    (scheduled || (ipopt_defer && ipopt_pending) || force || guided_now)
 	    ){
+	  std::clock_t guided_c0 = std::clock();
 	  ipopt_pending = false;
 	
 	  //	  cout << "nb_cells " <<  optimizer->get_nb_cells() << endl;
@@ -218,8 +238,12 @@ namespace ibex {
 	  log_value = optimalValue; log_status = (int) status; log_width = box.max_diam();
 	  log_dist = POS_INFINITY;
 	  log_inner=-1; log_corr_status=-1; log_corr_nodes=0; log_corr_time=0; log_corr_loup=POS_INFINITY; log_goal=POS_INFINITY; log_viol=POS_INFINITY;
+	  if (ipopt_sols.size()<2000 && (int) status > -10 && std::isfinite(optimalValue)) {
+	    bool fin = true; for (int i=0; i<solution.size(); i++) fin = fin && std::isfinite(solution[i]);
+	    if (fin) ipopt_sols.push_back(solution);
+	  }
 	  if (log_pending) {
-	    for (size_t k=0; k<ipopt_sols.size(); k++) {
+	    for (size_t k=0; k+1<ipopt_sols.size(); k++) {
 	      double d = 0;
 	      for (int i=0; i<solution.size(); i++) {
 	        double w = sys.box[i].diam(); if (!(w>0) || w>1e12) w = 1+std::fabs(solution[i]);
@@ -227,7 +251,6 @@ namespace ibex {
 	      }
 	      log_dist = std::min(log_dist, d);
 	    }
-	    if (ipopt_sols.size()<500) ipopt_sols.push_back(solution);
 	  }
 	  //	  cout << " status " << status << endl;
 	  //	  if (status == Solve_Succeeded) {
@@ -286,8 +309,14 @@ namespace ibex {
 	    }
 	  }
 	  if (ms>0 && loup < loup_ms) ipopt_ms_improved++;
+	  if (guided_now && loup < loup_ms) ipopt_guided_improved++;
 	  } // multistart
 	  ms_index = 0;
+	  if (guided_now) {
+	    ipopt_guided_calls++;
+	    ipopt_guided_time += double(std::clock() - guided_c0) / CLOCKS_PER_SEC;
+	    guided_now = false;
+	  }
 	}
 	
       }
@@ -342,13 +371,13 @@ namespace ibex {
 	//        cout << "ipopt box " << ipopt_box << endl;
         Array<NumConstraint> contrains = sys.ctrs;
         for (int i = 0; i < n; i++) {
-	  x_l[i] = ipopt_box[i].lb();   // Ipopt has for domain the initial box after contraction
+	  x_l[i] = (guided_now && ipopt_guided_local) ? the_box[i].lb() : ipopt_box[i].lb();   // Ipopt has for domain the initial box after contraction
 
         }
 
 
         for (int i = 0; i < n; i++) {
-	  x_u[i]=ipopt_box[i].ub();
+	  x_u[i] = (guided_now && ipopt_guided_local) ? the_box[i].ub() : ipopt_box[i].ub();
         }
 	
 	
@@ -426,6 +455,33 @@ namespace ibex {
 	    std::uniform_real_distribution<double> U(lo, hi);
 	    v[i] = (hi > lo) ? U(ms_rng) : lo;
 	  }
+	}
+	if (guided_now) {
+	  // maximin: of 10 random points of the node's box (same clamp around its
+	  // default start), the one farthest from every previous Ipopt solution
+	  // (max-norm, each coordinate scaled by its sampling range)
+	  ibex::Vector c0 = v, best = v, w(n);
+	  double best_d = -1;
+	  for (int t=0; t<10; t++) {
+	    ibex::Vector cand(n);
+	    for (int i=0; i<n; i++) {
+	      const Interval& xi = the_box[i];
+	      double c = c0[i], S = std::max(10.0, 10*std::fabs(c));
+	      double lo = std::max(xi.lb(), c-S), hi = std::min(xi.ub(), c+S);
+	      if (xi.diam() <= 2*S) { lo = xi.lb(); hi = xi.ub(); }
+	      w[i] = (hi > lo) ? hi - lo : 1.0;
+	      std::uniform_real_distribution<double> U(lo, hi);
+	      cand[i] = (hi > lo) ? U(g_rng) : lo;
+	    }
+	    double d = POS_INFINITY;
+	    for (size_t k=0; k<ipopt_sols.size(); k++) {
+	      double dk = 0;
+	      for (int i=0; i<n; i++) dk = std::max(dk, std::fabs(cand[i]-ipopt_sols[k][i])/w[i]);
+	      d = std::min(d, dk);
+	    }
+	    if (d > best_d) { best_d = d; best = cand; }
+	  }
+	  v = best;
 	}
 	//	cout << " force " << force << endl;
 	if (force && ms_index==0)  v=solution;
