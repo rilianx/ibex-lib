@@ -49,16 +49,15 @@ Interval branch-and-bound solvers compute rigorous enclosures of the solutions
 of nonlinear systems and of global optima. Their polytope-hull contractor
 bounds each of the $n$ variables of a node over a linear relaxation by solving
 $2n$ small linear programs (LPs) with a floating-point LP solver, whose dual
-solutions are certified afterwards by the Neumaier--Shcherbina bound. We
-redesign this contractor around the certificate. Since any vector of
-multipliers certifies a valid bound, an LP that stops early or fails yields a
-weaker bound instead of a lost one, and the pass over the bounds never has to
-be abandoned; merging the twin rows produced by the linearization halves the
-relaxation of square systems; and a self-certifying simplex (SC) drops the work
-that a general-purpose LP solver spends on making its answer correct: it
-verifies nothing, does not refactorize before declaring an optimum, and needs
-no phase~1. A ladder of configurations in the open-source solver Ibex, from
-SoPlex as Ibex uses it to SC, attributes the gain to each step. On relaxations
+solutions are certified afterwards by the Neumaier--Shcherbina bound. Since
+any vector of multipliers certifies a valid bound, the simplex that computes
+them never needs to be correct. We present a self-certifying simplex (SC) that
+drops the work a general-purpose LP solver spends on making its answer
+correct: it verifies nothing, does not refactorize before declaring an
+optimum, needs no phase~1, and solves the $2n$ LPs on one shared basis. A
+ladder of configurations in the open-source solver Ibex, from SoPlex as Ibex
+uses it, through the merging of twin rows, a tuned SoPlex and its simplex
+driven directly, to SC, attributes the gain to each step. On relaxations
 of up to 30 rows the redesigned contractor makes the solver about 24\% faster
 on global optimization problems and \todo{X}\% faster on systems of equations,
 and SC accounts for \todo{Y}\% beyond the simplex of SoPlex driven directly.
@@ -90,35 +89,25 @@ therefore treat the LP solver as a black box and certify its output a
 posteriori: the dual solution is turned into a safe bound by the
 Neumaier--Shcherbina procedure~\cite{neumaier2004safe}, and an infeasibility
 claim is accepted only if the returned Farkas ray passes the same verification.
-This design has two costs that are easy to miss. The first is in the
-answers: the contractor uses the multipliers only when the LP solver reports
-an optimum or a verified infeasibility, so an LP that reaches its iteration
-limit, or reports an infeasibility that its ray cannot prove, loses its bound,
-and the polytope-hull contractor of Ibex then abandons the whole pass. The
-second is in the calls: the $2n$ LPs of a node are small and closely related,
-typically two or three pivots apart, and each is a separate call to a
-general-purpose solver, which sets up its vectors, refactorizes the basis
-before declaring an optimum and verifies its solution; on these LPs that work
-exceeds the pivots themselves (Section~\ref{sec:experiments}).
+This design has a cost that is easy to miss: the $2n$ LPs of a node are small
+and closely related, typically two or three pivots apart, and each is a
+separate call to a general-purpose solver, which sets up its vectors,
+refactorizes the basis before declaring an optimum and verifies its solution;
+on these LPs that work exceeds the pivots themselves
+(Section~\ref{sec:experiments}).
 
-We take the certificate as the starting point of the design instead of its
-last step. With the relaxation written in a homogeneous form, with one
-interval-bounded slack per row, \emph{any} multiplier vector yields a valid
-bound on the box and on every sub-box. Three consequences shape the
-contractor. First, no outcome of an LP is fatal: an LP that stops early gives
-a weaker bound, an unproved infeasibility leaves one bound uncontracted, and
-the pass always continues, whatever the engine. Second, the relaxation can be
-reduced before the LPs are solved: the affine linearization writes each
-equation as two one-sided rows with the same normal, and merging such twin
-rows halves the relaxation of square systems. Third, the simplex that computes
-the multipliers never needs to be correct: it verifies nothing and does not
-refactorize before declaring an optimum, and since every basis can be made
-dual feasible by relocating its nonbasic variables, each of the $2n$ bound
-problems, and each problem after the box contracts, starts without a phase~1
-(the search for a feasible starting basis), and the $2n$ problems share one
-basis. We call this simplex \emph{self-certifying} (SC). How much each
-consequence is worth depends on the size of the relaxation, and measuring it
-is part of the contribution.
+We design the simplex around the certificate instead. With the relaxation
+written in a homogeneous form, with one interval-bounded slack per row,
+\emph{any} multiplier vector yields a valid bound on the box and on every
+sub-box, so the simplex that computes the multipliers never needs to be
+correct: it verifies nothing and does not refactorize before declaring an
+optimum. Since every basis can also be made dual feasible by relocating its
+nonbasic variables, each of the $2n$ bound problems, and each problem after
+the box contracts, starts without a phase~1 (the search for a feasible
+starting basis), and the $2n$ problems share one basis. We call this simplex
+\emph{self-certifying} (SC). How much it is worth depends on the size of the
+relaxation and on what else the contractor does, and measuring that is part of
+the contribution.
 
 \paragraph{Positioning.} The certificate itself is not new. That any
 multiplier vector yields a valid bound once the residual is evaluated in
@@ -150,13 +139,8 @@ where rigor is not required; the heuristic of skipping bounds already attained
 by a primal point, used by Ibex, comes from Baharev, Achterberg and
 R\'ev~\cite{baharev2009distillation}.
 
-\paragraph{Contributions.} The paper makes four contributions.
+\paragraph{Contributions.} The paper makes three contributions.
 \begin{itemize}
-\item \emph{A contractor that never loses a bound.} We give a pass over the
-$2n$ bounds in which every outcome of an LP yields a certified bound or leaves
-one bound uncontracted, and the pass never stops early, together with the
-merging of twin rows. Both apply to any LP engine; the first has been
-submitted to the Ibex distribution (Section~\ref{sec:contractor}).
 \item \emph{A simplex designed for the certificate.} SC omits the
 verification, the refactorization before an optimum and the phase~1 of a
 general-purpose solver, and solves the $2n$ problems of a node on one shared
@@ -166,9 +150,10 @@ feasibility for free, follow from the Neumaier--Shcherbina bound and LP
 duality; we state them in Section~\ref{sec:dfb} because the design rests on
 them, not as new results.
 \item \emph{An attribution of the gain.} A ladder of configurations inside the
-same contractor of Ibex, from SoPlex as Ibex uses it, through a tuned SoPlex
-and its simplex driven directly, to SC and a hybrid, measures what each step
-contributes, separately on optimization problems and systems of equations and
+same contractor of Ibex, from SoPlex as Ibex uses it, through the merging of
+twin rows (a simple preprocessing that halves the relaxation of square systems
+for every engine), a tuned SoPlex and its simplex driven directly, to SC and a
+hybrid, measures what each step contributes, separately on optimization problems and systems of equations and
 on small and large relaxations, with one instance per family. A replay of
 recorded passes outside the search, on the same LPs, adds HiGHS and Gurobi and
 explains where the time of a call goes (Section~\ref{sec:experiments}).
@@ -246,7 +231,7 @@ for $2n$ closely related LPs over the same constraints, with a certificate
 attached to every basis.
 
 % =====================================================================
-\section{A contractor built on the certificate}\label{sec:contractor}
+\section{The contractor}\label{sec:contractor}
 
 This section describes the contractor independently of the engine that
 solves its LPs: the relaxation and its certificate
@@ -254,7 +239,8 @@ solves its LPs: the relaxation and its certificate
 (Section~\ref{sec:pass}) and the merging of twin rows
 (Section~\ref{sec:merge}). Section~\ref{sec:simplex} then describes SC, and
 Section~\ref{sec:experiments} compares it with external LP solvers inside this
-same contractor.
+same contractor. Only SC is new; the rest is the common ground on which the
+engines are compared.
 
 \subsection{The homogeneous relaxation and its certificate}\label{sec:dfb}
 
@@ -384,7 +370,7 @@ original relaxation 731 times to control the width growth, and pivoting in
 floating point with certification of the final multipliers only was 2.8 times
 faster with essentially the same contraction (mean 24.0\% against 24.6\%).
 
-\subsection{A pass that never loses a bound}\label{sec:pass}
+\subsection{One pass over the bounds}\label{sec:pass}
 
 At each node the relaxation is computed, written in the
 form~\eqref{eq:homog}, and loaded once. The contractor then makes one pass over
@@ -404,32 +390,18 @@ the last primal point; we solve first the nearest one, whose optimum lies
 closest to the vertex where the previous LP ended, so that the next LP needs
 fewer pivots. This order is the best one for every engine we compare.
 
-What the certificate changes is how the pass treats the outcomes of an LP.
-In the polytope-hull contractor of Ibex~2.8.9 the multipliers are used only
-when the LP solver reports an optimum, or an infeasibility with a Farkas ray
-that passes the Neumaier--Shcherbina test. An LP that reaches its iteration
-limit, or reports an infeasibility without a verifiable ray, makes the
-contractor abandon the pass, and the remaining bounds of the node are not
-contracted. Since any multipliers certify a bound
-(Proposition~\ref{prop:valid}), none of these outcomes needs to be fatal:
-\begin{itemize}
-\item if the residual $\iv{R}(\lambda,\iv{z})$ excludes zero, the node is
-empty and the pass stops;
-\item if an LP stops without an optimum, at its iteration limit or on
-numerical trouble, its bound is certified with the multipliers of the basis
-where it stopped: the bound is weaker, but valid, and the pass goes on;
-\item if an LP reports an infeasibility whose ray fails the residual test,
-the box is not empty as far as the contractor can prove: that bound is not
-contracted, the LP is solved once more from a cold start, and the pass goes
-on.
-\end{itemize}
-The policy applies to any engine. An external LP solver that stops at its
-iteration limit keeps the solution of its last basis (SoPlex does), and those
-multipliers certify a bound in the same way; we use this policy with every
-engine in Section~\ref{sec:experiments}, and have submitted it to the Ibex
-distribution. All engines have the iteration limit $20m+200$ per LP, where $m$
-is the number of rows; Ibex gives SoPlex 100, which on Geneig-icse is reached
-by 377 of 61\,815 LPs, against 8 of 68\,757 with $20m+200$.
+If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
+empty and the pass stops. No other outcome stops it. An LP that ends without
+an optimum, at its iteration limit, still has the multipliers of the basis
+where it stopped, which certify a weaker but valid bound
+(Proposition~\ref{prop:valid}); an LP that reports an infeasibility whose ray
+fails the residual test leaves its bound uncontracted, and is solved once more
+from a cold start. The polytope-hull contractor of Ibex~2.8.9 instead
+abandons the pass in both cases; we corrected it, the correction has been
+submitted to the Ibex distribution, and every engine of
+Section~\ref{sec:experiments} uses it, including the reference. Ibex limits
+SoPlex to 100 iterations per LP; the other configurations, SC included, use
+$20m+200$, where $m$ is the number of rows.
 
 \subsection{Merging twin rows}\label{sec:merge}
 
