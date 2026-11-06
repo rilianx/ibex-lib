@@ -107,7 +107,13 @@ int main(int argc, char** argv) {
     /* Tope de 60 pivotes por LP en SC (2026-10-21): cualquier base certifica, asi
      * que cortar da una cota valida. Las cajas negras siguen con 20m+200: una caja
      * cortada por iteraciones no deja certificado y pierde la cota entera. */
-    if (!getenv("DFBH_LPCAP") && !getenv("DFBH_LPCAP_M")) setenv("DFBH_LPCAP", "60", 0);
+    /* SC BASE POR OMISION (2026-11-06, escalera de ablacion): sin tope de 60
+     * pivotes, sin devex y sin paso largo. Cada uno ayuda en unas familias
+     * (Bratu) y perjudica en otras (BroydenBanded); en promedio no cambian el
+     * tiempo. `DFBH_LPCAP=60`, `DFB_SX_DEVEX=1` y `DFB_SX_BFRT=1` los vuelven
+     * a encender. */
+    if (!getenv("DFB_SX_DEVEX")) setenv("DFB_SX_DEVEX", "0", 0);
+    if (!getenv("DFB_SX_BFRT"))  setenv("DFB_SX_BFRT", "0", 0);
     // Menú interactivo para configurar las opciones
     args::ArgumentParser parser("Optimizer04 configuration", "Configure and run Optimizer04");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
