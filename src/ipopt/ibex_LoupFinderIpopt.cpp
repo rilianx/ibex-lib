@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cmath>
 #include <random>
+#include <ctime>
 #include "ibex_BscHijackGuard.h"
 
 
@@ -55,6 +56,16 @@ namespace ibex {
   // at the first Ipopt call, this many extra Ipopt runs from random points of
   // the root box (each certified like the main one); counts of the extra runs
   // that improved the loup
+  // CPU limit of one Ipopt call enforced from the evaluation callbacks: past
+  // it they report an evaluation error and Ipopt gives up. max_cpu_time is
+  // only checked between iterations, and Ipopt 3.11 can loop inside one line
+  // search forever (matrix2 and ex9_1_5 from far starting points). <= 0: none
+  double ipopt_call_limit=5;
+  namespace { std::clock_t ipopt_deadline=0; bool ipopt_deadline_on=false;
+    struct IpoptDeadline {};
+    // throws out of Ipopt (RethrowNonIpoptException): returning false from a
+    // callback inside the restoration phase crashes Ipopt 3.11
+    inline bool past_deadline() { if (ipopt_deadline_on && std::clock() > ipopt_deadline) throw IpoptDeadline(); return false; } }
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
   // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
@@ -190,7 +201,16 @@ namespace ibex {
 	  Timer ipopt_timer; ipopt_timer.start();
 	  if (ipopt_max_time > 0) app->Options()->SetNumericValue("max_cpu_time", ipopt_max_time);
 	  if (getenv("IBEX_IPOPT_TRACE")) { std::cerr.precision(17); std::cerr << "call " << ipopt_calls << " force " << force << " start " << (force ? solution : start_point(box)) << " box " << box << std::endl; }
-	  ApplicationReturnStatus status = app->OptimizeTNLP(this);
+	  ipopt_deadline_on = ipopt_call_limit > 0;
+	  ipopt_deadline = std::clock() + (std::clock_t) (ipopt_call_limit * CLOCKS_PER_SEC);
+	  ApplicationReturnStatus status;
+	  try {
+	    status = app->OptimizeTNLP(this);
+	  } catch (IpoptDeadline&) {
+	    status = Maximum_CpuTime_Exceeded;
+	    optimalValue = POS_INFINITY;   // no usable result
+	  }
+	  ipopt_deadline_on = false;
 	  force=0;  // after call , force is reset to 0
 	  ipopt_timer.stop();
 	  log_pending = ipopt_log()!=NULL;
@@ -418,6 +438,7 @@ namespace ibex {
     // returns the value of the objective function
     bool LoupFinderIpopt::eval_f(int n, const Number* x, bool new_x, Number& obj_value)
     {
+        if (past_deadline()) return false;
         assert(n == the_box.size());
         ibex::Vector v(n);
 
@@ -435,6 +456,7 @@ namespace ibex {
 
     bool LoupFinderIpopt::eval_grad_f(int n, const Number* x, bool new_x, Number* grad_f)
     {
+        if (past_deadline()) return false;
       assert(n == the_box.size());
 
       
@@ -471,6 +493,7 @@ namespace ibex {
     // return the value of the constraints: g(x)
     bool LoupFinderIpopt::eval_g(int n, const Number* x, bool new_x, int m, Number* g)
     {
+        if (past_deadline()) return false;
         assert(n == sys.nb_var);
         assert(m == sys.nb_ctr);
 

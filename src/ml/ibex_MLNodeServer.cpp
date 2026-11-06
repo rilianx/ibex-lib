@@ -1506,24 +1506,25 @@ int MLNodeServer::decide(const Cell& c, const SampleParams& sp) {
 long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound,
 		std::ostream& out, const RunParams& rp, const SampleParams& sp) {
 
+	// the root (contraction, first upper bounding, Ipopt at the root) counts
+	Timer timer;
+	timer.start();
+
 	reset(init_box, obj_init_bound);
 
 	long nsamples = 0;
 
-	Timer timer;
-	timer.start();
-
 	update_uplo();
 
 	loup_history.clear();
-	{ LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e); }
+	{ LoupEvent e = { (long) nb_cells, timer.get_time(), loup }; loup_history.push_back(e); }
 	bound_history.clear();
-	{ BoundEvent e = { (long) nb_cells, 0.0, loup, uplo }; bound_history.push_back(e); }
+	{ BoundEvent e = { (long) nb_cells, timer.get_time(), loup, uplo }; bound_history.push_back(e); }
 	double next_bound_t = 0.01;
 	if (late_loup < loup) {
 		loup = late_loup;
 		buffer.contract(compute_ymax());
-		LoupEvent e = { (long) nb_cells, 0.0, loup }; loup_history.push_back(e);
+		LoupEvent e = { (long) nb_cells, timer.get_time(), loup }; loup_history.push_back(e);
 		update_uplo();
 	}
 
@@ -1648,13 +1649,13 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 long MLNodeServer::run_interactive(const IntervalVector& init_box, double obj_init_bound,
 		std::istream& in, std::ostream& out, const RunParams& rp, const SampleParams& sp) {
 
+	Timer timer;
+	timer.start();   // the root counts
+
 	reset(init_box, obj_init_bound);
 
 	long decisions = 0;
 	long nsamples = 0;
-
-	Timer timer;
-	timer.start();
 
 	update_uplo();
 
