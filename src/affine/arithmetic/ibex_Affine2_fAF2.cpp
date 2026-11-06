@@ -140,6 +140,14 @@ AffineMain<AF_fAF2>& AffineMain<AF_fAF2>::operator=(const AffineMain<AF_fAF2>& x
 			for (int i = 0; i <= x.size(); i++) {
 				_elt._val[i] = x._elt._val[i];
 			}
+		} else {
+			// as the copy constructor: an inactive form (empty or unbounded)
+			// has no coefficients. Keeping the previous ones (and their size)
+			// made a later "size()==n" test take them for a valid form:
+			// LinearizerAffine2 then added the previous constraint's row with
+			// zero error, an invalid cut (haldmads: wrong optimum).
+			_n = x._n;
+			if (_elt._val!=NULL) { delete[] _elt._val; _elt._val = NULL; }
 		}
 	}
 	return *this;

@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern int ipopt_multistart; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -318,6 +318,8 @@ int main(int argc, char** argv) {
 	args::ValueFlag<double> ipopt_start_max_arg(parser, "float", "With --ipopt-diam negative: Ipopt is not called on a box whose starting point has a coordinate larger than this in absolute value. Default: 1e8.", {"ipopt-start-max"});
 	args::ValueFlag<double> ipopt_max_time_arg(parser, "float", "With --loup ipopt*: CPU limit of one Ipopt call in seconds (Ipopt's max_cpu_time). Default: none.", {"ipopt-max-time"});
 	args::Flag bound_trace_arg(parser, "bound-trace", "With --solve: add \"bounds\": [[time, nodes, loup, uplo], ...] (start, each new loup, uplo moves at geometrically spaced times, end).", {"bound-trace"});
+	args::ValueFlag<int> ipopt_multistart_arg(parser, "int", "With --loup ipopt*: at the first Ipopt call, this many extra Ipopt runs from random points of the root box.", {"ipopt-multistart"});
+	args::ValueFlag<int> ipopt_ms_seed_arg(parser, "int", "Seed of --ipopt-multistart's starting points (default 1).", {"ipopt-ms-seed"});
 	args::Flag ipopt_defer_arg(parser, "ipopt-defer", "With --loup ipopt*: a scheduled Ipopt call that falls on a box wider than --ipopt-diam waits for the next box narrow enough instead of being skipped.", {"ipopt-defer"});
 	args::ValueFlag<long> guard_horizon(parser, "int", "With --bisector lsmear-guard: only switch to round-robin within the first N decisions. Default: 0 (no horizon).", {"guard-horizon"});
 	args::ValueFlag<string> bisector_arg(parser, "name", "Bisector to use. One of: "
@@ -431,6 +433,8 @@ int main(int argc, char** argv) {
 #ifdef __IBEX_WITH_IPOPT__
 		if (ipopt_diam_arg) ibex::ipopt_diam = ipopt_diam_arg.Get();
 		if (ipopt_expansion_arg) ibex::ipopt_expansion = ipopt_expansion_arg.Get();
+		if (ipopt_multistart_arg) ibex::ipopt_multistart = ipopt_multistart_arg.Get();
+		if (ipopt_ms_seed_arg) ibex::ipopt_ms_seed = ipopt_ms_seed_arg.Get();
 		if (ipopt_max_time_arg) ibex::ipopt_max_time = ipopt_max_time_arg.Get();
 		if (ipopt_start_max_arg) ibex::ipopt_start_max = ipopt_start_max_arg.Get();
 		if (ipopt_expansion_first_arg) ibex::ipopt_expansion_first = ipopt_expansion_first_arg.Get();
@@ -563,6 +567,7 @@ int main(int argc, char** argv) {
 					if (H[k].loup <= fin) { last_n = H[k].nodes; last_t = H[k].time; break; }
 				}
 				out.kv("loup_updates", (long) H.size()-1);
+				if (ibex::ipopt_multistart>0) out.kv("ms_improved", (long) ibex::ipopt_ms_improved);
 				if (bound_trace_arg) {
 					out.key("bounds"); out.arr();
 					const std::vector<MLNodeServer::BoundEvent>& B = server->bound_history;

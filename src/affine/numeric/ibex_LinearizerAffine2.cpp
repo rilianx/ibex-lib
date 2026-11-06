@@ -50,7 +50,7 @@ bool LinearizerAffine2::goal_linearization(const IntervalVector& box, LPSolver& 
 		return false;
 	}
 	try {
-	if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+	if (af2.is_actif() && af2.size() == sys.nb_var) { // if the affine2 form is valid
 		// convert the epsilon variables to the original box
 		double tmp=0;
 		for (int i =0; i <sys.nb_var; i++) {
@@ -95,7 +95,7 @@ int LinearizerAffine2::inlinearization(const IntervalVector& box, LPSolver& lp_s
 
 		//std::cout <<ev<<":::"<< af2<<"  "<<af2.size()<<"  " <<sys.nb_var<< std::endl;
 
-		if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+		if (af2.is_actif() && af2.size() == sys.nb_var) { // if the affine2 form is valid
 			bool b_abort=false;
 			// convert the epsilon variables to the original box
 			double tmp=0;
@@ -177,7 +177,7 @@ int LinearizerAffine2::linearize(const IntervalVector& box, LPSolver& lp_solver)
 		}
 		//std::cout <<ev<<":::"<< af2<<"  "<<af2.size()<<"  " <<sys.nb_var<< std::endl;
 
-		if (af2.size() == sys.nb_var) { // if the affine2 form is valid
+		if (af2.is_actif() && af2.size() == sys.nb_var) { // if the affine2 form is valid
 			bool b_abort=false;
 			// convert the epsilon variables to the original box
 			double tmp=0;

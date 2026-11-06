@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
+#include <random>
 #include "ibex_BscHijackGuard.h"
 
 
@@ -51,6 +52,11 @@ namespace ibex {
   double ipopt_start_max=1e8;
   // CPU limit of one Ipopt call (Ipopt's max_cpu_time); <= 0: none
   double ipopt_max_time=-1;
+  // at the first Ipopt call, this many extra Ipopt runs from random points of
+  // the root box (each certified like the main one); counts of the extra runs
+  // that improved the loup
+  int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
+  namespace { int ms_index=0; std::mt19937 ms_rng; }
   // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
   // widen to ipopt_expansion only when it gives no loup; <= 0: no first try
   double ipopt_expansion_first=-1;
@@ -175,6 +181,11 @@ namespace ibex {
 	  // the node being bounded: read now, the correction search below runs an
 	  // Optimizer of its own that overwrites these
 	  log_node_lb = optimizer_node_lb; log_depth = optimizer_node_depth;
+	  int nstarts = (ipopt_calls==0 && ipopt_multistart>0) ? ipopt_multistart : 0;
+	  if (nstarts>0) ms_rng.seed(ipopt_ms_seed);
+	  for (int ms=0; ms<=nstarts; ms++) {
+	  ms_index = ms;
+	  double loup_ms = loup;
 	  double loup_in = loup;
 	  Timer ipopt_timer; ipopt_timer.start();
 	  if (ipopt_max_time > 0) app->Options()->SetNumericValue("max_cpu_time", ipopt_max_time);
@@ -254,6 +265,9 @@ namespace ibex {
 		    }
 	    }
 	  }
+	  if (ms>0 && loup < loup_ms) ipopt_ms_improved++;
+	  } // multistart
+	  ms_index = 0;
 	}
 	
       }
@@ -381,8 +395,20 @@ namespace ibex {
         // initialize to the given starting point
 	//	ibex::Vector v = the_box.random();
 	ibex::Vector v = start_point(the_box);
+	if (ms_index>0) {
+	  // a random point of the root box; around the default start, at most
+	  // max(10, 10|c|) away from it in each unbounded or very wide direction
+	  for (int i=0; i<n; i++) {
+	    const Interval& xi = ipopt_box[i];
+	    double c = v[i], S = std::max(10.0, 10*std::fabs(c));
+	    double lo = std::max(xi.lb(), c-S), hi = std::min(xi.ub(), c+S);
+	    if (xi.diam() <= 2*S) { lo = xi.lb(); hi = xi.ub(); }
+	    std::uniform_real_distribution<double> U(lo, hi);
+	    v[i] = (hi > lo) ? U(ms_rng) : lo;
+	  }
+	}
 	//	cout << " force " << force << endl;
-	if (force)  v=solution;
+	if (force && ms_index==0)  v=solution;
 
 	for (int i=0; i<n ; i++)
 	  x[i]=v[i];
