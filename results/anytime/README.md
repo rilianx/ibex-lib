@@ -72,3 +72,20 @@ gains. Recommended configuration:
 
     --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1
     --ipopt-guided=0.1 --ipopt-guided-patience=20
+
+## hs118: a modelling artifact, fixed (ef82025)
+
+hs118 writes its range constraints as thick equalities, e.g.
+`((-x1)+x4)-[-7, 6])=0` (i.e. -7 <= x4-x1 <= 6). NormalizedSystem kept the
+interval constant inside f, so the inner test needed x4-x1 <= -7 and
+x4-x1 >= 6 at once: no point could ever be certified (no loup in any arm,
+while the lower bound reached the known optimum 664.82). Ipopt received
+mid(f)=0, i.e. x4-x1 = -0.5, and reported infeasibility on all 914 calls.
+With thick equalities normalized as ranges (a-eps <= f0 <= b+eps) and Ipopt
+bounds g in [-rad, rad], hs118 closes at the root: loup 664.82045, 0 nodes,
+0.014 s (tg10p config). Only hs118 and launch__coconut have interval
+constants in their constraints; launch__coconut is proved infeasible at the
+root by upstream ibexopt as well (0 cells), unchanged.
+
+The sweep arms (g05p20, g20p20, g10p10, g10p50) still use the binary
+without this fix.
