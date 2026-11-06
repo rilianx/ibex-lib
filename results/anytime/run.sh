@@ -17,6 +17,8 @@ xargs -P ${JOBS:-8} -n2 sh -c '
   case $arm in
     base)     x="" ;;
     ipoptfix) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
+    fix2)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;  # ipoptfix, affine fix (9e69f77)
+    ms20)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-multistart=20" ;;
   esac
   r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
        $x --bound-trace --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)

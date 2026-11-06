@@ -33,6 +33,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     nc1e5) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     fixaff) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;  # final, with the Affine2 operator= fix
     base8) d=1e8;  x="" ;;  # d1e8, with the Affine2 operator= fix
+    ms20)  d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-multistart=20" ;;
     final) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;  # nc1e5 with --ipopt-start-max (binary of 4197d3e+)
   esac
   r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \

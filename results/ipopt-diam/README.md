@@ -158,3 +158,19 @@ instances under 0.05 s (ackley_5, ex8_1_4, ex8_1_5).
 
 Recommended configuration: `--ipopt-diam=-1 --ipopt-expansion=1e-5
 --ipopt-expansion-first=0.1`.
+
+## After the affine relaxation fix (arms base8, fixaff)
+
+`--relax both` used LinearizerAffine2, which could add invalid cuts (an
+Affine2 assignment kept the previous form's coefficients when the new one
+was inactive; fixed in 9e69f77). base8 = d1e8 and fixaff = final, rerun
+with the fixed binary:
+
+    base8  vs d1e8    time +0.001 [-0.010, +0.010]  nodes gmean 0.999
+    fixaff vs final   time +0.010 [+0.001, +0.017]  nodes gmean 1.006
+    fixaff vs base8   time -0.006 [-0.021, +0.008]  nodes gmean 0.768
+                      (19 instances with > 20% fewer nodes, 6 with > 25% more)
+
+The invalid cuts barely mattered on these 223 runs (haldmads is the one
+instance whose node count moves: 982 -> more with the fix); every optimum
+is the same. The conclusions above hold.
