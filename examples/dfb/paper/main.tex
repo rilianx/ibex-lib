@@ -160,10 +160,11 @@ submitted to the Ibex distribution (Section~\ref{sec:contractor}).
 \item \emph{A simplex designed for the certificate.} SC omits the
 verification, the refactorization before an optimum and the phase~1 of a
 general-purpose solver, and solves the $2n$ problems of a node on one shared
-basis (Section~\ref{sec:simplex}). We prove that its certificate is valid for
-any multipliers and on every sub-box, exact at an optimal basis, and
-nondecreasing along the dual method, so that an LP can be stopped at any basis
-(Section~\ref{sec:properties}).
+basis (Section~\ref{sec:simplex}). The properties it relies on, validity of
+the certificate for any multipliers, exactness at an optimum and dual
+feasibility for free, follow from the Neumaier--Shcherbina bound and LP
+duality; we state them in Section~\ref{sec:dfb} because the design rests on
+them, not as new results.
 \item \emph{An attribution of the gain.} A ladder of configurations inside the
 same contractor of Ibex, from SoPlex as Ibex uses it, through a tuned SoPlex
 and its simplex driven directly, to SC and a hybrid, measures what each step
@@ -286,8 +287,7 @@ The certificate combines the $m$ rows of $\Abar z=0$ linearly, with one
 \emph{multiplier} per row, into a single equation $\gamma^Tz=0$ that every point
 of the polytope satisfies. Any vector of multipliers $\lambda\in\R^m$ gives a
 valid equation; the best ones for bounding $z_k$ are the dual solutions of the
-LP that minimizes or maximizes $z_k$ over the polytope
-(Section~\ref{sec:properties}), and the simplex of Section~\ref{sec:simplex}
+LP that minimizes or maximizes $z_k$ over the polytope, and the simplex of Section~\ref{sec:simplex}
 produces them.
 
 \begin{definition}[Certificate]\label{def:cert}
@@ -308,9 +308,65 @@ the box in interval arithmetic, and dividing by $\gamma_k$, encloses $z_k$; and
 if the residual $\iv{R}$ excludes zero, no point of the box can satisfy
 $\gamma^Tz=0$, so the polytope is empty. A contraction step therefore replaces
 $\iv{z}_k$ by $\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$, and an emptiness test
-checks $0\notin\iv{R}(\lambda,\iv{z})$. Section~\ref{sec:properties} states
-this formally (Proposition~\ref{prop:valid}) and shows when the enclosure is
-tight; Section~\ref{sec:simplex} explains how the simplex produces $\lambda$.
+checks $0\notin\iv{R}(\lambda,\iv{z})$. All statements below hold for the
+floating-point $A$ returned by the linearizer; rounding in $\iv{\gamma}$ and
+$\iv{C}_k$ is covered by outward rounding.
+
+\begin{proposition}[Validity]\label{prop:valid}
+Let $\lambda\in\R^m$ be arbitrary. For every $z\in P(\iv{x})$ and every $k$
+with $0\notin\iv{\gamma}_k$, $z_k\in\iv{C}_k(\lambda,\iv{z})$; if
+$0\notin\iv{R}(\lambda,\iv{z})$, then $P(\iv{x})=\emptyset$ and $\iv{x}$
+contains no solution. Both claims hold on every sub-box $\iv{x}'\subseteq\iv{x}$
+with the matrix $\Abar$ computed on $\iv{x}$.
+\end{proposition}
+\begin{proof}
+For $z\in P(\iv{x})$ and the exact $\gamma=\Abar^T\lambda\in\iv{\gamma}$,
+$\gamma^Tz=\lambda^T\Abar z=0$; both claims follow from the inclusion property
+of interval arithmetic and Lemma~\ref{lem:relax}. The linearization on
+$\iv{x}$ remains valid on $\iv{x}'$, so the polytope over $\iv{x}'$ lies in
+$P(\iv{x})$.
+\end{proof}
+
+No property of $\lambda$ is used: it need not be optimal, feasible or
+accurate, and errors in it can only weaken the enclosure. Written back in the
+variables $x$, $\inff\iv{C}_k(\lambda,\iv{z})$ is the Neumaier--Shcherbina safe
+lower bound of $\min x_k$ subject to $Ax\in\iv{b}$, $x\in\iv{x}$, with
+approximate dual $\lambda$~\cite{neumaier2004safe}, and the row-wise solution
+of the preconditioned system of Domes and Neumaier~\cite[\S5]{domes2012rigorous};
+validity on sub-boxes is used by Gleixner et al.~\cite{gleixner2017three} and
+in our earlier work~\cite{reyes2023preconditioning}. The homogeneous form,
+introduced in~\cite{reyes2023preconditioning}, adds one detail: each slack is
+bounded by $\square(A_{i:}\iv{x})$ even when a side of $\iv{b}_i$ is infinite,
+so a multiplier of the ``wrong'' sign on a one-sided row gives a weaker but
+finite bound, and literally any $\lambda$ certifies. Two standard facts
+complete what the design uses. At an optimal basis of $\mathrm{LP}_k$ with
+$z_k$ basic, $\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value in
+exact arithmetic, by LP duality~\cite[Prop.~1]{reyes2023preconditioning}; in
+floating point the excess is at most $\sum_j\wid(\iv{\gamma}_j)\magn(\iv{z}_j)$
+plus the effect of the inaccuracy of $\lambda$, as for the
+Neumaier--Shcherbina bound. And every basis can be made dual feasible for
+free~\cite{koberstein2005dual}:
+
+\begin{proposition}[Dual-feasible start]\label{prop:start}
+The slack basis $B=-I_m$ is dual feasible for the bound problem of every
+structural variable $z_k$, $k\le n$, with $\inff\iv{z}_k$ finite. If every
+$\iv{z}_j$ is bounded, any basis becomes dual feasible after placing each
+nonbasic $z_j$ at its lower bound if its reduced cost $d_j>0$ and at its upper
+bound if $d_j<0$.
+\end{proposition}
+\begin{proof}
+With the slack basis the cost of every basic variable is zero, so $\lambda=0$
+and $d=e_k$, and $z_k$ at its lower bound has the right sign. In general $d$
+does not depend on where the nonbasic variables sit, and the relocation
+enforces the sign conditions whenever the required bound is finite.
+\end{proof}
+
+When the objective changes from one bound to the next, or the box contracts,
+relocation thus restores dual feasibility without a phase~1, which is what
+lets one basis serve the $2n$ problems. Yamamura and
+coworkers~\cite{yamamura2001dual,yamamura2006dual} used the case of a box
+change to resume an LP emptiness test after a bisection. Section~\ref{sec:simplex}
+explains how the simplex produces $\lambda$.
 
 \paragraph{Why not a rigorous simplex.}
 Validity does not depend on how $\lambda$ was computed: any vector of
@@ -440,8 +496,27 @@ the certified bound is then available, and nondecreasing, at every iteration
 remains primal feasible, up to the contracted bound, and is reoptimized with
 primal steps, which is the usual warm start of an LP solver.
 \end{itemize}
+Under the dual method the certificate is available at every iteration, and it
+never gets worse:
+
+\begin{proposition}[Monotone certified bound]\label{prop:mono}
+Run the dual simplex method on $\mathrm{LP}_k$ from a dual-feasible basis. At
+every iteration $t$ in which $z_k$ is basic, $\inff\iv{C}_k(\lambda_t,\iv{z})$
+is a valid lower bound on $z_k$ over $P(\iv{x})$ and, in exact arithmetic, it
+is nondecreasing in $t$.
+\end{proposition}
+\begin{proof}
+Validity is Proposition~\ref{prop:valid}. With $z_k$ basic, $d=e_k-\Abar^T\lambda_t$
+has $d_k=0$, so $\gamma_k=1$, $\gamma_j=-d_j$ for $j\neq k$, and
+$\inff\iv{C}_k=\sum_{j\neq k}\min_{z_j\in\iv{z}_j}d_jz_j=\min_{z\in\iv{z}}d^Tz$,
+the Lagrangian dual function of $\mathrm{LP}_k$ at $\lambda_t$, which the
+iterates of the dual simplex method do not decrease.
+\end{proof}
+
+An LP stopped at its iteration limit under the dual method therefore keeps a
+bound no weaker than at its start (Section~\ref{sec:pass}).
 Both reach an optimal basis, so the certificate at termination is exact
-(Proposition~\ref{prop:exact}) and the pruning is the same; whether the node is
+(Section~\ref{sec:dfb}) and the pruning is the same; whether the node is
 empty is decided in the first LP, common to both. They differ only in cost.
 
 The cost depends on how far apart the optima of consecutive bounds are. An
@@ -503,8 +578,8 @@ chooses per run: it alternates the two on the first nodes, keeps the one with
 the lower cost per LP, measured as a moving average, and tries the other again
 every 25 nodes. With the primal warm start, primal steps are also the fallback
 when relocation is impossible because the bound indicated by a reduced cost is
-infinite; with the dual one, SC takes no primal steps
-(Section~\ref{sec:properties}).
+infinite; with the dual one, SC takes no primal steps, and an LP that ends
+with such a variable gives a valid, possibly weaker bound.
 
 \subsection{Simplex iterations}\label{sec:iter}
 
@@ -611,217 +686,13 @@ of its bounds and no entering variable in its row $r$, the polytope is empty,
 and the row $r$ of $B^{-1}$ is a Farkas ray: SC takes $\lambda=\rho_r$, and the
 residual test turns it into a proof of emptiness. The simplex itself never needs to be correct:
 a wrong pivot or an inaccurate $\lambda$ yields a weaker bound, never an
-invalid one (Proposition~\ref{prop:valid}).
-
-% =====================================================================
-\section{Properties of the certificate}\label{sec:properties}
-
-All statements hold for the floating-point $A$ returned by the linearizer;
-rounding in the computation of $\iv{\gamma}$ and $\iv{C}_k$ is covered by
-outward rounding. We write $e_k$ for the $k$-th unit vector of $\R^{n+m}$.
-
-\subsection{Validity}
-
-\begin{proposition}[Validity for any multipliers]\label{prop:valid}
-Let $\lambda\in\R^m$ be arbitrary. For every $z\in P(\iv{x})$ and every $k$ with
-$0\notin\iv{\gamma}_k$, we have $z_k\in\iv{C}_k(\lambda,\iv{z})$. If
-$0\notin\iv{R}(\lambda,\iv{z})$, then $P(\iv{x})=\emptyset$, and by
-Lemma~\ref{lem:relax} the box $\iv{x}$ contains no solution.
-\end{proposition}
-\begin{proof}
-Let $\gamma=\Abar^T\lambda$ be the exact vector, so $\gamma\in\iv{\gamma}$. For
-$z\in P(\iv{x})$, $\gamma^T z = \lambda^T\Abar z = 0$, hence
-$\gamma_k z_k = -\sum_{j\ne k}\gamma_j z_j$. Each product $\gamma_j z_j$ belongs
-to $\iv{\gamma}_j\iv{z}_j$ and the sum to the interval sum; dividing by
-$\gamma_k\in\iv{\gamma}_k$, which does not contain $0$, gives
-$z_k\in\iv{C}_k(\lambda,\iv{z})$ by the inclusion property. For the second
-claim, any $z\in P(\iv{x})$ would give $0=\gamma^T z\in\iv{R}(\lambda,\iv{z})$.
-\end{proof}
-
-No property of $\lambda$ is used: it need not be optimal, feasible, or
-accurate. Errors in $\lambda$ can only weaken the enclosure, never invalidate
-it. In particular, a Farkas multiplier read from the simplex when it detects
-primal infeasibility either passes the residual test or is simply not used:
-there is no ``infeasible but unproved'' outcome that forces the pass to stop.
-A warm-started simplex can, however, accumulate enough error to report
-infeasibility on boxes that are not empty: the ray then fails the test, the
-bound is merely not contracted, and the node is bisected instead of pruned.
-When this happens SC solves the same LP again from a cold start. In the
-benchmarks of Section~\ref{sec:experiments} this retry changes nothing at
-60\,s (the search is identical in 96\% of the runs), but it removes the rare
-long stalls in which the warm start reports such infeasibility over a whole
-region of the tree (Section~\ref{sec:long}).
-
-\begin{proposition}[Validity on sub-boxes]\label{prop:subbox}
-Let $\iv{x}'\subseteq\iv{x}$ and let $\iv{z}'\subseteq\iv{z}$ be the
-corresponding box of~\eqref{eq:homog}, built with the matrix $\Abar$ computed
-on $\iv{x}$. Then every solution in $\iv{x}'$ satisfies
-$z_k\in\iv{C}_k(\lambda,\iv{z}')\subseteq\iv{C}_k(\lambda,\iv{z})$.
-\end{proposition}
-\begin{proof}
-The linearization~\eqref{eq:relax} on $\iv{x}$ remains valid for solutions in
-$\iv{x}'$, so $P'=\{z\in\iv{z}':\Abar z=0\}\subseteq P(\iv{x})$ contains them,
-and Proposition~\ref{prop:valid} applies to $P'$. The inclusion follows from
-the inclusion isotonicity of interval arithmetic.
-\end{proof}
-
-A certificate computed at a node can thus be reused in all its descendants,
-as we did with the preconditioner of~\cite{reyes2023preconditioning}
-and Gleixner et al.\ with their dual-derived
-inequalities~\cite{gleixner2017three}. It stays valid, but it was optimized for
-the parent box and is usually weak in a child; with SC, where a fresh
-certificate costs one LP, we measured such reuse and it does not pay
-(Section~\ref{sec:discussion}).
-
-\subsection{Tightness}
-
-Consider the bound problem $\mathrm{LP}_k$~\eqref{eq:lpk} with $\iv{z}$
-bounded, and the notation of Section~\ref{sec:simplex}.
-
-\begin{lemma}\label{lem:dualfun}
-For any $\lambda$ with $d = e_k - \Abar^T\lambda$ and $d_k=0$, the exact
-certificate satisfies $\gamma_k=1$ and
-\[
-\inff \iv{C}_k(\lambda,\iv{z}) \;=\; \sum_{j\neq k}\min_{z_j\in\iv{z}_j} d_j z_j
-\;=\; \min_{z\in\iv{z}} d^T z \;=: g(\lambda),
-\]
-the value of the Lagrangian dual function of~\eqref{eq:lpk} at $\lambda$.
-\end{lemma}
-\begin{proof}
-$\gamma=\Abar^T\lambda = e_k - d$, so $\gamma_k = 1-d_k = 1$ and $\gamma_j=-d_j$
-for $j\ne k$. Then
-$\iv{C}_k = \sum_{j\ne k} d_j\iv{z}_j$, whose infimum is the sum of the minima of
-the independent terms. The term $j=k$ of $d^Tz$ vanishes. Finally, the
-Lagrangian of~\eqref{eq:lpk} relaxing $\Abar z=0$ with multiplier $\lambda$ is
-$z_k - \lambda^T\Abar z = d^T z$, minimized over the box $\iv{z}$.
-\end{proof}
-
-\begin{proposition}[Exactness at an optimal basis]\label{prop:exact}
-Let $B$ be an optimal basis of~\eqref{eq:lpk} with multipliers $\lambda^*$.
-If $z_k$ is basic, then in exact arithmetic
-$\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value of $\mathrm{LP}_k$.
-If $z_k$ is nonbasic at its lower bound, the optimal value is $\inff\iv{z}_k$ and
-there is nothing to contract.
-\end{proposition}
-\begin{proof}
-If $z_k$ is basic, $d_k=0$ and Lemma~\ref{lem:dualfun} gives
-$\inff\iv{C}_k=g(\lambda^*)$. By weak duality $g(\lambda^*)$ is a lower bound
-of the optimum. The basic solution $\bar z$ places each nonbasic variable at
-the bound that minimizes $d_j z_j$ (optimality signs) and has $d_j=0$ on basic
-variables, so $d^T\bar z=g(\lambda^*)$; since $\bar z\in P(\iv{x})$,
-$\bar z_k = e_k^T\bar z = d^T\bar z + \lambda^{*T}\Abar\bar z = g(\lambda^*)$.
-If $z_k$ is nonbasic at its lower bound, $\bar z_k=\inff\iv{z}_k$ is feasible
-and optimal.
-\end{proof}
-
-The remaining case, $z_k$ nonbasic at its upper bound in an optimal basis of the
-minimization, means that $P(\iv{x})$ lies in the hyperplane
-$z_k=\supp\iv{z}_k$. Then $d_k\le 0$, so $\gamma_k=1-d_k\ge 1$, and the same
-computation as in Lemma~\ref{lem:dualfun}, divided by $\gamma_k$, shows that the
-certificate is exact as well.
-
-In floating point, the computed enclosure exceeds the LP bound by at most
-$\sum_j \wid(\iv{\gamma}_j)\,\magn(\iv{z}_j)$ plus the effect of the inaccuracy of
-$\lambda$, the same slack as in the Neumaier--Shcherbina
-bound~\cite{neumaier2004safe}. On identical boxes, SC attains the LP hull in
-96\% of the bounds where it contracts more than the standard contractor
-(Section~\ref{sec:experiments}).
-
-\begin{remark}[Relation to Neumaier--Shcherbina and Domes--Neumaier]
-Written back in the variables $x$, $\inff\iv{C}_k(\lambda,\iv{z})$ is the
-Neumaier--Shcherbina safe lower bound of $\min x_k$ subject to $Ax\in\iv{b}$,
-$x\in\iv{x}$, with approximate dual $\lambda$~\cite{neumaier2004safe}, and the
-row-wise solution of the preconditioned system in the linear bounding of Domes
-and Neumaier~\cite[\S5]{domes2012rigorous}. In the homogeneous form,
-Proposition~\ref{prop:exact} is our earlier
-result~\cite[Prop.~1]{reyes2023preconditioning} that the dual solution of the
-bound LP is an optimal preconditioner for the Gauss--Seidel projection, with
-the vector $\lambda^T\Abar$ playing the role of a preconditioned row. The
-certificate is therefore the known one; Propositions~\ref{prop:start}
-and~\ref{prop:mono} are what make it cheap and always available inside the
-simplex.
-\end{remark}
-
-\subsection{Dual feasibility for free}
-
-\begin{proposition}[Dual-feasible start for every bound]\label{prop:start}
-The slack basis $B=-I_m$ is dual feasible for $\mathrm{LP}_k$, for every
-structural variable $k\le n$ with $\inff\iv{z}_k$ finite. More generally, if
-every $\iv{z}_j$ is bounded, any basis becomes dual feasible after placing each
-nonbasic $z_j$ at its lower bound if $d_j>0$ and at its upper bound if $d_j<0$.
-\end{proposition}
-\begin{proof}
-With the slack basis, $c_B=0$ for $k\le n$, so $\lambda=0$ and $d=e_k$: the only
-nonzero reduced cost is $d_k=1$, and $z_k$ at its lower bound satisfies the
-sign condition. In general, dual feasibility is a condition on the signs of
-$d_j$ for nonbasic variables relative to the bound at which they sit; $d$ does
-not depend on that placement, so the relocation enforces the condition
-whenever the required bound is finite.
-\end{proof}
-
-When the objective changes from one bound to the next, or the box is
-contracted between two bounds, relocation restores dual feasibility without a
-phase~1. That a boxed LP needs no dual phase~1 is a standard
-observation~\cite{koberstein2005dual}; what we use is that it holds across the
-$2n$ objectives and the contractions of the box, which is what allows one
-basis to be shared by the $2n$ problems. The
-case of a box change was exploited by Yamamura and
-coworkers~\cite{yamamura2001dual,yamamura2006dual} to resume an LP emptiness test
-after a bisection; Proposition~\ref{prop:start} extends it to a change of
-objective, which is what the $2n$ bound problems need.
-Relocation needs the bound indicated by the sign of the reduced cost to be
-finite. Slacks of one-sided rows, and variables with an unbounded domain, may
-not have it. In the implementation such a nonbasic variable is placed on its
-finite bound, which leaves its reduced cost with the wrong sign, or at zero if
-it is free. The iteration loop removes these dual infeasibilities with primal
-steps, and uses dual steps while some basic variable is out of its bounds; with
-the dual warm start SC takes no primal steps, and
-an LP that ends with such a variable gives a valid, possibly weaker bound. The
-certificate is unaffected, since it is valid for any $\lambda$; only the
-monotonicity of Proposition~\ref{prop:mono} is lost in such an LP until the
-basis is dual feasible again.
-
-\subsection{An anytime certified bound under the dual method}
-
-\begin{proposition}[Monotone certified bound]\label{prop:mono}
-Run the dual simplex method on~\eqref{eq:lpk} from a dual-feasible basis, with
-the standard or the long-step ratio test. At every iteration $t$ in which $z_k$
-is basic, $\inff\iv{C}_k(\lambda_t,\iv{z})$ is a valid lower bound on $z_k$ over
-$P(\iv{x})$, and, in exact arithmetic, these bounds are nondecreasing in $t$.
-\end{proposition}
-\begin{proof}
-Validity is Proposition~\ref{prop:valid}. With $z_k$ basic, $d_k=0$ and
-Lemma~\ref{lem:dualfun} identifies the bound with the dual objective
-$g(\lambda_t)$. Every iterate of the dual simplex is dual feasible, and each
-iteration moves $\lambda$ along a dual ascent direction with a step chosen by
-the ratio test; the long-step test maximizes the piecewise-linear dual function
-along that direction~\cite{maros2003generalized}. Hence $g(\lambda_t)$ is
-nondecreasing, strictly so on nondegenerate iterations.
-\end{proof}
-
-The certificate can thus be read at any point of the dual method, and an LP
-can be truncated with a valid bound that is no weaker than at its start. The
-pass uses this when an LP reaches its iteration limit
-(Section~\ref{sec:pass}); a tighter fixed limit did not pay
-(Section~\ref{sec:iter}), and truncating every LP when its bound comes close to
-what it can still gain saves pivots but weakens the contraction more than it
-saves (Section~\ref{sec:discussion}). In the solver of systems of equations,
-where SC uses the dual warm start (Section~\ref{sec:simplex}), the property
-holds in every LP of the pass; in the optimizer it holds in the first LP of
-each pass.
-
-\paragraph{Cost.}
-Certifying a bound costs the same in SC as the Neumaier--Shcherbina
-post-processing. Both compute a product of the transposed constraint matrix by
-the multipliers, restricted to the rows with $\lambda_i\neq 0$, plus $O(n+m)$
-operations: $\iv{\gamma}=\Abar^T\lambda$ and $\iv{C}_k$ in SC, and the
-residual $A^T\lambda-c$ and the bound $\lambda^T\iv{b}-(A^T\lambda-c)^T\iv{x}$
-in Neumaier--Shcherbina. On three optimization problems (ex6\_1\_3, ex7\_2\_3,
-chem) the SC certificate costs 1.3--3.1\,$\mu$s per LP, and the
-post-processing 1.9--3.0\,$\mu$s plus 1.2--1.5\,$\mu$s to extract the solution
-from the external solver. The difference between the two approaches is
-therefore not the cost of a certificate but where $\lambda$ comes from, which is
-what Section~\ref{sec:experiments} isolates.
+invalid one (Proposition~\ref{prop:valid}). Certifying a bound costs the same
+as the Neumaier--Shcherbina post-processing of an external solver's dual,
+since both compute $\Abar^T\lambda$ over the rows with $\lambda_i\neq 0$ plus
+$O(n+m)$ operations: 1.3--3.1\,$\mu$s per LP on three optimization problems,
+against 1.9--3.0\,$\mu$s plus 1.2--1.5\,$\mu$s to extract the solution from
+the external solver. The difference between the approaches is not the cost of
+a certificate but where $\lambda$ comes from.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
