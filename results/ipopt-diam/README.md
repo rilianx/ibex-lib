@@ -207,3 +207,29 @@ Uniform random restarts are too blunt: the cost is paid on every instance,
 the gain is on a few. Next: decide when and from where (budget relative to
 the search time, starting points away from previous Ipopt solutions and
 in regions the B&B has not discarded).
+
+## Guided Ipopt restarts (arms tg10, tg10l, tg10p)
+
+`--ipopt-guided=0.1`: at nodes where Ipopt is not scheduled, an extra Ipopt
+run while these runs have used < 10% of the CPU time; start = of 10 random
+points of the node's box, the farthest from every previous Ipopt solution.
+`--ipopt-guided-local`: Ipopt bounded by the node's box. `--ipopt-guided-
+patience=20`: stop after 20 guided runs in a row without a better loup,
+until the loup improves by any means. All on top of tfinal; root counted.
+
+    A      vs B       time diff [IC95]          nodes gmean  guided runs / s   instances improved by a guided run
+    tg10   vs tfinal  +0.036 [+0.019, +0.052]   0.899        27761 / 175 s     70
+    tg10l  vs tfinal  +0.029 [+0.013, +0.045]   0.896        25968             59
+    tg10p  vs tfinal  +0.012 [-0.003, +0.028]   0.910        2054 / 22 s       67
+    tg10p  vs tg10    -0.024 [-0.039, -0.009]   1.012
+    tg10p  vs tbase   +0.006 [-0.014, +0.024]   0.699
+
+- All three solve matrix2 at the first guided run (135 s -> 0.3 s).
+- Without patience the 10% budget is paid where the incumbent is already
+  optimal: ex6_2_13 (closes at ~293 s) times out after 31 s of guided runs.
+  Patience keeps 67 of the 70 instances where a guided run improves the loup
+  with 1/8 of the guided time; ex6_2_13 closes again.
+- tg10p vs the old base: a tie in time, 0.70 of the nodes; big wins on
+  matrix2, dixchlng, eigencco, launch, makela3, polak5; losses on dnieper
+  (5.4 -> 52 s: path-sensitive, see node-selection), haldmads, ex8_2_4,
+  ex9_2_5, ex7_3_5, ex8_5_1-1.
