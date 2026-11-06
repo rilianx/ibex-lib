@@ -150,9 +150,20 @@ NormalizedSystem::NormalizedSystem(const System& sys, double eps, bool extended,
 				//				f_2 = &ExprCopy().copy(fi.args(), args2, *p.first);
 				//				rhs = *p.second;
 				//			} else {
-				fu = &ExprCopy().copy(fc.args(), argsl, fc.expr());
-				fl = &ExprCopy().copy(fc.args(), argsu, fc.expr());
+				// A "thick" equality f0(x) - [a,b] = 0 (an interval constant, as in
+				// hs118 or launch__coconut) means f0(x) in [a,b]. Normalized as
+				// f(x)<=eps and -f(x)<=eps with the interval inside, no point can be
+				// certified (the inner test would need f0 <= a and f0 >= b). Use
+				// f0 with the constant as right-hand side instead.
+				const ExprSub* sub = dynamic_cast<const ExprSub*>(&fc.expr());
+				const ExprConstant* cst = sub ? dynamic_cast<const ExprConstant*>(&sub->right) : NULL;
+				bool thick = cst && fc.expr().dim.is_scalar() && cst->get().dim.is_scalar()
+				             && cst->get_value().diam() > 0 && !cst->get_value().is_unbounded();
+				const ExprNode& fbody = thick ? sub->left : fc.expr();
+				fu = &ExprCopy().copy(fc.args(), argsl, fbody);
+				fl = &ExprCopy().copy(fc.args(), argsu, fbody);
 				rhs.clear();
+				if (thick) rhs.i() = cst->get_value();
 				//			}
 
 				set_lb_ub(rhs, l, u, eps);
@@ -163,11 +174,13 @@ NormalizedSystem::NormalizedSystem(const System& sys, double eps, bool extended,
 				_ctrs.push_back(new NumConstraint(argsl,ExprCtr(ctrl,LEQ)));
 				_ctrs.push_back(new NumConstraint(argsu,ExprCtr(ctru,LEQ)));
 
+				const ExprNode* fk_thick = thick ? &ExprCopy().copy(fc.args(), args, fbody) : NULL;
 				for (int i=0; i<fc.expr().dim.nb_rows(); i++) {
 					for (int j=0; j<fc.expr().dim.nb_cols(); j++) {
-						_f_ctr.push_back(&(f_cpy[k]-ExprConstant::new_(u[i][j])));
+						const ExprNode& fk = thick ? *fk_thick : f_cpy[k];
+						_f_ctr.push_back(&(fk-ExprConstant::new_(u[i][j])));
 						_ops.push_back(LEQ);
-						_f_ctr.push_back(&(ExprConstant::new_(l[i][j])-f_cpy[k]));
+						_f_ctr.push_back(&(ExprConstant::new_(l[i][j])-fk));
 						_ops.push_back(LEQ);
 						k++;
 					}

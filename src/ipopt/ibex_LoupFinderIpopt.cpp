@@ -395,6 +395,15 @@ namespace ibex {
             {
 	      g_u[i] = 0;
 	      g_l[i] = 0;
+	      // a "thick" equality f0(x) - [a,b] = 0 means f0(x) in [a,b]; eval_g
+	      // returns the midpoint f0(x) - mid([a,b]), so the constraint is
+	      // g in [-rad, rad] (rad: the width the constant gives at a point)
+	      ibex::Vector pt = start_point(ipopt_box);
+	      Interval fi = contrains[i].f.eval(IntervalVector(pt));
+	      if (!fi.is_empty() && !fi.is_unbounded() && fi.rad() > 1e-9) {
+	        g_u[i] = fi.rad();
+	        g_l[i] = -fi.rad();
+	      }
 	    }
 
             else if (contrains[i].op == GEQ)
