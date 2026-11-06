@@ -49,12 +49,13 @@ Interval branch-and-bound solvers compute rigorous enclosures of the solutions
 of nonlinear systems and of global optima. Their polytope-hull contractor
 bounds each of the $n$ variables of a node over a linear relaxation by solving
 $2n$ small linear programs (LPs) with a floating-point LP solver, whose dual
-solutions are certified afterwards by the Neumaier--Shcherbina bound. Since
-any vector of multipliers certifies a valid bound, the simplex that computes
-them never needs to be correct. We present a self-certifying simplex (SC) that
-drops the work a general-purpose LP solver spends on making its answer
-correct: it verifies nothing, does not refactorize before declaring an
-optimum, needs no phase~1, and solves the $2n$ LPs on one shared basis. A
+solutions are certified afterwards by the Neumaier--Shcherbina bound. That
+bound is valid for any vector of multipliers, so it makes any LP solver safe
+to use; yet a general-purpose solver still spends, inside each call, the work
+of making its own answer correct. We present a self-certifying simplex (SC)
+that omits that work, which the certificate makes unnecessary: it verifies
+nothing, does not refactorize before declaring an optimum, needs no phase~1,
+and solves the $2n$ LPs on one shared basis. A
 ladder of configurations in the open-source solver Ibex, from SoPlex as Ibex
 uses it, through the merging of twin rows, a tuned SoPlex and its simplex
 driven directly, to SC, attributes the gain to each step. On relaxations
@@ -96,12 +97,14 @@ refactorizes the basis before declaring an optimum and verifies its solution;
 on these LPs that work exceeds the pivots themselves
 (Section~\ref{sec:experiments}).
 
-We design the simplex around the certificate instead. With the relaxation
+The certificate already makes any LP solver safe to use: with the relaxation
 written in a homogeneous form, with one interval-bounded slack per row,
 \emph{any} multiplier vector yields a valid bound on the box and on every
-sub-box, so the simplex that computes the multipliers never needs to be
-correct: it verifies nothing and does not refactorize before declaring an
-optimum. Since every basis can also be made dual feasible by relocating its
+sub-box, whatever solver produced it. But a black box cannot take advantage of
+this, because the work it does to make its answer correct is internal to each
+call. We design the simplex around the certificate instead: since its
+multipliers never need to be correct, it verifies nothing and does not
+refactorize before declaring an optimum. Since every basis can also be made dual feasible by relocating its
 nonbasic variables, each of the $2n$ bound problems, and each problem after
 the box contracts, starts without a phase~1 (the search for a feasible
 starting basis), and the $2n$ problems share one basis. We call this simplex
