@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern int ipopt_multistart; extern double ipopt_guided; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern int ipopt_multistart; extern double ipopt_guided; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -320,6 +320,7 @@ int main(int argc, char** argv) {
 	args::Flag bound_trace_arg(parser, "bound-trace", "With --solve: add \"bounds\": [[time, nodes, loup, uplo], ...] (start, each new loup, uplo moves at geometrically spaced times, end).", {"bound-trace"});
 	args::ValueFlag<double> ipopt_call_limit_arg(parser, "float", "With --loup ipopt*: CPU seconds after which one Ipopt call is made to give up (its evaluations report an error). <= 0: none. Default: 5.", {"ipopt-call-limit"});
 	args::ValueFlag<double> ipopt_guided_arg(parser, "float", "With --loup ipopt*: guided restarts, an extra Ipopt run from the current node's box (of 10 random points, the farthest from previous Ipopt solutions), while these runs use less than this fraction of the CPU time.", {"ipopt-guided"});
+	args::ValueFlag<int> ipopt_guided_patience_arg(parser, "int", "With --ipopt-guided: after this many guided runs in a row without improving the loup, stop them until the loup improves. Default: 0 (never stop).", {"ipopt-guided-patience"});
 	args::Flag ipopt_guided_local_arg(parser, "ipopt-guided-local", "With --ipopt-guided: Ipopt bounded by the node's box instead of the root box.", {"ipopt-guided-local"});
 	args::ValueFlag<int> ipopt_multistart_arg(parser, "int", "With --loup ipopt*: at the first Ipopt call, this many extra Ipopt runs from random points of the root box.", {"ipopt-multistart"});
 	args::ValueFlag<int> ipopt_ms_seed_arg(parser, "int", "Seed of --ipopt-multistart's starting points (default 1).", {"ipopt-ms-seed"});
@@ -438,6 +439,7 @@ int main(int argc, char** argv) {
 		if (ipopt_expansion_arg) ibex::ipopt_expansion = ipopt_expansion_arg.Get();
 		if (ipopt_call_limit_arg) ibex::ipopt_call_limit = ipopt_call_limit_arg.Get();
 		if (ipopt_guided_arg) ibex::ipopt_guided = ipopt_guided_arg.Get();
+		if (ipopt_guided_patience_arg) ibex::ipopt_guided_patience = ipopt_guided_patience_arg.Get();
 		if (ipopt_guided_local_arg) ibex::ipopt_guided_local = true;
 		if (ipopt_multistart_arg) ibex::ipopt_multistart = ipopt_multistart_arg.Get();
 		if (ipopt_ms_seed_arg) ibex::ipopt_ms_seed = ipopt_ms_seed_arg.Get();

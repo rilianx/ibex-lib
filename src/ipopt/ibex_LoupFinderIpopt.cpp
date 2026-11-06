@@ -78,6 +78,10 @@ namespace ibex {
   // the node's box instead of the root box. <= 0: off.
   double ipopt_guided=-1; bool ipopt_guided_local=false;
   int ipopt_guided_calls=0, ipopt_guided_improved=0; double ipopt_guided_time=0;
+  // patience: after this many guided runs in a row that do not improve the
+  // loup, they stop until the loup improves by any means. <= 0: never stop
+  int ipopt_guided_patience=0;
+  namespace { int guided_streak=0; double guided_last_loup=POS_INFINITY; }
   namespace { bool guided_now=false; std::clock_t guided_t0=0; bool guided_started=false; std::mt19937 g_rng(7); }
   // with ipopt_expansion: first try the 1e-6 box (with this CPU timeout) and
   // widen to ipopt_expansion only when it gives no loup; <= 0: no first try
@@ -189,7 +193,9 @@ namespace ibex {
 	  for (int i=0; i<v.size(); i++) if (!(std::fabs(v[i]) <= ipopt_start_max)) { narrow=false; break; }
 	}
 	guided_now = false;
-	if (ipopt_guided > 0 && !scheduled && !force && narrow) {
+	if (loup < guided_last_loup) { guided_last_loup = loup; guided_streak = 0; }
+	if (ipopt_guided > 0 && !scheduled && !force && narrow
+	    && (ipopt_guided_patience <= 0 || guided_streak < ipopt_guided_patience)) {
 	  if (!guided_started) { guided_started = true; guided_t0 = std::clock(); }
 	  double elapsed = double(std::clock() - guided_t0) / CLOCKS_PER_SEC;
 	  if (ipopt_guided_time < ipopt_guided * elapsed) {
@@ -313,6 +319,7 @@ namespace ibex {
 	  } // multistart
 	  ms_index = 0;
 	  if (guided_now) {
+	    if (loup < guided_last_loup) { guided_last_loup = loup; guided_streak = 0; } else guided_streak++;
 	    ipopt_guided_calls++;
 	    ipopt_guided_time += double(std::clock() - guided_c0) / CLOCKS_PER_SEC;
 	    guided_now = false;
