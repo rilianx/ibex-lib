@@ -35,7 +35,8 @@ def pdg(lo, up):
     return min(1.0, max(0.0, lo - up) / max(abs(lo), abs(up), 1.0))
 
 def integral(B, f):
-    s = 0.0
+    # before the root is processed there are no bounds: gap 1
+    s = min(B[0][0], T) if B else T
     for k in range(len(B)):
         t0 = B[k][0]; t1 = B[k+1][0] if k+1 < len(B) else T
         t1 = min(t1, T)
@@ -51,7 +52,8 @@ def metrics(B, best, status):
     lastl = 0.0
     for k in range(1, len(B)):
         if B[k][2] != B[k-1][2]: lastl = B[k][0]
-    at10 = [b for b in B if b[0] <= T/10][-1][2]
+    pre = [b for b in B if b[0] <= T/10]
+    at10 = pre[-1][2] if pre else INF
     early = lo < INF and at10 < INF and abs(at10 - lo) <= 1e-6 * max(1, abs(lo))
     return dict(gap=gap, pint=integral(B, lambda b: pg(b[2], best)),
                 pdint=integral(B, lambda b: pdg(b[2], b[3])), t_ub=lastl,
