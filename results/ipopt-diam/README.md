@@ -233,3 +233,17 @@ until the loup improves by any means. All on top of tfinal; root counted.
   matrix2, dixchlng, eigencco, launch, makela3, polak5; losses on dnieper
   (5.4 -> 52 s: path-sensitive, see node-selection), haldmads, ex8_2_4,
   ex9_2_5, ex7_3_5, ex8_5_1-1.
+
+## Sweep of the guided restarts (budget rho, patience p), 223 closed instances
+
+    arm      rho   p    time vs tfinal [IC95]     nodes  total   guided s  inst. improved  slower (>1.3x)
+    tg10p    0.1   20   +0.012 [-0.004, +0.027]   0.910  1599 s  22        67              dnieper 52, ex7_3_5, ex8_5_1-1, ex9_2_5, haldmads
+    g05p20   0.05  20   +0.005 [-0.008, +0.016]   0.870  1539 s  15        62              dnieper 10.6, ex8_5_1-1, ex8_5_1bis, haldmads
+    g20p20   0.2   20   +0.014 [-0.001, +0.028]   0.905  1557 s  35        74              ex8_1_5 0.1->5.1, ex8_5_1bis, ex8_5_6 2.3->7.1
+    g10p10   0.1   10   -0.000 [-0.012, +0.009]   0.882  1528 s  15        68              ex8_5_1bis
+    g10p50   0.1   50   +0.012 [-0.002, +0.026]   0.879  1578 s  32        65              dnieper 43.7, ex7_3_5, ex8_5_1-1, haldmads
+
+All close 223/223 and solve matrix2 (0.3 s). Patience 10 is the best here:
+a tie in time with tfinal, 0.88 of its nodes, the lowest total time, and a
+single instance slower by more than 1.3x. The dnieper losses (path
+sensitivity) appear with patience 20-50, not with 10.
