@@ -3836,6 +3836,15 @@ DFBSimplex::Status CtcDFBHull::resolver_caja(int k, bool maximizar, const Interv
             for (int j = 0; j < m; ++j) lam_caja[j] = f[nb_var + j];
             res = DFBSimplex::INFEASIBLE;
         } else caja_inf_sin_rayo = true;
+    } else if (st == LPSolver::Status::MaxIter && getenv("DFBH_CORTE_CERT") && std::string(getenv("DFBH_CORTE_CERT")) != "0") {
+        /* Como el PR de Ibex (cota de los LPs cortados): SoPlex guarda el dual
+         * de la base en que se corto y ese dual certifica. Las primeras
+         * `nb_var` filas del LPSolver son las cotas de las variables. */
+        soplex::DVectorReal y(mylinearsolver.mysoplex->numRowsReal());
+        if (mylinearsolver.mysoplex->getDualReal(y) && y.dim() >= nb_var + m) {
+            for (int j = 0; j < m; ++j) lam_caja[j] = y[nb_var + j];
+            res = DFBSimplex::ITER_LIMIT;
+        }
     }
     mylinearsolver.set_cost(k, 0.0);
     if (reloj) cr_t[2] += ahora_s() - cr2;

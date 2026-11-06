@@ -844,10 +844,11 @@ Contractor and solvers are implemented in Ibex, with the two relaxations of
 our previous work~\cite{araya2025hybridizing}: the affine
 relaxation~\cite{ninin2015affine}, and the combined relaxation
 (\texttt{compo}), which adds to the affine rows those of
-X-Newton~\cite{araya2012xnewton}, one per constraint and corner. Neither is
-part of the Ibex distribution, whose solver and optimizer use the X-Newton
-relaxation alone; the comparison between engines does not depend on this
-choice, since every engine solves the same relaxation.
+X-Newton~\cite{araya2012xnewton}, one per constraint and corner. Preliminary
+experiments fixed one relaxation per program: the affine relaxation for
+optimization, where \texttt{compo} costs more than it saves with every engine,
+and \texttt{compo} for systems of equations, where it halves the search tree.
+Every engine solves the same relaxation.
 Per node, the affine relaxation has a median of 5 rows (quartiles 3--9) on
 optimization problems and 16 (9--30) on systems of equations after merging;
 \texttt{compo} has 13 (7--20) and 56 (36--94). For systems of equations we use
