@@ -174,3 +174,36 @@ with the fixed binary:
 The invalid cuts barely mattered on these 223 runs (haldmads is the one
 instance whose node count moves: 982 -> more with the fix); every optimum
 is the same. The conclusions above hold.
+
+## The root's time was not counted (fixed in ae66555): arms t*
+
+The timer started after the root was processed (contraction and the first
+upper bounding, Ipopt at the root included), so every time above leaves the
+root out, which favoured the arms that call Ipopt at the root (no
+threshold). Rerun with the root counted, affine fix included, 223
+instances, 310 s:
+
+    A       vs B       time diff [IC95]          nodes gmean   total time (closed)
+    tfinal  vs tbase   -0.004 [-0.019, +0.009]   0.768         1669 vs 1662 s
+    tms5    vs tfinal  +0.014 [-0.003, +0.032]   0.871         1579 s
+    tms20   vs tfinal  +0.057 [+0.032, +0.083]   0.833         1674 s
+    tms5    vs tbase   +0.010 [-0.008, +0.028]   0.669
+
+tfinal = no threshold + cascaded correction; tms5/tms20 = the same plus 5/20
+extra Ipopt runs from random points of the root box (--ipopt-multistart).
+
+- With the root counted, the new Ipopt base is a tie in time with the old one
+  (it was -0.014 [-0.031, -0.000] without the root); it still saves nodes
+  (0.77) and wins big on dixchlng 2.2->0.3, eigencco 4.3->0.6, launch
+  3.2->0.8, makela3 1.8->0.0, polak5 1.3->0.0; it loses on dnieper, ex14_1_7,
+  ex8_2_4, haldmads, hs100, ex7_2_3 (1.3-2x).
+- Random multistart at the root solves matrix2 (135 s -> 0.4 s: a random
+  start reaches the optimum 0, type A) and ex7_2_3, but costs seconds where
+  one Ipopt run is slow (launch 0.8->4.1 with 5 starts, 12.5 with 20;
+  haldmads 2.3->10; dixchlng 0.3->6.3; ex9_2_5). 5 starts: a tie overall,
+  lower total time thanks to matrix2; 20 starts: worse.
+
+Uniform random restarts are too blunt: the cost is paid on every instance,
+the gain is on a few. Next: decide when and from where (budget relative to
+the search time, starting points away from previous Ipopt solutions and
+in regions the B&B has not discarded).
