@@ -48,3 +48,27 @@ Reading:
   orthregb, polak6) and many small losses (the root's extra Ipopt runs delay
   the first loup by seconds; hs089 loses its feasible point, polygon25 ends
   worse).
+
+## Guided Ipopt restarts (tg10, tg10l, tg10p)
+
+tg10 = tfinal + `--ipopt-guided=0.1` (extra Ipopt runs at nodes, < 10% of
+the CPU time, start = farthest of 10 random points of the node's box from
+previous Ipopt solutions); tg10l = Ipopt bounded by the node's box; tg10p =
+tg10 + `--ipopt-guided-patience=20`. Primal integrals use the best loup over
+all arms (so the tfinal values here differ slightly from above).
+
+    tg10p vs   primal integral          primal-dual integral     final loup better / worse
+    tfinal     0.111 vs 0.143 (10/4)    0.569 vs 0.599 (12/3)    cresc4 linear orthrege polak6 polygon25 rk23 / prolog wall
+    tg10       0.111 vs 0.120 (6/1)     0.569 vs 0.586 (17/1)    polak6 prolog / linear polygon25
+    tg10l      0.111 vs 0.128 (6/6)     0.569 vs 0.589 (15/2)
+    tbase      0.111 vs 0.165 (17/6)    0.569 vs 0.601 (12/5)    cresc4 linear orthrege polak6 polygon25 / wall
+
+(n/m: instances better / worse by more than 1e-3.) Still no feasible point:
+discs, ex5_3_3, hs118, minlphi, minlphi1.
+
+Patience removes the cost of the budget on the lower bound (the primal-dual
+integral is now better than tfinal's, not worse) and keeps the primal
+gains. Recommended configuration:
+
+    --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1
+    --ipopt-guided=0.1 --ipopt-guided-patience=20
