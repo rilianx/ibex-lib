@@ -89,3 +89,18 @@ root by upstream ibexopt as well (0 cells), unchanged.
 
 The sweep arms (g05p20, g20p20, g10p10, g10p50) still use the binary
 without this fix.
+
+## Patience 10 vs 20 (g10p10 vs tg10p)
+
+    g10p10 vs  primal integral          primal-dual integral     final loup better / worse
+    tg10p      0.126 vs 0.111 (3/6)     0.575 vs 0.569 (8/7)     - / polak6 prolog rk23
+    tfinal     0.126 vs 0.143 (11/3)    0.575 vs 0.599 (13/5)    cresc4 linear orthrege polak6 polygon25 rk23 / prolog wall
+    tbase      0.126 vs 0.165 (17/4)    0.575 vs 0.601 (14/4)
+
+g10p10 closes 4 of the 75 (mistake in 281 s, besides chenery-1, hs093,
+wall). The patience-20 advantage comes from rk23 (0.083 vs 0.444) and
+polak6, where both arms make a single / a few guided runs: the budget is
+measured in CPU time, so which node gets the run differs between runs, and
+these instances are noise-sensitive. Patience 10 is the better choice on the
+223 closed instances (a tie in time with tfinal, no dnieper loss) and about
+the same here.
