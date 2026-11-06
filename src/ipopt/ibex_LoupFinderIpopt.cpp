@@ -101,6 +101,10 @@ namespace ibex {
       app->Options()->SetIntegerValue("print_level",0);
       app->Options()->SetIntegerValue("max_iter",1000);
       app->Options()->SetStringValue("linear_solver","mumps");
+      // Ipopt checks f and g for NaN/Inf but not their derivatives by default;
+      // a NaN in the Jacobian or Hessian goes to MUMPS, which may then crash
+      // (water, starting near a division by 0 once Ipopt runs on wide boxes)
+      app->Options()->SetStringValue("check_derivatives_for_naninf","yes");
       // Initialize the IpoptApplication and process the options
       
       ApplicationReturnStatus status;
