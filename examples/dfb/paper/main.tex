@@ -584,7 +584,11 @@ passes: for 110 instances, 36 systems of equations (one per family) and 74
 optimization problems (one per family and size class, among those on which R0
 takes more than 1\,s), we recorded the input boxes of 1\,000 calls of the
 contractor spread along a search with SC, with the affine relaxation, and
-replayed every call with each rung on the same LPs. Three more optimization
+replayed every call with each rung on the same LPs. Because the affine
+relaxation of only six systems exceeds 30 rows, a second bank does the same
+with \texttt{compo}, the best relaxation on large systems, for 41 systems
+whose relaxation has more than 30 rows (31 to 687, median 63; one per family,
+R0 above 1\,s). Three more optimization
 problems were left out: on pentagon and ex8\_2\_4, SoPlex as used by Ibex
 aborted with an internal exception, and on concon the affine linearization
 failed for every rung.
@@ -597,24 +601,24 @@ the normalization keeps a few long instances from dominating.
 \begin{table}[t]
 \centering
 \caption{Time per pass of each rung over that of SoPlex as used by Ibex (R0),
-on the bank of passes (1\,000 recorded calls per instance, affine relaxation,
-same LPs for every rung), by program and by the mean number of rows of the
-merged relaxation. Quotient of the means of the times normalized per instance
+on the bank of passes (1\,000 recorded calls per instance, same LPs for every
+rung), by program and by the mean number of rows of the merged relaxation:
+affine relaxation up to 30 rows, \texttt{compo} above. Quotient of the means of the times normalized per instance
 (see text). Last row: instances where SC is cheaper than the bare simplex.}
 \label{tab:ladder}
 \begin{tabular}{lccc}
 \toprule
 & optimization & \multicolumn{2}{c}{systems of equations}\\
 \cmidrule(lr){3-4}
-rung & (74) & $\le 30$ rows (30) & $>30$ rows (6)\\
+rung & (74) & $\le 30$ rows (30) & $>30$ rows (41)\\
 \midrule
-R1 + merging twin rows & 0.93 & 0.85 & 0.84\\
-R2 + tuned SoPlex      & 0.65 & 0.62 & 0.50\\
-R3 bare simplex        & 0.49 & 0.49 & \textbf{0.36}\\
-R4 SC                  & \textbf{0.37} & \textbf{0.39} & 0.57\\
-R5 hybrid              & 0.37 & 0.39 & 0.36\\
+R1 + merging twin rows & 0.93 & 0.85 & 0.85\\
+R2 + tuned SoPlex      & 0.65 & 0.62 & 0.55\\
+R3 bare simplex        & 0.49 & 0.49 & \textbf{0.43}\\
+R4 SC                  & \textbf{0.37} & \textbf{0.39} & 0.65\\
+R5 hybrid              & 0.37 & 0.39 & 0.43\\
 \midrule
-SC cheaper than R3     & 69 / 74 & 25 / 30 & 0 / 6\\
+SC cheaper than R3     & 69 / 74 & 25 / 30 & 7 / 41\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -661,17 +665,24 @@ within 1\% on all but 6--9 of the 110 instances. The exception is R0, whose
 limit of 100 iterations ends 9.4\% of the LPs of small systems without an
 optimum (1.0\% after merging; less than 0.1\% with $20m+200$); the
 multipliers where it stops certify a weaker bound, and R0 contracts by 0.182.
-On Geneig-icse the difference is 0.23 against 0.34.
+On Geneig-icse the difference is 0.23 against 0.34. On the \texttt{compo}
+bank the LPs are larger and more degenerate, and with the tolerance of
+$10^{-6}$ the certified bounds of the engines differ slightly more: SC
+contracts by 0.156, the tuned SoPlex by 0.159 and the bare simplex by 0.161,
+while the limit of R0 ends 8\% of the LPs without an optimum.
 
 \paragraph{Large relaxations.}
-On the six systems whose affine relaxation exceeds 30 rows, the order of the
-last two rungs is reversed: a pass of SC costs 1.56 times that of the bare
-simplex (geometric mean), and loses on all six. There an LP needs a dozen
+On the systems whose relaxation exceeds 30 rows the order of the last two
+rungs is reversed: on the \texttt{compo} bank a pass of SC costs 1.48 times
+that of the bare simplex (geometric mean) and is cheaper on only 7 of the 41
+systems, and on the six affine ones it costs 1.56 times and loses on all.
+Merging and tuning SoPlex keep their weight. There an LP needs a dozen
 pivots, the fixed cost of a call no longer dominates, and SC needs more
 pivots, each more expensive (Section~\ref{sec:discussion}); the hybrid hands
 these relaxations to the bare simplex. Devex pricing, the long-step ratio test
-and the limit of 60 pivots (Section~\ref{sec:iter}) bring SC to 0.41 there,
-still above the bare simplex, and change nothing on the smaller relaxations.
+and the limit of 60 pivots (Section~\ref{sec:iter}) bring SC to 0.41 on the
+six affine systems, but leave it at 1.46 times the bare simplex on the
+\texttt{compo} bank, and change nothing on the smaller relaxations.
 
 \subsection{The whole solver}\label{sec:main}
 
@@ -712,9 +723,13 @@ R5 hybrid              & --   & --   & --   & --   & \textbf{0.68} & \textbf{0.6
 The ladder keeps its shape, diluted: the pass is only part of the cost of a
 node, with the linearization, HC4, ACID and interval Newton. On optimization
 problems SC makes the solver 25\% faster than R0, and 7\% faster than the bare
-simplex. On small systems SC and the bare simplex tie (0.81 against 0.82):
-the pass weighs less in a node of the system solver, which also runs ACID
-and interval Newton, and the 22\% saved per pass is diluted in the whole. On large systems SC is 15\% slower than the bare simplex, and the
+simplex. On small systems SC and the bare simplex tie (0.81 against 0.82),
+because the pass weighs less in the system solver. Counting the calls of the
+contractor in a search with SC and multiplying them by the cost of a pass on
+the bank, the pass takes a median of 16\% of the CPU on optimization problems
+(interquartile range 7--26\%) but 4.5\% on systems of equations (2--13\%),
+where the linearization, HC4, ACID and interval Newton dominate a node; saving
+22\% of 4.5\% is about 1\%. On large systems SC is 15\% slower than the bare simplex, and the
 hybrid, which runs the bare simplex there, matches it. Only three optimization
 families exceed 30 rows (33--49 rows); SC remains the best on them (0.73
 against 0.88 for the bare simplex), so the hybrid could keep SC on
@@ -729,7 +744,11 @@ rows (0.86--0.92 on optimization problems, 0.95--0.98 on systems), ties from
 15 to 30, and loses from 40 rows on (1.06 at 40--50 rows, 1.25 beyond 120 on
 systems). The total time of the hybrid is flat for $T$ between 15 and 30, and
 we use $T=30$; the contractor applies it per node, with the size of the
-relaxation of the previous node. \todo{validar el hibrido por nodo con T=15, 20, 30}
+relaxation of the previous node. Run inside the search on the systems of
+equations with \texttt{compo} (two seeds), the hybrid with $T=15$, 20 and 30
+costs 0.98--1.01 times the bare simplex on the small systems and 1.00 on the
+large ones, where SC alone costs 1.19: the choice per node loses nothing, and
+the threshold does not matter inside this range.
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
@@ -749,8 +768,9 @@ pivots, that is a quarter of the cost of a pass of the best use of SoPlex.
 \paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
 falls as the pivots per LP grow, and beyond 30 rows they dominate. There SC
 needs more pivots than SoPlex, for three reasons that multiply. On
-Katsurabis-14 with \texttt{compo}, the clearest case, a pass of SC cost 2.7
-times that of the tuned SoPlex on the same LPs. The starting point,
+Katsurabis-14 with \texttt{compo}, a pass of SC costs 1.6 times that of the
+tuned SoPlex on the bank; we decomposed the gap on an earlier version of SC,
+where it was 2.7. The starting point,
 $\times1.5$: started from the final basis of SoPlex instead of its own, SC
 drops from 33 to 22 pivots per LP, because on a large degenerate polytope the
 optimum of a bound is a face, and SoPlex stops inside it at vertices that serve
@@ -797,7 +817,7 @@ seeds; we excluded it, with alkyl and alkylbis, from the means. Relaxations of
 several hundred rows are still expensive for every engine: the systems of 400
 to 1\,000 variables of the benchmark exceed the limits of 60\,s and 6\,GB with
 all of them. And the gain of SC on the whole system solver is small, because
-the pass is a small part of its nodes. One use of the certificate is left
+the pass is a small part of its nodes (4.5\% of the CPU in the median). One use of the certificate is left
 open: when the warm-started simplex declares an infeasibility that the ray
 does not certify, SC solves the LP again from the slack basis
 (Section~\ref{sec:iter}), but the multipliers of the basis where it stopped,
