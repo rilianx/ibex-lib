@@ -72,10 +72,25 @@ namespace ibex {
   // Gershgorin), and would its tangent-plane bound close the box?
   bool cvx_stats=false;
   bool cvx_close_on=false;
+  long cvx_backoff_max=0;
   long cvx_raised=0, cvx_pruned=0;
   extern double (*optimizer_extra_lb)(const IntervalVector&);
   namespace { LoupFinderIpopt* cvx_finder=NULL;
-    double cvx_hook(const IntervalVector& b) { return cvx_finder ? cvx_finder->cvx_bound(b, NULL) : NEG_INFINITY; } }
+    // backoff: after a node where the Lagrangian is not certified convex, the
+    // next check is done 2x later (up to cvx_backoff_max nodes); a certified
+    // node resets it. Bounds the Hessian cost where nothing is convex.
+    long cvx_interval=1, cvx_skip=0;
+    double cvx_hook(const IntervalVector& b) {
+      if (!cvx_finder) return NEG_INFINITY;
+      if (cvx_backoff_max > 1 && cvx_skip > 0) { cvx_skip--; return NEG_INFINITY; }
+      bool cert = false;
+      double lb = cvx_finder->cvx_bound(b, &cert);
+      if (cvx_backoff_max > 1) {
+        cvx_interval = cert ? 1 : std::min(2*cvx_interval, cvx_backoff_max);
+        cvx_skip = cvx_interval - 1;
+      }
+      return lb;
+    } }
   long cvx_nodes=0, cvx_with_dual=0, cvx_certified=0, cvx_close=0, cvx_better_lb=0;
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
