@@ -25,6 +25,10 @@ namespace ibex {
 // the node being bounded, readable by a loup finder (see LoupFinderIpopt's log)
 double optimizer_node_lb = NEG_INFINITY;
 int optimizer_node_depth = -1;
+// an extra lower bound on the objective over a box (e.g. a certified convex
+// Lagrangian bound), applied after the upper bounding; NULL: none
+double (*optimizer_extra_lb)(const IntervalVector&) = NULL;
+long optimizer_extra_lb_raised = 0, optimizer_extra_lb_pruned = 0;
 
 /*
  * TODO: redundant with ExtendedSystem.
@@ -270,6 +274,16 @@ void Optimizer::contract_and_bound(Cell& c) {
 	if (loup_ch) {
 		y &= Interval(NEG_INFINITY,compute_ymax());
 		c.prop.update(BoxEvent(c.box,BoxEvent::CONTRACT,BitSet::singleton(n+1,goal_var)));
+	}
+
+	if (optimizer_extra_lb!=NULL && !y.is_empty()) {
+		double elb = optimizer_extra_lb(tmp_box);
+		if (elb > y.lb()) {
+			optimizer_extra_lb_raised++;
+			y &= Interval(elb, POS_INFINITY);
+			if (y.is_empty()) optimizer_extra_lb_pruned++;
+			else c.prop.update(BoxEvent(c.box,BoxEvent::CONTRACT,BitSet::singleton(n+1,goal_var)));
+		}
 	}
 
 	//TODO: should we propagate constraints again?

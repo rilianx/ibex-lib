@@ -16,6 +16,7 @@
 #include <limits>
 #include "ibex_LoupFinderIpopt.h"
 #include "ibex_Timer.h"
+#include "ibex_NormalizedSystem.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cmath>
@@ -70,6 +71,11 @@ namespace ibex {
   // usable Ipopt run) certifiably convex on the box (interval Hessian,
   // Gershgorin), and would its tangent-plane bound close the box?
   bool cvx_stats=false;
+  bool cvx_close_on=false;
+  long cvx_raised=0, cvx_pruned=0;
+  extern double (*optimizer_extra_lb)(const IntervalVector&);
+  namespace { LoupFinderIpopt* cvx_finder=NULL;
+    double cvx_hook(const IntervalVector& b) { return cvx_finder ? cvx_finder->cvx_bound(b, NULL) : NEG_INFINITY; } }
   long cvx_nodes=0, cvx_with_dual=0, cvx_certified=0, cvx_close=0, cvx_better_lb=0;
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
@@ -181,6 +187,7 @@ namespace ibex {
       the_box  = box;
       double newloup=false;
       IntervalVector loup_point0=loup_point;
+      if (cvx_close_on && cvx_finder==NULL) { cvx_finder = this; optimizer_extra_lb = &cvx_hook; }
       if (recursive_call && cvx_stats) cvx_measure(box, loup);
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
@@ -276,7 +283,7 @@ namespace ibex {
 	  bool usable = (int) status > -10 && (int) status != 2 && (int) status != 4
 	                && std::isfinite(optimalValue);
 	  for (int i=0; usable && i<solution.size(); i++) usable = std::isfinite(solution[i]);
-	  if (cvx_stats && usable && (int) cvx_x_tmp.size()==sys.nb_var) { cvx_x = cvx_x_tmp; cvx_lambda = cvx_lambda_tmp; cvx_have = true; }
+	  if ((cvx_stats || cvx_close_on) && usable && (int) cvx_x_tmp.size()==sys.nb_var) { cvx_x = cvx_x_tmp; cvx_lambda = cvx_lambda_tmp; cvx_have = true; }
 	  if( usable && optimalValue< loup){
 	    
 	    for (int i=0; i< box.size(); i++) {
@@ -435,10 +442,20 @@ namespace ibex {
     // returns the initial point for the problem
     void LoupFinderIpopt::cvx_measure(const IntervalVector& box, double loup) {
       cvx_nodes++;
-      if (!cvx_have || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return;
+      bool certified=false;
+      double lb = cvx_bound(box, &certified);
+      if (certified) cvx_certified++;
+      if (!(lb > NEG_INFINITY)) return;
+      if (lb > optimizer_node_lb) cvx_better_lb++;
+      if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
+    }
+
+    double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified) {
+      if (certified) *certified = false;
+      if (!cvx_have || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return NEG_INFINITY;
       int n = sys.nb_var, m = sys.f_ctrs.image_dim();
-      if ((int) cvx_lambda.size() != m) return;
-      cvx_with_dual++;
+      if ((int) cvx_lambda.size() != m) return NEG_INFINITY;
+      if (certified) cvx_with_dual++;
       // multipliers with the sign weak duality needs: f<=0 -> >=0, f>=0 -> <=0
       std::vector<double> lam(m, 0.0);
       for (int k=0; k<m; k++) {
@@ -446,7 +463,7 @@ namespace ibex {
         double l = cvx_lambda[k];
         if (op==LEQ || op==LT) l = std::max(0.0, l);
         else if (op==GEQ || op==GT) l = std::min(0.0, l);
-        if (!std::isfinite(l)) return;
+        if (!std::isfinite(l)) return NEG_INFINITY;
         lam[k] = l;
       }
       // interval Hessian of the Lagrangian on the box
@@ -462,14 +479,14 @@ namespace ibex {
       for (int i=0; i<n; i++) {
         Interval r(0);
         for (int j=0; j<n; j++) if (j!=i) r += abs(H[i][j]);
-        if (H[i][i].is_empty() || !(H[i][i].lb() - r.ub() >= 0)) return;
+        if (H[i][i].is_empty() || !(H[i][i].lb() - r.ub() >= 0)) return NEG_INFINITY;
       }
-      cvx_certified++;
+      if (certified) *certified = true;
       // tangent plane of the Lagrangian at the projection of Ipopt's point
       IntervalVector xh(n);
       for (int i=0; i<n; i++) {
         double v = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
-        if (!std::isfinite(v)) return;
+        if (!std::isfinite(v)) return NEG_INFINITY;
         xh[i] = Interval(v);
       }
       Interval L = sys.goal->eval(xh);
@@ -484,10 +501,14 @@ namespace ibex {
       }
       Interval bound = L;
       for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
+      // equalities are relaxed to |h| <= eps_h in the search: lambda*h can be
+      // as large as |lambda|*eps_h on a point the search calls feasible
+      for (int k=0; k<m; k++)
+        if (lam[k]!=0 && sys.ctrs.size()==m && sys.ctrs[k].op==EQ)
+          bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
-      if (!std::isfinite(lb)) return;
-      if (lb > optimizer_node_lb) cvx_better_lb++;
-      if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
+      if (!std::isfinite(lb)) return NEG_INFINITY;
+      return lb;
     }
 
     // the center of the box; an unbounded box has no finite center: there,
@@ -774,7 +795,7 @@ namespace ibex {
     {
         // here is where we would store the solution to variables, or write to a file, etc
         // so we could use the solution.
-        if (cvx_stats) {
+        if (cvx_stats || cvx_close_on) {
           cvx_x_tmp.assign(x, x+n);
           cvx_lambda_tmp.assign(lambda, lambda+m);
         }
