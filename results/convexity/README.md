@@ -36,3 +36,18 @@ dipigri, hs100 (50-99%), and a few with < 50%.
 
 Optima agree with the proved values (results/dataset-fixedloup/optima.txt)
 within the solver's precision; every uplo stays below the optimum.
+
+## 223 closed instances (tcvx = tfinal + --cvx-close, gcvx = g05p20 + --cvx-close)
+
+    A      vs B       time diff [IC95]          nodes  total time (closed)
+    tcvx   vs tfinal  +0.019 [+0.000, +0.036]   0.763  1384 vs 1669 s
+    gcvx   vs g05p20  +0.007 [-0.011, +0.024]   0.784  1186 vs 1539 s
+    gcvx   vs tbase   +0.008 [-0.017, +0.030]   0.523  1186 vs 1662 s
+
+Big wins: harker 125 -> 0.0 s, sambal 28 -> 0.0 s, srcpm 1.4 -> 0.0 s (and
+gcvx keeps matrix2 0.3 s, dixchlng, eigencco, launch, makela3, polak5).
+Every optimum agrees with optima.txt (ex8_2_4's reference is the known
+wrong one). The cost: the interval Hessian is evaluated at every node, also
+where nothing is ever certified; ex6_2_13 (closes at ~293 s) times out with
+0 raised bounds, and several instances are 1.2-1.4x slower. Next: back off
+the check where it keeps failing.
