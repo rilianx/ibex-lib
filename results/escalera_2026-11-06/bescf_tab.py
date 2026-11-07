@@ -20,6 +20,10 @@ for f in glob.glob(S+'/bescf/*.txt'):
     for side in ('DFB ','caja'):
         mm=re.search(r'\[abcaja\] %s.*no optimo=(\d+)'%side,t)
         if mm: noopt[(pel,side)]+=int(mm.group(1))
+# optimizacion: solo la seleccion una por familia y clase (bopt_sel.py)
+SEL=set(open(S+'/bopt_sel.txt').read().split())
+for i in list(D):
+    if i[0]=='opt' and i[1] not in SEL: print('fuera de la seleccion',i); del D[i]
 # variantes del mismo problema (bis/ter/-1/_1): queda la de mas filas
 def base(n): return re.sub(r'(bis|ter|-1|_1)$','',n) if re.match(r'ex\d+_\d+_\d+',n) else n
 best={}

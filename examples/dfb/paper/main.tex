@@ -745,10 +745,14 @@ the $10^{-9}$ feasibility tolerance of the oracle.
 \subsection{Cost of a pass}\label{sec:bank}
 
 To measure the contractor without the noise of the search, we built a bank of
-passes: for 68 instances, 36 systems of equations (one per family) and 32
-optimization problems spread over the range of running times, we recorded the
-input boxes of 1\,000 calls of the contractor along the search, with the affine
-relaxation, and replayed every call with each rung on the same LPs.
+passes: for 110 instances, 36 systems of equations (one per family) and 74
+optimization problems (one per family and size class, among those on which R0
+takes more than 1\,s), we recorded the input boxes of 1\,000 calls of the
+contractor spread along a search with SC, with the affine relaxation, and
+replayed every call with each rung on the same LPs. Three more optimization
+problems were left out: on pentagon and ex8\_2\_4, SoPlex as used by Ibex
+aborted with an internal exception, and on concon the affine linearization
+failed for every rung.
 Table~\ref{tab:ladder} gives the time per pass of each rung against R0.
 For each instance we normalize both times by the larger one,
 $t(A)/\max(t(A),t(\mathrm{R0}))$ and $t(\mathrm{R0})/\max(t(A),t(\mathrm{R0}))$,
@@ -767,7 +771,7 @@ merged relaxation. Quotient of the means of the times normalized per instance
 \toprule
 & optimization & \multicolumn{2}{c}{systems of equations}\\
 \cmidrule(lr){3-4}
-rung & (32) & $\le 30$ rows (30) & $>30$ rows (6)\\
+rung & (74) & $\le 30$ rows (30) & $>30$ rows (6)\\
 \midrule
 R1 + merging twin rows & 0.93 & 0.85 & 0.84\\
 R2 + tuned SoPlex      & 0.65 & 0.62 & 0.50\\
@@ -775,24 +779,25 @@ R3 bare simplex        & 0.49 & 0.49 & \textbf{0.36}\\
 R4 SC                  & \textbf{0.37} & \textbf{0.39} & 0.57\\
 R5 hybrid              & 0.37 & 0.39 & 0.36\\
 \midrule
-SC cheaper than R3     & 29 / 32 & 25 / 30 & 0 / 6\\
+SC cheaper than R3     & 69 / 74 & 25 / 30 & 0 / 6\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 On optimization problems and on systems of up to 30 rows, a pass of SC costs
 0.37--0.39 times that of R0, and 26\% and 22\% less than the bare simplex
-(geometric means of the ratio 0.74 and 0.78). The three steps before SC are
+(geometric means of the ratio 0.74 and 0.78; SC is cheaper on 69 of the 74
+optimization problems and 25 of the 30 systems). The three steps before SC are
 of similar weight: merging saves 7--15\%, tuning SoPlex 27--30\% of what
 remains, and driving its simplex directly 21--25\% more. The median pass on optimization
-problems takes 194\,$\mu$s with R0, 90 with the bare simplex and 66 with SC;
+problems takes 280\,$\mu$s with R0, 136 with the bare simplex and 88 with SC;
 on small systems, 200, 108 and 84\,$\mu$s.
 
 The gain of SC lies in the cost of an LP, not in its pivots. The tuned SoPlex
-and the bare simplex need a median of 1.8 pivots per LP, SC 2.8--2.9, because
+and the bare simplex need a median of 1.8 pivots per LP, SC 2.8, because
 SoPlex often ends an LP at a vertex that is already optimal for the next bound
-(Section~\ref{sec:discussion}); yet an LP of SC costs 11.8\,$\mu$s on
-optimization problems and 16.2 on small systems, against 15.9 and 21.7 for
+(Section~\ref{sec:discussion}); yet an LP of SC costs 11.6\,$\mu$s on
+optimization problems and 16.2 on small systems, against 16.0 and 21.7 for
 the bare simplex. What SC does not do is what makes the difference: the bare
 simplex keeps the LP loaded and verifies nothing, so the remaining gap is the
 refactorization that SoPlex makes before declaring an optimum and the setup of
@@ -807,7 +812,7 @@ pass cost the same relative to SoPlex.}
 Ordered as a ladder, each step is measured on the engine of its rung, and
 merging is measured on R0, the most expensive one. On the same bank, merging
 saves 7\% of a pass of R0 on optimization problems and 15\% on systems of
-equations, but 23\% and 43--47\% of a pass of SC. A call of SoPlex carries a
+equations, but 21\% and 43--47\% of a pass of SC. A call of SoPlex carries a
 fixed cost that does not depend on the rows; SC has almost none, so its time
 follows the size of the LP, and halving the rows of a square system nearly
 halves it. Merging is a simple preprocessing, not a contribution of this
@@ -815,9 +820,9 @@ paper, but it is worth most with an engine that has removed the fixed cost of
 a call.
 
 \paragraph{Same contraction.}
-All rungs empty the same boxes and contract the perimeter alike: by 0.269 on
+All rungs empty the same boxes and contract the perimeter alike: by 0.255 on
 optimization problems and 0.186--0.187 on small systems for R1 to R4, and
-within 1\% on all but 3--7 instances. The exception is R0, whose
+within 1\% on all but 6--9 of the 110 instances. The exception is R0, whose
 limit of 100 iterations ends 9.4\% of the LPs of small systems without an
 optimum (1.0\% after merging; less than 0.1\% with $20m+200$); the
 multipliers where it stops certify a weaker bound, and R0 contracts by 0.182.

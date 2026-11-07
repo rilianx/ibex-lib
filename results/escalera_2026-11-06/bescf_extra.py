@@ -1,10 +1,10 @@
 import glob,re,os,collections,statistics as st,math
 exec(open('bescf_tab.py').read().split("def get(v,k):")[0].replace("print('variante descartada',i);",""))
-drop={('opt','ex8_5_2'),('opt','ex8_4_5bis'),('opt','ex2_1_9')}
+SEL=set(open(S+'/bopt_sel.txt').read().split()); drop={('opt','ex8_5_2'),('opt','concon'),('opt','pentagon'),('opt','ex8_2_4')}
 X=collections.defaultdict(lambda: collections.defaultdict(list))
 for f in glob.glob(S+'/bescf/*.txt'):
     b=os.path.basename(f)[:-4]; prog,rest=b.split('.',1); n,pel=rest.rsplit('.',1)
-    if (prog,n) in drop: continue
+    if (prog,n) in drop or (prog=='opt' and n not in SEL): continue
     t=open(f).read(); cl=prog+('' if prog=='opt' else ('<=30' if filas[(prog,n)]<=30 else '>30'))
     for side,tag in (('DFB ','d'),('caja','c')):
         c=re.search(r'costo %s\s*: pasada ([0-9.]+) s\s+pivotes=(\d+)\s+us/LP=([0-9.]+)\s+piv/LP=([0-9.]+)'%side.strip(),t)
