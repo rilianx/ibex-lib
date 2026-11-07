@@ -171,6 +171,9 @@ namespace ibex {
         LoupFinderIpopt& operator=(const LoupFinderIpopt&);
 
         ibex::Vector start_point(const IntervalVector& b);
+        // convexity measurement (--cvx-stats): last usable Ipopt point and multipliers
+        std::vector<double> cvx_x, cvx_lambda, cvx_x_tmp, cvx_lambda_tmp; bool cvx_have=false;
+        void cvx_measure(const IntervalVector& box, double loup);
         bool log_pending=false, log_forced=false; double log_loup_in=0, log_time=0, log_value=0, log_width=0, log_dist=0, log_node_lb=0; int log_status=0, log_depth=0;  // IBEX_IPOPT_LOG
         int log_inner=-1, log_corr_status=-1, log_corr_nodes=0; double log_goal=0, log_viol=0, log_corr_time=0, log_corr_loup=0;
         bool ipopt_pending=false;  // a scheduled call skipped on a wide box, see ipopt_defer

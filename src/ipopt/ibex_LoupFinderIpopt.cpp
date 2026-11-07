@@ -66,6 +66,11 @@ namespace ibex {
     // throws out of Ipopt (RethrowNonIpoptException): returning false from a
     // callback inside the restoration phase crashes Ipopt 3.11
     inline bool past_deadline() { if (ipopt_deadline_on && std::clock() > ipopt_deadline) throw IpoptDeadline(); return false; } }
+  // --cvx-stats: at each node, is the Lagrangian (multipliers of the last
+  // usable Ipopt run) certifiably convex on the box (interval Hessian,
+  // Gershgorin), and would its tangent-plane bound close the box?
+  bool cvx_stats=false;
+  long cvx_nodes=0, cvx_with_dual=0, cvx_certified=0, cvx_close=0, cvx_better_lb=0;
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
   // Guided restarts: at a node where Ipopt is not scheduled, an extra Ipopt
@@ -176,6 +181,7 @@ namespace ibex {
       the_box  = box;
       double newloup=false;
       IntervalVector loup_point0=loup_point;
+      if (recursive_call && cvx_stats) cvx_measure(box, loup);
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
 	bool scheduled = (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50);
@@ -270,6 +276,7 @@ namespace ibex {
 	  bool usable = (int) status > -10 && (int) status != 2 && (int) status != 4
 	                && std::isfinite(optimalValue);
 	  for (int i=0; usable && i<solution.size(); i++) usable = std::isfinite(solution[i]);
+	  if (cvx_stats && usable && (int) cvx_x_tmp.size()==sys.nb_var) { cvx_x = cvx_x_tmp; cvx_lambda = cvx_lambda_tmp; cvx_have = true; }
 	  if( usable && optimalValue< loup){
 	    
 	    for (int i=0; i< box.size(); i++) {
@@ -426,6 +433,63 @@ namespace ibex {
 
 
     // returns the initial point for the problem
+    void LoupFinderIpopt::cvx_measure(const IntervalVector& box, double loup) {
+      cvx_nodes++;
+      if (!cvx_have || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return;
+      int n = sys.nb_var, m = sys.f_ctrs.image_dim();
+      if ((int) cvx_lambda.size() != m) return;
+      cvx_with_dual++;
+      // multipliers with the sign weak duality needs: f<=0 -> >=0, f>=0 -> <=0
+      std::vector<double> lam(m, 0.0);
+      for (int k=0; k<m; k++) {
+        CmpOp op = sys.ctrs.size()==m ? sys.ctrs[k].op : EQ;
+        double l = cvx_lambda[k];
+        if (op==LEQ || op==LT) l = std::max(0.0, l);
+        else if (op==GEQ || op==GT) l = std::min(0.0, l);
+        if (!std::isfinite(l)) return;
+        lam[k] = l;
+      }
+      // interval Hessian of the Lagrangian on the box
+      IntervalMatrix H(n,n);
+      df->jacobian(box, H);
+      for (int k=0; k<m; k++) {
+        if (lam[k]==0) continue;
+        IntervalMatrix Hk(n,n);
+        dg[k]->jacobian(box, Hk);
+        H += Interval(lam[k]) * Hk;
+      }
+      // Gershgorin: every row diagonally dominant with a nonnegative diagonal
+      for (int i=0; i<n; i++) {
+        Interval r(0);
+        for (int j=0; j<n; j++) if (j!=i) r += abs(H[i][j]);
+        if (H[i][i].is_empty() || !(H[i][i].lb() - r.ub() >= 0)) return;
+      }
+      cvx_certified++;
+      // tangent plane of the Lagrangian at the projection of Ipopt's point
+      IntervalVector xh(n);
+      for (int i=0; i<n; i++) {
+        double v = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
+        if (!std::isfinite(v)) return;
+        xh[i] = Interval(v);
+      }
+      Interval L = sys.goal->eval(xh);
+      IntervalVector grad = df->eval_vector(xh);
+      if (m>0) {
+        IntervalVector gx = sys.f_ctrs.eval_vector(xh);
+        for (int k=0; k<m; k++) {
+          if (lam[k]==0) continue;
+          L += Interval(lam[k]) * gx[k];
+          grad += Interval(lam[k]) * dg[k]->eval_vector(xh);
+        }
+      }
+      Interval bound = L;
+      for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
+      double lb = bound.lb();
+      if (!std::isfinite(lb)) return;
+      if (lb > optimizer_node_lb) cvx_better_lb++;
+      if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
+    }
+
     // the center of the box; an unbounded box has no finite center: there,
     // the point of the interval closest to 0 (a finite one), so that Ipopt
     // can run there too
@@ -710,6 +774,10 @@ namespace ibex {
     {
         // here is where we would store the solution to variables, or write to a file, etc
         // so we could use the solution.
+        if (cvx_stats) {
+          cvx_x_tmp.assign(x, x+n);
+          cvx_lambda_tmp.assign(lambda, lambda+m);
+        }
 
         // For this example, we write the solution to the console
         /*
