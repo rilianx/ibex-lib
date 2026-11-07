@@ -104,3 +104,23 @@ measured in CPU time, so which node gets the run differs between runs, and
 these instances are noise-sensitive. Patience 10 is the better choice on the
 223 closed instances (a tie in time with tfinal, no dnieper loss) and about
 the same here.
+
+## Sweep of the guided restarts (budget rho, patience p), 75 open instances
+
+Means over the 62 instances with metrics in every arm (best loup over all
+arms as reference, so values differ slightly from the tables above):
+
+    arm      rho   p    primal int.  primal-dual int.  closed  no loup   vs tfinal: primal / primal-dual better-worse
+    tfinal   -     -    0.156        0.599             3       5
+    tg10p    0.1   20   0.124        0.569             3       5
+    g10p10   0.1   10   0.139        0.575             4       5         11/3   13/5
+    g05p20   0.05  20   0.125        0.587             4       4         12/2   19/1
+    g20p20   0.2   20   0.133        0.587             4       5         14/1   15/3
+    g10p50   0.1   50   0.140        0.578             4       5          7/5   20/1
+
+Every setting improves on tfinal in both integrals, and they are close to
+one another (single-instance noise: rk23, polak6). With the 223 closed
+instances (time vs tfinal: g05p20 +0.005, g10p10 -0.000, tg10p +0.012,
+g10p50 +0.012, g20p20 +0.014), rho 0.05 / p 20 and rho 0.1 / p 10 are the
+two best compromises; rho 0.05 also found a feasible point on one more
+instance.
