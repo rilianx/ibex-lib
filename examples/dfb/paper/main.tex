@@ -38,7 +38,7 @@
 \small Escuela de Ingenier\'ia Inform\'atica, Pontificia Universidad Cat\'olica de Valpara\'iso, Chile
 \and Victor Reyes\\
 \small Escuela de Inform\'atica y Telecomunicaciones, Universidad Diego Portales, Chile}
-\date{\todo{borrador del 2026-11-04}}
+\date{\todo{borrador del 2026-11-06}}
 
 \begin{document}
 \maketitle
@@ -58,13 +58,14 @@ nothing, does not refactorize before declaring an optimum, needs no phase~1,
 and solves the $2n$ LPs on one shared basis. A
 ladder of configurations in the open-source solver Ibex, from SoPlex as Ibex
 uses it, through the merging of twin rows, a tuned SoPlex and its simplex
-driven directly, to SC, attributes the gain to each step. On relaxations
-of up to 30 rows the redesigned contractor makes the solver about 24\% faster
-on global optimization problems and \todo{X}\% faster on systems of equations,
-and SC accounts for \todo{Y}\% beyond the simplex of SoPlex driven directly.
-On larger relaxations SC is slower than that simplex, and a hybrid that
-chooses the engine by the size of the relaxation keeps the best of both.
-\todo{cifras finales de la escalera}
+driven directly, to SC, attributes the gain to each step. On a bank of
+recorded passes, with the same LPs and the same contraction, a pass of SC on
+relaxations of up to 30 rows costs 0.37--0.39 times that of SoPlex as Ibex
+uses it, and 22--26\% less than the simplex of SoPlex driven directly. Inside
+the search, the optimizer becomes 25\% faster than with SoPlex as Ibex uses
+it. On larger relaxations SC is slower than the simplex of SoPlex, and a
+hybrid that chooses the engine by the size of the relaxation keeps the best
+of both.
 \end{abstract}
 
 % =====================================================================
@@ -157,9 +158,9 @@ same contractor of Ibex, from SoPlex as Ibex uses it, through the merging of
 twin rows (a simple preprocessing that halves the relaxation of square systems
 for every engine), a tuned SoPlex and its simplex driven directly, to SC and a
 hybrid, measures what each step contributes, separately on optimization problems and systems of equations and
-on small and large relaxations, with one instance per family. A replay of
-recorded passes outside the search, on the same LPs, adds HiGHS and Gurobi and
-explains where the time of a call goes (Section~\ref{sec:experiments}).
+on small and large relaxations: on a bank of recorded passes, where every
+rung solves the same LPs, and inside the search, with one instance per family
+(Section~\ref{sec:experiments}).
 \item \emph{The boundary of the approach.} SC pays on relaxations of up to
 about 30 rows, where the fixed cost of a call dominates; beyond, its pivots
 cost more than those of SoPlex. We explain why, and give a hybrid contractor
@@ -540,7 +541,7 @@ optimization & 9 (5--17)   & 17\% & 0.3 (0.2--0.5) & 4\% & 2.5 & 2.1\\
 In time, the two effects balance differently in each program. On
 optimization problems the primal warm start pivots as little as the dual one
 and saves the relocation: in the whole solver, the dual warm start is 4\%
-slower (Table~\ref{tab:ablation}). On systems of equations the two extra
+slower. On systems of equations the two extra
 primal pivots per LP cost about as much as the relocation they avoid, and both
 warm starts take the same time. SC therefore uses the primal warm start in the
 optimizer, where the first LP of each pass is still solved by the dual method,
@@ -672,496 +673,317 @@ a certificate but where $\lambda$ comes from.
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
 
-
-\paragraph{A controlled comparison.}
-To measure the contribution of the simplex, and not of the rest of the
-contractor, we compare engines inside the \emph{same} contractor. All run
-the same pass over the $2n$ bounds, on the same merged relaxation, with the
-same skipping rule, the same certificate and the same policy when an LP yields
-no certificate: that bound is not contracted and the pass continues. (The
-polytope-hull contractor of Ibex~2.8.9 abandons the pass when the LP solver
-reports infeasibility without a verifiable ray or reaches its iteration limit;
-our contractor continues with the next bound, whatever the engine.) They
-differ only in where the multipliers come from:
-\begin{itemize}
-\item \emph{SC}: the multipliers of the final basis of the self-certifying simplex;
-\item a \emph{black box}: an LP solver solves each LP on the same relaxation,
-warm-started from the previous bound, and its dual solution, or its Farkas ray
-if it reports infeasibility, is passed to the same interval certificate
-$\iv{\gamma}=\Abar^T\lambda$, which is the Neumaier--Shcherbina bound written
-in the homogeneous form.
-\end{itemize}
-The homogeneous form is therefore not what separates the engines: the
-certificate, its evaluation over the box and its validity on sub-boxes are
-common to all, and SoPlex itself solves ranged rows in the same form, with one
-bounded logical variable per row. What differs is a simplex designed for that
-certificate.
-
-We use four black boxes. The reference is SoPlex~4.0.2 driven as Ibex drives
-it, through its \texttt{SoPlex} class, in its best configuration for this use:
-its own instance holding the same rows and sides with the box as column bounds,
-presolving off, the nearest bound first, and the tolerance $10^{-6}$ for
-systems of equations and $10^{-9}$ for optimization.\footnote{The LP interface
-of Ibex also stores the $n$ variable bounds as rows, which makes each LP 16\%
-more expensive on small relaxations; rows that are free for SoPlex are passed
-to it empty; presolving each new relaxation costs 3\% more than it saves on LPs
-of a few pivots; the farthest bound first is 3--7\% slower; $10^{-9}$ makes
-SoPlex report spurious infeasibility on relaxations with nearly equal rows, and
-$10^{-6}$ weakens its dual on optimization problems. Turning off scaling, or
-forcing the row or column representation or the primal algorithm, did not
-help, and SoPlex~7.1.6 was 1.2--1.9 times slower than 4.0.2 on a sample of
-eight problems.} The second is the simplex of SoPlex driven directly through
-its \texttt{SPxSolver} class, the \emph{bare simplex}: the LP stays loaded,
-between bounds only the objective and the column bounds change, and nothing is
-verified. It is the cheapest way to use SoPlex, and we report it alongside
-SoPlex throughout. The other two are HiGHS~1.15.1 and Gurobi~12.0.3, with one
-thread, the dual simplex, the basis kept between LPs and no presolve; a pass
-with them costs two to five times that of SoPlex (Table~\ref{tab:bank}), so we
-use them only on the bank of passes. Both forms of SoPlex have the iteration
-limit $20m+200$ (Section~\ref{sec:simplex}).
+\paragraph{A ladder of configurations.}
+All configurations run inside the \emph{same} contractor: the same pass over
+the $2n$ bounds, with the same skipping rule, the same certificate
+$\iv{\gamma}=\Abar^T\lambda$ applied to whatever multipliers the engine returns
+(its dual solution, or its Farkas ray if it reports infeasibility), and the
+same policy when an LP ends without an optimum: the multipliers where it
+stopped certify a weaker bound, and the pass continues
+(Section~\ref{sec:pass}). The configurations differ in one step at a time:
+\begin{enumerate}
+\item[R0] \emph{SoPlex as used by Ibex}: SoPlex~4.0.2 through the LP interface
+of Ibex, which stores the $n$ variable bounds as rows, with presolving on, the
+tolerance $10^{-9}$, the bounds in their natural order and at most 100
+iterations per LP;
+\item[R1] \emph{+ merging twin rows} (Section~\ref{sec:merge});
+\item[R2] \emph{+ a tuned SoPlex}: its own instance holding the box as column
+bounds, presolving off, the tolerance $10^{-6}$ for systems of equations and
+$10^{-9}$ for optimization, the nearest bound first and the limit $20m+200$;%
+\footnote{Each of these choices is the best one for SoPlex on these LPs:
+presolving each new relaxation costs more than it saves on LPs of a few
+pivots, $10^{-9}$ makes SoPlex report spurious infeasibility on relaxations
+with nearly equal rows, and $10^{-6}$ weakens its dual on optimization
+problems. Turning off scaling, or forcing the row or column representation or
+the primal algorithm, did not help, and SoPlex~7.1.6 was 1.2--1.9 times slower
+than 4.0.2 on a sample of eight problems.}
+\item[R3] \emph{the bare simplex}: the simplex of SoPlex driven directly through
+its \texttt{SPxSolver} class, the LP kept loaded, only the objective and the
+column bounds changed between LPs, nothing verified; it is the cheapest way
+to use SoPlex;
+\item[R4] \emph{SC} (Section~\ref{sec:simplex});
+\item[R5] \emph{the hybrid}: SC on relaxations of at most 30 rows, the bare
+simplex beyond.
+\end{enumerate}
+Each rung is compared with R0. HiGHS~1.15.1 and Gurobi~12.0.3, with one
+thread, the dual simplex, the basis kept between LPs and no presolve, cost
+2.3--4.6 times as much per pass as the tuned SoPlex, so we leave them out of
+the ladder.
 
 \paragraph{Setting.}
-Contractor and solvers are implemented in Ibex, with the two relaxations of
-our previous work~\cite{araya2025hybridizing}: the affine
+Contractor and solvers are implemented in Ibex 2.8.9, with the two relaxations
+of our previous work~\cite{araya2025hybridizing}: the affine
 relaxation~\cite{ninin2015affine}, and the combined relaxation
 (\texttt{compo}), which adds to the affine rows those of
 X-Newton~\cite{araya2012xnewton}, one per constraint and corner. Preliminary
-experiments fixed one relaxation per program: the affine relaxation for
+experiments fixed the relaxation of each program: the affine one for
 optimization, where \texttt{compo} costs more than it saves with every engine,
 and \texttt{compo} for systems of equations, where it halves the search tree.
-Every engine solves the same relaxation.
-Per node, the affine relaxation has a median of 5 rows (quartiles 3--9) on
-optimization problems and 16 (9--30) on systems of equations after merging;
-\texttt{compo} has 13 (7--20) and 56 (36--94). For systems of equations we use
-the solver composition of Ibex (HC4, ACID, interval Newton when the system is
-square, and the linear contractor within a fixed point with HC4) with the
-LSmear bisector, on the 242 systems of the Ibex solver benchmark that some
-configuration solves within 3600\,s (22 are excluded), 2 seeds, 60\,s per run.
-For optimization we use IbexOpt on 240 problems, those of the Ibex optimization
-benchmark that some configuration solves within 3600\,s (59 are excluded), 4
-seeds, 60\,s per run. The parameters of SC were chosen on the systems and on
-139 of the optimization problems, except the bound order of the optimizer,
-chosen on all 240; on the other 101, which we added afterwards, SC gains as
-much as on the 139. Three problems (alkyl, alkylbis, bearing) whose search
-trees change by two orders of magnitude between seeds of the same
-configuration are excluded from the means. We report geometric means of
-ratios over the pairs of runs in which both methods finish, for runs whose
-reference time exceeds 0.1, 1 and 5\,s, and the runs that finish within the
-time limit (for optimization, the problems solved in all four seeds). All runs
-were made on a machine with two Intel Xeon E5-2620 v4 processors (2.1\,GHz, 16
-cores) and 64\,GB of memory, under Linux 6.17, eight runs at a time and a
-memory limit of 6\,GB per run; the code is compiled with GCC 13.3
-(\texttt{-O3}) against Ibex 2.8.9 with the GAOL~4.2.0 interval library and
-SoPlex~4.0.2. CPU times are process times.
+Per node, after merging, the affine relaxation has a median of 5 rows
+(quartiles 3--9) on optimization problems and 16 (9--30) on systems of
+equations; \texttt{compo} has 56 (36--94) on systems. For systems of
+equations we use the solver composition of Ibex (HC4, ACID, interval Newton
+when the system is square, and the linear contractor within a fixed point with
+HC4) with the LSmear bisector, on the 242 systems of the Ibex solver benchmark
+that some configuration solves within 3600\,s, 2 seeds, 60\,s per run; for
+optimization, IbexOpt on the 240 problems of the Ibex optimization benchmark
+that some configuration solves within 3600\,s, 4 seeds, 60\,s per run. All
+runs were made on two Intel Xeon E5-2620 v4 processors (2.1\,GHz, 16 cores)
+with 64\,GB of memory, under Linux 6.17, eight runs at a time with at most
+6\,GB each; the code is compiled with GCC 13.3 (\texttt{-O3}) with the
+GAOL~4.2.0 interval library. CPU times are process times.
 \todo{publicar el codigo y los scripts}
 
-\subsection{Rigor}
-
+\paragraph{Rigor.}
 SC is rigorous by Proposition~\ref{prop:valid}; we also checked it against the
-LP hull. On four systems (Bratu-0060, Discrete-Integralf2-13, Geneig,
-Bellido), for each of the 2\,834 bounds where SC contracted more than the
-polytope-hull contractor of Ibex on the same box and polytope, we solved the
-bound LP over the input box with a fresh instance of SoPlex, used as an
-oracle; no valid contraction can go beyond this hull. SC attained it in 98\%
-of these bounds (the contractor of Ibex in 4\%) and went beyond it in 19, all
-within the $10^{-9}$ feasibility tolerance of the oracle.
+LP hull. On four systems, for each of the 2\,834 bounds where SC contracted more
+than the polytope-hull contractor of Ibex on the same box and polytope, we
+solved the bound LP over the input box with a fresh instance of SoPlex; SC
+attained this hull in 98\% of these bounds and went beyond it in 19, all within
+the $10^{-9}$ feasibility tolerance of the oracle.
 
 \subsection{Cost of a pass}\label{sec:bank}
 
-The comparison inside the search mixes two effects: how many cells are
-explored and what each pass of the contractor costs. To measure the
-polytope-hull contractor alone, without the noise of the search, we built a
-bank of passes: for 71 instances, one per family on systems of equations and
-35 optimization problems spread over the range of running times, we recorded
-the input boxes of 1\,000 calls of the contractor along the search of SC, with
-the affine relaxation, and replayed each call outside the search with each
-engine on the same LPs. All engines then contract every box to the same result,
-and only their cost differs (Table~\ref{tab:bank}). A pass of SC costs 0.62
-times that of SoPlex on systems of equations and 0.55 times on optimization
-problems, and it is cheaper on all but one instance. Against the bare simplex
-the ratios are 0.82 and 0.73, and SC is cheaper on 26 of the 36 systems and on
-32 of the 35 optimization problems. Against HiGHS and Gurobi a pass of SC costs
-0.12--0.27 times theirs. The difference lies in the cost of an LP, not in the
-pivots: SC makes 28\% more pivots per LP than SoPlex on systems of equations
-and 59\% more on optimization problems, where SoPlex ends many LPs at a vertex
-that is already optimal for the next bound (Section~\ref{sec:discussion}).
+To measure the contractor without the noise of the search, we built a bank of
+passes: for 68 instances, 36 systems of equations (one per family) and 32
+optimization problems spread over the range of running times, we recorded the
+input boxes of 1\,000 calls of the contractor along the search, with the affine
+relaxation, and replayed every call with each rung on the same LPs.
+Table~\ref{tab:ladder} gives the time per pass of each rung against R0.
+For each instance we normalize both times by the larger one,
+$t(A)/\max(t(A),t(\mathrm{R0}))$ and $t(\mathrm{R0})/\max(t(A),t(\mathrm{R0}))$,
+average each over the instances, and report the quotient of the two means;
+the normalization keeps a few long instances from dominating.
 
 \begin{table}[t]
 \centering
-\caption{Polytope-hull passes replayed outside the search (1\,000 recorded calls
-per instance, 36 systems of equations and 35 optimization problems, affine
-relaxation): time per pass of SC over that of each black box on the same LPs
-(geometric mean), median time per pass of the black box in $\mu$s, and
-instances where SC is cheaper. The median pass of SC takes 245\,$\mu$s on systems and
-107\,$\mu$s on optimization problems. All engines empty the same boxes and
-contract the perimeter by 0.164--0.166 on systems and 0.273 on optimization
-problems. HiGHS failed on one optimization problem.}
-\label{tab:bank}
-\small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccccc}
+\caption{Time per pass of each rung over that of SoPlex as used by Ibex (R0),
+on the bank of passes (1\,000 recorded calls per instance, affine relaxation,
+same LPs for every rung), by program and by the mean number of rows of the
+merged relaxation. Quotient of the means of the times normalized per instance
+(see text). Last row: instances where SC is cheaper than the bare simplex.}
+\label{tab:ladder}
+\begin{tabular}{lccc}
 \toprule
-& \multicolumn{3}{c}{systems} & \multicolumn{3}{c}{optimization}\\
-\cmidrule(lr){2-4}\cmidrule(lr){5-7}
-black box & SC/BB & median & cheaper & SC/BB & median & cheaper\\
+& optimization & \multicolumn{2}{c}{systems of equations}\\
+\cmidrule(lr){3-4}
+rung & (32) & $\le 30$ rows (30) & $>30$ rows (6)\\
 \midrule
-SoPlex, as used by Ibex   & 0.62 &    373 & 35 / 36 & 0.55 &    196 & 35 / 35\\
-SoPlex, bare simplex      & 0.82 &    280 & 26 / 36 & 0.73 &    140 & 32 / 35\\
-Gurobi 12.0.3                         & 0.27 &    892 & 36 / 36 & 0.21 &    576 & 35 / 35\\
-HiGHS 1.15.1                          & 0.19 & 1\,402 & 36 / 36 & 0.12 &    998 & 34 / 34\\
+R1 + merging twin rows & 0.93 & 0.85 & 0.84\\
+R2 + tuned SoPlex      & 0.65 & 0.62 & 0.50\\
+R3 bare simplex        & 0.49 & 0.49 & \textbf{0.36}\\
+R4 SC                  & \textbf{0.37} & \textbf{0.39} & 0.57\\
+R5 hybrid              & 0.37 & 0.39 & 0.36\\
+\midrule
+SC cheaper than R3     & 29 / 32 & 25 / 30 & 0 / 6\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\begin{tikzpicture}
-\begin{groupplot}[group style={group size=2 by 1, horizontal sep=0.5cm, yticklabels at=edge left},
-  xbar, xmode=log, width=0.47\textwidth, height=0.34\textwidth, /pgf/bar width=7pt,
-  xmin=0.35, xmax=12, enlarge y limits=0.15,
-  symbolic y coords={SC, {SoPlex, bare simplex}, {SC + emulated work}, SoPlex, Gurobi, HiGHS},
-  ytick=data, axis line style={gray!70}, tick style={gray!70}, grid=major, major grid style={gray!20},
-  xtick={0.5,1,2,4,8}, xticklabels={0.5,1,2,4,8},
-  point meta=rawx, nodes near coords, nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/precision=2},
-  label style={font=\footnotesize}, tick label style={font=\scriptsize}, title style={font=\footnotesize},
-  xlabel={time per pass, relative to SoPlex}]
-\nextgroupplot[title={systems of equations}]
-\addplot[fill=serieA, draw=none] coordinates {(0.62,SC) (0.76,{SoPlex, bare simplex}) (0.96,{SC + emulated work}) (1.00,SoPlex) (2.30,Gurobi) (3.26,HiGHS)};
-\nextgroupplot[title={optimization}]
-\addplot[fill=serieB, draw=none] coordinates {(0.55,SC) (0.75,{SoPlex, bare simplex}) (0.91,{SC + emulated work}) (1.00,SoPlex) (2.62,Gurobi) (4.58,HiGHS)};
-\end{groupplot}
-\end{tikzpicture}
-\caption{Time per pass on the bank of Table~\ref{tab:bank}, relative to SoPlex
-as used by Ibex (geometric means over the instances). ``SC + emulated work''
-is SC with the work of a call of SoPlex added at every LP
-(see text).}
-\label{fig:ladder}
-\end{figure}
+On optimization problems and on systems of up to 30 rows, a pass of SC costs
+0.37--0.39 times that of R0, and 26\% and 22\% less than the bare simplex
+(geometric means of the ratio 0.74 and 0.78). The three steps before SC are
+of similar weight: merging saves 7--15\%, tuning SoPlex 27--30\% of what
+remains, and driving its simplex directly 21--25\% more. The median pass on optimization
+problems takes 194\,$\mu$s with R0, 90 with the bare simplex and 66 with SC;
+on small systems, 200, 108 and 84\,$\mu$s.
 
-\paragraph{Where the gain comes from.} To attribute the gap with SoPlex we
-added to SC, at every LP and on separate vectors so that its contraction does
-not change, each part of the work that SoPlex does in a call, and replayed the
-bank.\footnote{Measured with an earlier version of SC, whose pass cost the
-same, 0.62 and 0.55 times that of SoPlex.} In logarithmic scale the shares add
-up: a refactorization at every LP accounts for 53--58\% of the gap, verifying
-the solution for 21--23\%, and recomputing the vectors at the start of a solve
-and copying the solution for 10--11\%. With all of them a pass of SC costs
-0.91--0.96 times that of SoPlex (Figure~\ref{fig:ladder}); the rest is the
-machinery of a call. Driving the simplex of SoPlex directly, which keeps the
-LP loaded and verifies nothing, removes about half of the same gap. About half
-of the difference with SoPlex as used by Ibex is therefore its interface, and
-the other half is the refactorization that its simplex makes before declaring
-an optimum, which the certificate makes unnecessary.
+The gain of SC lies in the cost of an LP, not in its pivots. The tuned SoPlex
+and the bare simplex need a median of 1.8 pivots per LP, SC 2.8--2.9, because
+SoPlex often ends an LP at a vertex that is already optimal for the next bound
+(Section~\ref{sec:discussion}); yet an LP of SC costs 11.8\,$\mu$s on
+optimization problems and 16.2 on small systems, against 15.9 and 21.7 for
+the bare simplex. What SC does not do is what makes the difference: the bare
+simplex keeps the LP loaded and verifies nothing, so the remaining gap is the
+refactorization that SoPlex makes before declaring an optimum and the setup of
+each solve. Adding the work of a call of the tuned SoPlex back to SC at every LP, on
+separate vectors so that the contraction does not change, made a pass of SC
+cost 0.91--0.96 times that of R2: a refactorization at every LP accounted for
+53--58\% of the gap, verifying the solution for 21--23\%, and setting up the
+solve and copying the solution for 10--11\%.\footnote{Measured with an earlier version of SC, whose
+pass cost the same relative to SoPlex.}
+
+\paragraph{Merging pays more with SC.}
+Ordered as a ladder, each step is measured on the engine of its rung, and
+merging is measured on R0, the most expensive one. On the same bank, merging
+saves 7\% of a pass of R0 on optimization problems and 15\% on systems of
+equations, but 23\% and 43--47\% of a pass of SC. A call of SoPlex carries a
+fixed cost that does not depend on the rows; SC has almost none, so its time
+follows the size of the LP, and halving the rows of a square system nearly
+halves it. Merging is a simple preprocessing, not a contribution of this
+paper, but it is worth most with an engine that has removed the fixed cost of
+a call.
+
+\paragraph{Same contraction.}
+All rungs empty the same boxes and contract the perimeter alike: by 0.269 on
+optimization problems and 0.186--0.187 on small systems for R1 to R4, and
+within 1\% on all but 3--7 instances. The exception is R0, whose
+limit of 100 iterations ends 9.4\% of the LPs of small systems without an
+optimum (1.0\% after merging; less than 0.1\% with $20m+200$); the
+multipliers where it stops certify a weaker bound, and R0 contracts by 0.182.
+On Geneig-icse the difference is 0.23 against 0.34.
+
+\paragraph{Large relaxations.}
+On the six systems whose affine relaxation exceeds 30 rows, the order of the
+last two rungs is reversed: a pass of SC costs 1.56 times that of the bare
+simplex (geometric mean), and loses on all six. There an LP needs a dozen
+pivots, the fixed cost of a call no longer dominates, and SC needs more
+pivots, each more expensive (Section~\ref{sec:discussion}); the hybrid hands
+these relaxations to the bare simplex. Devex pricing, the long-step ratio test
+and the limit of 60 pivots (Section~\ref{sec:iter}) bring SC to 0.41 there,
+still above the bare simplex, and change nothing on the smaller relaxations.
 
 \subsection{The whole solver}\label{sec:main}
 
-Table~\ref{tab:main} compares SC with SoPlex and with the bare simplex inside
-the search, with both relaxations. The search trees are the same within 3\% in
-every comparison; what changes is the time.
-
-With the affine relaxation, SC is 16--17\% faster than SoPlex on optimization
-problems and 8--9\% faster on systems of equations, and 10\% and 4--6\% faster
-than the bare simplex; it is faster than SoPlex in 93\% of the runs on systems
-of equations and 92\% on optimization problems. The pass is only part of the
-cost of a node, with the linearization, propagation, ACID and interval Newton,
-so the 38--45\% saved per pass yields these 8--17\%. The largest gains are on
-Geneig-icse ($\times0.54$ against SoPlex) and DiscreteBoundary-0200
-($\times0.69$), and on hydro, hs100 and ex2\_1\_9 ($\times0.58$--$0.69$).
-Against SoPlex, SC loses by more than 5\% on no system and on two optimization
-problems (linear $\times1.11$, haldmads $\times1.25$).
-
-With \texttt{compo}, which has two to four times the rows, the picture changes.
-On optimization problems SC is still 5--8\% faster than SoPlex, but ties with
-the bare simplex; on systems of equations it ties with SoPlex and is 7--8\%
-slower than the bare simplex. The larger relaxation prunes more, for every
-engine: it halves the cells on systems of equations and saves 24--35\% of them
-on optimization problems, but its LPs fall where SC loses
-(Section~\ref{sec:size}).
+Table~\ref{tab:solver} runs the same ladder inside the search. To weight
+families equally, we keep one instance per family and size class, the one
+with the largest relaxation; families are the prefix of the name on systems
+of equations, while on optimization problems every problem is its own family,
+except for reformulations of the same problem (\texttt{bis}, \texttt{-1}).
+To populate both size classes of the systems, we pool their runs with the
+affine and \texttt{compo} relaxations, each (instance, relaxation) classified
+by its own size. Times are normalized per run as on the bank; unfinished runs
+count as 60\,s.
 
 \begin{table}[t]
 \centering
-\caption{SC against SoPlex as used by Ibex (BB) and against the bare simplex,
-inside the same contractor, with the affine and the combined
-(\texttt{compo}) relaxation. Ratios of cells (range over the three thresholds)
-and CPU for runs whose reference time exceeds 0.1, 1 and 5\,s, and runs
-finished (optimization: problems solved in all four seeds, out of 240; systems:
-runs out of 484).}
-\label{tab:main}
-\begin{tabular}{llccccc}
+\caption{CPU of each rung over that of SoPlex as used by Ibex (R0), inside the
+search, one instance per family and size class, for runs where one of the two
+configurations takes more than 1 and 5\,s; number of families in parentheses.
+Systems of equations pool the affine and \texttt{compo} relaxations. The
+search trees agree within 3\%.}
+\label{tab:solver}
+\begin{tabular}{lcccccc}
 \toprule
-& & & \multicolumn{3}{c}{CPU} & \\
-\cmidrule(lr){4-6}
-benchmark & comparison & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & finished\\
+& \multicolumn{2}{c}{optimization} & \multicolumn{4}{c}{systems of equations}\\
+& \multicolumn{2}{c}{$\le30$ rows (189)} & \multicolumn{2}{c}{$\le 30$ rows (65)} & \multicolumn{2}{c}{$>30$ rows (52)}\\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+rung & $>1$\,s & $>5$\,s & $>1$\,s & $>5$\,s & $>1$\,s & $>5$\,s\\
 \midrule
-optimization, affine & SC / BB   & 0.98--0.99 & 0.83 & 0.83 & 0.84 & 217 / 214\\
-optimization, affine & SC / bare & 0.98--0.99 & 0.90 & 0.90 & 0.90 & 217 / 216\\
-systems, affine      & SC / BB   & 0.99       & 0.92 & 0.91 & 0.91 & 365 / 362\\
-systems, affine      & SC / bare & 0.98--0.99 & 0.96 & 0.96 & 0.94 & 365 / 362\\
-\midrule
-optimization, compo  & SC / BB   & 0.99--1.00 & 0.92 & 0.94 & 0.95 & 219 / 216\\
-optimization, compo  & SC / bare & 0.99--1.00 & 1.00 & 1.02 & 1.02 & 219 / 218\\
-systems, compo       & SC / BB   & 1.00--1.01 & 0.99 & 0.99 & 0.98 & 366 / 367\\
-systems, compo       & SC / bare & 1.01--1.03 & 1.07 & 1.08 & 1.07 & 366 / 372\\
+R1 + merging twin rows & 0.99 & 0.96 & 0.97 & 0.98 & 0.85 & 0.85\\
+R2 + tuned SoPlex      & 0.87 & 0.84 & 0.86 & 0.84 & 0.73 & 0.68\\
+R3 bare simplex        & 0.81 & 0.79 & 0.82 & 0.81 & \textbf{0.68} & \textbf{0.64}\\
+R4 SC                  & \textbf{0.75} & \textbf{0.75} & \textbf{0.81} & \textbf{0.80} & 0.79 & 0.72\\
+R5 hybrid              & --   & --   & --   & --   & \textbf{0.68} & \textbf{0.64}\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\paragraph{Where the black box loses bounds.} With the same certificate, the
-engines can only differ in their multipliers. Running SC and SoPlex on the
-same boxes and polytope at every node of four systems shows two mechanisms.
-When SoPlex ends without an optimal basis the bound is lost, while an LP of SC
-that stops early yields a weaker bound, not a lost one; with the limit that
-Ibex gives SoPlex (100 iterations) this happens in 377 of 61\,815 LPs on
-Geneig-icse, and with $20m+200$ in 8 of 68\,757. When both reach an optimum,
-degenerate LPs have many optimal duals and each engine stops at a different
-one. These differences go both ways (on Geneig-icse SoPlex contracts more in
-40 of 1\,934 nodes and SC in 32; on CountercurrentReactors2-9 SC in 46 of
-1\,055 and SoPlex in 22), and the mean contraction per node is the same within
-$10^{-3}$ on three of the four systems.
+The ladder keeps its shape, diluted: the pass is only part of the cost of a
+node, with the linearization, HC4, ACID and interval Newton. On optimization
+problems SC makes the solver 25\% faster than R0, and 7\% faster than the bare
+simplex. On small systems SC and the bare simplex tie (0.81 against 0.82):
+the pass weighs less in a node of the system solver, which also runs ACID
+and interval Newton, and the 22\% saved per pass is diluted in the whole. On large systems SC is 15\% slower than the bare simplex, and the
+hybrid, which runs the bare simplex there, matches it. Only three optimization
+families exceed 30 rows (33--49 rows); SC remains the best on them (0.73
+against 0.88 for the bare simplex), so the hybrid could keep SC on
+optimization problems at any size. Devex, the long-step ratio test and the
+limit of 60 pivots change these ratios by at most 0.01.
 
-\paragraph{Long runs.}\label{sec:long} We reran with a limit of 3600\,s and
-the affine relaxation the instances on which some configuration reached the
-60\,s limit (48 systems with 2 seeds, 24 optimization problems with 4 seeds);
-all engines re-solve from a cold start an LP whose reported infeasibility
-cannot be certified. On optimization problems the gain carries over: SC is
-15\% faster than SoPlex and 5\% faster than the bare simplex, and finishes all
-96 runs, against 88 for SoPlex (hs101 and hs112 unfinished in every seed) and
-95 for the bare simplex. On systems of equations, where the long runs are
-those of the largest relaxations, SC is 4\% faster than SoPlex and ties with
-the bare simplex; it finishes 93 of 96 runs against 94. The run that SC leaves
-unfinished and the others finish, of CountercurrentReactors2-26, comes from
-the adaptive tuning of ACID, which in some runs settles for a long stretch on
-shaving few variables, not from the linear contractor.
-
-\subsection{The gain depends on the size of the relaxation}\label{sec:size}
-
-Table~\ref{tab:size} groups the instances by the mean number of rows of their
-relaxation, after merging. Against SoPlex, SC is faster up to 30 rows with
-both relaxations and in every size with the affine one; with \texttt{compo}
-it is within 6\% from 30 to 120 rows and loses beyond (systems, $\times1.17$).
-Against the bare simplex, SC wins only below 15 rows ($\times0.87$--$0.95$);
-from 15 rows on it ties with the affine relaxation and loses with
-\texttt{compo} ($\times1.03$--$1.16$). The affine relaxation of the
-optimization problems almost never exceeds 30 rows, which is why the gain of
-SC on them is the largest; that of the systems of equations spreads over all
-sizes, and \texttt{compo} moves both benchmarks to the sizes where SC loses.
-
-\begin{table}[t]
-\centering
-\caption{CPU of SC over that of SoPlex (BB) and of the bare simplex, by the
-mean number of rows of the relaxation per node, for the instances whose
-reference runs exceed 1\,s (geometric mean over the instances; number of
-instances in parentheses; ``--'': no instance).}
-\label{tab:size}
-\begin{tabular}{llccccc}
-\toprule
-& & \multicolumn{5}{c}{rows of the relaxation}\\
-\cmidrule(lr){3-7}
-comparison & benchmark & $<15$ & 15--30 & 30--60 & 60--120 & $>120$\\
-\midrule
-SC / BB   & optimization, affine & 0.83 (52) & 0.86 (15) & 0.88 (2)  & --        & --\\
-          & optimization, compo  & 0.87 (26) & 0.91 (19) & 1.05 (15) & 1.06 (8)  & --\\
-          & systems, affine      & 0.91 (40) & 0.91 (23) & 0.90 (5)  & 0.96 (8)  & 0.89 (7)\\
-          & systems, compo       & 0.88 (3)  & 0.94 (9)  & 0.99 (35) & 0.95 (25) & 1.17 (10)\\
-\midrule
-SC / bare & optimization, affine & 0.87 (52) & 1.00 (14) & 0.86 (2)  & --        & --\\
-          & optimization, compo  & 0.90 (28) & 1.04 (21) & 1.16 (15) & 1.10 (8)  & --\\
-          & systems, affine      & 0.95 (40) & 0.94 (23) & 0.95 (5)  & 1.07 (8)  & 0.97 (7)\\
-          & systems, compo       & 0.92 (3)  & 1.04 (7)  & 1.11 (34) & 1.03 (25) & 1.13 (10)\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-On small relaxations an LP needs one to three pivots and the fixed cost of a
-call dominates: that is what SC removes. On large ones the pivots dominate,
-and SC needs more of them. On Katsurabis-14 with \texttt{compo}, the clearest
-case, a pass of SC costs 2.7 times that of SoPlex on the same LPs, a factor
-that splits into three that multiply. The starting point, $\times1.5$: started
-from the final basis of SoPlex instead of its own, SC drops from 33 to 22
-pivots per LP, because on a large degenerate polytope the optimum of a bound
-is a face, and SoPlex stops inside it at vertices that serve the next bound
-better. The pivoting rules, $\times1.25$: 22 against 17.7 pivots from the same
-basis. The cost per pivot, $\times1.4$ (19.4 against 14.0\,$\mu$s), mostly the
-dual ratio test over the whole pivot row and recomputing $x_B$, which SoPlex
-updates. The limit of 60 pivots per LP cuts the longest chains and is worth
-3--9\% on systems of equations with \texttt{compo}, but does not close the gap.
-
-\subsection{Ablation}\label{sec:ablation}
-
-Table~\ref{tab:ablation} changes one component of SC at a time, inside the
-search, with the affine relaxation. The search trees change by less than 3\%
-in every row. Four components carry the time. Merging proportional rows is the
-largest: without it SC is 22--32\% slower on systems of equations, with three
-fewer runs finished, and 6--7\% slower on optimization problems, with three
-fewer problems solved; the twin rows of each equation double $m$, and on
-Geneig-icse the run takes five times longer. The engine: with the explicit
-tableau of Section~\ref{sec:discussion} instead of the revised engine, SC is
-11--14\% slower on systems of equations, with nine fewer runs finished, and
-3--4\% slower on optimization problems. The long-step ratio test saves 3--5\% on systems of equations and
-is neutral on optimization problems, whose LPs are shorter. And on optimization
-problems the order and the warm start: the farthest bound first is 5--6\%
-slower and the dual warm start 4\%; on systems of equations both choices cost
-the same. Devex and the limit of 60 pivots per LP change the time by less than
-1\%: with the affine relaxation, these rules act on few LPs.
-
-\begin{table}[t]
-\centering
-\caption{Ablation, affine relaxation: each row changes one component of SC.
-Ratios against full SC: cells and CPU on systems of equations for runs above
-0.1, 1 and 5\,s, runs finished out of 484 (full SC: 365), CPU on optimization
-problems above 0.1\,s and problems solved in all seeds (full SC: 217). The
-warm-start row gives each program the warm start of the other: primal on
-systems of equations, dual on optimization problems.}
-\label{tab:ablation}
-\begin{tabular}{lccccccc}
-\toprule
-& \multicolumn{5}{c}{systems of equations} & \multicolumn{2}{c}{optimization}\\
-\cmidrule(lr){2-6}\cmidrule(lr){7-8}
-configuration & cells & $>0.1$\,s & $>1$\,s & $>5$\,s & fin. & CPU & solved\\
-\midrule
-without merging rows              & 1.02 & 1.32 & 1.22 & 1.23 & 362 & 1.06 & 214\\
-explicit tableau                  & 1.00 & 1.14 & 1.14 & 1.11 & 356 & 1.03 & 218\\
-without long-step ratio test      & 1.01 & 1.03 & 1.03 & 1.05 & 362 & 1.01 & 218\\
-farthest-bound order              & 1.00 & 1.01 & 1.00 & 1.01 & 362 & 1.06 & 218\\
-warm start of the other program   & 1.01 & 1.01 & 0.99 & 0.99 & 364 & 1.04 & 218\\
-without devex                     & 1.00 & 1.00 & 1.00 & 1.00 & 363 & 1.00 & 217\\
-without the limit of 60 pivots    & 1.00 & 1.01 & 1.01 & 1.01 & 364 & 1.01 & 217\\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{The threshold of the hybrid.}
+From the runs of every rung we evaluated offline the hybrid that takes, for
+each (instance, relaxation), SC if its mean relaxation has at most $T$ rows
+and the bare simplex otherwise. Against the bare simplex, SC gains below 15
+rows (0.86--0.92 on optimization problems, 0.95--0.98 on systems), ties from
+15 to 30, and loses from 40 rows on (1.06 at 40--50 rows, 1.25 beyond 120 on
+systems). The total time of the hybrid is flat for $T$ between 15 and 30, and
+we use $T=30$; the contractor applies it per node, with the size of the
+relaxation of the previous node. \todo{validar el hibrido por nodo con T=15, 20, 30}
 
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
 
-\paragraph{Why SC wins.} SC does not contract with a better polytope: all
-engines solve the same relaxation and feed the same certificate. Its advantage
-has two sources. The first is cost. On the same LPs a pass of SC costs
-0.55--0.62 times that of SoPlex and 0.73--0.82 times that of its simplex driven
-directly (Table~\ref{tab:bank}), and SC does not pivot less: it makes 28--59\%
-more pivots per LP than SoPlex. What it saves is the work that the certificate
-makes unnecessary, a refactorization and a verification at every LP, together
-with the setup of a call and the phase~1 that a change of objective or of the
-box would otherwise require (Section~\ref{sec:bank}). About half of the gap
-with SoPlex as used by Ibex is its interface, and a careful integration of its
-simplex recovers it; the other half is in the simplex itself. The second source
-is the certificate at every basis: where the black box ends without an optimum
-the bound is lost, while the multipliers of SC still certify it. With the same
-iteration limit in every engine this is rare (Section~\ref{sec:main}), and
-per node the engines contract alike; along the search, small differences in
-either direction compound, and on Geneig-icse SC ends with 0.80 of the cells
-of SoPlex. The gain of SC is therefore mostly cost: on Geneig-icse a pass of
-SC costs 0.39 times that of SoPlex on the same boxes.
+\paragraph{Why SC wins.} SC does not contract with a better polytope: every
+rung solves the same relaxation and feeds the same certificate, and from R1 on
+they contract alike. Its advantage is the cost of an LP. The ladder separates
+two parts of what a call of SoPlex as Ibex uses it costs: the interface and
+its options (R0 to R3), which a careful integration of SoPlex removes, and
+what the simplex of SoPlex itself does at every LP, which only a simplex
+designed for the certificate can omit. SC pivots more than SoPlex, but it
+neither refactorizes before declaring an optimum nor verifies its answer,
+needs no phase~1 when the objective or the box changes, and keeps one basis
+for the whole pass. On small relaxations, where an LP needs two or three
+pivots, that is a quarter of the cost of a pass of the best use of SoPlex.
 
-\paragraph{Where it loses.} Both sources are worth most when LPs are short. A
-pass removes a fixed cost per call, so its weight falls as the pivots per LP
-grow, and from 15--30 rows the pivots dominate (Section~\ref{sec:size}). There
-SC needs more of them than SoPlex, for three reasons that multiply: the vertex
-where it stops inside the optimal face of a degenerate polytope is a worse
-start for the next bound, its pivoting rules need more pivots from the same
-basis, and its pivots cost more, because the dual ratio test scans the whole
-pivot row and $x_B$ is recomputed instead of updated. The first is the most
-specific to this setting and the one we could not fix: on optimization
-problems SoPlex ends 13--40\% of its LPs at a vertex that is already optimal
-for the next bound, and started from those bases SC needs as few pivots, but
-neither a tie-break toward the corners of the box inside the optimal face nor a
-short walk inside that face (up to ten primal steps that keep the optimum) made
-SC end at such vertices. The second and third are engineering, and a revised
+\paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
+falls as the pivots per LP grow, and beyond 30 rows they dominate. There SC
+needs more pivots than SoPlex, for three reasons that multiply. On
+Katsurabis-14 with \texttt{compo}, the clearest case, a pass of SC cost 2.7
+times that of the tuned SoPlex on the same LPs. The starting point,
+$\times1.5$: started from the final basis of SoPlex instead of its own, SC
+drops from 33 to 22 pivots per LP, because on a large degenerate polytope the
+optimum of a bound is a face, and SoPlex stops inside it at vertices that serve
+the next bound better. The pivoting rules, $\times1.25$: 22 against 17.7
+pivots from the same basis. The cost per pivot, $\times1.4$ (19.4 against
+14.0\,$\mu$s), mostly the dual ratio test over the whole pivot row and
+recomputing $x_B$, which SoPlex updates. The first reason is the most specific
+to this setting and the one we could not fix: on optimization problems SoPlex
+ends 13--40\% of its LPs at a vertex that is already optimal for the next
+bound, and started from those bases SC needs as few pivots, but neither a
+tie-break toward the corners of the box inside the optimal face nor a short
+walk inside that face (up to ten primal steps that keep the optimum) made SC
+end at such vertices. The second and third are engineering, and a revised
 engine with the pricing and the updates of SoPlex would remove them. Until
-then, a contractor can choose the engine per node. Solving the pass with SC
-when the relaxation of the previous node had at most 30 rows, and with the
-bare simplex otherwise, stays within 2\% of the better engine in every
-configuration of Table~\ref{tab:main}. With \texttt{compo} on systems of
-equations this hybrid is 8--11\% faster than SoPlex and the best configuration
-of the solver, exploring 0.47--0.56 of the cells of SC with the affine
-relaxation in 0.86--0.97 of the time; on optimization problems the best remains
-SC with the affine relaxation. A lower threshold fails: at 15 rows the hybrid
-hands Geneig-icse to the bare simplex, which loses bounds that SC certifies,
-and the run takes 2.2 times longer.
+then the hybrid uses each engine where it is better; on systems of equations,
+whose best relaxation is \texttt{compo}, this is what makes the redesigned
+contractor pay.
 
-\paragraph{What did not pay.} We also measured on the whole benchmark several
-ideas that use the certificate or the tableau beyond the pass, and none paid.
-Reusing certificates of an ancestor box keeps them valid, by
-Proposition~\ref{prop:valid}, but not strong: tested on the slices of ACID,
-the multipliers of the node itself almost never prune a slice, and those of an
-ancestor prune slices that the linear contractor of the node prunes anyway.
-Truncating each LP when its anytime bound (Proposition~\ref{prop:mono}) comes
-within a tolerance of what the LP can still gain saves pivots ($\times0.84$)
-but weakens the contraction (cells $\times1.39$--$1.60$); only the fixed limit
-of 60 pivots, which acts on a few long LPs, pays. Limiting only the first LP of
-each pass, the longest, saves its pivots without moving them to the next LP,
-but the first LP is too small a part of a node for this to matter.
-Propagating with HC4 in the middle of a pass, when a bound has just contracted
-by more than half, empties the box often, but those boxes would be emptied by
-the rest of the pass anyway. Cuts at the LP optima reduce the cells
-($\times0.80$--$0.88$) at a higher cost (CPU $\times1.18$--$1.31$). A Lagrangian
-bound improved by monotonicity tightens the LP bound in most applications, but
-costs more than it saves (CPU $\times1.08$ to $\times3.5$). Inheriting the
-basis of the parent node costs only a factorization with the revised engine
-and cuts the pivots of the first LP of a node by a factor of three or more,
-but the first LP is a small part of the node: the time changes by less than
-4\% on optimization problems and grows by 1--5\% on systems of equations.
-
-Three components of earlier versions of SC were dropped for the same reason.
-Keeping the whole tableau $T=B^{-1}\Abar$ explicitly, row by row in sparse
-form, makes a pivot a Gauss--Jordan elimination with no linear system to
-solve; our first versions used it on relaxations of up to 30 rows, but with the
-other components in place it is 11--14\% slower than the revised engine on
-systems of equations (Table~\ref{tab:ablation}), and 1--2\% slower even when
-limited to 30 rows. With the tableau at hand, the bounds can also be ordered by
-the number of dual infeasibilities that the next LP must repair, which can be
-counted without pivoting; this saved up to 2\% with the tableau, and the
-nearest bound first does as well with the revised engine. Finally, the bound
-problems are highly dual degenerate: with $z_k$ basic in row $r$, every column
-that does not meet row $r$ has a zero reduced cost, and on some systems
-(Virasoro, Katsura) 80--95\% of the dual pivots were degenerate. Perturbing the
-zero reduced costs after relocation, the standard
-remedy~\cite{koberstein2005dual}, saved 3--4\% on systems of equations in
-earlier versions; with the other components it makes SC 1--2\% slower. The pattern is that doing more work inside a node does
-not change the search tree; what changed it was what is computed: the merged
-relaxation, the stability filter of the ratio test, the Farkas ray of the
-infeasible row, the tolerance.
+\paragraph{What did not pay.} Several ideas that use the certificate or the
+tableau beyond the pass did not pay on the whole benchmark. Certificates of an
+ancestor box remain valid (Proposition~\ref{prop:valid}) but rarely prune what
+the node does not prune anyway. Truncating each LP when its anytime bound
+(Proposition~\ref{prop:mono}) is close to what the LP can still gain saves
+pivots ($\times0.84$) but weakens the contraction (cells
+$\times1.39$--$1.60$). Propagating with HC4 in the middle of a pass, cuts at
+the LP optima, and a Lagrangian bound improved by monotonicity reduce the
+cells or tighten bounds, but cost more than they save. Inheriting the basis of
+the parent node cuts the pivots of the first LP of a node by a factor of three
+or more, but the first LP is a small part of the node. Earlier versions of SC
+kept the whole tableau explicitly and perturbed the zero reduced costs of the
+highly dual-degenerate bound problems~\cite{koberstein2005dual}; with the
+other components in place both made SC slower. Doing more work inside a node
+did not change the search tree; what changed it was what is computed: the
+merged relaxation, the stability filter of the ratio test, the Farkas ray of
+the infeasible row, the tolerance.
 
 \paragraph{Limits.} SC removes the external LP solver from the contractor, not
 from the optimizer: the upper-bounding of IbexOpt still solves its LPs with
-SoPlex, with every engine. On problems with very narrow equalities the
-upper-bounding becomes the bottleneck: on bearing, whose eight equalities are
-relaxed to $|h|\le10^{-8}$, the lower bound of SC is good but feasible points
-are found only in boxes of width $10^{-4}$ to $10^{-3}$, and the search tree
-changes by two orders of magnitude between seeds; we excluded it, with alkyl
-and alkylbis, from the means. Relaxations of several hundred rows are still
-expensive for every engine: the systems of 400 to 1\,000 variables of the
-benchmark exceed the limits of 60\,s and 6\,GB with all of them. Finally, the
-gain of SC is one of small relaxations: on the relaxations that make the best
-solver of systems of equations, SC alone is slower than the bare simplex of
-SoPlex, and the gain there comes from the hybrid. One use of the certificate
-is left open: when the warm-started simplex declares an infeasibility that the
-ray does not certify, SC solves the LP again from the slack basis
+SoPlex. On problems with very narrow equalities the upper-bounding becomes the
+bottleneck: on bearing, whose eight equalities are relaxed to
+$|h|\le10^{-8}$, feasible points are found only in boxes of width $10^{-4}$ to
+$10^{-3}$, and the search tree changes by two orders of magnitude between
+seeds; we excluded it, with alkyl and alkylbis, from the means. Relaxations of
+several hundred rows are still expensive for every engine: the systems of 400
+to 1\,000 variables of the benchmark exceed the limits of 60\,s and 6\,GB with
+all of them. And the gain of SC on the whole system solver is small, because
+the pass is a small part of its nodes. One use of the certificate is left
+open: when the warm-started simplex declares an infeasibility that the ray
+does not certify, SC solves the LP again from the slack basis
 (Section~\ref{sec:iter}), but the multipliers of the basis where it stopped,
 moved along the ray as long as the bound improves, already give a certified
-bound without that second LP. Only the second LP can prove the box empty,
-and these cases are rare; we have not tried it.
+bound without that second LP.
 
 % =====================================================================
 \section{Conclusion}
 
 A polytope-hull contractor solves $2n$ small, closely related LPs per node and
-needs a rigorous bound from each. We have shown that the certificate that makes
-the bound rigorous, the Neumaier--Shcherbina bound written in the homogeneous
-form of the relaxation, is also a design principle for the simplex that
-produces it. Since any basis certifies, the simplex needs no verification, no
-refactorization before declaring an optimum and no phase~1, can stop an LP at
-any basis, and solves the $2n$ problems on one shared basis. Inside the same
-contractor, with the same contraction, a pass of this simplex costs 0.55--0.62
-times that of SoPlex, 0.73--0.82 times that of its simplex driven directly and
-0.12--0.27 times that of HiGHS and Gurobi, and where a black box loses a bound
-the simplex still certifies it. With the affine relaxation the whole
-solver is 16--17\% faster than with SoPlex on optimization problems and 8--9\%
-on systems of equations. The gain belongs to small relaxations, where the fixed
-cost of a call dominates: beyond 15--30 rows SoPlex needs fewer pivots, mostly
-because the vertices where it ends an LP are better starting points for the
-next bound. A contractor that uses each engine where it is better is never
-worse than either, and is the best configuration on systems of equations. How
-to choose, inside the optimal face of a degenerate polytope, the vertex that
-serves the next bound is the open question.
+certifies each bound with the Neumaier--Shcherbina bound, which is valid for
+any multipliers. A general-purpose LP solver cannot take advantage of this,
+because the work it does to make its answer correct is internal to each call.
+A simplex designed around the certificate omits that work: it verifies
+nothing, does not refactorize before declaring an optimum, needs no phase~1 and
+solves the $2n$ problems on one shared basis. Measured as a ladder inside the
+same contractor, on the same LPs and with the same contraction, a pass of this
+simplex costs 0.37--0.39 times that of SoPlex as Ibex uses it on relaxations of
+up to 30 rows, and 22--26\% less than the best use of SoPlex, its simplex driven
+directly. Inside the search, the redesigned contractor makes the optimizer 25\%
+faster than with SoPlex as Ibex uses it, 7\% of it beyond the bare simplex. On
+larger relaxations the pivots dominate and SoPlex needs fewer, mostly because
+the vertices where it ends an LP are better starting points for the next
+bound; a hybrid that chooses the engine by the size of the relaxation keeps
+the best of both. How to choose, inside the optimal face of a degenerate
+polytope, the vertex that serves the next bound is the open question.
 
 % =====================================================================
 \bibliographystyle{plain}
