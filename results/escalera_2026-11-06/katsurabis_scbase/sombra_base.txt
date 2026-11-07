@@ -1,0 +1,32 @@
+[sombrabase] vistos 2000 | tamano de base distinto 0 (ultima 99 de 99) | otros fallos 0
+[sombrabase] vistos 4000 | tamano de base distinto 0 (ultima 112 de 112) | otros fallos 0
+[sombrabase] vistos 6000 | tamano de base distinto 0 (ultima 108 de 108) | otros fallos 0
+[sombrabase] vistos 8000 | tamano de base distinto 0 (ultima 112 de 112) | otros fallos 0
+[sombrabase] vistos 10000 | tamano de base distinto 0 (ultima 99 de 99) | otros fallos 0
+[sombrabase] vistos 12000 | tamano de base distinto 0 (ultima 105 de 105) | otros fallos 0
+[sombrabase] vistos 14000 | tamano de base distinto 0 (ultima 111 de 111) | otros fallos 0
+[sombrabase] vistos 16000 | tamano de base distinto 0 (ultima 105 de 105) | otros fallos 0
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=542  vacios probados por DFB=34 (6.3% de los nodos)  LPs=16688  pivotes=346649
+[dfb] piv/LP=20.78  degen=20.8%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 104.91 por linealizacion (542 llamadas)
+[dfb] filas paralelas: fundidas=15080 quitadas=0 (27.83 y 0.00 por linealizacion)
+[sombra] bases de SoPlex instaladas en SC: 16545, fallidas 0
+[sombra] al terminar cada LP, SC deja 24.30 estructurales basicas, 4.26 de ellas en una cota (18%)
+[sombra] SC>10 y caja<=1: k basica al empezar SC 69.6% caja 69.6% | estructurales basicas SC 15.87 caja 15.87
+[sombra] resto          : k basica al empezar SC 93.1% caja 93.6% | estructurales basicas SC 24.07 caja 24.26
+[sombra] SC>10 y caja<=1: LPs 46 | al empezar SC tiene 31.87 basicas fuera de cota y 4.18 costos reducidos de signo malo | piv/LP SC 35.05
+[sombra] resto          : LPs 16642 | al empezar SC tiene 5.23 basicas fuera de cota y 8.70 costos reducidos de signo malo | piv/LP SC 20.75
+[sombra] LPs con caja=0 y SC>0: 1, pivotes SC 1 (primales 0, de paso cero 0)
+[sombra] LPs=16688 | piv/LP SC 20.79 caja 18.12 | us/LP SC 269.62 caja 253.63 | caja pivotea menos 35.1% igual 30.6% mas 34.4% | optimos SC 16624 caja 16654
+[sombra] SC   pivotes por LP: 0:10.1% 1:6.4% 2:4.2% 3:4.1% 4-5:6.4% 6-9:11.0% 10-19:20.0% 20+:38.3%
+[sombra] caja pivotes por LP: 0:9.9% 1:7.2% 2:4.4% 3:4.1% 4-5:6.9% 6-9:11.3% 10-19:20.1% 20+:36.5%
+[sombra] en los 1648 LPs sin pivotes de la caja, SC hace: 0:100.0% 1:0.1% 2:0.0% 3:0.0% 4-5:0.0% 6-9:0.0% 10-19:0.0% 20+:0.0%
+[dfb] vueltas del bucle=363605  (21.79 por resolucion, contra 20.77 pivotes)
+[dfb] compute_basics=37924  (0.11 por pivote)
+[dfb] estados: solves=16693  optimal=99.7%  infeasible=0.3%  iterlimit=0.1%  otros(singular/unbounded)=0.1%  | warm=16545 cold=148 fact_fallo=3
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=542 tableau=0
+[dfb] warm medir: nodos dual=50 primal=492 | costo por LP (prom. movil) dual 953.2 us, primal 571.1 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 15
+[replay] cajas=542 vacias=34 contraccion_media=0.13703 cpu_contractor=11.7644 s us_por_llamada=21705.6 LPs=16688 pivotes=346649

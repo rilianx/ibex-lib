@@ -1,0 +1,14 @@
+[perf] solves=16947  solve=8.211s (load aparte 0.139s) | pivot 27%  ratio-test dual 22%  primal 35%  refresh 2%  basics 4%  y_fact 2%  setobj 1% | ESCALAR LA CAJA 1%  reparar cotas 1%  cola 1%  arranque en frio 1%  bucle 9%  resto 1% | load = 2% de todo
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=542  vacios probados por DFB=34 (6.3% de los nodos)  LPs=16944  pivotes=451503
+[dfb] piv/LP=26.65  degen=41.9%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 105.01 por linealizacion (542 llamadas)
+[dfb] filas paralelas: fundidas=15082 quitadas=0 (27.83 y 0.00 por linealizacion)
+[dfb] vueltas del bucle=468452  (27.65 por resolucion, contra 26.65 pivotes)
+[dfb] compute_basics=41737  (0.10 por pivote)
+[dfb] estados: solves=16947  optimal=99.4%  infeasible=0.3%  iterlimit=0.4%  otros(singular/unbounded)=0.1%  | warm=16390 cold=557 fact_fallo=2
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=542 tableau=0
+[dfb] warm medir: nodos dual=44 primal=498 | costo por LP (prom. movil) dual 737.1 us, primal 348.8 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 61
+[replay] cajas=542 vacias=34 contraccion_media=0.13696 cpu_contractor=10.2872 s us_por_llamada=18980.1 LPs=16944 pivotes=451503

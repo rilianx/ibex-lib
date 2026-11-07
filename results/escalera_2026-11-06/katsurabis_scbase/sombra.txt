@@ -1,0 +1,23 @@
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=542  vacios probados por DFB=34 (6.3% de los nodos)  LPs=16933  pivotes=456093
+[dfb] piv/LP=26.94  degen=42.5%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 104.91 por linealizacion (542 llamadas)
+[dfb] filas paralelas: fundidas=15080 quitadas=0 (27.83 y 0.00 por linealizacion)
+[sombra] al terminar cada LP, SC deja 24.30 estructurales basicas, 4.42 de ellas en una cota (19%)
+[sombra] SC>10 y caja<=1: k basica al empezar SC 82.0% caja 66.7% | estructurales basicas SC 20.22 caja 19.27
+[sombra] resto          : k basica al empezar SC 93.0% caja 92.7% | estructurales basicas SC 23.55 caja 24.17
+[sombra] SC>10 y caja<=1: LPs 111 | al empezar SC tiene 29.04 basicas fuera de cota y 7.04 costos reducidos de signo malo | piv/LP SC 209.15
+[sombra] resto          : LPs 16822 | al empezar SC tiene 5.18 basicas fuera de cota y 8.75 costos reducidos de signo malo | piv/LP SC 25.74
+[sombra] LPs con caja=0 y SC>0: 489, pivotes SC 22781 (primales 0, de paso cero 0)
+[sombra] LPs=16933 | piv/LP SC 26.94 caja 18.11 | us/LP SC 368.50 caja 251.91 | caja pivotea menos 37.2% igual 24.4% mas 38.6% | optimos SC 16824 caja 16899
+[sombra] SC   pivotes por LP: 0:8.2% 1:8.8% 2:4.9% 3:4.5% 4-5:6.9% 6-9:10.4% 10-19:18.9% 20+:37.8%
+[sombra] caja pivotes por LP: 0:10.7% 1:7.2% 2:4.1% 3:4.2% 4-5:6.6% 6-9:11.0% 10-19:19.7% 20+:37.0%
+[sombra] en los 1796 LPs sin pivotes de la caja, SC hace: 0:72.8% 1:13.4% 2:3.6% 3:2.7% 4-5:2.3% 6-9:1.4% 10-19:2.2% 20+:2.0%
+[dfb] vueltas del bucle=472969  (27.94 por resolucion, contra 26.94 pivotes)
+[dfb] compute_basics=41897  (0.10 por pivote)
+[dfb] estados: solves=16934  optimal=99.4%  infeasible=0.3%  iterlimit=0.4%  otros(singular/unbounded)=0.1%  | warm=16379 cold=555 fact_fallo=3
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=542 tableau=0
+[dfb] warm medir: nodos dual=52 primal=490 | costo por LP (prom. movil) dual 935.2 us, primal 549.5 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 61
+[replay] cajas=542 vacias=34 contraccion_media=0.13690 cpu_contractor=12.7489 s us_por_llamada=23521.9 LPs=16933 pivotes=456093
