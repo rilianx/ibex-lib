@@ -113,35 +113,25 @@ starting basis), and the $2n$ problems share one basis. We call this simplex
 relaxation and on what else the contractor does, and measuring that is part of
 the contribution.
 
-\paragraph{Positioning.} The certificate itself is not new. That any
+\paragraph{Positioning.} The certificate itself is not new: that any
 multiplier vector yields a valid bound once the residual is evaluated in
 interval arithmetic is the principle of Neumaier and
 Shcherbina~\cite{neumaier2004safe}. Domes and Neumaier~\cite{domes2012rigorous}
-applied it to filtering with linear relaxations: they solve the bound LPs with
-an external solver, collect the multipliers, and solve the preconditioned
-interval system row by row. In previous work~\cite{reyes2023preconditioning} we
-wrote the relaxation in the homogeneous form used here and showed that the
-optimal preconditioner for an interval Gauss--Seidel projection is given by the
-dual solutions of the bound LPs; the equivalent valid inequalities appear in
-the optimization-based bound tightening of Gleixner et
-al.~\cite{gleixner2017three}, and both works reuse them in sub-boxes. In all
-these approaches the multipliers are a by-product of an external solver and
+applied it to filtering with linear relaxations; in previous
+work~\cite{reyes2023preconditioning} we wrote the relaxation in the homogeneous
+form used here and showed that the dual solutions of the bound LPs give the
+optimal preconditioner for an interval Gauss--Seidel projection, and Gleixner et
+al.~\cite{gleixner2017three} reuse the equivalent inequalities in sub-boxes. In
+all these approaches the multipliers are a by-product of an external solver and
 certification is a post-processing step, whose cost leads to applying it to a
-few promising variables~\cite{domes2012rigorous}, or to recomputing it only
-periodically and reusing it in between~\cite{reyes2023preconditioning}. What
-changes with SC is \emph{where the multipliers come from and how often a usable
-certificate is available}: the simplex itself produces them, at every basis.
-On the solver side, Yamamura and
-coworkers~\cite{yamamura2001dual,yamamura2006dual} observed that, after a
-bisection, the optimal tableau of the parent remains dual feasible for the
-child, so that an LP emptiness test can be resumed by the dual simplex method
-with few or no pivots per box; their warm start concerns a single feasibility
-LP on a fixed relaxation, without rigorous certification, and SC extends it to
-the $2n$ objectives of the bound problems. Bound tightening by optimization is
-also central in MINLP solvers~\cite{belotti2009branching,gleixner2017three},
-where rigor is not required; the heuristic of skipping bounds already attained
-by a primal point, used by Ibex, comes from Baharev, Achterberg and
-R\'ev~\cite{baharev2009distillation}.
+few promising variables~\cite{domes2012rigorous} or only
+periodically~\cite{reyes2023preconditioning}. Yamamura and
+coworkers~\cite{yamamura2001dual,yamamura2006dual} observed that the optimal
+tableau of the parent remains dual feasible after a bisection, and resume an LP
+emptiness test by the dual simplex method; SC extends this warm start to the
+$2n$ bound problems, with rigorous certification. The heuristic of skipping
+bounds already attained by a primal point, used by Ibex, comes from Baharev,
+Achterberg and R\'ev~\cite{baharev2009distillation}.
 
 \paragraph{Contributions.} The paper makes three contributions.
 \begin{itemize}
@@ -176,63 +166,35 @@ Interval branch and bound alternates bisection with contraction. Ibex, on
 which we build, composes constraint propagation (HC4~\cite{benhamou1999revising}),
 shaving-based consistencies such as ACID~\cite{neveu2015adaptive}, the interval
 Newton operator for square systems~\cite{neumaier1990interval}, and contractors
-based on linear relaxations~\cite{chabert2009contractor}. The polytope-hull
-contractor computes a linear relaxation of the constraints over the box and
-bounds each variable over it; in X-Newton~\cite{araya2012xnewton} the
-relaxation comes from convex interval Taylor forms, and the affine arithmetic
-relaxation of Ninin et al.~\cite{ninin2015affine} is an alternative which we
-later combined with it~\cite{araya2025hybridizing}. QUAD~\cite{lebbah2005quad}
-and GloptLab~\cite{domes2012rigorous} use linear relaxations in the same way.
-In previous work~\cite{reyes2023preconditioning} we wrote the relaxation in the
-homogeneous form used here and showed that the optimal preconditioner for a
-Gauss--Seidel projection over it is given by the dual solutions of the bound
-LPs. Yamamura and coworkers~\cite{yamamura2001dual,yamamura2006dual} solve an LP
-emptiness test at each box of a bisection search and resume it by the dual
-simplex method from the parent's tableau.
+based on linear relaxations~\cite{chabert2009contractor}, whose relaxation
+comes from convex interval Taylor forms~\cite{araya2012xnewton}, from affine
+arithmetic~\cite{ninin2015affine}, or from both~\cite{araya2025hybridizing}.
+QUAD~\cite{lebbah2005quad} and GloptLab~\cite{domes2012rigorous} use linear
+relaxations in the same way.
 
 \paragraph{Rigorous bounds for linear programs.}
 A floating-point LP solver returns approximate solutions, and two lines of
-work make its results rigorous. The first certifies them a posteriori.
-Neumaier and Shcherbina~\cite{neumaier2004safe} showed that any approximate
-dual vector yields a safe bound once the residual is evaluated in interval
-arithmetic, and that an approximate Farkas ray proves infeasibility under the
-same verification; Jansson~\cite{jansson2004rigorous} gave rigorous lower and
-upper bounds based on the same principle, implemented in
-Lurupa~\cite{keil2006computational}. In filtering, Domes and
-Neumaier~\cite{domes2012rigorous} apply this certificate to the bound LPs of a
-linear relaxation, collecting the multipliers from an external solver for a
-few promising variables. The second line solves the LP exactly, in rational
+work make its results rigorous. The first certifies them a posteriori: any
+approximate dual vector yields a safe bound once the residual is evaluated in
+interval arithmetic, and an approximate Farkas ray proves infeasibility under
+the same verification~\cite{neumaier2004safe,jansson2004rigorous,keil2006computational}.
+The second solves the LP exactly, in rational
 arithmetic~\cite{applegate2007exact}, or to arbitrary precision by iterative
-refinement~\cite{gleixner2016iterative}, as needed in exact mixed-integer
-programming~\cite{cook2013hybrid}. Both treat the LP solver as given. The
-present work keeps the a posteriori certificate, which costs no more than one
-matrix--vector product, and changes the solver instead.
-
-\paragraph{Optimization-based bound tightening.}
-Minimizing and maximizing each variable over a relaxation is also a standard
-bound tightening technique in global optimization, where rigor is not
-required: range reduction in BARON~\cite{ryoo1996branch}, and
-optimization-based bound tightening in Couenne~\cite{belotti2009branching} and
-SCIP. Gleixner et al.~\cite{gleixner2017three} make it cheaper by filtering
-bounds already attained by feasible points, by ordering the LPs greedily, and
-by turning the dual solutions into valid inequalities that are propagated in
-the subtree. The skipping rule used by Ibex comes from Baharev, Achterberg and
-R\'ev~\cite{baharev2009distillation}: a bound attained by a primal point found
-earlier needs no LP, and the next LP is warm-started from the previous one.
+refinement~\cite{gleixner2016iterative}, as in exact mixed-integer
+programming~\cite{cook2013hybrid}. Both treat the LP solver as given; we keep
+the a posteriori certificate and change the solver. Minimizing and maximizing
+each variable over a relaxation is also the optimization-based bound
+tightening of global optimization solvers, where rigor is not
+required~\cite{ryoo1996branch,belotti2009branching,gleixner2017three}.
 
 \paragraph{Simplex techniques.}
-Our simplex uses standard ingredients of modern implementations, described in
-detail by Koberstein~\cite{koberstein2005dual} for the dual method: the
-bounded-variable dual simplex with Harris' ratio test~\cite{harris1973devex},
-and the revised method with a sparse LU factorization of the basis updated by
-Forrest and Tomlin's method~\cite{forrest1972updated}, as in
-SoPlex~\cite{wunderling1996paralleler}. We also tried the long-step (bound
-flipping) ratio test~\cite{maros2003generalized} and devex
-pricing~\cite{harris1973devex}, an approximation of steepest
-edge~\cite{forrest1992steepest}; on the LPs of a pass they did not pay.
-What is specific to our setting is not any of these techniques but their use
-for $2n$ closely related LPs over the same constraints, with a certificate
-attached to every basis.
+SC uses standard ingredients, described by Koberstein~\cite{koberstein2005dual}
+for the dual method: the bounded-variable dual simplex with Harris' ratio
+test~\cite{harris1973devex}, and the revised method with a sparse LU
+factorization updated by the method of Forrest and
+Tomlin~\cite{forrest1972updated}, as in SoPlex~\cite{wunderling1996paralleler}.
+What is specific to our setting is their use for $2n$ closely related LPs over
+the same constraints, with a certificate attached to every basis.
 
 % =====================================================================
 \section{The contractor}\label{sec:contractor}
@@ -359,20 +321,13 @@ change to resume an LP emptiness test after a bisection. Section~\ref{sec:simple
 explains how the simplex produces $\lambda$.
 
 \paragraph{Why not a rigorous simplex.}
-Validity does not depend on how $\lambda$ was computed: any vector of
-multipliers gives a valid bound, and a poor one only gives a weaker bound. Rigor is
-therefore needed only in the final evaluation of $\iv{\gamma}$ and
-$\iv{C}_k$, not in the pivoting. Carrying intervals through the pivots
-instead pays the overestimation of interval Gaussian
-elimination~\cite{neumaier1990interval}, whose widths grow with the number of
-pivots, and solving each LP exactly in rational arithmetic, or to high
-precision by iterative refinement~\cite{applegate2007exact,gleixner2016iterative},
-buys an exactness that the bound does not need, at a cost that $2n$ LPs per
-node cannot afford. An early version of our contractor pivoted in interval
-arithmetic: on a one-box benchmark it had to rebuild the tableau from the
-original relaxation 731 times to control the width growth, and pivoting in
-floating point with certification of the final multipliers only was 2.8 times
-faster with essentially the same contraction (mean 24.0\% against 24.6\%).
+Since any multipliers give a valid bound, rigor is needed only in the final
+evaluation of $\iv{\gamma}$ and $\iv{C}_k$, not in the pivoting. Pivoting in
+interval arithmetic pays the width growth of interval Gaussian
+elimination~\cite{neumaier1990interval}, and solving each LP exactly or to high
+precision~\cite{applegate2007exact,gleixner2016iterative} buys an exactness
+that the bound does not need; an early version of our contractor that pivoted
+in interval arithmetic was 2.8 times slower, with the same contraction.
 
 \subsection{One pass over the bounds}\label{sec:pass}
 
@@ -430,6 +385,7 @@ nonbasic variable at one of its bounds is \emph{dual feasible} if $d_j\ge 0$ for
 nonbasic variables at their lower bound and $d_j\le 0$ for those at their upper
 bound, and \emph{primal feasible} if the basic variables lie within their
 bounds. This section describes how the simplex solves the $2n$ problems of a
+node.bounds. This section describes how the simplex solves the $2n$ problems of a
 node; the design choices are evaluated in Section~\ref{sec:experiments}.
 
 \paragraph{What the certificate makes unnecessary.} Since the certificate of
@@ -443,37 +399,21 @@ is: an inaccurate $\lambda$ yields a weaker bound, never an invalid one, so the
 error of the factorization is controlled only as far as pivoting requires.
 Likewise, since every basis can be made dual feasible
 (Proposition~\ref{prop:start}), no phase~1 is needed when the objective changes
-or the box contracts, and the $2n$ problems can share one basis.
-Section~\ref{sec:bank} measures what these savings are worth against SoPlex.
-
-The rest of this section describes the simplex that results: how each LP
-starts from the previous one (Section~\ref{sec:warm}), the iterations
-(Section~\ref{sec:iter}), the factorization of the basis
-(Section~\ref{sec:engines}), and how the certificate is computed when an LP
-ends (Section~\ref{sec:certif}).
+or the box contracts, and the $2n$ problems share one basis.
+Section~\ref{sec:bank} measures what these savings are worth.
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
-The first LP of a pass has no previous basis. It starts from the slack basis
-$B=-I_m$, which is dual feasible for every $\mathrm{LP}_k$
-(Proposition~\ref{prop:start}), and is solved by the dual method, with no
-phase~1.
-
-Between two consecutive LPs of the pass the objective changes, and the
-contracted bound changes the box. Two warm starts are possible from the
-previous optimal basis:
-\begin{itemize}
-\item \emph{dual}: relocate every nonbasic variable to the bound indicated by
-the sign of its new reduced cost, $z_k$ included, which restores dual
-feasibility (Proposition~\ref{prop:start}), and continue with the dual method;
-the certified bound is then available, and nondecreasing, at every iteration
-(Proposition~\ref{prop:mono});
-\item \emph{primal}: keep the nonbasic variables where they are; the basis
-remains primal feasible, up to the contracted bound, and is reoptimized with
-primal steps, which is the usual warm start of an LP solver.
-\end{itemize}
-Under the dual method the certificate is available at every iteration, and it
-never gets worse:
+The first LP of a pass starts from the slack basis $B=-I_m$, which is dual
+feasible for every $\mathrm{LP}_k$ (Proposition~\ref{prop:start}), and is
+solved by the dual method, with no phase~1. Between two consecutive LPs the
+objective changes and the contracted bound changes the box, and two warm
+starts are possible from the previous optimal basis. The \emph{dual} one
+relocates every nonbasic variable to the bound indicated by the sign of its new
+reduced cost, which restores dual feasibility, and continues with the dual
+method; the \emph{primal} one keeps the nonbasic variables where they are and
+reoptimizes with primal steps, as an LP solver does. Under the dual method the
+certificate is available at every iteration, and it never gets worse:
 
 \begin{proposition}[Monotone certified bound]\label{prop:mono}
 Run the dual simplex method on $\mathrm{LP}_k$ from a dual-feasible basis. At
@@ -489,101 +429,29 @@ the Lagrangian dual function of $\mathrm{LP}_k$ at $\lambda_t$, which the
 iterates of the dual simplex method do not decrease.
 \end{proof}
 
-An LP stopped at its iteration limit under the dual method therefore keeps a
-bound no weaker than at its start (Section~\ref{sec:pass}).
-Both reach an optimal basis, so the certificate at termination is exact
-(Section~\ref{sec:dfb}) and the pruning is the same; whether the node is
-empty is decided in the first LP, common to both. They differ only in cost.
-
-The cost depends on how far apart the optima of consecutive bounds are. An
-optimal vertex is given by a basis and by the bound on which each nonbasic
-variable rests, and a nonbasic variable that must move to its opposite bound
-costs the two warm starts differently: the primal one pays an iteration for it,
-the dual one moves it for free, since relocation is not a pivot. Relocation has
-its own cost, however, paid once per LP: it changes the values of the nonbasic
-variables, and the basic values must be recomputed from the factorization.
-So the primal warm start is cheaper when few variables change side, and the
-dual one when many do.
-
-How many change side depends on the rows. On systems of equations every row
-comes from an equation and is a narrow slab: the interval of its slack is, on
-average, 13\% of the range of the row over the box, so the optima of
-consecutive bounds often rest on opposite faces of a slab. On optimization
-problems the slack intervals cover 48\% of the range, and few rows change side.
-Table~\ref{tab:sides} measures it over the benchmarks of
-Section~\ref{sec:experiments}. The basis changes by 10--17\% in both programs,
-but a median of 1.9 nonbasic variables per LP change side on systems of
-equations, against 0.3 on optimization problems. The iterations follow: on
-systems the primal warm start makes 5.1 per LP against 3.1 for the dual one,
-about one more per side change; on optimization problems it makes 2.1
-against 2.5.
-
-\begin{table}[t]
-\centering
-\caption{Optima of consecutive bounds of a pass (seed 1, 60\,s per run, 165
-systems and 141 optimization problems with at least 1\,000 warm LPs in both
-warm starts). Medians, with quartiles in parentheses, of the rows of the
-relaxation, the basic variables that change, the nonbasic variables that move
-to their opposite bound, and the iterations per warm LP with each warm start.}
-\label{tab:sides}
-\begin{tabular}{lcccccc}
-\toprule
-& & basis & \multicolumn{2}{c}{side changes} & \multicolumn{2}{c}{iterations per LP}\\
-\cmidrule(lr){4-5}\cmidrule(lr){6-7}
-benchmark & rows & changed & per LP & \% nonbasic & dual & primal\\
-\midrule
-systems      & 18 (10--32) & 10\% & 1.9 (1.1--2.8) & 16\% & 3.1 & 5.1\\
-optimization & 9 (5--17)   & 17\% & 0.3 (0.2--0.5) & 4\% & 2.5 & 2.1\\
-\bottomrule
-\end{tabular}
-\end{table}
-
-In time, the two effects balance differently in each program. On
-optimization problems the primal warm start pivots as little as the dual one
-and saves the relocation: in the whole solver, the dual warm start is 4\%
-slower. On systems of equations the two extra
-primal pivots per LP cost about as much as the relocation they avoid, and both
-warm starts take the same time. SC therefore uses the primal warm start in the
-optimizer, where the first LP of each pass is still solved by the dual method,
-and the dual warm start in the solver of systems of equations. There the two
-cost the same and the choice matters little; we keep the dual one so that the
-whole pass runs the dual method of its first LP, with primal steps only as a
-fallback. With the larger relaxation of
-Section~\ref{sec:experiments} neither warm start wins on every system, and SC
-chooses per run: it alternates the two on the first nodes, keeps the one with
-the lower cost per LP, measured as a moving average, and tries the other again
-every 25 nodes. With the primal warm start, primal steps are also the fallback
-when relocation is impossible because the bound indicated by a reduced cost is
-infinite; with the dual one, SC takes no primal steps, and an LP that ends
-with such a variable gives a valid, possibly weaker bound.
+Both warm starts reach an optimal basis and give the same bound; they differ
+in cost. A nonbasic variable that must move to its opposite bound costs the
+primal warm start an iteration, while relocation moves it for free but forces
+the basic values to be recomputed once per LP. On systems of equations every
+row is a narrow slab (its slack interval covers 13\% of the range of the row
+over the box, on average), and a median of 1.9 nonbasic variables per LP
+change side, against 0.3 on optimization problems, whose slack intervals cover
+48\% of the range. SC therefore uses the primal warm start in the optimizer,
+where the dual one is 4\% slower, and the dual one on systems of equations,
+where both cost about the same; with \texttt{compo}, where neither wins on
+every system, it alternates the two on the first nodes and keeps the one with
+the lower cost per LP, trying the other again every 25 nodes.
 
 \subsection{Simplex iterations}\label{sec:iter}
 
-We recall the bounded-variable simplex in the notation of
-$\mathrm{LP}_k$~\eqref{eq:lpk}, following~\cite{koberstein2005dual}. Let $B$ be
-the basis matrix, $\mathcal{B}$ and $\mathcal{N}$ the basic and nonbasic
-index sets, and $x_N$ the nonbasic variables, each at one of its bounds; the
-basic values are $x_B = -B^{-1}\Abar_{\mathcal{N}}x_N$, since the right-hand
-side of~\eqref{eq:homog} is zero. Every iteration exchanges one basic and one
-nonbasic variable and needs three vectors:
-\begin{itemize}
-\item the \emph{pivot column} $\alpha_q = B^{-1}\Abar_{:q}$ of the entering
-variable $z_q$, obtained by solving $B\alpha_q = \Abar_{:q}$ (forward
-transformation, FTRAN);
-\item the \emph{pivot row} $\alpha_r^T = e_r^T B^{-1}\Abar$ of the variable
-leaving at position $r$, obtained by solving $B^T\rho_r = e_r$ (backward
-transformation, BTRAN) and then computing $\alpha_r^T = \rho_r^T\Abar$;
-\item the step lengths: a primal step $\theta_p$ for $x_B$ and a dual step
-$\theta_d = d_q/\alpha_{rq}$ for $(\lambda,d)$.
-\end{itemize}
-The updates are then
-\[
-x_B \leftarrow x_B - \theta_p\,\alpha_q,\qquad
-\lambda \leftarrow \lambda + \theta_d\,\rho_r,\qquad
-d \leftarrow d - \theta_d\,\alpha_r ,
-\]
-with $z_q$ taking position $r$ of the basis. The certificate needs $\lambda$,
-which is therefore always at hand.
+We follow the bounded-variable simplex of~\cite{koberstein2005dual}. Each
+iteration exchanges one basic and one nonbasic variable using the pivot column
+$\alpha_q = B^{-1}\Abar_{:q}$ of the entering variable (FTRAN), the pivot row
+$\alpha_r^T = \rho_r^T\Abar$ with $B^T\rho_r=e_r$ (BTRAN), and updates
+$x_B \leftarrow x_B - \theta_p\alpha_q$,
+$\lambda \leftarrow \lambda + \theta_d\rho_r$ and
+$d \leftarrow d - \theta_d\alpha_r$, so that $\lambda$, which the
+certificate needs, is always at hand.
 
 \paragraph{Dual steps.} In a dual iteration the basis is dual feasible and
 some basic variable violates its bounds. The leaving variable is the basic
@@ -605,70 +473,37 @@ on average they leave the time unchanged (Section~\ref{sec:experiments}). SC
 therefore uses the textbook rules above. On the small LPs of a pass, the
 choice of pivots matters less than the work that surrounds them.
 
-\paragraph{Primal steps.} In a primal iteration the basis is primal feasible
-and some nonbasic variable has a reduced cost of the wrong sign; it enters
-(Dantzig's rule: largest $|d_j|$), and the ratio test over the pivot column
-$\alpha_q$ finds the first basic variable to reach a bound, or lets $z_q$ move
-to its own opposite bound. Pivots below a stability threshold are filtered
-out before choosing the leaving variable; without this filter a rejected
-pivot was indistinguishable from optimality, and 40\% of the reported optima
-were not dual feasible. SC takes primal steps only with the primal warm start:
-to reoptimize after each bound, and to repair the nonbasic variables that
-could not be relocated.
-
-\paragraph{Tolerances and infinite bounds.} The primal and dual feasibility
-tolerances are $10^{-9}$, relative to the magnitude of the value tested; with
-the combined relaxation of Section~\ref{sec:experiments}, whose nearly parallel
-rows make the LPs degenerate, we use $10^{-6}$ in the solver of systems of
-equations. A tolerance is a matter of efficiency, not of rigor. A tolerance too
-wide accepts an empty polytope as feasible, which only delays the pruning, and
-weakens the contraction: with $10^{-6}$ and the affine relaxation, SC explores
-twice the cells on Geneig-icse. A tolerance too tight makes the warm-started
-simplex report infeasibility on boxes that are not empty; the ray then fails
-the residual test, and SC solves that LP again from the slack basis instead of
-discarding it. Slacks may have an
-infinite side; a nonbasic variable always sits at a finite bound, the other
-one if the bound indicated by its reduced cost is infinite, and at zero if it
-is free.
+\paragraph{Primal steps, tolerances.} Primal steps enter the nonbasic
+variable with the largest reduced cost of the wrong sign (Dantzig's rule);
+pivots below a stability threshold are filtered out before choosing the
+leaving variable, since without this filter a rejected pivot was
+indistinguishable from optimality. The feasibility tolerances are $10^{-9}$,
+relative to the value tested, and $10^{-6}$ with \texttt{compo} on systems of
+equations, whose nearly parallel rows make the LPs degenerate. A tolerance is a
+matter of efficiency, not of rigor: too wide, it weakens the contraction; too
+tight, the warm-started simplex reports infeasibility on boxes that are not
+empty, the ray fails the residual test, and SC solves that LP again from the
+slack basis.
 
 \subsection{The engine}\label{sec:engines}
 
-SC keeps a sparse LU factorization $B = LU$, computed by the factorization
-code of SoPlex, and obtains each iteration's vectors by triangular solves:
-FTRAN solves $Ly=\Abar_{:q}$ and then $U\alpha_q = y$, BTRAN solves $U^Tw=e_r$
-and then $L^T\rho_r=w$. Since the basis changes by one column per iteration,
-the factors are not recomputed but updated: in the Forrest--Tomlin
-update~\cite{forrest1972updated} the new column replaces column $r$ of $U$,
-which breaks its triangular shape; a permutation moves it to the end, and one
-row elimination, stored as a sparse row transformation appended to $L$,
-restores the triangle. The update reuses the vector $y$ of the last FTRAN, so
-it costs about one more solve. Updates make the factors grow, and SC
-refactorizes $B$ from scratch every 50 pivots. The FTRAN of the entering
-column is computed once per iteration and serves both the Forrest--Tomlin
-update and the update of $x_B$, which is
-recomputed from scratch every 32 pivots to limit drift. The reduced costs and
-$\lambda$ are updated with the pivot row as above. An iteration costs one
-FTRAN, one BTRAN, one product $\rho_r^T\Abar$ and the update, all
-proportional to the number of nonzeros involved.
+SC keeps a sparse LU factorization of $B$, computed by the factorization code
+of SoPlex and updated after each pivot by the Forrest--Tomlin
+method~\cite{forrest1972updated}, which reuses the FTRAN of the entering column.
+It refactorizes every 50 pivots and recomputes $x_B$ every 32, to limit drift.
 
 \subsection{Certification}\label{sec:certif}
 
-When an LP terminates, $\lambda$ is read from the final basis, where it is
-kept updated with the pivot row. The certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
-once per bound in outward-rounded interval arithmetic, over the rows with
-$\lambda_i\neq 0$, and $\iv{C}_k$ and $\iv{R}$ follow in $O(n+m)$
-(Definition~\ref{def:cert}). When a dual iteration finds a basic variable out
-of its bounds and no entering variable in its row $r$, the polytope is empty,
-and the row $r$ of $B^{-1}$ is a Farkas ray: SC takes $\lambda=\rho_r$, and the
-residual test turns it into a proof of emptiness. The simplex itself never needs to be correct:
-a wrong pivot or an inaccurate $\lambda$ yields a weaker bound, never an
-invalid one (Proposition~\ref{prop:valid}). Certifying a bound costs the same
-as the Neumaier--Shcherbina post-processing of an external solver's dual,
-since both compute $\Abar^T\lambda$ over the rows with $\lambda_i\neq 0$ plus
-$O(n+m)$ operations: 1.3--3.1\,$\mu$s per LP on three optimization problems,
-against 1.9--3.0\,$\mu$s plus 1.2--1.5\,$\mu$s to extract the solution from
-the external solver. The difference between the approaches is not the cost of
-a certificate but where $\lambda$ comes from.
+When an LP terminates, the certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
+once in outward-rounded interval arithmetic, over the rows with
+$\lambda_i\neq 0$, and $\iv{C}_k$ and $\iv{R}$ follow in $O(n+m)$. When a dual
+iteration finds a violated basic variable and no entering variable in its row
+$r$, $\lambda=\rho_r$ is a Farkas ray, and the residual test turns it into a
+proof of emptiness. Certifying a bound costs the same as the
+Neumaier--Shcherbina post-processing of an external solver's dual
+(1.3--3.1\,$\mu$s per LP on three optimization problems); the difference
+between the approaches is not the cost of a certificate but where $\lambda$
+comes from.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}

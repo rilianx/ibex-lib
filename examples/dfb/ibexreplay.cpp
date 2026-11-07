@@ -9,6 +9,7 @@
 #include "ibex.h"
 #include "ibex_CtcDFBHull.h"
 #include "ibex_LinearizerAffine2.h"
+#include "ibex_LinearizerCompo.h"
 #include "ibex_DFBSimplex.h"
 #include <cstdio>
 #include <cstdlib>
@@ -32,6 +33,14 @@ int main(int argc, char** argv) {
         }
         if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "cerca", 0);
     } else if (!getenv("DFBH_ORDEN")) setenv("DFBH_ORDEN", "costo_o_cerca", 0);
+    /* `DFBH_REPLAY_LIN=compo` (2026-11-06): relajacion combinada, como
+     * `ibexsolve_dfb --lin=compo` (tolerancia 1e-6 y arranque tibio medido). */
+    const bool compo = getenv("DFBH_REPLAY_LIN") && std::string(getenv("DFBH_REPLAY_LIN")) == "compo";
+    if (compo) {
+        if (!getenv("DFB_SX_FEASTOL")) setenv("DFB_SX_FEASTOL", "1e-6", 1);
+        if (!getenv("DFB_SX_DUALTOL")) setenv("DFB_SX_DUALTOL", "1e-6", 1);
+        if (!getenv("DFBH_WARM") && !getenv("DFB_SX_PIVOTEO")) setenv("DFBH_WARM", "medir", 0);
+    }
     {
         const char* tol = "1e-9";
         if (!getenv("DFB_SX_RAYO"))           setenv("DFB_SX_RAYO", "fila", 0);
@@ -51,7 +60,8 @@ int main(int argc, char** argv) {
     System* s = &sys;
     ExtendedSystem* ext = NULL;
     if (opt) { ext = new ExtendedSystem(sys, 1e-8); s = ext; }
-    LinearizerAffine2* lr = new LinearizerAffine2(*s);
+    Linearizer* lr = compo ? (Linearizer*) new LinearizerCompo(*new LinearizerAffine2(*s), *new LinearizerXTaylor(*s))
+                           : (Linearizer*) new LinearizerAffine2(*s);
     CtcHC4* hc4 = opt ? new CtcHC4(s->ctrs, 0.01, true) : NULL;
     CtcDFBHull* ctc = opt ? new CtcDFBHull(*lr, ext->goal_var(), LPSolver::default_tolerance, hc4)
                           : new CtcDFBHull(*lr);
