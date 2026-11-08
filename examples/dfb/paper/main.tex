@@ -569,8 +569,9 @@ that some configuration solves within 3600\,s, 4 seeds, 60\,s per run. All
 runs were made on two Intel Xeon E5-2620 v4 processors (2.1\,GHz, 16 cores)
 with 64\,GB of memory, under Linux 6.17, eight runs at a time with at most
 6\,GB each; the code is compiled with GCC 13.3 (\texttt{-O3}) with the
-GAOL~4.2.0 interval library. CPU times are process times.
-\todo{publicar el codigo y los scripts}
+GAOL~4.2.0 interval library. CPU times are process times. The code, the
+banks of passes and the scripts are public (see the statement of code and
+data availability).
 
 \paragraph{Rigor.}
 SC is rigorous by Proposition~\ref{prop:valid}; we also checked it against the
@@ -885,6 +886,17 @@ the vertices where it ends an LP are better starting points for the next
 bound; a hybrid that chooses the engine by the size of the relaxation keeps
 the best of both. How to choose, inside the optimal face of a degenerate
 polytope, the vertex that serves the next bound is the open question.
+
+\section*{Code and data availability}
+SC, the contractor and the solver configurations are implemented in Ibex and
+available in the branch \texttt{dfb-sc-paper} of
+\url{https://github.com/rilianx/ibex-lib} (directory
+\texttt{examples/dfb}). The same repository holds, in
+\texttt{results/escalera\_2026-11-06}, the banks of passes (input boxes and
+relaxations), the raw results of every run and the scripts that produce the
+tables and figures of Section~\ref{sec:experiments}. The fix to the polytope-hull
+contractor of Ibex used in the baseline was submitted upstream
+(\url{https://github.com/ibex-team/ibex-lib/pull/579}).
 
 % =====================================================================
 \bibliographystyle{plain}
