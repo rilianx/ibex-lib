@@ -86,7 +86,10 @@ namespace ibex {
       bool cert = false;
       double lb = cvx_finder->cvx_bound(b, &cert);
       if (cvx_backoff_max > 1) {
-        cvx_interval = cert ? 1 : std::min(2*cvx_interval, cvx_backoff_max);
+        // a check pays off when the bound beats the node's own lower bound
+        // (with --cvx-test 2 nothing is "certified", the bound may still help)
+        bool useful = cert || lb > optimizer_node_lb;
+        cvx_interval = useful ? 1 : std::min(2*cvx_interval, cvx_backoff_max);
         cvx_skip = cvx_interval - 1;
       }
       return lb;
