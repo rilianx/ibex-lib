@@ -91,6 +91,7 @@ namespace ibex {
       }
       return lb;
     } }
+  long cvx_center_indef=0;
   long cvx_nodes=0, cvx_with_dual=0, cvx_certified=0, cvx_close=0, cvx_better_lb=0;
   int ipopt_multistart=0; int ipopt_ms_improved=0; int ipopt_ms_seed=1;
   namespace { int ms_index=0; std::mt19937 ms_rng; }
@@ -455,6 +456,75 @@ namespace ibex {
 
 
     // returns the initial point for the problem
+    namespace {
+    // Interval Cholesky: true if the real symmetric matrix enclosed by M is
+    // proved positive definite (every pivot's lower bound > 0).
+    bool interval_cholesky_pd(const IntervalMatrix& M) {
+      int n = M.nb_rows();
+      IntervalMatrix L(n,n,Interval(0));
+      for (int j=0; j<n; j++) {
+        Interval sj = M[j][j];
+        for (int k=0; k<j; k++) sj -= sqr(L[j][k]);
+        if (sj.is_empty() || !(sj.lb() > 0)) return false;
+        L[j][j] = sqrt(sj);
+        for (int i=j+1; i<n; i++) {
+          Interval sij = M[i][j];
+          for (int k=0; k<j; k++) sij -= L[i][k]*L[j][k];
+          L[i][j] = sij / L[j][j];
+          if (L[i][j].is_empty() || L[i][j].is_unbounded()) return false;
+        }
+      }
+      return true;
+    }
+    }
+
+    int cvx_psd_test = 0;   // 0: Gershgorin; 1: + comparison matrix and midpoint-radius (Cholesky)
+
+    bool LoupFinderIpopt::certify_psd(const IntervalMatrix& H0) {
+      int n0 = H0.nb_rows();
+      for (int i=0; i<n0; i++) for (int j=0; j<n0; j++)
+        if (H0[i][j].is_empty() || H0[i][j].is_unbounded()) return false;
+      // Gershgorin (cheap, sufficient)
+      bool gersh = true;
+      for (int i=0; gersh && i<n0; i++) {
+        Interval r(0);
+        for (int j=0; j<n0; j++) if (j!=i) r += abs(H0[i][j]);
+        if (!(H0[i][i].lb() - r.ub() >= 0)) gersh = false;
+      }
+      if (gersh) return true;
+      if (cvx_psd_test == 0) return false;
+      // drop the variables with an identically zero row (linear in L)
+      std::vector<int> idx;
+      for (int i=0; i<n0; i++) {
+        bool zero = true;
+        for (int j=0; zero && j<n0; j++) zero = (H0[i][j].lb()==0 && H0[i][j].ub()==0);
+        if (!zero) idx.push_back(i);
+      }
+      int n = idx.size();
+      if (n==0) return true;
+      IntervalMatrix H(n,n);
+      for (int a=0; a<n; a++) for (int b=0; b<n; b++) H[a][b] = H0[idx[a]][idx[b]];
+      // 1) comparison matrix: diag lb, off-diagonal -max|h_ij|  (x'Ax >= |x|'M|x|)
+      IntervalMatrix M(n,n);
+      for (int a=0; a<n; a++) for (int b=0; b<n; b++)
+        M[a][b] = (a==b) ? Interval(H[a][a].lb()) : -Interval(std::max(std::fabs(H[a][b].lb()), std::fabs(H[a][b].ub())));
+      if (interval_cholesky_pd(M)) return true;
+      // 2) midpoint-radius: lambda_min(A) >= lambda_min(Hc) - ||Hr||_inf
+      Interval rho(0);
+      for (int a=0; a<n; a++) {
+        Interval ra(0);
+        for (int b=0; b<n; b++) ra += Interval(H[a][b].rad());
+        rho = Interval(std::max(rho.ub(), ra.ub()));
+      }
+      IntervalMatrix C(n,n);
+      for (int a=0; a<n; a++) for (int b=0; b<n; b++) {
+        // symmetrised center
+        C[a][b] = (Interval(H[a][b].mid()) + Interval(H[b][a].mid())) / 2.0;
+        if (a==b) C[a][b] -= rho;
+      }
+      return interval_cholesky_pd(C);
+    }
+
     void LoupFinderIpopt::cvx_measure(const IntervalVector& box, double loup) {
       cvx_nodes++;
       bool certified=false;
@@ -490,13 +560,39 @@ namespace ibex {
         dg[k]->jacobian(box, Hk);
         H += Interval(lam[k]) * Hk;
       }
-      // Gershgorin: every row diagonally dominant with a nonnegative diagonal
-      for (int i=0; i<n; i++) {
-        Interval r(0);
-        for (int j=0; j<n; j++) if (j!=i) r += abs(H[i][j]);
-        if (H[i][i].is_empty() || !(H[i][i].lb() - r.ub() >= 0)) return NEG_INFINITY;
+      // --cvx-test 2: alphaBB-like. Instead of requiring H PSD, take a diagonal
+      // shift d (Gershgorin: d_i = max(0, sum_j!=i |h_ij| - h_ii)) making H+D
+      // PSD; L(y) + sum d_i/2 (y_i-x^_i)^2 is then convex and the tangent
+      // bound holds after subtracting sum d_i/2 max_{y in B} (y_i-x^_i)^2.
+      std::vector<double> dshift(n, 0.0);
+      bool shifted = false;
+      if (cvx_psd_test == 2) {
+        for (int i=0; i<n; i++) for (int j=0; j<n; j++)
+          if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
+        for (int i=0; i<n; i++) {
+          Interval r(0);
+          for (int j=0; j<n; j++) if (j!=i) r += abs(H[i][j]);
+          Interval di = r - Interval(H[i][i].lb());
+          dshift[i] = std::max(0.0, di.ub());
+          if (dshift[i] > 0) shifted = true;
+        }
       }
-      if (certified) *certified = true;
+      if (cvx_psd_test != 2 && !certify_psd(H)) {
+        if (certified) {
+          // is even the center indefinite? (float Cholesky of mid(H) + tiny shift)
+          int nn = H.nb_rows(); std::vector<double> A(nn*nn), Lc(nn*nn, 0.0); bool pd = true;
+          for (int a=0; a<nn; a++) for (int b=0; b<nn; b++) A[a*nn+b] = (H[a][b].mid()+H[b][a].mid())/2 + (a==b ? 1e-9*(1+std::fabs(H[a][a].mid())) : 0);
+          for (int j=0; pd && j<nn; j++) {
+            double sj = A[j*nn+j]; for (int k=0; k<j; k++) sj -= Lc[j*nn+k]*Lc[j*nn+k];
+            if (!(sj > 0)) { pd = false; break; }
+            Lc[j*nn+j] = std::sqrt(sj);
+            for (int i=j+1; i<nn; i++) { double t = A[i*nn+j]; for (int k=0; k<j; k++) t -= Lc[i*nn+k]*Lc[j*nn+k]; Lc[i*nn+j] = t / Lc[j*nn+j]; }
+          }
+          if (!pd) cvx_center_indef++;
+        }
+        return NEG_INFINITY;
+      }
+      if (certified && !shifted) *certified = true;
       // tangent plane of the Lagrangian at the projection of Ipopt's point
       IntervalVector xh(n);
       for (int i=0; i<n; i++) {
@@ -516,6 +612,12 @@ namespace ibex {
       }
       Interval bound = L;
       for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
+      if (shifted)
+        for (int i=0; i<n; i++) if (dshift[i] > 0) {
+          if (box[i].is_unbounded()) return NEG_INFINITY;
+          Interval w = sqr(box[i] - xh[i]);
+          bound -= Interval(dshift[i]) / 2.0 * Interval(w.ub());
+        }
       // equalities are relaxed to |h| <= eps_h in the search: lambda*h can be
       // as large as |lambda|*eps_h on a point the search calls feasible
       for (int k=0; k<m; k++)
