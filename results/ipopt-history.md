@@ -23,6 +23,9 @@ instances both close.
 | tg10 / tg10l | 11-06 | + guided restarts (10% budget) global / local | 222 (ex6_2_13 TO) | 1429 / 1419 s | 0.686 / 0.684 | 3 | 225 |
 | tg10p | 11-06 | + patience 20 (recommended) | 223 | 1599 s | 0.696 | 3 | 226 |
 | tg10p + thick-equality fix | 11-06 | hs118 ranges certifiable | (223) | | | 4 (+ hs118) | 227 |
+| g05p20 | 11-07 | guided restarts rho 0.05, patience 20 | 223 | 1539 s | 0.665 | 4 (+ mistake) | 227 |
+| tcvx | 11-08 | + certified-convex Lagrangian bound (--cvx-close), thick fix | 222 (ex6_2_13 TO) | 1384 s | 0.763 | 11 (+ abel, abelbis, abelbis-1, abelter-1, fccu, polak3, hs118, mistake) | 233 |
+| gcvx | 11-08 | g05p20 + --cvx-close | 222 (ex6_2_13 TO) | 1186 s | 0.523 vs tbase | 11 | 233 |
 
 Other status changes on the open 75:
 - wall: proved *infeasible* by the binaries before the affine fix, closes

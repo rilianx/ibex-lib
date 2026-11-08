@@ -51,3 +51,21 @@ wrong one). The cost: the interval Hessian is evaluated at every node, also
 where nothing is ever certified; ex6_2_13 (closes at ~293 s) times out with
 0 raised bounds, and several instances are 1.2-1.4x slower. Next: back off
 the check where it keeps failing.
+
+## 75 open instances (310 s)
+
+    arm      closed  primal int.  primal-dual int.   no loup
+    tfinal   3       0.156        0.599              5
+    g05p20   4       0.125        0.587              4
+    tcvx     11      0.140        0.503              5 (hs118 closes)
+    gcvx     11      0.138        0.509              4
+
+Newly closed by the convex bound: abel, abelbis, abelbis-1, abelter-1 (at
+the root; before: timeouts with lower bounds -1e6, -8e8, -313, 22.5 for an
+optimum of 225.19), fccu, polak3; plus hs118 (thick-equality fix, in the
+same binary) and mistake (borderline, ~280-300 s). Lower bounds improve on
+hs101, hs102, linear, water-abs. gcvx vs tbase: primal-dual integral 0.509
+vs 0.601 (27 better / 2 worse), primal 0.138 vs 0.178 (18/3).
+
+Total: 222 of the 223 (ex6_2_13 times out from the per-node Hessian cost) +
+11 of the 75 = 233 of 298, from 224 at the start of the Ipopt work.
