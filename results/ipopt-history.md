@@ -37,3 +37,30 @@ Other status changes on the open 75:
 - Proved unbounded: 8-9, infeasible: 2 (ex7_3_6, launch__coconut) in all
   arms; no feasible point at 310 s: 9 instances with the old base, 4 with
   tg10p + the thick fix (discs, ex5_3_3, minlphi, minlphi1).
+
+## All together (arm `full`), and a clean timing comparison
+
+full = --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1
+--ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64
+(+ affine fix, thick-equality fix, root time counted).
+
+Closed: 223/223 + 11/75 = 234/298 (start: 224). Every optimum agrees with
+optima.txt (ex8_2_4's reference is the known wrong one).
+
+The container restarted right before this run on a ~30% faster host: against
+gcvx, full has the same node counts (ratio 1.000) and ~30% lower times on
+dozens of instances. tbase2 reruns the original base on the same host:
+
+    A      vs B       time diff [IC95]          nodes  total time (closed)
+    tbase2 vs tbase   -0.067 [-0.085, -0.050]   1.016  1229 vs 1662 s   (host speed only)
+    full   vs tbase2  -0.007 [-0.029, +0.013]   0.516  1032 vs 1229 s
+
+Same host: half the nodes, -16% total time, a tie on the pairwise metric
+(1 s floor: most instances take < 1 s). Faster: harker 93 -> 0.0 s, sambal
+18.6 -> 0.0, matrix2 94 -> 0.2, launch 9.8 -> 0.6, eigencco 3.6 -> 0.2,
+dixchlng 1.7 -> 0.4, makela3 1.3 -> 0.0. Slower: dnieper 4.2 -> 5.5,
+ex8_2_4 2.7 -> 6.0, ex9_2_5 1.0 -> 2.2, haldmads 1.1 -> 2.2.
+
+Open 75 (62 with metrics in all arms): primal integral 0.182 (tbase) ->
+0.135 (full), primal-dual 0.601 -> 0.505; no feasible point 9 -> 4 (discs,
+ex5_3_3, minlphi, minlphi1).
