@@ -67,7 +67,14 @@ int main(int argc, char** argv) {
 	list.resize(k);
 	CtcCompo ctc(list);
 
+#ifdef SC_LSMEAR_SYSTEM
+	/* LSmear on a plain System, as in the paper: only in the Ibex of the
+	 * paper's repository (make -f Makefile.inplace). */
 	Bsc* bsc = new LSmear(eqs ? *eqs : sys, eps);
+#else
+	/* Ibex releases and develop have no LSmear for a plain System. */
+	Bsc* bsc = new SmearSumRelative(eqs ? *eqs : sys, eps);
+#endif
 	CellBuffer* buf = bfs ? (CellBuffer*) new CellList() : (CellBuffer*) new CellStack();
 
 	Solver s(sys, ctc, *bsc, *buf, Vector(sys.nb_var, eps), Vector(sys.nb_var, POS_INFINITY));

@@ -15,7 +15,7 @@
 //============================================================================
 
 #include "ibex.h"
-#include "bin/parse_args.h"
+#include "parse_args.h"
 #include "ibex_CtcSC.h"
 #include "ibex_LinearizerAffine2.h"
 #include "ibex_OptimMemory.h"

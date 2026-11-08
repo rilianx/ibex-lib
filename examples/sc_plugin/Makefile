@@ -1,64 +1,45 @@
-# Builds CtcSC and two drivers against the in-place Ibex of this repository
-# (built with cmake, GAOL and SoPlex 4.0.2). The affine linearizer used by the
-# drivers comes from examples/dfb/affine (it is not part of Ibex).
+# Builds CtcSC and two drivers (sc_solve, sc_opt) against an installed Ibex.
+#
+# Ibex must be built with SoPlex as LP library (CtcSC uses its LU):
+#   cmake -DLP_LIB=soplex -DCMAKE_INSTALL_PREFIX=<prefix> .. && make && make install
+# Then:
+#   make                                   # if ibex.pc is found by pkg-config
+#   make PKG_CONFIG_PATH=<prefix>/share/pkgconfig
+#
+# The affine linearizer (affine/, by J. Ninin, LGPL) is used only by the
+# drivers: Ibex develop does not ship it.
 
-CXX = g++
-CXXFLAGS = -O3 -msse3 -frounding-math -std=gnu++11 -MMD -MP
+PKG_CONFIG ?= pkg-config
+IBEX_CFLAGS := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --cflags ibex)
+IBEX_LIBS   := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --libs ibex)
+ifeq ($(IBEX_LIBS),)
+$(error ibex.pc not found: set PKG_CONFIG_PATH to the folder of ibex.pc)
+endif
 
-IBEX = ../..
-AFF  = ../dfb/affine
-
-INCLUDES = \
-  -I. -I$(AFF) \
-  -I$(IBEX)/interval_lib_wrapper/gaol \
-  -I$(IBEX)/lp_lib_wrapper/soplex \
-  -I$(IBEX)/src \
-  -I$(IBEX)/src/arithmetic -I$(IBEX)/src/bisector -I$(IBEX)/src/cell -I$(IBEX)/src/combinatorial \
-  -I$(IBEX)/src/contractor -I$(IBEX)/src/data -I$(IBEX)/src/function -I$(IBEX)/src/loup \
-  -I$(IBEX)/src/numeric -I$(IBEX)/src/optim -I$(IBEX)/src/parser -I$(IBEX)/src/predicate -I$(IBEX)/src/set \
-  -I$(IBEX)/src/solver -I$(IBEX)/src/strategy -I$(IBEX)/src/symbolic -I$(IBEX)/src/operators \
-  -I$(IBEX)/src/system -I$(IBEX)/src/tools \
-  -I$(IBEX)/interval_lib_wrapper/gaol/gaol-4.2.0 \
-  -I$(IBEX)/interval_lib_wrapper/gaol/gaol-4.2.0-build \
-  -I$(IBEX)/interval_lib_wrapper/gaol/gaol-4.2.0-build/gaol \
-  -I$(IBEX)/interval_lib_wrapper/gaol/mathlib-2.1.0/src \
-  -I$(IBEX)/interval_lib_wrapper/gaol/mathlib-2.1.0-build/src \
-  -I$(IBEX)/lp_lib_wrapper/soplex/soplex-4.0.2/src
-
-LDFLAGS = \
-  -L$(IBEX)/src \
-  -L$(IBEX)/interval_lib_wrapper/gaol/gaol-4.2.0-build \
-  -L$(IBEX)/interval_lib_wrapper/gaol/mathlib-2.1.0-build \
-  -L$(IBEX)/lib
-
-LDLIBS = -libex -lsoplex -lgaol -lgdtoa -lultim
+CXX      ?= g++
+CXXFLAGS ?= -O3 -frounding-math
+CXXFLAGS += -std=c++14 -MMD -MP
+CPPFLAGS += -I. -Iaffine $(IBEX_CFLAGS)
+# Ibex installs its libraries in <prefix>/lib (and gaol/soplex in lib/ibex/3rd):
+comma := ,
+RPATH := $(patsubst -L%,-Wl$(comma)-rpath$(comma)%,$(filter -L%,$(IBEX_LIBS)))
 
 SC_SRCS  = ibex_CtcSC.cpp ibex_SCSimplex.cpp ibex_SCBasis.cpp
-AFF_SRCS = $(AFF)/ibex_Affine2_fAF2.cpp $(AFF)/ibex_Affine3_fAFFullI.cpp $(AFF)/ibex_AffineVar.cpp \
-           $(AFF)/ibex_CtcAffineFwdBwd.cpp $(AFF)/ibex_LinearizerAffine2.cpp
-
+AFF_SRCS = $(wildcard affine/*.cpp)
 SC_OBJS  = $(SC_SRCS:.cpp=.o)
-AFF_OBJS = $(patsubst $(AFF)/%.cpp,aff_%.o,$(AFF_SRCS))
+AFF_OBJS = $(AFF_SRCS:.cpp=.o)
 
-TARGETS = sc_solve sc_opt
-
-all: $(TARGETS)
+all: sc_solve sc_opt
 
 sc_solve: sc_solve.o $(SC_OBJS) $(AFF_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(IBEX_LIBS) $(RPATH)
 
 sc_opt: sc_opt.o $(SC_OBJS) $(AFF_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
-
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
-
-aff_%.o: $(AFF)/%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(IBEX_LIBS) $(RPATH)
 
 clean:
-	rm -f *.o *.d $(TARGETS)
+	rm -f *.o *.d affine/*.o affine/*.d sc_solve sc_opt
 
--include $(wildcard *.d)
+-include $(wildcard *.d affine/*.d)
 
 .PHONY: all clean

@@ -44,7 +44,9 @@ This is the configuration called *SC base* in the paper
 | `ibex_SCSimplex.{h,cpp}` | the revised dual/primal simplex |
 | `ibex_SCBasis.{h,cpp}` | sparse LU of the basis (SoPlex `SLUFactor`, hidden behind a pimpl) |
 | `sc_solve.cpp`, `sc_opt.cpp` | drivers: a system solver and an optimizer (not part of the contractor) |
-| `Makefile` | builds the drivers against the in-place Ibex of this repository |
+| `Makefile` | builds the drivers against an installed Ibex (`pkg-config ibex`) |
+| `Makefile.inplace` | the same against the in-place Ibex of the repository of the paper |
+| `affine/`, `parse_args.h` | third-party code used only by the drivers |
 
 The contractor uses only the Ibex core and the SoPlex headers. It has no
 global or static mutable state and reads no environment variables.
@@ -82,57 +84,61 @@ CtcFixPoint fp(*new CtcCompo(sc, hc4), 0.2);
 
 `add_property` forwards to the linearizer, like `CtcPolytopeHull` does.
 
-## Integration into Ibex (develop)
+## Building
 
-1. Copy the six files: `ibex_CtcSC.{h,cpp}` into `src/contractor/`, and
-   `ibex_SCSimplex.{h,cpp}` and `ibex_SCBasis.{h,cpp}` into `src/numeric/`.
-2. `SCBasis` needs the SoPlex headers, so build them only when Ibex uses
-   SoPlex. The default of develop is `LP_LIB=none`; configure with
-   `-DLP_LIB=soplex`. Add to `src/contractor/CMakeLists.txt`:
-
-   ```cmake
-   if (LP_LIB STREQUAL "soplex")
-     target_sources (ibex PRIVATE
-       ${CMAKE_CURRENT_SOURCE_DIR}/ibex_CtcSC.cpp
-       ${CMAKE_CURRENT_SOURCE_DIR}/ibex_CtcSC.h)
-   endif ()
-   ```
-
-   and the same for `ibex_SCSimplex.*` and `ibex_SCBasis.*` in
-   `src/numeric/CMakeLists.txt`. Check that `ibex.h`, which is generated from
-   the header list, still compiles when the three headers are left out with
-   another `LP_LIB`.
-3. The class uses only API that exists in develop:
-   - `Linearizer::linearize(box, LPSolver&, BoxProperties&)`;
-   - `LPSolver(n, LPSolver::Mode::NotCertified)`, `rows()`, `lhs_rhs()`,
-     `clear_constraints()`;
-   - `ContractContext`, `BoxEvent`.
-
-   It does not need any of the local changes of `src` in this repository.
-
-## Building the drivers here
+`CtcSC` is a plugin: it is not part of Ibex, and it builds against an
+installed Ibex, release 2.8 or develop. Ibex must use SoPlex as its LP
+library, because `SCBasis` uses the LU factorization of SoPlex:
 
 ```
-cd examples/sc_plugin && make
-./sc_solve ../../benchs/solver/polynom/Bellido.bch --lin=art -t 60 --seed=1
-./sc_opt ../../benchs/optim/blowup/meanvar.bch --filtering=acidhc4 --lin=art --seed=1 -t 60
+# Ibex (once)
+cmake -DCMAKE_BUILD_TYPE=Release -DINTERVAL_LIB=gaol -DLP_LIB=soplex \
+      -DCMAKE_INSTALL_PREFIX=$HOME/ibex ..
+make && make install
+
+# this folder
+make PKG_CONFIG_PATH=$HOME/ibex/share/pkgconfig
+./sc_solve <ibex>/benchs/solver/polynom/Bellido.bch --lin=art -t 60 --seed=1
+./sc_opt <ibex>/benchs/optim/blowup/meanvar.bch --filtering=acidhc4 --lin=art --seed=1 -t 60
 ```
 
-Ibex must have been built in place first, with
-`cmake -DCMAKE_BUILD_TYPE=Release -DINTERVAL_LIB=gaol -DLP_LIB=soplex . && make`.
-The drivers take the affine linearizer from `examples/dfb/affine`, which is
-not part of Ibex.
+`make -f Makefile.inplace` builds instead against the in-place Ibex of the
+repository of the paper.
+
+To use `CtcSC` in your own program, compile the three files
+`ibex_CtcSC.cpp`, `ibex_SCSimplex.cpp` and `ibex_SCBasis.cpp` with it, with the
+flags of `pkg-config --cflags ibex`. The contractor uses only Ibex API that
+exists in both 2.8 and develop:
+
+- `Linearizer::linearize(box, LPSolver&, BoxProperties&)`;
+- `LPSolver(n, LPSolver::Mode::NotCertified)`, `rows()`, `lhs_rhs()`,
+  `clear_constraints()`;
+- `ContractContext`, `BoxEvent`.
+
+Third-party files bundled for the drivers only:
+
+- `affine/` is the affine-arithmetic linearizer of Jordan Ninin (ENSTA
+  Bretagne, LGPL), which Ibex develop does not ship. This copy is the one of
+  the paper; it keeps a few research switches (`DFBH_LIN*`, `DFBH_AFNOPOOL`)
+  that do nothing unless they are set.
+- `parse_args.h` is the argument parser of Ibex (`src/bin`, MIT license).
 
 The drivers use the same strategies as `examples/dfb/ibexsolve_dfb --lr=dfbhull`
-and `examples/dfb/ibexopt --lr=dfbhull`:
+and `examples/dfb/ibexopt --lr=dfbhull` of the paper:
 
 - `sc_solve`: HC4, ACID and interval Newton, then `FixPoint(CtcSC ; HC4)` and
-  LSmear. `--lin=art` uses `DUAL` with 1e-9; `--lin=compo` uses `ADAPTIVE`
+  LSmear. Ibex 2.8 and develop have no LSmear for a plain system, so with
+  `Makefile` it bisects with SmearSumRelative; `Makefile.inplace` uses LSmear
+  as in the paper. `--lin=art` uses `DUAL` with 1e-9; `--lin=compo` uses `ADAPTIVE`
   with 1e-6.
 - `sc_opt`: HC4 and ACID, then `FixPoint(CtcSC ; HC4)` with ratio 0.2, then
   LSmear and beam search. It uses `PRIMAL` with 1e-9.
 
 ## Validation against the research code
+
+Built against Ibex develop (commit 0a0f9796d), `sc_opt` gives the same tree as
+the in-place build (ex2_1_9: same cells, passes, LPs and pivots); `sc_solve`
+differs only by the bisector (see above).
 
 The comparison is with the `examples/dfb` binaries in their SC base
 configuration (rung R3 of `results/escalera_2026-11-06/escf.sh`), with
