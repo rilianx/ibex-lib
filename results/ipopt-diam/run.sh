@@ -44,6 +44,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     tg10p)  d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.1 --ipopt-guided-patience=20" ;;
     tcvx)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --cvx-close" ;;
     gcvx)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close" ;;
+    full)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64" ;;
     g05p20) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20" ;;
     g20p20) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.2 --ipopt-guided-patience=20" ;;
     g10p10) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.1 --ipopt-guided-patience=10" ;;
