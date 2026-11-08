@@ -1,0 +1,4 @@
+*.o
+*.d
+sc_solve
+sc_opt
