@@ -1,7 +1,8 @@
 #!/bin/bash
 # Banco de pasadas con compo, sistemas >30 filas, uno por familia (2026-11-06). $1 ruta.
-cd ~/ibex2024/examples/dfb
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+S=${S:-$H/work/S}
 n=$(basename $1 .bch); c=$S/bancocmp/sol.$n.txt; ulimit -v 6000000
 if [ ! -s $c ]; then
   raw=$S/bancocmp/raw.$n

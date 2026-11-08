@@ -1,13 +1,13 @@
 import re,os,math,sys
 def run(script,dirn,pref):
-    g={}; exec(open(script).read().split("nom=[")[0].replace('print(','(lambda *a,**k:None)('),g)
+    g={'__file__':os.path.abspath(script)}; exec(open(script).read().split("nom=[")[0].replace('print(','(lambda *a,**k:None)('),g)
     D,get,filas=g['D'],g['get'],g['filas']
     for prog in ('opt','sol'):
       for cl in ('<=30','>30'):
         sel=[i for i in D if i[0]==prog and (filas[i]<=30)==(cl=='<=30')]
         pr=[];pr2=[];pr3=[];c=[]
         for i in sel:
-            f='r0c/%s.%s.b0fc.txt'%(pref or prog,i[1])
+            f=g['S']+'/r0c/%s.%s.b0fc.txt'%(pref or prog,i[1])
             if not os.path.exists(f) or not os.path.getsize(f): continue
             t=open(f).read(); m=re.search(r'costo caja : pasada ([0-9.]+) s',t)
             if not m: continue

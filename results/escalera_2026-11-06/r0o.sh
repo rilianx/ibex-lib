@@ -1,7 +1,8 @@
 #!/bin/bash
 # R0/R0f en el solver con el orden de Ibex (mas cercana) (2026-11-07). $1 ruta $2 sol|opt $3 semilla $4 escf|escfa
-cd ~/ibex2024/examples/dfb
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad/$4_r0c
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+S=${S:-$H/work/S}/$4_r0c
 n=$(basename "$1" .bch); ulimit -v 6000000
 if [ $4 = escfa ]; then lin=art; else lin=compo; fi
 caja_ibex="DFBH_MOTOR=caja DFBH_CAJA_TOL=1e-9 DFBH_ORDEN_CAJA=cerca DFBH_CORTE_CERT=1"

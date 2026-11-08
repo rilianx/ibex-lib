@@ -1,0 +1,13 @@
+{
+  "title": "Certificate-driven polytope-hull contraction for interval branch and bound: code and data",
+  "upload_type": "software",
+  "description": "Code and data of the paper. The self-certifying simplex (SC) and the polytope-hull contractor are in examples/dfb of this Ibex fork. results/escalera_2026-11-06 holds the banks of passes, the raw results of every run, the run scripts and the scripts that produce the tables; its README.md explains how to rebuild the binaries and regenerate the tables.",
+  "creators": [
+    {"name": "Araya, Ignacio", "affiliation": "Pontificia Universidad Católica de Valparaíso"}
+  ],
+  "license": "LGPL-3.0-or-later",
+  "keywords": ["interval branch and bound", "polytope hull", "linear relaxation", "dual simplex", "Neumaier-Shcherbina", "Ibex"],
+  "related_identifiers": [
+    {"identifier": "https://github.com/ibex-team/ibex-lib", "relation": "isDerivedFrom", "resource_type": "software"}
+  ]
+}

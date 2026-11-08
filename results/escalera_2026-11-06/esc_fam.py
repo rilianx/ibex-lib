@@ -1,8 +1,8 @@
 # Escalera por programa y clase de tamano (<=30 / >30 filas tras fusionar), una instancia por familia y clase:
 # la de mas filas de la relajacion dentro de la clase. Cada peldano contra R0 (SoPlex como lo usa Ibex).
 import glob,os,re,sys,collections
-S='/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad'
-M='/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad'
+import os; S=os.environ.get('S',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/S'))
+M=os.environ.get('M',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/M'))
 T=60.0; excl={'alkyl','alkylbis','bearing'}
 def familia(prog,n):
     if prog=='sol': return n.split('-')[0]

@@ -1,7 +1,8 @@
 #!/bin/bash
 # Escalera con la relajacion afin en sistemas (2026-11-06): R3 SC base, R4 +tope 60, R5 +devex, R6 +paso largo (=SC final). $1 ruta $2 sol|opt $3 semilla
-cd ~/ibex2024/examples/dfb
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad/escfa
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+S=${S:-$H/work/S}/escfa
 n=$(basename "$1" .bch); ulimit -v 6000000
 if [ $2 = sol ]; then tc=1e-6; lin=art; pel="R0 R0f R1 R2 R3 R4 R5 R6"; else tc=1e-9; lin=art; pel="R0 R0f R1 R2 R3 R4 R5 R6"; fi
 caja_ibex="DFBH_MOTOR=caja DFBH_CAJA_TOL=1e-9 DFBH_ORDEN_CAJA=nat DFBH_CORTE_CERT=1"

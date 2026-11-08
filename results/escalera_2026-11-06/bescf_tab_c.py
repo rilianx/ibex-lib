@@ -1,7 +1,7 @@
 # Escalera por pasada sobre el banco (71 instancias x 1000 llamadas grabadas, afin). Cada peldano contra b0 caja.
 import glob,os,re,collections,math,sys
-S='/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad'
-M='/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad'
+import os; S=os.environ.get('S',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/S'))
+M=os.environ.get('M',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/M'))
 filas={}
 for f in os.listdir(M+'/filas_m2'):
     if f.count('.')!=3: continue

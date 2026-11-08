@@ -5,9 +5,10 @@
 #  b0f: lo mismo con fusion; DFB = SC base
 #  b1 : caja = SoPlex ajustado (instancia propia, sin presolve, tolerancia por programa, mas cercana, 20m+200); DFB = SC base
 #  b2 : caja = simplex de SoPlex directo (SPxSolver); DFB = SC con devex, paso largo y tope de 60
-cd ~/ibex2024/examples/dfb
-M=/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+M=${M:-$H/work/M}
+S=${S:-$H/work/S}
 n=$(basename $1 .bch); c=$M/banco/$2.$n.txt; o=$S/bescf/$2.$n.$3.txt
 [ -s $o ] && exit 0
 ulimit -v 6000000

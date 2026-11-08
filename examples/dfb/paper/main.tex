@@ -440,7 +440,8 @@ change side, against 0.3 on optimization problems, whose slack intervals cover
 where the dual one is 4\% slower, and the dual one on systems of equations,
 where both cost about the same; with \texttt{compo}, where neither wins on
 every system, it alternates the two on the first nodes and keeps the one with
-the lower cost per LP, trying the other again every 25 nodes.
+the lower measured CPU time per LP, trying the other again every 25 nodes
+(so the choice, unlike the rest of SC, depends on timing).
 
 \subsection{Simplex iterations}\label{sec:iter}
 
@@ -475,7 +476,8 @@ therefore uses the textbook rules above. On the small LPs of a pass, the
 choice of pivots matters less than the work that surrounds them.
 
 \paragraph{Primal steps, tolerances.} Primal steps enter the nonbasic
-variable with the largest reduced cost of the wrong sign (Dantzig's rule);
+variable with the largest reduced cost of the wrong sign (Dantzig's rule;
+with \texttt{compo}, whose primal warm starts are longer, devex weights);
 pivots below a stability threshold are filtered out before choosing the
 leaving variable, since without this filter a rejected pivot was
 indistinguishable from optimality. The feasibility tolerances are $10^{-9}$,
@@ -888,14 +890,14 @@ the best of both. How to choose, inside the optimal face of a degenerate
 polytope, the vertex that serves the next bound is the open question.
 
 \section*{Code and data availability}
-SC, the contractor and the solver configurations are implemented in Ibex and
-available in the branch \texttt{dfb-sc-paper} of
-\url{https://github.com/rilianx/ibex-lib} (directory
-\texttt{examples/dfb}). The same repository holds, in
-\texttt{results/escalera\_2026-11-06}, the banks of passes (input boxes and
-relaxations), the raw results of every run and the scripts that produce the
-tables and figures of Section~\ref{sec:experiments}. The fix to the polytope-hull
-contractor of Ibex used in the baseline was submitted upstream
+The code and data used in the experiments are archived at Zenodo
+(\todo{DOI}); they are the branch \texttt{dfb-sc-paper} of
+\url{https://github.com/rilianx/ibex-lib}. SC and the contractor are in
+\texttt{examples/dfb}; \texttt{results/escalera\_2026-11-06} holds the banks
+of passes (input boxes and relaxations), the raw results of every run, the
+scripts that ran them and those that produce the tables, with instructions to
+rebuild the binaries. The fix to the polytope-hull contractor of Ibex used in
+the baseline was submitted upstream
 (\url{https://github.com/ibex-team/ibex-lib/pull/579}).
 
 % =====================================================================

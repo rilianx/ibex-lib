@@ -1,8 +1,8 @@
 # Umbral del hibrido: por instancia (filas medias tras fusionar), SC base (R3) si filas <= T, simplex directo (R2) si no.
 # Puntaje contra R0 (A/max : B/max), corridas > 1 s, y tambien media geometrica de t/t_R0.
 import glob,os,re,math,collections,sys
-S='/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad'
-M='/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad'
+import os; S=os.environ.get('S',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/S'))
+M=os.environ.get('M',os.path.join(os.path.dirname(os.path.abspath(__file__)),'work/M'))
 T=60.0; excl={'alkyl','alkylbis','bearing'}
 filas={}
 for f in os.listdir(M+'/filas_m2'):

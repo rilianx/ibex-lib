@@ -1,8 +1,9 @@
 #!/bin/bash
 # Banco de pasadas, optimizacion una por familia (2026-11-06). $1 ruta. Captura todas las llamadas de una busqueda de 60 s con SC base,
 # guarda 1000 repartidas uniformemente y corre los peldanos b0 b0f b1 b2 (como bescf.sh).
-cd ~/ibex2024/examples/dfb
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+S=${S:-$H/work/S}
 n=$(basename $1 .bch); c=$S/bancoopt/opt.$n.txt; ulimit -v 6000000
 if [ ! -s $c ]; then
   raw=$S/bancoopt/raw.$n

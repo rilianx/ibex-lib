@@ -1,8 +1,9 @@
 #!/bin/bash
 # Trabajo emulado con SC base (2026-11-07): config b1 (SC base vs SoPlex ajustado) + cascada acumulada DFB_EMU_*. $1 ruta $2 sol|opt
-cd ~/ibex2024/examples/dfb
-M=/tmp/claude-1001/-home-iaraya/5f64b562-0cdb-4c11-89ea-a54f0d24b4aa/scratchpad
-S=/tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad
+H=$(cd "$(dirname "$0")" && pwd)   # this folder; work/ holds datos_trabajo.tgz unpacked
+cd "$H/../../examples/dfb"
+M=${M:-$H/work/M}
+S=${S:-$H/work/S}
 n=$(basename $1 .bch); ulimit -v 6000000
 c=$S/bancoopt/$2.$n.txt; [ -s $c ] || c=$M/banco/$2.$n.txt; [ -s $c ] || exit 0
 if [ $2 = opt ]; then tol=1e-9; else tol=1e-6; fi
