@@ -69,3 +69,21 @@ vs 0.601 (27 better / 2 worse), primal 0.138 vs 0.178 (18/3).
 
 Total: 222 of the 223 (ex6_2_13 times out from the per-node Hessian cost) +
 11 of the 75 = 233 of 298, from 224 at the start of the Ipopt work.
+
+## The per-node cost and --cvx-backoff (ex6_2_13, machine otherwise idle)
+
+    ex6_2_13 (351770 nodes in every run)      time
+    tfinal                                    221.8 s
+    + --cvx-close                             227.2 s   (+2.4%)
+    + --cvx-close --cvx-backoff=64            218.5 s
+
+The timeout of tcvx/gcvx on ex6_2_13 came from running at ~293 s, next to
+the limit, on a loaded machine; the Hessian checks cost ~2.4% there, and
+the backoff (check 2x less often after each non-certified node, at most
+every 64 nodes, reset by a certified one) removes that cost. On harker,
+sambal, abel the backoff keeps the root closing; polak3 30.1 -> 32.6 s.
+
+Recommended configuration:
+
+    --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1
+    --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64
