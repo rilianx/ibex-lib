@@ -80,8 +80,10 @@ Contributions.
 
 4.  An experimental study on 298 instances of the IbexOpt benchmark, including an ablation
     of each component and anytime measures (primal and primal–dual integrals) on the 75
-    instances that are not solved within the time limit. [TODO: fill in from the final
-    ablation.]
+    instances that are not solved within the time limit. The ablation shows that the
+    components are complementary: Ipopt improves the upper bound, the Lagrangian bound the
+    lower bound (it alone closes the 8 new instances), and guided restarts the anytime
+    primal behaviour.
 
 [TODO: paper outline.]
 

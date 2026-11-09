@@ -25,10 +25,11 @@ interval arithmetic and either certify that it is positive semidefinite on the b
 shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
 the relaxation of equality constraints, yields a valid lower bound. Together with a more
-robust integration of Ipopt into IbexOpt, the bound closes 12 more of 298 benchmark
-instances, halves the number of nodes on the instances solved by both versions, and
-reduces the primal--dual integral on the instances that stay open.
-\textbf{[TODO: update with the final ablation.]}
+robust integration of Ipopt into IbexOpt, the bound closes 8 more of 298 benchmark
+instances, halves the number of nodes and reduces the total time by 20\% on the
+instances solved by all versions, and reduces the primal and primal--dual integrals by
+33\% and 16\% on the instances that stay open, while the time per node grows by at most
+12\%.
 \end{abstract}
 
 \section{Introduction}
@@ -123,7 +124,9 @@ shrinks around a nondegenerate KKT point.
 \item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark,
   including an ablation of each component and anytime measures (primal and
   primal--dual integrals) on the 75 instances that are not solved within the time
-  limit. \textbf{[TODO: fill in from the final ablation.]}
+  limit. The ablation shows that the components are complementary: Ipopt improves
+  the upper bound, the Lagrangian bound the lower bound (it alone closes the 8 new
+  instances), and guided restarts the anytime primal behaviour.
 \end{enumerate}
 
 \textbf{[TODO: paper outline.]}
