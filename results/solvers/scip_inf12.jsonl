@@ -7,3 +7,8 @@
 {"instance": "bearing.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": 1.9251184729317632, "uplo": 1.9251184729317632, "nodes": 2376, "time": 1.384459, "wall": 1.384523868560791}}
 {"instance": "chance.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 29.89437804150864, "uplo": 29.890856141880352, "nodes": 1, "time": 0.013084, "wall": 0.013120412826538086}}
 {"instance": "chem-1.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -47.70651484458981, "uplo": -47.75422009268114, "nodes": 324071, "time": 96.985746, "wall": 96.98581385612488}}
+{"instance": "chem.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -47.70651484458982, "uplo": -47.75421483747364, "nodes": 324531, "time": 95.002862, "wall": 95.0029296875}}
+{"instance": "chembis.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -47.706514844530815, "uplo": -47.75247221325926, "nodes": 1, "time": 0.007722, "wall": 0.007760047912597656}}
+{"instance": "concon.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -6230.795568845893, "uplo": -6232.09875606627, "nodes": 195821, "time": 23.843291, "wall": 23.843360662460327}}
+{"instance": "dipigri.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 680.6300554297511, "uplo": 680.0047376788431, "nodes": 5, "time": 0.070577, "wall": 0.07063078880310059}}
+{"instance": "disc2.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 1.5624999337699652, "uplo": 1.562497353456912, "nodes": 1, "time": 0.036369, "wall": 0.036420583724975586}}
