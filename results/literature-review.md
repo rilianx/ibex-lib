@@ -321,33 +321,143 @@ no aparece en ninguno de los tres:
   original y muestra su impacto. Solo LP. Remite a referencias nuevas que importan
   (abajo).
 
-## 7. Papers que faltan (actualizado)
+## 7. Lectura completa del segundo lote de PDF (Messine–Trombettoni 2019, Jansson 2004 LP, Kearfott et al. 2013, Adjiman et al. 1996)
+
+### Messine, F., Trombettoni, G. (2019), *Reliable bounds for convex relaxation in interval global optimization codes*, AIP Conf. Proc. 2070, 020050
+
+- **Teorema 1 (solo cajas):** para f convexa en X y cualquier x̃ ∈ X,
+  f(x*) ≥ f(x̃) + (z − x̃)ᵀ∇f(x̃), con z_i el extremo de X_i según el signo de ∂f/∂x_i.
+- **Teorema 2 (restricciones):** f y g convexas, igualdades **lineales** Ax = b,
+  μ̃ ≥ 0, λ̃ libre: f(x*) ≥ L(x̃, μ̃, λ̃) + (z − x̃)ᵀ∇ₓL(x̃, μ̃, λ̃).
+  La prueba usa Taylor de 2º orden del Lagrangiano y que Hₓ ⪰ 0 en X.
+- **Corolario 1 (versión con intervalos):** si el signo de ∂L/∂x_i no se decide con
+  intervalos, toma z_i = [x_i, x̄_i] completo. Es exactamente lo que hacemos.
+- Reconocen que Jansson (JOGO 2004) da el mismo teorema por otra vía.
+- Anuncian resultados numéricos futuros; el artículo no trae experimentos.
+- **Qué nos aporta.**
+  - En la prueba, la convexidad de f y g y la linealidad de las igualdades solo se usan
+    para tener Hₓ L(·, μ̃, λ̃) ⪰ 0 en X **para los multiplicadores fijos**. Es una
+    condición suficiente, no necesaria.
+  - Nuestro aporte es justamente debilitar la hipótesis: basta **certificar en la caja**
+    que ∇²ₓL(·, μ̃, λ̃) ⪰ 0 (Gershgorin, matriz de comparación, Cholesky intervalar).
+    Así entran objetivo y restricciones no convexos e igualdades no lineales.
+  - Si no se certifica, se desplaza con d_i al estilo αBB. La cota pasa a ser válida
+    para el NLP original no convexo.
+  - Ellos lo plantean para una **relajación convexa** resuelta con Ipopt. Nosotros
+    usamos el Ipopt del **upper bounding** sobre el problema original, así que los
+    multiplicadores salen gratis.
+  - Detalle técnico: nuestras igualdades están relajadas a |h| ≤ ε_h, por eso restamos
+    Σ|λ_j|ε_h. Ellos no lo necesitan porque sus igualdades son exactas y lineales.
+- **Errata menor:** escriben λ ∈ ℝⁿ y μ ∈ (ℝⁿ)⁺ donde corresponde ℝ^q y (ℝ^p)⁺. Además,
+  en el desarrollo final el término −λ̃ᵀb debe ir con λ̃ᵀA x̃ dentro del gradiente; la
+  forma final es correcta.
+
+### Jansson, C. (2004), *Rigorous lower and upper bounds in linear programming*, SIAM J. Optim. 14(3):914–935
+
+- **Ojo: no es el paper que pedí.** Este es el de **LP** del SIAM. El que cita
+  Messine–Trombettoni como origen del teorema convexo es *A rigorous lower bound for the
+  optimal value of convex optimization problems*, JOGO 28(1):121–137 (2004). Sigue
+  faltando.
+- **Contenido.**
+  - Cota inferior rigurosa en O(n²) desde un dual aproximado (Teorema 6.1). Es
+    equivalente a Neumaier–Shcherbina y fue desarrollada en paralelo.
+  - Cota superior rigurosa: deflaciona el problema y encierra un punto factible en el
+    interior relativo (método de Hansen/Kearfott).
+  - Soporta datos intervalares y cotas simples infinitas.
+- **Para nosotros:**
+  - Es la base de la corrección del LP que IBEX ya usa en el contractor de relajación
+    lineal.
+  - Su conclusión anuncia la generalización a programación convexa, que es el paper de
+    JOGO 28.
+  - Su esquema de deflación para la cota superior es análogo a nuestra corrección de
+    la solución de Ipopt (búsqueda de una caja factible certificada alrededor del
+    punto).
+
+### Kearfott, Castille, Tyagi (2013), *A general framework for convexity analysis in deterministic global optimization*, JOGO 56:765–785
+
+- **Análisis estructural sobre el grafo computacional (code list).** Identifica
+  variables "no convexas", incluidas variables intermedias, cuyo subdividirlas basta
+  para que el resto del problema sea convexo o quede bien acotado.
+- **Objetivo:** reemplazar el B&B adaptativo por una malla no adaptativa sobre pocas
+  variables, más predecible y paralelizable. Hace experimentos exploratorios sobre
+  COCONUT Lib-1.
+- **No es certificación numérica de la Hessiana por caja**, ni cota lagrangiana. Es
+  simbólica y global: el problema completo o por subexpresión, no el Lagrangiano con
+  multiplicadores fijos.
+- **Relación con nuestro trabajo.**
+  - Es complementario: su análisis podría decir a priori qué instancias tienen
+    estructura convexa, y nuestra certificación es numérica, local a la caja y depende
+    de λ̃.
+  - Hay casos que su análisis no capta y el nuestro sí: el Lagrangiano puede ser
+    convexo en una caja aunque f o g no lo sean (por ejemplo polak3 y abel, cerradas
+    con la cota).
+  - También sugiere una línea futura: ramificar preferentemente sobre las variables
+    responsables de d_i > 0, que son las "no convexas" en la caja.
+
+### Adjiman, Androulakis, Maranas, Floudas (1996), *A global optimization method, αBB, for process design*, Comput. Chem. Eng. 20(Suppl.):S419–S424
+
+- **Precursor de αBB I/II (1998).**
+  - Descompone f en términos lineales, convexos, bilineales (envolvente de McCormick),
+    cóncavos univariados y no convexos generales.
+  - A los no convexos les suma Σα(x_i^L − x_i)(x_i^U − x_i).
+- **Cómo obtiene α en esta versión:**
+  - polinomio característico intervalar de la Hessiana más el teorema de Kharitonov
+    (4 polinomios);
+  - la raíz mínima da λ_min; el ejemplo muestra que es conservador (−4 frente a −2.5
+    real).
+- **No incluye Gershgorin escalado ni el α no uniforme por variable.** Esos (con la
+  matriz de comparación, Hertz, etc.) están en Part I de 1998, que sigue faltando para
+  citar nuestro d_i.
+  - Nuestra fórmula d_i = max(0, Σ_{j≠i}|h_ij| − h̲_ii) es el "Gershgorin escalado con
+    d = 1" de Part I.
+  - Nuestra variante escalada corresponde a la de Part I con d = x̄ − x̲.
+- **Diferencia clave con nosotros.**
+  - αBB construye un **subestimador convexo de cada función** y resuelve un NLP convexo
+    por nodo.
+  - Nosotros desplazamos solo el **Lagrangiano agregado** y no resolvemos nada extra: la
+    cota es la tangente en el punto de Ipopt más la penalidad cuadrática, con costo
+    O(n²) por nodo.
+
+### Evaluación de novedad (tras este lote)
+
+- **El teorema base es conocido** (Jansson 2004 en JOGO; Messine–Trombettoni 2019):
+  cota tangente del Lagrangiano para problemas convexos con un punto aproximado.
+- **Lo nuevo:**
+  1. **Hipótesis debilitada:** se certifica la convexidad del Lagrangiano con
+     multiplicadores fijos **en cada caja**, no la del problema. Eso permite NLP no
+     convexo con igualdades no lineales.
+  2. **Extensión αBB del Lagrangiano agregado,** con el término cuadrático acotado en la
+     caja. Es válida siempre, aunque no se certifique.
+  3. **Los multiplicadores vienen del Ipopt de upper bounding,** sin relajación convexa
+     ni subgradiente. Van Voorhis lo sugiere como trabajo futuro.
+  4. **Corrección ε_h** para igualdades relajadas, y backoff adaptativo.
+  5. **Evaluación empírica en un B&B de intervalos riguroso:** +12 instancias cerradas
+     sobre 298 y −50 % de nodos.
+- Messine–Trombettoni no reportan experimentos. Si existe una implementación de su
+  teorema en IbexOpt (alguna rama de Trombettoni), habría que comparar.
+
+## 8. Papers que faltan (actualizado)
 
 Prioridad alta:
 1. **Jansson, C. (2004).** A rigorous lower bound for the optimal value of convex
-   optimization problems. *J. Global Optim.* 28(1):121–137. — Origen del Teorema 1.
-2. **Messine, F., Trombettoni, G. (2019).** Reliable bounds for convex relaxation in
-   interval global optimization codes. *AIP Conf. Proc.* 2070(1):020050,
-   doi:10.1063/1.5090017. — Su uso en IbexOpt/IBBA; lo más cercano a lo nuestro dentro
-   de IBEX.
-3. **Kearfott, R.B., Castille, J., Tyagi, G. (2013).** A general framework for convexity
-   analysis in deterministic global optimization. *J. Global Optim.* 56(3):765–785. —
-   Detección/certificación de convexidad en B&B riguroso.
-4. **Adjiman, Dallwig, Floudas, Neumaier (1998)**, αBB I (Comput. Chem. Eng. 22(9)).
+   optimization problems. *J. Global Optim.* 28(1):121–137. — **El de JOGO, no el de
+   SIAM** (el entregado es el de LP). Origen del teorema convexo.
+2. **Adjiman, Dallwig, Floudas, Neumaier (1998).** A global optimization method, αBB,
+   for general twice-differentiable constrained NLPs — I. Theoretical advances.
+   *Comput. Chem. Eng.* 22(9):1137–1158. — Para citar el Gershgorin escalado (nuestro
+   d_i). El de 1996 entregado no lo trae.
 
 Prioridad media:
-5. **Jansson, C. (2009).** On verified numerical computations in convex programming.
+3. **Jansson, C. (2009).** On verified numerical computations in convex programming.
    *Japan J. Indust. Appl. Math.* 26(2–3):337–363.
-6. **Kearfott (2014)**, On rigorous upper bounds to a global optimum, JOGO 59(2).
-7. **Araya, Messine, Ninin, Trombettoni (2024)**, hibridación afín + XTaylor, JOGO (por el
-   bug afín).
-8. **Ryoo & Sahinidis (1996)**, branch-and-reduce, JOGO 8 (si se extiende a reducción de
-   rangos).
-9. **Li & Sun (2000)**, Local convexification of the Lagrangian function in nonconvex
-   optimization, JOTA 104:109–120 (citado por Van Voorhis; convexificación del
-   Lagrangiano).
-10. **Dür & Horst (1997)**, Lagrange duality and partitioning techniques in nonconvex
-    global optimization, JOTA 95:347–369 (convergencia del gap dual con particiones).
+4. **Kearfott (2014)**, On rigorous upper bounds to a global optimum, JOGO 59(2).
+5. **Araya, Messine, Ninin, Trombettoni (2024)**, hibridación afín + XTaylor, JOGO.
+6. **Ryoo & Sahinidis (1996)**, branch-and-reduce, JOGO 8.
+7. **Li & Sun (2000)**, Local convexification of the Lagrangian function in nonconvex
+   optimization, JOTA 104:109–120.
+8. **Dür & Horst (1997)**, Lagrange duality and partitioning techniques in nonconvex
+   global optimization, JOTA 95:347–369.
 
-Ya no hace falta: Van Voorhis (2002), QIBEX (2025) y Neumaier–Shcherbina (cubierto por
-la revisión de Guilbeau et al.).
+Ya leídos: Van Voorhis (2002), QIBEX (2025), revisión de Neumaier–Shcherbina,
+Messine–Trombettoni (2019), Jansson (2004, SIAM, LP), Kearfott–Castille–Tyagi (2013),
+Adjiman et al. (1996).
