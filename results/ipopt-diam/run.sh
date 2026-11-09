@@ -21,6 +21,7 @@ touch $OUT
 for arm in ${ARMS:-d1e8 d1e12 dinf}; do while read i; do echo "$arm $i"; done < ${INSTANCES:-results/node-selection/closed-instances.txt}; done |
 xargs -P ${JOBS:-8} -n2 sh -c '
   arm=$0; i=$1; grep -q "\"instance\": \"$i\", \"arm\": \"$arm\"" '"$OUT"' && exit 0
+  L=ipoptxn
   case $arm in
     d1e8)  d=1e8 ;;
     d1e12) d=1e12 ;;
@@ -47,6 +48,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     full)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64" ;;
     # ablation (deterministic: guided budget in nodes), same host
     abase) d=1e8;  x="" ;;
+    anoip) d=1e8;  x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
     aipopt) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     acvx0) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     acvx) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
@@ -59,7 +61,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     g10p50) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.1 --ipopt-guided-patience=50" ;;
     final) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;  # nc1e5 with --ipopt-start-max (binary of 4197d3e+)
   esac
-  r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
+  r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup $L \
        --ipopt-diam=$d $x --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
   [ -z "$r" ] && r="{\"status\": \"killed\"}"
   echo "{\"instance\": \"$i\", \"arm\": \"$arm\", \"result\": $r}" >> '"$OUT"'

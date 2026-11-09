@@ -14,6 +14,7 @@ touch $OUT
 for arm in ${ARMS:-ipoptfix}; do while read i; do echo "$arm $i"; done < ${INSTANCES:-results/anytime/open-instances.txt}; done |
 xargs -P ${JOBS:-8} -n2 sh -c '
   arm=$0; i=$1; grep -q "\"instance\": \"$i\", \"arm\": \"$arm\"" '"$OUT"' && exit 0
+  L=ipoptxn
   case $arm in
     base)     x="" ;;
     ipoptfix) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
@@ -28,6 +29,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     gcvx)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close" ;;
     full)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64" ;;
     abase) x="" ;;
+    anoip) x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
     aipopt) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     acvx0) x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     acvx) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
@@ -39,7 +41,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     g10p50)   x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.1 --ipopt-guided-patience=50" ;;
     ms20)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-multistart=20" ;;
   esac
-  r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
+  r=$(timeout $(($TLIM+200)) '"$BIN"' benchs/optim/all/$i --solve --bisector lsmear-lffix --relax both --loup $L \
        $x --bound-trace --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
   [ -z "$r" ] && r="{\"status\": \"killed\"}"
   echo "{\"instance\": \"$i\", \"arm\": \"$arm\", \"result\": $r}" >> '"$OUT"'
