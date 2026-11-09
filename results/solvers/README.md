@@ -62,3 +62,16 @@ objective enclosure unbounded below, which is an overestimation, not a proof:
 test_infinity3 (SCIP: -1e-8), like (SCIP finds 1005.5 < IbexOpt's 1218.5),
 like-1, ex8_5_6-1, ship, modele_opti. ibexopt-ml now reports these as
 `no_lower_bound` (not closed), and analyze.py reclassifies older runs.
+
+## Performance profiles (pairwise)
+
+`perfprof.py` -> `perfprof.png` / `perfprof.pdf`: one panel per pair (SCIP vs
+one IbexOpt arm), so a third solver never changes a pair's ratios. Instances
+translated for SCIP, closed by one of the two and taking > 1 s for one of the
+two; times floored at 1 s. Fraction within τ of the faster of the two:
+
+| pair | n | fastest (τ=1): SCIP / IbexOpt | closed at τ=1024: SCIP / IbexOpt |
+|---|---|---|---|
+| SCIP vs no Ipopt | 102 | 59 % / 41 % | 75 % / 77 % |
+| SCIP vs + Ipopt | 100 | 54 % / 46 % | 73 % / 80 % |
+| SCIP vs + Ipopt + Lagrangian bound | 94 | 46 % / 54 % | 69 % / 85 % |
