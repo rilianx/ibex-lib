@@ -476,6 +476,10 @@ void ExprSimplify::visit(const ExprSub& e) {
 	visit_add_sub(e,false);
 }
 
+// --sqr-rewrite (ibexopt-ml): rewrite e*e as sqr(e) when both factors are the
+// same expression. Off by default (changes every arm's evaluation).
+bool expr_sqr_rewrite=false;
+
 void ExprSimplify::visit(const ExprMul& e) {
 
 	DoubleIndex l_idx;
@@ -527,6 +531,13 @@ void ExprSimplify::visit(const ExprMul& e) {
 			// always put the constant on the left side
 			// (to apply the previous cases upstream)
 			insert(e, left(l)*(right(l)*r));
+	}
+	else if (expr_sqr_rewrite && l.dim.is_scalar() && r.dim.is_scalar()
+			&& (&l == &r || (l.height == r.height && l.size == r.size && l == r))) {
+		// e*e -> sqr(e): the interval product of two occurrences of the same
+		// expression ignores the dependency ([-1,oo]*[-1,oo] = [-oo,oo] where
+		// sqr gives [0,oo]); sqr is exact (3pk: sums of squares written as products)
+		insert(e, sqr(l));
 	}
 	else {
 		if (is_cst(r) && r.dim.is_scalar())
