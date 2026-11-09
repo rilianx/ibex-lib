@@ -71,3 +71,29 @@ excluded). "No feasible point" = timeouts without a loup.
   (certification box) 0.4–5 %.
 - The pairwise time metric barely separates the arms on the 223 set because
   most of those instances take < 1 s (1 s floor).
+
+## Relative times t(A)/max(t(A), t(abase))
+
+Per instance r_A = t_A / max(t_A, t_base) and r_base = t_base / max(t_A, t_base)
+(1 = the slower of the two). Timeouts count as 310 s. Only instances with
+max(t_A, t_base) > 1 s. Diff = mean(r_A − r_base), bootstrap IC95; W/L = A
+faster / slower by more than 5 %.
+
+| arm | set | n | mean r_A | mean r_base | diff [IC95] | W/L |
+|---|---|---|---|---|---|---|
+| aipopt | 223 | 59 | 0.930 | 0.950 | −0.021 [−0.087, +0.040] | 8/10 |
+| acvx0 | 223 | 57 | 0.882 | 0.988 | −0.106 [−0.174, −0.046] | 16/3 |
+| acvx | 223 | 59 | 0.836 | 0.954 | −0.119 [−0.204, −0.035] | 20/13 |
+| afull | 223 | 61 | 0.825 | 0.918 | −0.094 [−0.198, +0.001] | 24/22 |
+| aipopt | 75 open | 60 | 0.998 | 1.000 | −0.001 [−0.004, +0.000] | 1/0 |
+| acvx0 | 75 open | 60 | 0.870 | 1.000 | −0.130 [−0.215, −0.049] | 8/0 |
+| acvx | 75 open | 60 | 0.868 | 1.000 | −0.131 [−0.216, −0.050] | 9/0 |
+| afull | 75 open | 60 | 0.870 | 0.999 | −0.129 [−0.215, −0.048] | 8/0 |
+| aipopt | all | 119 | 0.964 | 0.975 | −0.011 [−0.045, +0.019] | 9/10 |
+| acvx0 | all | 117 | 0.876 | 0.994 | −0.118 [−0.176, −0.068] | 24/3 |
+| acvx | all | 119 | 0.852 | 0.977 | −0.125 [−0.185, −0.066] | 29/13 |
+| afull | all | 121 | 0.847 | 0.958 | −0.111 [−0.178, −0.048] | 32/22 |
+
+Worst afull slowdowns (223 set): ex8_5_6 1.7 → 6.5 s, haldmads 1.0 → 3.3,
+ex8_2_4 2.5 → 5.8, ex8_5_1bis 1.2 → 2.1. On the open set the gains are the 8
+instances that close (the rest time out in both arms).
