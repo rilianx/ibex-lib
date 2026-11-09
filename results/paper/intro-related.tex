@@ -4,8 +4,8 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{hyperref}
 
-\title{The local solver as primal and dual oracle in a rigorous interval branch and bound:
-certified Lagrangian bounds from Ipopt multipliers}
+\title{Certified Lagrangian lower bounds from local-solver multipliers
+in a rigorous interval branch and bound}
 \author{Draft --- Introduction and Related Work}
 \date{November 2026}
 
@@ -16,20 +16,20 @@ certified Lagrangian bounds from Ipopt multipliers}
 \textbf{[Draft abstract.]} Interval branch-and-bound solvers such as IbexOpt compute
 rigorous enclosures of the global optimum of nonconvex continuous problems, but their
 lower bounds come from linear relaxations of the problem over each box and stay loose
-long after the incumbent is optimal. Meanwhile, the local solver that most of these codes
+long after the incumbent is optimal. Meanwhile, the local NLP solver that these codes
 call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
 multipliers that are discarded. We show that this by-product is enough to compute a
-rigorous lower bound on the original nonconvex problem at every node where the local
+rigorous lower bound on the original nonconvex problem at the nodes where the local
 solver runs: we enclose the Hessian of the Lagrangian with the solver's multipliers by
 interval arithmetic and either certify that it is positive semidefinite on the box, or
 shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
-the relaxation of equality constraints, yields a valid lower bound. Together with a more
-robust integration of Ipopt into IbexOpt, the bound closes 8 more of 298 benchmark
-instances, halves the number of nodes and reduces the total time by 20\% on the
-instances solved by all versions, and reduces the primal and primal--dual integrals by
-33\% and 16\% on the instances that stay open, while the time per node grows by at most
-12\%.
+the relaxation of equality constraints, yields a valid lower bound. In IbexOpt with Ipopt
+as local solver, on 298 benchmark instances, the bound closes 8 more instances and
+roughly halves the solving time on the instances that take more than a second, at a
+cost below 1\% of the running time. We also propose an adaptive schedule for the
+upper-bounding calls of the local solver, which improves the anytime behaviour on the
+instances that are not solved.
 \end{abstract}
 
 \section{Introduction}
@@ -56,14 +56,16 @@ optimal value of a linear relaxation made safe with the technique of
 \citet{NeumaierShcherbina2004} and \citet{Jansson2004lp}, and (iii)~searches for a
 feasible point that may improve the incumbent value (the \emph{loup}). In IbexOpt,
 step~(iii) combines cheap heuristics (probing and the inner regions of
-\citet{Araya2014}) with a call to the interior-point solver Ipopt
-\citep{WachterBiegler2006}. Ipopt's approximate local optimum is then certified as
-feasible by a small box built around it.
+\citet{Araya2014}) with calls to a local NLP solver, the interior-point solver Ipopt
+\citep{WachterBiegler2006}, whose approximate local optimum is then certified as
+feasible by a small box built around it. Calling a local solver for upper bounding is
+standard practice in global optimization; nothing in what follows is specific to Ipopt
+beyond the fact that it returns Lagrange multipliers.
 
 Two observations motivate this work. First, on a large benchmark the incumbent is usually
 optimal, or very close to it, long before the search ends. Most of the remaining effort
 goes into closing the gap from below, and the linear relaxations of the problem over
-small boxes are the bottleneck. Second, each successful call to Ipopt returns not only a
+small boxes are the bottleneck. Second, each successful call to the local solver returns not only a
 point $\hat x$ but a full primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$, with
 multipliers $\hat\mu \ge 0$ for the inequalities and $\hat\lambda$ for the equalities.
 Interval solvers discard the multipliers. Yet weak Lagrangian duality holds for
@@ -101,31 +103,29 @@ shrinks around a nondegenerate KKT point.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{A certified Lagrangian lower bound for the original nonconvex problem.}
-  It reuses the multipliers of the local solver that already performs upper bounding,
-  so it needs no relaxation, no subgradient iterations and no auxiliary optimization
-  problem. The only extra cost is one interval evaluation of the Hessian of the
-  Lagrangian per call. It handles nonlinear equalities, through the
+\item \textbf{A certified Lagrangian lower bound for the original nonconvex problem}
+  (main contribution). It reuses the multipliers of the local solver that already
+  performs upper bounding, so it needs no relaxation, no subgradient iterations and no
+  auxiliary optimization problem. Its only extra cost is one interval evaluation of
+  the Hessian of the Lagrangian per call. It handles nonlinear equalities, through the
   $\varepsilon_h$-correction in~\eqref{eq:weak}, and boxes on which the Lagrangian is
-  not convex, through the diagonal shift in~\eqref{eq:bound}.
-\item \textbf{A cost control (backoff)} that applies the bound only where it pays off,
-  together with positive-semidefiniteness tests of increasing strength:
-  interval Gerschgorin, the comparison matrix, and a midpoint--radius test with an
-  interval Cholesky factorization.
-\item \textbf{The local solver as primal oracle in an interval branch and bound}:
-  compared with IbexOpt without a local solver, calling Ipopt for upper bounding
-  divides the solving time by 1.6, the number of nodes by 3 and the primal integral
-  by 3. We also make this integration robust (calls on boxes of any width with
-  finite starting points, a gate on starting points far from the origin, a cascade
-  of certification boxes, hard per-call time limits) and add guided restarts from
-  maximin starting points of the best-first node, which mainly improve the anytime
-  behaviour.
-\item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark,
-  including an ablation of each component and anytime measures (primal and
-  primal--dual integrals) on the 75 instances that are not solved within the time
-  limit. Against the solver without a local solver, Ipopt as primal oracle
-  alone reaches 0.62 of the time and, with the Lagrangian bound computed from its
-  multipliers (dual oracle), 0.34 of the time and 13 more closed instances.
+  not convex, through the diagonal shift in~\eqref{eq:bound}; on boxes where convexity
+  is certified it is the bound of \citet{Jansson2004convex}.
+\item \textbf{Making the bound cheap}: a backoff that applies it only where it pays
+  off, and positive-semidefiniteness tests of increasing strength (interval Gerschgorin,
+  comparison matrix, midpoint--radius test with an interval Cholesky factorization).
+  The bound costs less than 1\% of the running time and the time per node grows by at
+  most 5\%.
+\item \textbf{An adaptive schedule for the upper-bounding calls} of the local solver:
+  the gap between calls resets after a call that improves the incumbent and doubles
+  otherwise, with a hard limit per call. It does not change the time to solve, but
+  reduces the primal integral by about 20--30\% on the instances that are not solved.
+\item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark: an
+  ablation of each component, including IbexOpt without local solver as a reference,
+  anytime measures (primal and primal--dual integrals) on the 75 instances not solved
+  within the time limit, and a comparison with SCIP~10. With the Lagrangian bound,
+  the rigorous solver closes 236 instances, against 228 without it and 220 for SCIP.
+  \textbf{[TODO: SCIP with $\pm 10^{12}$ bounds for both solvers.]}
 \end{enumerate}
 
 \textbf{[TODO: paper outline.]}
@@ -152,8 +152,8 @@ posteriori by the dual-based correction of
 Feasible points are certified either by inner regions, i.e.\ polytopes or boxes proved
 entirely feasible \citep{Araya2014}, or by an existence proof in a small box around an
 approximate local optimum \citep{Kearfott2014}. Ipopt \citep{WachterBiegler2006} is
-the local solver used by IbexOpt for the latter. Our first group of contributions
-concerns how and when this local solver is called; the certification of its result
+the local solver used by IbexOpt for the latter. Our schedule for the upper-bounding
+calls concerns when this local solver is called; the certification of its result
 follows the existing small-box approach.
 
 Restarting a local solver from diversified starting points is standard in heuristic
@@ -161,9 +161,11 @@ global optimization, for instance OQNLP's scatter-search multistart with filters
 avoid starting near known local minima \citep{Ugray2007}. Inside rigorous solvers, the
 interaction between local search and the search tree has been studied mainly for node
 selection \citep{Neveu2016,ReyesAraya2024}. Charibde \citep{Vanaret2020} shares the
-incumbent between an evolutionary algorithm and an interval branch and bound. Our guided
-restarts run inside the rigorous search: they start from maximin points of the
-best-first node, under a node-count budget and a patience rule. Anytime behaviour is
+incumbent between an evolutionary algorithm and an interval branch and bound. Global
+solvers typically call their local solver at a fixed frequency or at selected nodes;
+our schedule adapts the frequency to the recent success of the calls, in the spirit of
+the adaptive heuristic scheduling of MIP solvers. \textbf{[TODO: cite a reference on
+adaptive primal-heuristic scheduling in MIP/MINLP.]} Anytime behaviour is
 measured with the primal integral of \citet{Berthold2013}, extended to the
 primal--dual gap.
 
