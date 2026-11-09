@@ -113,3 +113,39 @@ W/L = faster/slower than abase by > 5 %.
 | acvx0 | 73 (73) | 0.52 [0.36, 0.73] | 0.99 | 24/3 |
 | acvx | 73 (73) | 0.51 [0.34, 0.72] | 0.99 | 30/14 |
 | afull | 73 (73) | 0.50 [0.33, 0.73] | 1.00 | 32/23 |
+
+## Against no Ipopt at all (anoip: `--loup default`, LoupFinderDefault)
+
+Same common-set rule, now including anoip: instances some arm closes and some
+arm takes > 1 s: n_total = 81 (in parentheses, how many the arm closes).
+Ratio t(A)/t(anoip), times floored at 1 s, timeout = 310 s.
+
+| arm | closed /298 | n_total (closes) | geomean t/t(anoip) [IC95] | median | W/L vs anoip |
+|---|---|---|---|---|---|
+| anoip | 223 | 81 (69) | 1.00 | 1.00 | — |
+| abase | 228 | 81 (73) | 0.62 [0.48, 0.77] | 0.98 | 38/13 |
+| aipopt | 228 | 81 (73) | 0.62 [0.47, 0.77] | 0.98 | 38/13 |
+| acvx0 | 236 | 81 (81) | 0.35 [0.24, 0.51] | 0.86 | 51/11 |
+| acvx | 236 | 81 (81) | 0.34 [0.23, 0.51] | 0.84 | 50/13 |
+| afull | 236 | 81 (81) | 0.34 [0.22, 0.50] | 0.85 | 53/18 |
+
+Nodes (geometric mean vs anoip, 223 instances closed by every arm): abase
+0.34, aipopt 0.27, acvx0 0.27, acvx 0.20, afull 0.18.
+
+Open set (62 instances with metrics in every arm):
+
+| arm | primal integral | primal-dual integral | no feasible point (timeouts) |
+|---|---|---|---|
+| anoip | 0.522 | 0.702 | 22 |
+| abase | 0.162 | 0.576 | 8 |
+| aipopt | 0.145 | 0.574 | 4 |
+| acvx0 | 0.162 | 0.493 | 8 |
+| acvx | 0.139 | 0.491 | 4 |
+| afull | 0.108 | 0.481 | 4 |
+
+Ipopt as primal oracle (anoip -> abase) is the largest single effect: 0.62 of
+the time, a third of the nodes, primal integral 0.52 -> 0.16, feasible points
+on 14 more open instances, +5 closed. As dual oracle (abase -> acvx0, the
+Lagrangian bound from its multipliers): a further 0.35/0.62 = 0.56 of the
+time and +8 closed. All together: about a third of the time of the solver
+without Ipopt, 18 % of its nodes, +13 closed instances.

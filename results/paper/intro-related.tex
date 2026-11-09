@@ -112,21 +112,20 @@ shrinks around a nondegenerate KKT point.
   together with positive-semidefiniteness tests of increasing strength:
   interval Gerschgorin, the comparison matrix, and a midpoint--radius test with an
   interval Cholesky factorization.
-\item \textbf{A robust integration of Ipopt into an interval branch and bound}, as
-  primal oracle:
-  \begin{itemize}
-  \item calls on boxes of any width, with finite starting points on unbounded boxes;
-  \item a gate on starting points far from the origin;
-  \item a cascade of certification boxes around the local solution;
-  \item hard per-call time limits, enforced through the evaluation callbacks;
-  \item guided restarts from maximin starting points inside the best-first node.
-  \end{itemize}
+\item \textbf{The local solver as primal oracle in an interval branch and bound}:
+  compared with IbexOpt without a local solver, calling Ipopt for upper bounding
+  divides the solving time by 1.6, the number of nodes by 3 and the primal integral
+  by 3. We also make this integration robust (calls on boxes of any width with
+  finite starting points, a gate on starting points far from the origin, a cascade
+  of certification boxes, hard per-call time limits) and add guided restarts from
+  maximin starting points of the best-first node, which mainly improve the anytime
+  behaviour.
 \item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark,
   including an ablation of each component and anytime measures (primal and
   primal--dual integrals) on the 75 instances that are not solved within the time
-  limit. The ablation shows that the components are complementary: Ipopt improves
-  the upper bound, the Lagrangian bound the lower bound (it alone closes the 8 new
-  instances), and guided restarts the anytime primal behaviour.
+  limit. Against the solver without a local solver, Ipopt as primal oracle
+  alone reaches 0.62 of the time and, with the Lagrangian bound computed from its
+  multipliers (dual oracle), 0.34 of the time and 13 more closed instances.
 \end{enumerate}
 
 \textbf{[TODO: paper outline.]}
