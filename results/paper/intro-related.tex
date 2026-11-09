@@ -1,0 +1,294 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+
+\title{The local solver as primal and dual oracle in a rigorous interval branch and bound:
+certified Lagrangian bounds from Ipopt multipliers}
+\author{Draft --- Introduction and Related Work}
+\date{November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\textbf{[Draft abstract.]} Interval branch-and-bound solvers such as IbexOpt compute
+rigorous enclosures of the global optimum of nonconvex continuous problems, but their
+lower bounds come from linear relaxations of the problem over each box and stay loose
+long after the incumbent is optimal. Meanwhile, the local solver that most of these codes
+call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
+multipliers that are discarded. We show that this by-product is enough to compute a
+rigorous lower bound on the original nonconvex problem at every node where the local
+solver runs: we enclose the Hessian of the Lagrangian with the solver's multipliers by
+interval arithmetic and either certify that it is positive semidefinite on the box, or
+shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
+Lagrangian at the local solution, minimized in closed form over the box and corrected for
+the relaxation of equality constraints, yields a valid lower bound. Together with a more
+robust integration of Ipopt into IbexOpt, the bound closes 12 more of 298 benchmark
+instances, halves the number of nodes on the instances solved by both versions, and
+reduces the primal--dual integral on the instances that stay open.
+\textbf{[TODO: update with the final ablation.]}
+\end{abstract}
+
+\section{Introduction}
+
+We consider the nonconvex continuous optimization problem
+\begin{equation}\label{eq:P}
+  \min_{x \in X} \; f(x) \quad \text{s.t.} \quad g(x) \le 0, \quad h(x) = 0,
+\end{equation}
+where $X \subset \mathbb{R}^n$ is a box and $f$, $g$ and $h$ are twice
+differentiable functions given by explicit expressions. \emph{Rigorous} global
+optimization solvers return an interval that provably contains the global minimum value,
+even in the presence of rounding errors. Interval branch-and-bound codes such as
+GlobSol \citep{Kearfott1996}, IBBA \citep{Ninin2015} and IbexOpt
+\citep{Trombettoni2011,Araya2014} reach this guarantee by evaluating every quantity
+that affects pruning with outward-rounded interval arithmetic
+\citep{HansenWalster2004,Neumaier2004}. The equalities are relaxed to
+$|h(x)| \le \varepsilon_h$, and the solver certifies feasible points inside the
+relaxed region.
+
+In such a solver, each node of the search tree is a box $[x] \subseteq X$ on which the
+solver (i)~contracts the box with constraint propagation and with linear relaxations,
+(ii)~computes a lower bound of $f$ over the feasible part of the box, typically as the
+optimal value of a linear relaxation made safe with the technique of
+\citet{NeumaierShcherbina2004} and \citet{Jansson2004lp}, and (iii)~searches for a
+feasible point that may improve the incumbent value (the \emph{loup}). In IbexOpt,
+step~(iii) combines cheap heuristics (probing and the inner regions of
+\citet{Araya2014}) with a call to the interior-point solver Ipopt
+\citep{WachterBiegler2006}. Ipopt's approximate local optimum is then certified as
+feasible by a small box built around it.
+
+Two observations motivate this work. First, on a large benchmark the incumbent is usually
+optimal, or very close to it, long before the search ends. Most of the remaining effort
+goes into closing the gap from below, and the linear relaxations of the problem over
+small boxes are the bottleneck. Second, each successful call to Ipopt returns not only a
+point $\hat x$ but a full primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$, with
+multipliers $\hat\mu \ge 0$ for the inequalities and $\hat\lambda$ for the equalities.
+Interval solvers discard the multipliers. Yet weak Lagrangian duality holds for
+\emph{any} multipliers, not only optimal ones: for every feasible $x$ of the relaxed
+problem,
+\begin{equation}\label{eq:weak}
+  f(x) \;\ge\; L(x) - \varepsilon_h \textstyle\sum_j |\hat\lambda_j|,
+  \qquad L(x) := f(x) + \hat\mu^\top g(x) + \hat\lambda^\top h(x).
+\end{equation}
+A lower bound on $f$ over the feasible part of $[x]$ therefore follows from any lower
+bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left. When
+$L$ is convex on $[x]$, its tangent plane at $\hat x$ is such a bound, and it is tight
+when $\hat x$ is a KKT point of the problem restricted to $[x]$. This is the theorem of
+\citet{Jansson2004convex} and \citet{MessineTrombettoni2019} for convex programs.
+
+Our point is that the convexity hypothesis is needed only for $L$ with the
+\emph{fixed} multipliers $(\hat\mu,\hat\lambda)$ and only \emph{on the current box}. It
+can therefore be checked numerically, node by node, in the original nonconvex problem.
+Let $[H]$ be an interval enclosure of $\nabla^2 L$ over $[x]$, and let $d \ge 0$ be a
+vector such that $H + \operatorname{diag}(d)$ is positive semidefinite for every
+$H \in [H]$. Following the scaled Gerschgorin rule of \citet{Adjiman1998a}, we take
+$d_i = \max\{0, \sum_{j \ne i} \lvert [H]_{ij} \rvert - h^L_{ii}\}$, where $h^L_{ii}$ is the lower end of $[H]_{ii}$.
+Then, for every $x \in [x]$,
+\begin{equation}\label{eq:bound}
+  L(x) \ge L(\hat x) + \nabla L(\hat x)^\top (x - \hat x)
+          - \frac{1}{2} \sum_i d_i (x_i - \hat x_i)^2 .
+\end{equation}
+The right-hand side is separable, so it is bounded below over $[x]$ in closed form, in
+$O(n)$ operations once the gradient is known. Combined with \eqref{eq:weak} and
+evaluated in interval arithmetic, it yields a rigorous lower bound on~\eqref{eq:P}
+over $[x]$, which raises the node's lower bound or prunes the node. When the Hessian
+is certified positive semidefinite on the box ($d = 0$), the bound reduces to that of
+\citet{Jansson2004convex}. It then converges to the local optimum value as the box
+shrinks around a nondegenerate KKT point.
+
+\paragraph{Contributions.}
+\begin{enumerate}
+\item \textbf{A certified Lagrangian lower bound for the original nonconvex problem.}
+  It reuses the multipliers of the local solver that already performs upper bounding,
+  so it needs no relaxation, no subgradient iterations and no auxiliary optimization
+  problem. The only extra cost is one interval evaluation of the Hessian of the
+  Lagrangian per call. It handles nonlinear equalities, through the
+  $\varepsilon_h$-correction in~\eqref{eq:weak}, and boxes on which the Lagrangian is
+  not convex, through the diagonal shift in~\eqref{eq:bound}.
+\item \textbf{A cost control (backoff)} that applies the bound only where it pays off,
+  together with positive-semidefiniteness tests of increasing strength:
+  interval Gerschgorin, the comparison matrix, and a midpoint--radius test with an
+  interval Cholesky factorization.
+\item \textbf{A robust integration of Ipopt into an interval branch and bound}, as
+  primal oracle:
+  \begin{itemize}
+  \item calls on boxes of any width, with finite starting points on unbounded boxes;
+  \item a gate on starting points far from the origin;
+  \item a cascade of certification boxes around the local solution;
+  \item hard per-call time limits, enforced through the evaluation callbacks;
+  \item guided restarts from maximin starting points inside the best-first node.
+  \end{itemize}
+\item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark,
+  including an ablation of each component and anytime measures (primal and
+  primal--dual integrals) on the 75 instances that are not solved within the time
+  limit. \textbf{[TODO: fill in from the final ablation.]}
+\end{enumerate}
+
+\textbf{[TODO: paper outline.]}
+
+\section{Related work}
+
+\subsection{Rigorous global optimization and upper bounding with local solvers}
+
+Spatial branch-and-bound solvers for nonconvex problems include BARON
+\citep{RyooSahinidis1996,TawarmalaniSahinidis2005}, Couenne \citep{Belotti2009},
+ANTIGONE \citep{MisenerFloudas2014} and SCIP \citep{VigerskeGleixner2018}. They build
+convex (mostly polyhedral) relaxations from a factorable reformulation and call a local
+NLP solver to find feasible points. Their bounds are computed in floating point, with
+tolerances, and are not guaranteed against rounding errors.
+
+Interval solvers trade speed for rigor
+\citep{Kearfott1996,HansenWalster2004,Neumaier2004}. In IbexOpt
+\citep{ChabertJaulin2009,Trombettoni2011,Araya2014}, the lower bound comes from
+interval evaluation and from linear relaxations, either XTaylor linearizations or
+affine arithmetic \citep{Ninin2015,Araya2024hybrid}. These relaxations are made safe a
+posteriori by the dual-based correction of
+\citet{NeumaierShcherbina2004} \citep[see also][]{Jansson2004lp,Guilbeau}.
+
+Feasible points are certified either by inner regions, i.e.\ polytopes or boxes proved
+entirely feasible \citep{Araya2014}, or by an existence proof in a small box around an
+approximate local optimum \citep{Kearfott2014}. Ipopt \citep{WachterBiegler2006} is
+the local solver used by IbexOpt for the latter. Our first group of contributions
+concerns how and when this local solver is called; the certification of its result
+follows the existing small-box approach.
+
+Restarting a local solver from diversified starting points is standard in heuristic
+global optimization, for instance OQNLP's scatter-search multistart with filters that
+avoid starting near known local minima \citep{Ugray2007}. Inside rigorous solvers, the
+interaction between local search and the search tree has been studied mainly for node
+selection \citep{Neveu2016,ReyesAraya2024}. Charibde \citep{Vanaret2020} shares the
+incumbent between an evolutionary algorithm and an interval branch and bound. Our guided
+restarts run inside the rigorous search: they start from maximin points of the
+best-first node, under a node-count budget and a patience rule. Anytime behaviour is
+measured with the primal integral of \citet{Berthold2013}, extended to the
+primal--dual gap.
+
+\subsection{Rigorous bounds from approximate dual information}
+
+Weak duality turns any dual-feasible vector into a valid bound. Making this rigorous
+with approximate multipliers is a well-established idea for linear programs.
+
+\citet{NeumaierShcherbina2004} and, independently, \citet{Jansson2004lp} showed how to
+compute a safe lower bound on the optimal value of a linear program from an approximate
+dual solution, by bounding the dual infeasibility over the finite simple bounds with
+directed rounding. \citet{Guilbeau} review these bounds and correct typographical errors
+in the original formulas. This correction is what makes linear relaxations safe inside
+interval solvers, IbexOpt included.
+
+\citet{Jansson2004convex} extended the approach to convex programs
+$\min f(x)$ s.t.\ $G(x) \le 0$, $Hx = h$ with simple bounds, where $f$ and every
+component of $G$ are convex and the equalities are linear. Each function is replaced by
+its tangent at an approximate solution $\tilde x$. The dual of the resulting linear
+program, evaluated at the approximate multipliers, gives the bound, which is exact at a
+KKT point. The method is a post-processing of any nonlinear solver's output, and it
+handles uncertain data and infinite bounds.
+\citet{MessineTrombettoni2019} derived the same bound from a second-order Taylor
+expansion of the Lagrangian and the KKT conditions, in the form
+$f(x^*) \ge L(\tilde x) + (z - \tilde x)^\top \nabla L(\tilde x)$, with $z_i$ the end
+of $[x_i]$ selected by the sign of $\partial_i L(\tilde x)$. They proposed it to make
+convex relaxations solved by a local solver reliable inside interval codes such as Ibex
+and IBBA.
+
+QIBEX \citep{Elloumi2025} put this bound to work. It solves mixed-integer quadratically
+constrained programs in IbexOpt with a convex quadratic relaxation obtained once from a
+semidefinite program. It certifies both the convexity of the relaxation and, via the
+same theorem, its lower bound.
+
+All of these works apply the bound to a problem that is convex \emph{by construction}:
+a linear program, a convex program, or a convex relaxation. Our bound applies it to the
+original nonconvex problem. In the proofs of \citet{Jansson2004convex} and
+\citet{MessineTrombettoni2019}, convexity of $f$ and $G$ and linearity of the equalities
+serve only one purpose: making the Lagrangian with the \emph{given} multipliers convex
+on the domain. We certify exactly this weaker condition, box by box, from an interval
+Hessian. When it fails, we restore validity with a diagonal shift. The primal--dual pair
+comes from the local solver already used for upper bounding, so no relaxation is built
+or solved.
+
+\subsection{Convex underestimators and the $\alpha$BB shift}
+
+The $\alpha$BB method \citep{Androulakis1995,Adjiman1998a,Adjiman1998b} underestimates
+each general nonconvex term $f$ on a box by
+$f(x) + \sum_i \alpha_i (x_i^L - x_i)(x_i^U - x_i)$. This underestimator is convex if
+and only if $\nabla^2 f + 2\operatorname{diag}(\alpha)$ is positive semidefinite on the
+box \citep[Thm.~2.1]{Adjiman1998a}.
+
+\citet{Adjiman1998a} give several rigorous ways to obtain $\alpha$ from an interval
+Hessian:
+\begin{itemize}
+\item $O(n^2)$ rules: Gerschgorin and scaled Gerschgorin;
+\item $O(n^3)$ rules: E-matrix, Mori--Kokame, the lower bounding Hessian and the Hertz
+  method;
+\item Kharitonov's theorem applied to the interval characteristic polynomial;
+\item an SDP-based rule.
+\end{itemize}
+In the scaled Gerschgorin rule (their Thm.~3.13), for any $d > 0$, taking
+$\alpha_i = \max\{0, -\frac{1}{2}(a^L_{ii} - \sum_{j\ne i} \lvert a \rvert_{ij} d_j/d_i)\}$
+makes $A + 2\operatorname{diag}(\alpha)$ positive semidefinite for every $A \in [A]$.
+With $d = \mathbf 1$ this is our shift; they also propose
+$d = x^U - x^L$.
+
+In their experiments \citep{Adjiman1998b}:
+\begin{itemize}
+\item computing $\alpha$ takes about 2.5\% of the CPU time for most rules;
+\item the scaled Gerschgorin rule with $d = x^U - x^L$, the E-matrix rule and the Hertz
+  rule are usually the best, but the differences are modest;
+\item branching on the variables that most degrade the underestimator speeds up
+  convergence.
+\end{itemize}
+
+Our use of the shift differs in two ways. First, we shift the \emph{aggregated
+Lagrangian} with fixed multipliers rather than each nonconvex term, so cancellations
+between objective and constraints, which can make $L$ convex on a box where $f$ and
+$g$ are not, come for free. Second, $\alpha$BB solves a convex nonlinear program per
+node with the underestimators. We use the shifted Lagrangian only through its tangent
+at the local solution~\eqref{eq:bound}, a separable expression bounded in closed form.
+The bound is weaker than the optimal value of the $\alpha$BB relaxation, but it costs
+one interval Hessian evaluation instead of a nonlinear solve.
+
+\subsection{Lagrangian underestimates in branch and bound}
+
+\citet{VanVoorhis2002} is the closest predecessor: it uses the Lagrangian, not each
+function, as the object to underestimate. He solves quadratically constrained programs
+by a branch and bound in which the lower bound minimizes a convex underestimator of the
+Lagrangian over the box. The underestimator is built term by term for quadratic
+functions; the multipliers are updated by subgradient steps in each node; and interval
+Newton on the Fritz John conditions discards boxes. That work does not address rounding
+errors.
+
+He observes that obtaining good multipliers takes several iterations, and suggests
+using Lagrangian underestimates ``at later stages of the branch-and-bound process, when
+good multiplier estimates have been obtained via RLT or some other relaxation
+strategy''. Our approach takes the multipliers, at no cost, from the local solver that
+already runs at those stages. It replaces the per-node convex program by the
+closed-form bound~\eqref{eq:bound}, covers general twice-differentiable functions, and
+is rigorous.
+
+In BARON, the multipliers of the relaxation are used for optimality-based domain
+reduction \citep{RyooSahinidis1996}. Extending our bound to reduce variable ranges
+with the same tangent is a natural next step.
+
+\subsection{Certifying convexity}
+
+Deciding whether every matrix in a symmetric interval matrix is positive semidefinite
+is NP-hard, so rigorous solvers rely on sufficient conditions. Examples include
+Gerschgorin-type and comparison-matrix tests, midpoint--radius conditions such as
+$\lambda_{\min}(H_c) \ge \rho(H_\Delta)$, and their parametric refinements
+\citep{Hladik2018}.
+
+Symbolic approaches propagate convexity through the expression graph
+\citep{Fourer2010}. \citet{Kearfott2013} identify the (possibly intermediate)
+variables responsible for nonconvexity, aiming at a non-adaptive subdivision of only
+those variables. In interval branch and bound, the reverse use of the interval Hessian
+is classical: the nonconvexity test discards boxes on which the objective cannot have
+an interior minimizer \citep{HansenWalster2004}.
+
+These analyses address the convexity of the \emph{problem functions}. Ours concerns the
+Lagrangian with fixed multipliers on one box, and it is numerical and local. A symbolic
+analysis could complement it by predicting on which instances the certification is
+likely to succeed.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}

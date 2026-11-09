@@ -1,0 +1,356 @@
+Introduction
+
+We consider the nonconvex continuous optimization problem
+min_(x ∈ X) f(x)  s.t.  g(x) ≤ 0,  h(x) = 0,      (1)
+where X ⊂ ℝ^(n) is a box and f, g and h are twice differentiable functions given by
+explicit expressions. Rigorous global optimization solvers return an interval that
+provably contains the global minimum value, even in the presence of rounding errors.
+Interval branch-and-bound codes such as GlobSol (Kearfott 1996), IBBA (Ninin, Messine, and
+Hansen 2015) and IbexOpt (Trombettoni et al. 2011; Araya et al. 2014) reach this guarantee
+by evaluating every quantity that affects pruning with outward-rounded interval arithmetic
+(Hansen and Walster 2004; Neumaier 2004). The equalities are relaxed to |h(x)| ≤ ε_(h),
+and the solver certifies feasible points inside the relaxed region.
+
+In such a solver, each node of the search tree is a box [x] ⊆ X on which the solver
+(i) contracts the box with constraint propagation and with linear relaxations,
+(ii) computes a lower bound of f over the feasible part of the box, typically as the
+optimal value of a linear relaxation made safe with the technique of Neumaier and
+Shcherbina (2004) and Jansson (2004b), and (iii) searches for a feasible point that may
+improve the incumbent value (the loup). In IbexOpt, step (iii) combines cheap heuristics
+(probing and the inner regions of Araya et al. (2014)) with a call to the interior-point
+solver Ipopt (Wächter and Biegler 2006). Ipopt’s approximate local optimum is then
+certified as feasible by a small box built around it.
+
+Two observations motivate this work. First, on a large benchmark the incumbent is usually
+optimal, or very close to it, long before the search ends. Most of the remaining effort
+goes into closing the gap from below, and the linear relaxations of the problem over small
+boxes are the bottleneck. Second, each successful call to Ipopt returns not only a point x̂
+but a full primal–dual pair (x̂,μ̂,λ̂), with multipliers μ̂ ≥ 0 for the inequalities and λ̂ for
+the equalities. Interval solvers discard the multipliers. Yet weak Lagrangian duality
+holds for any multipliers, not only optimal ones: for every feasible x of the relaxed
+problem,
+f(x) ≥ L(x) − ε_(h)∑_(j)|λ̂_(j)|,   L(x) := f(x) + μ̂^(⊤)g(x) + λ̂^(⊤)h(x).      (2)
+A lower bound on f over the feasible part of [x] therefore follows from any lower bound of
+the Lagrangian L over the whole box, with no constraints left. When L is convex on [x],
+its tangent plane at x̂ is such a bound, and it is tight when x̂ is a KKT point of the
+problem restricted to [x]. This is the theorem of Jansson (2004a) and Messine and
+Trombettoni (2019) for convex programs.
+
+Our point is that the convexity hypothesis is needed only for L with the fixed multipliers
+(μ̂,λ̂) and only on the current box. It can therefore be checked numerically, node by node,
+in the original nonconvex problem. Let [H] be an interval enclosure of ∇²L over [x], and
+let d ≥ 0 be a vector such that H + diag (d) is positive semidefinite for every H ∈ [H].
+Following the scaled Gerschgorin rule of Adjiman et al. (1998), we take
+d_(i) = max {0, ∑_(j ≠ i)|[H]_(ij)| − h_(ii)^(L)}, where h_(ii)^(L) is the lower end of
+[H]_(ii). Then, for every x ∈ [x],
+$$L(x) \ge L(\hat x) + \nabla L(\hat x)^\top (x - \hat x)
+          - \frac{1}{2} \sum_i d_i (x_i - \hat x_i)^2 .
+\qquad\qquad (3)$$
+The right-hand side is separable, so it is bounded below over [x] in closed form, in O(n)
+operations once the gradient is known. Combined with (2) and evaluated in interval
+arithmetic, it yields a rigorous lower bound on (1) over [x], which raises the node’s
+lower bound or prunes the node. When the Hessian is certified positive semidefinite on the
+box (d = 0), the bound reduces to that of Jansson (2004a). It then converges to the local
+optimum value as the box shrinks around a nondegenerate KKT point.
+
+Contributions.
+
+1.  A certified Lagrangian lower bound for the original nonconvex problem. It reuses the
+    multipliers of the local solver that already performs upper bounding, so it needs no
+    relaxation, no subgradient iterations and no auxiliary optimization problem. The only
+    extra cost is one interval evaluation of the Hessian of the Lagrangian per call. It
+    handles nonlinear equalities, through the ε_(h)-correction in (2), and boxes on which
+    the Lagrangian is not convex, through the diagonal shift in (3).
+
+2.  A cost control (backoff) that applies the bound only where it pays off, together with
+    positive-semidefiniteness tests of increasing strength: interval Gerschgorin, the
+    comparison matrix, and a midpoint–radius test with an interval Cholesky factorization.
+
+3.  A robust integration of Ipopt into an interval branch and bound, as primal oracle:
+
+    -   calls on boxes of any width, with finite starting points on unbounded boxes;
+
+    -   a gate on starting points far from the origin;
+
+    -   a cascade of certification boxes around the local solution;
+
+    -   hard per-call time limits, enforced through the evaluation callbacks;
+
+    -   guided restarts from maximin starting points inside the best-first node.
+
+4.  An experimental study on 298 instances of the IbexOpt benchmark, including an ablation
+    of each component and anytime measures (primal and primal–dual integrals) on the 75
+    instances that are not solved within the time limit. [TODO: fill in from the final
+    ablation.]
+
+[TODO: paper outline.]
+
+Related work
+
+Rigorous global optimization and upper bounding with local solvers
+
+Spatial branch-and-bound solvers for nonconvex problems include BARON (Ryoo and Sahinidis
+1996; Tawarmalani and Sahinidis 2005), Couenne (Belotti et al. 2009), ANTIGONE (Misener
+and Floudas 2014) and SCIP (Vigerske and Gleixner 2018). They build convex (mostly
+polyhedral) relaxations from a factorable reformulation and call a local NLP solver to
+find feasible points. Their bounds are computed in floating point, with tolerances, and
+are not guaranteed against rounding errors.
+
+Interval solvers trade speed for rigor (Kearfott 1996; Hansen and Walster 2004; Neumaier
+2004). In IbexOpt (Chabert and Jaulin 2009; Trombettoni et al. 2011; Araya et al. 2014),
+the lower bound comes from interval evaluation and from linear relaxations, either XTaylor
+linearizations or affine arithmetic (Ninin, Messine, and Hansen 2015; Araya et al. 2024).
+These relaxations are made safe a posteriori by the dual-based correction of Neumaier and
+Shcherbina (2004) (see also Jansson 2004b; Guilbeau et al., n.d.).
+
+Feasible points are certified either by inner regions, i.e. polytopes or boxes proved
+entirely feasible (Araya et al. 2014), or by an existence proof in a small box around an
+approximate local optimum (Kearfott 2014). Ipopt (Wächter and Biegler 2006) is the local
+solver used by IbexOpt for the latter. Our first group of contributions concerns how and
+when this local solver is called; the certification of its result follows the existing
+small-box approach.
+
+Restarting a local solver from diversified starting points is standard in heuristic global
+optimization, for instance OQNLP’s scatter-search multistart with filters that avoid
+starting near known local minima (Ugray et al. 2007). Inside rigorous solvers, the
+interaction between local search and the search tree has been studied mainly for node
+selection (Neveu, Trombettoni, and Araya 2016; Reyes and Araya 2024). Charibde (Vanaret et
+al. 2020) shares the incumbent between an evolutionary algorithm and an interval branch
+and bound. Our guided restarts run inside the rigorous search: they start from maximin
+points of the best-first node, under a node-count budget and a patience rule. Anytime
+behaviour is measured with the primal integral of Berthold (2013), extended to the
+primal–dual gap.
+
+Rigorous bounds from approximate dual information
+
+Weak duality turns any dual-feasible vector into a valid bound. Making this rigorous with
+approximate multipliers is a well-established idea for linear programs.
+
+Neumaier and Shcherbina (2004) and, independently, Jansson (2004b) showed how to compute a
+safe lower bound on the optimal value of a linear program from an approximate dual
+solution, by bounding the dual infeasibility over the finite simple bounds with directed
+rounding. Guilbeau et al. (n.d.) review these bounds and correct typographical errors in
+the original formulas. This correction is what makes linear relaxations safe inside
+interval solvers, IbexOpt included.
+
+Jansson (2004a) extended the approach to convex programs min f(x) s.t. G(x) ≤ 0, Hx = h
+with simple bounds, where f and every component of G are convex and the equalities are
+linear. Each function is replaced by its tangent at an approximate solution x̃. The dual of
+the resulting linear program, evaluated at the approximate multipliers, gives the bound,
+which is exact at a KKT point. The method is a post-processing of any nonlinear solver’s
+output, and it handles uncertain data and infinite bounds. Messine and Trombettoni (2019)
+derived the same bound from a second-order Taylor expansion of the Lagrangian and the KKT
+conditions, in the form f(x^(*)) ≥ L(x̃) + (z−x̃)^(⊤)∇L(x̃), with z_(i) the end of [x_(i)]
+selected by the sign of ∂_(i)L(x̃). They proposed it to make convex relaxations solved by a
+local solver reliable inside interval codes such as Ibex and IBBA.
+
+QIBEX (Elloumi et al. 2025) put this bound to work. It solves mixed-integer quadratically
+constrained programs in IbexOpt with a convex quadratic relaxation obtained once from a
+semidefinite program. It certifies both the convexity of the relaxation and, via the same
+theorem, its lower bound.
+
+All of these works apply the bound to a problem that is convex by construction: a linear
+program, a convex program, or a convex relaxation. Our bound applies it to the original
+nonconvex problem. In the proofs of Jansson (2004a) and Messine and Trombettoni (2019),
+convexity of f and G and linearity of the equalities serve only one purpose: making the
+Lagrangian with the given multipliers convex on the domain. We certify exactly this weaker
+condition, box by box, from an interval Hessian. When it fails, we restore validity with a
+diagonal shift. The primal–dual pair comes from the local solver already used for upper
+bounding, so no relaxation is built or solved.
+
+Convex underestimators and the αBB shift
+
+The αBB method (Androulakis, Maranas, and Floudas 1995; Adjiman et al. 1998; Adjiman,
+Androulakis, and Floudas 1998) underestimates each general nonconvex term f on a box by
+f(x) + ∑_(i)α_(i)(x_(i)^(L)−x_(i))(x_(i)^(U)−x_(i)). This underestimator is convex if and
+only if ∇²f + 2diag (α) is positive semidefinite on the box (Adjiman et al. 1998,
+Thm. 2.1).
+
+Adjiman et al. (1998) give several rigorous ways to obtain α from an interval Hessian:
+
+-   O(n²) rules: Gerschgorin and scaled Gerschgorin;
+
+-   O(n³) rules: E-matrix, Mori–Kokame, the lower bounding Hessian and the Hertz method;
+
+-   Kharitonov’s theorem applied to the interval characteristic polynomial;
+
+-   an SDP-based rule.
+
+In the scaled Gerschgorin rule (their Thm. 3.13), for any d > 0, taking
+$\alpha_i = \max\{0, -\frac{1}{2}(a^L_{ii} - \sum_{j\ne i} \lvert a \rvert_{ij} d_j/d_i)\}$
+makes A + 2diag (α) positive semidefinite for every A ∈ [A]. With d = 1 this is our shift;
+they also propose d = x^(U) − x^(L).
+
+In their experiments (Adjiman, Androulakis, and Floudas 1998):
+
+-   computing α takes about 2.5% of the CPU time for most rules;
+
+-   the scaled Gerschgorin rule with d = x^(U) − x^(L), the E-matrix rule and the Hertz
+    rule are usually the best, but the differences are modest;
+
+-   branching on the variables that most degrade the underestimator speeds up convergence.
+
+Our use of the shift differs in two ways. First, we shift the aggregated Lagrangian with
+fixed multipliers rather than each nonconvex term, so cancellations between objective and
+constraints, which can make L convex on a box where f and g are not, come for free.
+Second, αBB solves a convex nonlinear program per node with the underestimators. We use
+the shifted Lagrangian only through its tangent at the local solution (3), a separable
+expression bounded in closed form. The bound is weaker than the optimal value of the αBB
+relaxation, but it costs one interval Hessian evaluation instead of a nonlinear solve.
+
+Lagrangian underestimates in branch and bound
+
+Van Voorhis (2002) is the closest predecessor: it uses the Lagrangian, not each function,
+as the object to underestimate. He solves quadratically constrained programs by a branch
+and bound in which the lower bound minimizes a convex underestimator of the Lagrangian
+over the box. The underestimator is built term by term for quadratic functions; the
+multipliers are updated by subgradient steps in each node; and interval Newton on the
+Fritz John conditions discards boxes. That work does not address rounding errors.
+
+He observes that obtaining good multipliers takes several iterations, and suggests using
+Lagrangian underestimates “at later stages of the branch-and-bound process, when good
+multiplier estimates have been obtained via RLT or some other relaxation strategy”. Our
+approach takes the multipliers, at no cost, from the local solver that already runs at
+those stages. It replaces the per-node convex program by the closed-form bound (3), covers
+general twice-differentiable functions, and is rigorous.
+
+In BARON, the multipliers of the relaxation are used for optimality-based domain reduction
+(Ryoo and Sahinidis 1996). Extending our bound to reduce variable ranges with the same
+tangent is a natural next step.
+
+Certifying convexity
+
+Deciding whether every matrix in a symmetric interval matrix is positive semidefinite is
+NP-hard, so rigorous solvers rely on sufficient conditions. Examples include
+Gerschgorin-type and comparison-matrix tests, midpoint–radius conditions such as
+λ_(min)(H_(c)) ≥ ρ(H_(Δ)), and their parametric refinements (Hladík 2018).
+
+Symbolic approaches propagate convexity through the expression graph (Fourer et al. 2010).
+Kearfott, Castille, and Tyagi (2013) identify the (possibly intermediate) variables
+responsible for nonconvexity, aiming at a non-adaptive subdivision of only those
+variables. In interval branch and bound, the reverse use of the interval Hessian is
+classical: the nonconvexity test discards boxes on which the objective cannot have an
+interior minimizer (Hansen and Walster 2004).
+
+These analyses address the convexity of the problem functions. Ours concerns the
+Lagrangian with fixed multipliers on one box, and it is numerical and local. A symbolic
+analysis could complement it by predicting on which instances the certification is likely
+to succeed.
+
+Adjiman, Claire S., Ioannis P. Androulakis, and Christodoulos A. Floudas. 1998. “A Global
+Optimization Method, αBB, for General Twice-Differentiable Constrained NLPs – II.
+Implementation and Computational Results.” Computers & Chemical Engineering 22 (9):
+1159–79.
+
+Adjiman, Claire S., Stefan Dallwig, Christodoulos A. Floudas, and Arnold Neumaier. 1998.
+“A Global Optimization Method, αBB, for General Twice-Differentiable Constrained NLPs – I.
+Theoretical Advances.” Computers & Chemical Engineering 22 (9): 1137–58.
+
+Androulakis, Ioannis P., Costas D. Maranas, and Christodoulos A. Floudas. 1995. “αBB: A
+Global Optimization Method for General Constrained Nonconvex Problems.” Journal of Global
+Optimization 7 (4): 337–63.
+
+Araya, Ignacio, Frédéric Messine, Jordan Ninin, and Gilles Trombettoni. 2024. “Hybridizing
+Two Linear Relaxation Techniques in Interval-Based Solvers.” Journal of Global
+Optimization.
+
+Araya, Ignacio, Gilles Trombettoni, Bertrand Neveu, and Gilles Chabert. 2014. “Upper
+Bounding in Inner Regions for Global Optimization Under Inequality Constraints.” Journal
+of Global Optimization 60 (2): 145–64.
+
+Belotti, Pietro, Jon Lee, Leo Liberti, François Margot, and Andreas Wächter. 2009.
+“Branching and Bounds Tightening Techniques for Non-Convex MINLP.” Optimization Methods
+and Software 24 (4–5): 597–634.
+
+Berthold, Timo. 2013. “Measuring the Impact of Primal Heuristics.” Operations Research
+Letters 41 (6): 611–14.
+
+Chabert, Gilles, and Luc Jaulin. 2009. “Contractor Programming.” Artificial Intelligence
+173 (11): 1079–1100.
+
+Elloumi, Sourour, Amélie Lambert, Bertrand Neveu, and Gilles Trombettoni. 2025. “Global
+Solution of Quadratic Problems Using Interval Methods and Convex Relaxations.” Journal of
+Global Optimization 91: 331–53. https://doi.org/10.1007/s10898-024-01370-8.
+
+Fourer, Robert, Chandrakant Maheshwari, Arnold Neumaier, Dominique Orban, and Hermann
+Schichl. 2010. “Convexity and Concavity Detection in Computational Graphs: Tree Walks for
+Convexity Assessment.” INFORMS Journal on Computing 22 (1): 26–43.
+
+Guilbeau, Jared T., Md. Istiaq Hossain, Sam D. Karhbet, Ralph Baker Kearfott, Temitope S.
+Sanusi, and Lihong Zhao. n.d. “A Review of Computation of Mathematically Rigorous Bounds
+on Optima of Linear Programs.”
+
+Hansen, Eldon, and G. William Walster. 2004. Global Optimization Using Interval Analysis.
+2nd ed. New York: Marcel Dekker.
+
+Hladík, Milan. 2018. “Positive Semidefiniteness and Positive Definiteness of a Linear
+Parametric Interval Matrix.” arXiv:1704.05782.
+
+Jansson, Christian. 2004a. “A Rigorous Lower Bound for the Optimal Value of Convex
+Optimization Problems.” Journal of Global Optimization 28 (1): 121–37.
+
+———. 2004b. “Rigorous Lower and Upper Bounds in Linear Programming.” SIAM Journal on
+Optimization 14 (3): 914–35.
+
+Kearfott, Ralph Baker. 1996. Rigorous Global Search: Continuous Problems. Dordrecht:
+Kluwer Academic Publishers.
+
+———. 2014. “On Rigorous Upper Bounds to a Global Optimum.” Journal of Global Optimization
+59 (2): 459–76.
+
+Kearfott, Ralph Baker, Jessie Castille, and Gaurav Tyagi. 2013. “A General Framework for
+Convexity Analysis in Deterministic Global Optimization.” Journal of Global Optimization
+56 (3): 765–85.
+
+Messine, Frédéric, and Gilles Trombettoni. 2019. “Reliable Bounds for Convex Relaxation in
+Interval Global Optimization Codes.” In AIP Conference Proceedings (LeGO 2018),
+2070:020050. https://doi.org/10.1063/1.5090017.
+
+Misener, Ruth, and Christodoulos A. Floudas. 2014. “ANTIGONE: Algorithms for
+Continuous/Integer Global Optimization of Nonlinear Equations.” Journal of Global
+Optimization 59 (2–3): 503–26.
+
+Neumaier, Arnold. 2004. “Complete Search in Continuous Global Optimization and Constraint
+Satisfaction.” Acta Numerica 13: 271–369.
+
+Neumaier, Arnold, and Oleg Shcherbina. 2004. “Safe Bounds in Linear and Mixed-Integer
+Linear Programming.” Mathematical Programming 99 (2): 283–96.
+
+Neveu, Bertrand, Gilles Trombettoni, and Ignacio Araya. 2016. “Node Selection Strategies
+in Interval Branch and Bound Algorithms.” Journal of Global Optimization 64 (2): 289–304.
+
+Ninin, Jordan, Frédéric Messine, and Pierre Hansen. 2015. “A Reliable Affine Relaxation
+Method for Global Optimization.” 4OR 13 (3): 247–77.
+
+Reyes, Victor, and Ignacio Araya. 2024. “Node Selection Through Upper Bounding Local
+Search Methods in Branch & Bound Solvers for NCOPs.” Journal of Global Optimization.
+https://doi.org/10.1007/s10898-024-01403-2.
+
+Ryoo, Hong S., and Nikolaos V. Sahinidis. 1996. “A Branch-and-Reduce Approach to Global
+Optimization.” Journal of Global Optimization 8 (2): 107–38.
+
+Tawarmalani, Mohit, and Nikolaos V. Sahinidis. 2005. “A Polyhedral Branch-and-Cut Approach
+to Global Optimization.” Mathematical Programming 103 (2): 225–49.
+
+Trombettoni, Gilles, Ignacio Araya, Bertrand Neveu, and Gilles Chabert. 2011. “Inner
+Regions and Interval Linearizations for Global Optimization.” In Proceedings of the
+Twenty-Fifth AAAI Conference on Artificial Intelligence, 99–104.
+
+Ugray, Zsolt, Leon Lasdon, John Plummer, Fred Glover, James Kelly, and Rafael Martí. 2007.
+“Scatter Search and Local NLP Solvers: A Multistart Framework for Global Optimization.”
+INFORMS Journal on Computing 19 (3): 328–40.
+
+Van Voorhis, Tim. 2002. “A Global Optimization Algorithm Using Lagrangian Underestimates
+and the Interval Newton Method.” Journal of Global Optimization 24 (3): 349–70.
+
+Vanaret, Charlie, Jean-Baptiste Gotteland, Nicolas Durand, and Jean-Marc Alliot. 2020.
+“Certified Global Minima for a Benchmark of Difficult Optimization Problems.”
+arXiv:2003.09867.
+
+Vigerske, Stefan, and Ambros Gleixner. 2018. “SCIP: Global Optimization of Mixed-Integer
+Nonlinear Programs in a Branch-and-Cut Framework.” Optimization Methods and Software 33
+(3): 563–93.
+
+Wächter, Andreas, and Lorenz T. Biegler. 2006. “On the Implementation of an Interior-Point
+Filter Line-Search Algorithm for Large-Scale Nonlinear Programming.” Mathematical
+Programming 106 (1): 25–57.

@@ -1,0 +1,13 @@
+body { font-family: "Latin Modern Roman","Computer Modern","Times New Roman",serif; font-size: 11pt; line-height: 1.45; max-width: none; margin: 0; color: #000; }
+header#title-block-header { text-align: center; margin-bottom: 1.5em; }
+h1.title { font-size: 16pt; margin-bottom: .3em; }
+p.author, p.date { margin: .2em; }
+h1 { font-size: 13pt; margin-top: 1.4em; }
+h2 { font-size: 11.5pt; margin-top: 1.2em; }
+.abstract { margin: 0 2.5em; font-size: 10pt; }
+.abstract-title { text-align: center; font-weight: bold; }
+p { text-align: justify; margin: .5em 0; }
+math[display="block"] { margin: .6em 0; }
+#refs { font-size: 9.5pt; }
+#refs div { margin-bottom: .35em; padding-left: 1.5em; text-indent: -1.5em; }
+a { color: #1a4a8a; text-decoration: none; }
