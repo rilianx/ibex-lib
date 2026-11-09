@@ -100,23 +100,24 @@ instances that close (the rest time out in both arms).
 
 ## Time ratio t(A)/t(abase)
 
-Geometric mean of the per-instance ratio (bootstrap IC95) and median, over
-instances with max(t_A, t_base) > 1 s; timeouts = 310 s.
+Geometric mean of the per-instance ratio (bootstrap IC95) and median, on a
+common instance set: instances where some arm (any of the 5) takes > 1 s;
+timeouts = 310 s.
 
 | arm | set | n | geomean [IC95] | median |
 |---|---|---|---|---|
-| aipopt | 223 | 59 | 0.88 [0.69, 1.04] | 1.00 |
-| acvx0 | 223 | 57 | 0.69 [0.45, 0.93] | 0.99 |
-| acvx | 223 | 59 | 0.58 [0.36, 0.86] | 0.99 |
-| afull | 223 | 61 | 0.55 [0.32, 0.86] | 1.01 |
+| aipopt | 223 | 62 | 0.88 [0.69, 1.03] | 1.00 |
+| acvx0 | 223 | 62 | 0.71 [0.48, 0.94] | 0.99 |
+| acvx | 223 | 62 | 0.60 [0.36, 0.86] | 0.99 |
+| afull | 223 | 62 | 0.56 [0.32, 0.86] | 1.01 |
 | aipopt | 75 open | 60 | 1.00 [1.00, 1.00] | 1.00 |
 | acvx0 | 75 open | 60 | 0.42 [0.21, 0.74] | 1.00 |
 | acvx | 75 open | 60 | 0.34 [0.16, 0.69] | 1.00 |
 | afull | 75 open | 60 | 0.35 [0.16, 0.70] | 1.00 |
-| aipopt | all | 119 | 0.94 [0.83, 1.02] | 1.00 |
-| acvx0 | all | 117 | 0.53 [0.35, 0.75] | 1.00 |
-| acvx | all | 119 | 0.45 [0.28, 0.67] | 1.00 |
-| afull | all | 121 | 0.44 [0.27, 0.66] | 1.00 |
+| aipopt | all | 122 | 0.93 [0.82, 1.01] | 1.00 |
+| acvx0 | all | 122 | 0.55 [0.37, 0.76] | 1.00 |
+| acvx | all | 122 | 0.45 [0.29, 0.67] | 1.00 |
+| afull | all | 122 | 0.45 [0.28, 0.67] | 1.00 |
 
 The median is ~1: the typical instance does not change; the geometric mean is
 driven by a minority with large speedups (instances the bound closes in
