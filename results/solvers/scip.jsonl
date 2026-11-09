@@ -256,3 +256,8 @@
 {"instance": "hs089.bch", "arm": "scip", "result": {"status": "error"}}
 {"instance": "hs090.bch", "arm": "scip", "result": {"status": "error"}}
 {"instance": "hs091.bch", "arm": "scip", "result": {"status": "error"}}
+{"instance": "hs093.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 135.07596071828323, "uplo": 0.0, "nodes": 2720346, "time": 310.051565, "wall": 310.05172538757324}}
+{"instance": "hs101.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 1809.7646822427846, "uplo": 1234.7225048040818, "nodes": 32303, "time": 310.000418, "wall": 310.0005190372467}}
+{"instance": "hs102.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 911.88053251755, "uplo": 836.2828047994133, "nodes": 34480, "time": 310.000231, "wall": 310.00047755241394}}
+{"instance": "hs107.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 5055.011794154199, "uplo": 1029.0310816299746, "nodes": 171346, "time": 310.002045, "wall": 310.00217843055725}}
+{"instance": "hs110.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -45.77846971746816, "uplo": -54.41548231314154, "nodes": 166177, "time": 310.002085, "wall": 310.00217866897583}}
