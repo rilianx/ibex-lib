@@ -214,3 +214,5 @@
 {"instance": "sambal.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 3.9682194626741003, "uplo": 3.966360578441467, "nodes": 1, "time": 0.01309, "wall": 0.01318359375}}
 {"instance": "schaffer.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 0.0, "uplo": -1.0000001937626735e-09, "nodes": 1, "time": 0.001426, "wall": 0.0014607906341552734}}
 {"instance": "pentagon.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -1435903.5578171676, "uplo": -1e+20, "nodes": 641, "time": 310.000121, "wall": 310.0031621456146}}
+{"instance": "rosenbrock10.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -1.4850229922626448e-07, "uplo": -257.85666696080045, "nodes": 350295, "time": 310.002869, "wall": 310.0029544830322}}
+{"instance": "ship-1.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": -1.098747350005064e-08, "uplo": -1.098747350005064e-08, "nodes": 1, "time": 0.027489, "wall": 0.027548789978027344}}
