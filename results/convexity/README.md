@@ -87,3 +87,26 @@ Recommended configuration:
 
     --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1
     --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64
+
+## Scaled Gershgorin shift (--cvx-test 3) vs plain (--cvx-test 2)
+
+Full configuration, 310 s, same host:
+
+    instance   test 2 (plain)          test 3 (plain or scaled, smaller penalty)
+    robot      29.9 s, 36006 nodes     29.8 s, 35684
+    ex6_2_13   193.1 s, 306264         183.6 s, 288602
+    ex6_2_6    4.9 s, 13778            5.0 s, 13044
+    ex8_4_1    27.9 s, 10016           27.0 s, 9878
+    catena     0.0 s, 0                0.0 s, 0
+    chakra     timeout                 timeout (uplo -188.21 vs -188.23)
+    polak3     24.3 s, 5580            32.9 s, 6512
+    haldmads   2.2 s, 1490             3.7 s, 1374
+    dnieper    22.7 s, 2322            1.5 s, 78
+
+The scaled shift trims nodes a little (2-6%) but brings no clear gain; the
+differences in time are within the run-to-run variation, which is large
+here: dnieper took 2.1 s with test 2 in the full2 run and 22.7 s now. The
+guided-restart budget and the convexity backoff are measured in CPU time,
+so the search is not deterministic across runs; path-sensitive instances
+(dnieper, polak3, haldmads) swing. Plain Gershgorin (test 2) stays the
+default.
