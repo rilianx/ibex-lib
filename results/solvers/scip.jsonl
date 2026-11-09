@@ -295,3 +295,4 @@
 {"instance": "water-abs.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 842.430985670479, "uplo": 514.8840293086758, "nodes": 135478, "time": 310.000295, "wall": 310.0004017353058}}
 {"instance": "water.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": null, "uplo": 141.25244335126015, "nodes": 933591, "time": 310.002221, "wall": 310.00227093696594}}
 {"instance": "water1-abs.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": null, "uplo": 141.2517920798655, "nodes": 823758, "time": 310.001925, "wall": 310.0019910335541}}
+{"instance": "water1.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": 839.9409703542105, "uplo": 179.26243242388307, "nodes": 241891, "time": 310.000815, "wall": 310.00094056129456}}
