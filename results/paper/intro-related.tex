@@ -24,7 +24,7 @@ interval arithmetic and either certify that it is positive semidefinite on the b
 shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
 the relaxation of equality constraints, yields a valid lower bound. In IbexOpt with Ipopt
-as local solver, on 298 benchmark instances, the bound closes 8 more instances and
+as local solver, on 298 instances of the COCONUT benchmark, the bound closes 8 more instances and
 roughly halves the solving time on the instances that take more than a second, at a
 cost below 1\% of the running time, and makes the rigorous solver close more instances
 than SCIP~10 on this benchmark.
@@ -114,7 +114,7 @@ shrinks around a nondegenerate KKT point.
   comparison matrix, midpoint--radius test with an interval Cholesky factorization).
   The bound costs less than 1\% of the running time and the time per node grows by at
   most 5\%.
-\item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark: an
+\item \textbf{An experimental study} on 298 instances of the COCONUT benchmark \citep{Shcherbina2003}: an
   ablation (IbexOpt without local solver, with the local solver for upper bounding
   only, and with the Lagrangian bound) and a comparison with SCIP~10. With the
   Lagrangian bound, the rigorous solver closes 236 instances, against 228 without it
@@ -404,8 +404,8 @@ problems where the Lagrangian bound never helps.
 
 \subsection{Setup}
 
-\textbf{[Draft.]} 298 instances of the IbexOpt benchmark (\texttt{benchs/optim/all}:
-COCONUT, GlobalLib and others): the 223 that IbexOpt solves within the time limit and
+\textbf{[Draft.]} 298 instances of the COCONUT benchmark \citep{Shcherbina2003}, in the Minibex
+translation distributed with IbEX (\texttt{benchs/optim/all}): the 223 that IbexOpt solves within the time limit and
 75 that it does not. One thread, 310~s, same machine, three runs in parallel; relative
 precision $10^{-3}$, absolute $10^{-7}$, $\varepsilon_h = 10^{-8}$. Deterministic budgets
 (backoff in nodes), seed 1. Measures: instances solved; time ratios with a 1~s floor

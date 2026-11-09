@@ -71,12 +71,13 @@ Contributions.
     bound costs less than 1% of the running time and the time per node grows by at most
     5%.
 
-3.  An experimental study on 298 instances of the IbexOpt benchmark: an ablation (IbexOpt
-    without local solver, with the local solver for upper bounding only, and with the
-    Lagrangian bound) and a comparison with SCIP 10. With the Lagrangian bound, the
-    rigorous solver closes 236 instances, against 228 without it and 220 for SCIP, and its
-    solving time drops to 0.55 of the time without it on the instances that take more than
-    a second. [TODO: SCIP with  ± 10¹² bounds for both solvers.]
+3.  An experimental study on 298 instances of the COCONUT benchmark (Shcherbina et al.
+    2003): an ablation (IbexOpt without local solver, with the local solver for upper
+    bounding only, and with the Lagrangian bound) and a comparison with SCIP 10. With the
+    Lagrangian bound, the rigorous solver closes 236 instances, against 228 without it and
+    220 for SCIP, and its solving time drops to 0.55 of the time without it on the
+    instances that take more than a second. [TODO: SCIP with  ± 10¹² bounds for both
+    solvers.]
 
 The paper is organized as follows. Section 2 reviews related work. Section 3 recalls the
 interval branch and bound of IbexOpt and how it uses a local solver. Section 4 presents
@@ -330,13 +331,14 @@ Experiments
 
 Setup
 
-[Draft.] 298 instances of the IbexOpt benchmark (benchs/optim/all: COCONUT, GlobalLib and
-others): the 223 that IbexOpt solves within the time limit and 75 that it does not. One
-thread, 310 s, same machine, three runs in parallel; relative precision 10⁻³, absolute
-10⁻⁷, ε_(h) = 10⁻⁸. Deterministic budgets (backoff in nodes), seed 1. Measures: instances
-solved; time ratios with a 1 s floor (timeout = 310 s) on the instances some configuration
-solves and some takes more than 1 s, with bootstrap confidence intervals; nodes; time per
-node. [TODO: hardware, Ipopt version, LP solver.]
+[Draft.] 298 instances of the COCONUT benchmark (Shcherbina et al. 2003), in the Minibex
+translation distributed with IbEX (benchs/optim/all): the 223 that IbexOpt solves within
+the time limit and 75 that it does not. One thread, 310 s, same machine, three runs in
+parallel; relative precision 10⁻³, absolute 10⁻⁷, ε_(h) = 10⁻⁸. Deterministic budgets
+(backoff in nodes), seed 1. Measures: instances solved; time ratios with a 1 s floor
+(timeout = 310 s) on the instances some configuration solves and some takes more than 1 s,
+with bootstrap confidence intervals; nodes; time per node. [TODO: hardware, Ipopt version,
+LP solver.]
 
 Ablation
 
@@ -461,6 +463,11 @@ https://doi.org/10.1007/s10898-024-01403-2.
 
 Ryoo, Hong S., and Nikolaos V. Sahinidis. 1996. “A Branch-and-Reduce Approach to Global
 Optimization.” Journal of Global Optimization 8 (2): 107–38.
+
+Shcherbina, Oleg, Arnold Neumaier, Djamila Sam-Haroud, Xuan-Ha Vu, and Tuan-Viet Nguyen.
+2003. “Benchmarking Global Optimization and Constraint Satisfaction Codes.” In Global
+Optimization and Constraint Satisfaction (COCOS 2002), 2861:211–22. Lecture Notes in
+Computer Science. Springer.
 
 Tawarmalani, Mohit, and Nikolaos V. Sahinidis. 2005. “A Polyhedral Branch-and-Cut Approach
 to Global Optimization.” Mathematical Programming 103 (2): 225–49.
