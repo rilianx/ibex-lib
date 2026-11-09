@@ -63,3 +63,4 @@ benchs/optim/*.tar.gz
 
 # results ibex files
 *.cov
+results/solvers/bch12/
