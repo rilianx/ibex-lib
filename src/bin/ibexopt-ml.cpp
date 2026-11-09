@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern bool ipopt_guided_nodes; extern double ipopt_total_time, ipopt_corr_total_time, cvx_total_time; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -321,6 +321,7 @@ int main(int argc, char** argv) {
 	args::ValueFlag<double> ipopt_call_limit_arg(parser, "float", "With --loup ipopt*: CPU seconds after which one Ipopt call is made to give up (its evaluations report an error). <= 0: none. Default: 5.", {"ipopt-call-limit"});
 	args::ValueFlag<double> ipopt_guided_arg(parser, "float", "With --loup ipopt*: guided restarts, an extra Ipopt run from the current node's box (of 10 random points, the farthest from previous Ipopt solutions), while these runs use less than this fraction of the CPU time.", {"ipopt-guided"});
 	args::ValueFlag<int> ipopt_guided_patience_arg(parser, "int", "With --ipopt-guided: after this many guided runs in a row without improving the loup, stop them until the loup improves. Default: 0 (never stop).", {"ipopt-guided-patience"});
+	args::Flag ipopt_guided_nodes_arg(parser, "ipopt-guided-nodes", "With --ipopt-guided: budget in loup-finder calls (guided runs <= fraction x nodes) instead of CPU time, so the search is deterministic.", {"ipopt-guided-nodes"});
 	args::Flag ipopt_guided_local_arg(parser, "ipopt-guided-local", "With --ipopt-guided: Ipopt bounded by the node's box instead of the root box.", {"ipopt-guided-local"});
 	args::Flag cvx_stats_arg(parser, "cvx-stats", "Measure, at each node, whether the Lagrangian of the last Ipopt run is certifiably convex on the box and whether its tangent bound would close it (counters in the JSON).", {"cvx-stats"});
 	args::Flag cvx_close_arg(parser, "cvx-close", "Raise each node's lower bound with the tangent bound of the Lagrangian of the last Ipopt run when it is certified convex on the box (interval Hessian, Gershgorin); boxes above the upper bound are pruned.", {"cvx-close"});
@@ -444,6 +445,7 @@ int main(int argc, char** argv) {
 		if (ipopt_call_limit_arg) ibex::ipopt_call_limit = ipopt_call_limit_arg.Get();
 		if (ipopt_guided_arg) ibex::ipopt_guided = ipopt_guided_arg.Get();
 		if (ipopt_guided_patience_arg) ibex::ipopt_guided_patience = ipopt_guided_patience_arg.Get();
+		if (ipopt_guided_nodes_arg) ibex::ipopt_guided_nodes = true;
 		if (ipopt_guided_local_arg) ibex::ipopt_guided_local = true;
 		if (cvx_stats_arg) ibex::cvx_stats = true;
 		if (cvx_close_arg) ibex::cvx_close_on = true;
@@ -583,6 +585,9 @@ int main(int argc, char** argv) {
 					if (H[k].loup <= fin) { last_n = H[k].nodes; last_t = H[k].time; break; }
 				}
 				out.kv("loup_updates", (long) H.size()-1);
+				out.kv("ipopt_time", ibex::ipopt_total_time);
+				out.kv("ipopt_corr_time", ibex::ipopt_corr_total_time);
+				out.kv("cvx_time", ibex::cvx_total_time);
 				if (ibex::ipopt_multistart>0) out.kv("ms_improved", (long) ibex::ipopt_ms_improved);
 				if (ibex::cvx_close_on) { out.kv("cvx_raised", ibex::optimizer_extra_lb_raised); out.kv("cvx_pruned", ibex::optimizer_extra_lb_pruned); }
 				if (ibex::cvx_stats) { out.kv("cvx_nodes", ibex::cvx_nodes); out.kv("cvx_with_dual", ibex::cvx_with_dual); out.kv("cvx_certified", ibex::cvx_certified); out.kv("cvx_close", ibex::cvx_close); out.kv("cvx_better_lb", ibex::cvx_better_lb); out.kv("cvx_center_indef", ibex::cvx_center_indef); }

@@ -45,6 +45,12 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     tcvx)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --cvx-close" ;;
     gcvx)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close" ;;
     full)   d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64" ;;
+    # ablation (deterministic: guided budget in nodes), same host
+    abase) d=1e8;  x="" ;;
+    aipopt) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
+    acvx0) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;
+    acvx) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
+    afull) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --ipopt-guided-nodes --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     full2)  d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     tbase2) d=1e8; x="" ;;  # tbase again, same machine as full (timing)
     g05p20) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20" ;;

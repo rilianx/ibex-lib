@@ -73,6 +73,7 @@ namespace ibex {
   bool cvx_stats=false;
   bool cvx_close_on=false;
   long cvx_backoff_max=0;
+  double cvx_total_time=0;   // CPU time in the convexity bound (JSON)
   long cvx_raised=0, cvx_pruned=0;
   extern double (*optimizer_extra_lb)(const IntervalVector&);
   namespace { LoupFinderIpopt* cvx_finder=NULL;
@@ -84,7 +85,9 @@ namespace ibex {
       if (!cvx_finder) return NEG_INFINITY;
       if (cvx_backoff_max > 1 && cvx_skip > 0) { cvx_skip--; return NEG_INFINITY; }
       bool cert = false;
+      std::clock_t c0 = std::clock();
       double lb = cvx_finder->cvx_bound(b, &cert);
+      cvx_total_time += double(std::clock() - c0) / CLOCKS_PER_SEC;
       if (cvx_backoff_max > 1) {
         // a check pays off when the bound beats the node's own lower bound
         // (with --cvx-test 2 nothing is "certified", the bound may still help)
@@ -107,6 +110,11 @@ namespace ibex {
   // bound first) makes the node a promising region not yet discarded. ipopt_guided_local: Ipopt bounded by
   // the node's box instead of the root box. <= 0: off.
   double ipopt_guided=-1; bool ipopt_guided_local=false;
+  // budget counted in loup-finder calls (nodes) instead of CPU time:
+  // guided runs <= ipopt_guided * nodes so far (deterministic)
+  bool ipopt_guided_nodes=false;
+  // time accounting (JSON): Ipopt runs, correction searches, convexity bounds
+  double ipopt_total_time=0, ipopt_corr_total_time=0;
   int ipopt_guided_calls=0, ipopt_guided_improved=0; double ipopt_guided_time=0;
   // patience: after this many guided runs in a row that do not improve the
   // loup, they stop until the loup improves by any means. <= 0: never stop
@@ -230,7 +238,8 @@ namespace ibex {
 	    && (ipopt_guided_patience <= 0 || guided_streak < ipopt_guided_patience)) {
 	  if (!guided_started) { guided_started = true; guided_t0 = std::clock(); }
 	  double elapsed = double(std::clock() - guided_t0) / CLOCKS_PER_SEC;
-	  if (ipopt_guided_time < ipopt_guided * elapsed) {
+	  if (ipopt_guided_nodes ? (ipopt_guided_calls < ipopt_guided * (ipopt_calls+1))
+	                         : (ipopt_guided_time < ipopt_guided * elapsed)) {
 	    guided_now = true;
 	  }
 	}
@@ -271,6 +280,7 @@ namespace ibex {
 	  ipopt_deadline_on = false;
 	  force=0;  // after call , force is reset to 0
 	  ipopt_timer.stop();
+	  ipopt_total_time += ipopt_timer.get_time();
 	  log_pending = ipopt_log()!=NULL;
 	  log_forced = was_forced; log_loup_in = loup_in; log_time = ipopt_timer.get_time();
 	  log_value = optimalValue; log_status = (int) status; log_width = box.max_diam();
@@ -1049,6 +1059,7 @@ namespace ibex {
       log_corr_time = opt.get_time(); log_corr_loup = opt.get_loup();
       correction_nodes+=opt.get_nb_cells();
       correction_time+=opt.get_time();
+      ipopt_corr_total_time += opt.get_time();
       if (optimizer->trace)
 	cout << " correction nodes " << correction_nodes << " correction_time " << correction_time << endl;
       if (opt.get_loup() < optimizer->get_loup()){
