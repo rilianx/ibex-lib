@@ -133,3 +133,4 @@
 {"instance": "ex8_5_3.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -0.004140608962762471, "uplo": -0.0041446656818839855, "nodes": 59915, "time": 5.973082, "wall": 5.97314715385437}}
 {"instance": "ex8_5_4.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -0.00042698799741219817, "uplo": -0.00042739179324519094, "nodes": 422, "time": 0.310287, "wall": 0.3103499412536621}}
 {"instance": "ex8_5_5-1.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -1.3473250922318425, "uplo": -1.348668258356018, "nodes": 3376, "time": 0.706867, "wall": 0.7069320678710938}}
+{"instance": "ex8_5_5.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -0.010758399124815465, "uplo": -0.010769114246426792, "nodes": 195598, "time": 20.432237, "wall": 20.432292222976685}}
