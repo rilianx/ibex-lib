@@ -1583,7 +1583,10 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 				handle_cell(*new_cells.first);
 				handle_cell(*new_cells.second);
 
-				if (uplo_of_epsboxes == NEG_INFINITY) { status="unbounded"; break; }
+				// a box that cannot be bisected has an objective enclosure unbounded below
+				// (often an overestimation at infinity: e*e evaluated as a product, 3pk);
+				// this is no proof that the problem is unbounded: report it as such
+				if (uplo_of_epsboxes == NEG_INFINITY) { status="no_lower_bound"; break; }
 
 				if (loup_changed) {
 					double ymax = compute_ymax();
@@ -1740,7 +1743,10 @@ long MLNodeServer::run_interactive(const IntervalVector& init_box, double obj_in
 				handle_cell(*new_cells.first);
 				handle_cell(*new_cells.second);
 
-				if (uplo_of_epsboxes == NEG_INFINITY) { status="unbounded"; break; }
+				// a box that cannot be bisected has an objective enclosure unbounded below
+				// (often an overestimation at infinity: e*e evaluated as a product, 3pk);
+				// this is no proof that the problem is unbounded: report it as such
+				if (uplo_of_epsboxes == NEG_INFINITY) { status="no_lower_bound"; break; }
 
 				if (loup_changed) {
 					double ymax = compute_ymax();

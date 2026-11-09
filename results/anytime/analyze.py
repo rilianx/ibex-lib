@@ -23,7 +23,11 @@ for l in open(F):
     d = json.loads(l)
     r = d['result']
     B = [[float(x) if x is not None else INF for x in b] for b in (r.get('bounds') or [])]
-    R[d['instance']][d['arm']] = (r.get('status'), B, r.get('nodes'))
+    st = r.get('status')
+    # before 'no_lower_bound' existed, both stops were reported as 'unbounded':
+    # only a loup of -oo (a feasible point with objective -oo) is evidence
+    if st == 'unbounded' and r.get('loup') is not None and r['loup'] > -1e300: st = 'no_lower_bound'
+    R[d['instance']][d['arm']] = (st, B, r.get('nodes'))
 
 def pg(lo, best):
     if lo == INF or lo is None: return 1.0
