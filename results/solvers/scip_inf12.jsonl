@@ -1,0 +1,8 @@
+{"instance": "ackley_5.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": -8.394490411515987e-07, "uplo": -8.394490411515987e-07, "nodes": 1, "time": 0.012608999999999999, "wall": 0.012641429901123047}}
+{"instance": "alkyl.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -1.7649999794746123, "uplo": -1.7666435369043683, "nodes": 71, "time": 0.165396, "wall": 0.16545534133911133}}
+{"instance": "alkylbis.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -1.7649999794746123, "uplo": -1.7666435369043683, "nodes": 71, "time": 0.13132, "wall": 0.1313779354095459}}
+{"instance": "avgasa.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -4.412171753733839, "uplo": -4.415519642028958, "nodes": 1, "time": 0.017931, "wall": 0.017975568771362305}}
+{"instance": "avgasb.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -4.483219429706831, "uplo": -4.486731766564546, "nodes": 1, "time": 0.019464, "wall": 0.019498109817504883}}
+{"instance": "batch.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 259180.33716575688, "uplo": 258990.9472129107, "nodes": 1, "time": 0.013169, "wall": 0.013213872909545898}}
+{"instance": "bearing.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": 1.9251184729317632, "uplo": 1.9251184729317632, "nodes": 2376, "time": 1.384459, "wall": 1.384523868560791}}
+{"instance": "chance.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 29.89437804150864, "uplo": 29.890856141880352, "nodes": 1, "time": 0.013084, "wall": 0.013120412826538086}}

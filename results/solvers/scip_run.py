@@ -18,6 +18,9 @@ path = sys.argv[1]
 tlim = float(sys.argv[2]) if len(sys.argv) > 2 else 310.0
 relgap = float(sys.argv[3]) if len(sys.argv) > 3 else 1e-3
 absgap = float(sys.argv[4]) if len(sys.argv) > 4 else 1e-7
+# SCIP_INFBOUND=1e12: replace missing variable bounds by +-1e12 (what the SCIP 8
+# paper does for every solver through GAMS, gams/infbound); default: keep them
+infbound = float(__import__('os').environ.get('SCIP_INFBOUND', '0'))
 
 src = open(path).read()
 src = re.sub(r'//[^\n]*|#[^\n]*', '', src)
@@ -86,6 +89,8 @@ for st in vars_s.split(';'):
         raise SystemExit('cannot parse variable: %r' % st)
     lb = -INF if m.group(2) is None else float(ev(m.group(2)))
     ub = INF if m.group(3) is None else float(ev(m.group(3)))
+    if infbound > 0:
+        lb = max(lb, -infbound); ub = min(ub, infbound)
     lb = -INF if lb == -math.inf else lb
     ub = INF if ub == math.inf else ub
     NS[m.group(1)] = model.addVar(m.group(1), lb=lb, ub=ub)
