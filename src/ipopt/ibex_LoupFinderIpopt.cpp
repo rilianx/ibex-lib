@@ -62,6 +62,14 @@ namespace ibex {
   // only checked between iterations, and Ipopt 3.11 can loop inside one line
   // search forever (matrix2 and ex9_1_5 from far starting points). <= 0: none
   double ipopt_call_limit=5;
+  // --ipopt-adaptive=M (M > 0): replaces the fixed schedule (every
+  // ipopt_frequency loup-finder calls) by a backoff: the next scheduled call
+  // comes 1 call later after one that improved the loup, twice the previous
+  // gap (up to M) after one that did not. 0: fixed schedule
+  long ipopt_adaptive=0;
+  namespace { long ipopt_ad_interval=1, ipopt_ad_skip=0; }
+  // CPU timeout of the correction search with the wide box (--ipopt-expansion)
+  double ipopt_corr_time=1;
   namespace { std::clock_t ipopt_deadline=0; bool ipopt_deadline_on=false;
     struct IpoptDeadline {};
     // throws out of Ipopt (RethrowNonIpoptException): returning false from a
@@ -218,7 +226,12 @@ namespace ibex {
       if (recursive_call && cvx_stats) cvx_measure(box, loup);
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
-	bool scheduled = (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50);
+	bool scheduled;
+	if (ipopt_adaptive > 0) {
+	  scheduled = (ipopt_ad_skip <= 0 || ipopt_calls<ipopt_first);
+	  if (!scheduled) ipopt_ad_skip--;
+	} else
+	  scheduled = (ipopt_calls%ipopt_frequency==0 || ipopt_calls<ipopt_first || ipopt_calls==10 || ipopt_calls==20  || ipopt_calls==50);
 	bool narrow;
 	if (ipopt_diam >= 0) narrow = box.max_diam() <= ipopt_diam;
 	else {
@@ -259,6 +272,7 @@ namespace ibex {
 	  // the node being bounded: read now, the correction search below runs an
 	  // Optimizer of its own that overwrites these
 	  log_node_lb = optimizer_node_lb; log_depth = optimizer_node_depth;
+	  double loup_in_call = loup;
 	  int nstarts = (ipopt_calls==0 && ipopt_multistart>0) ? ipopt_multistart : 0;
 	  if (nstarts>0) ms_rng.seed(ipopt_ms_seed);
 	  for (int ms=0; ms<=nstarts; ms++) {
@@ -361,6 +375,10 @@ namespace ibex {
 	  if (guided_now && loup < loup_ms) ipopt_guided_improved++;
 	  } // multistart
 	  ms_index = 0;
+	  if (ipopt_adaptive > 0 && scheduled && !was_forced) {
+	    ipopt_ad_interval = (loup < loup_in_call) ? 1 : std::min(2*ipopt_ad_interval, ipopt_adaptive);
+	    ipopt_ad_skip = ipopt_ad_interval - 1;
+	  }
 	  if (guided_now) {
 	    if (loup < guided_last_loup) { guided_last_loup = loup; guided_streak = 0; } else guided_streak++;
 	    ipopt_guided_calls++;
@@ -1037,7 +1055,7 @@ namespace ibex {
 
       opt.set_uplo(optimizer->get_uplo());
       opt.set_loup(optimizer->get_loup());
-      opt.timeout = corr_first_try ? ipopt_expansion_first : 1;
+      opt.timeout = corr_first_try ? ipopt_expansion_first : ipopt_corr_time;
       //      cout << " boxsol " << boxsol << endl;
       // The nested search shares the enclosing one's bisector. A stateless
       // bisector does not mind; lsmear-guard would count the nested decisions

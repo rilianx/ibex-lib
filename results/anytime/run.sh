@@ -29,6 +29,10 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     gcvx)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close" ;;
     full)     x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --cvx-close --cvx-backoff=64" ;;
     abase) x="" ;;
+    # tuned Ipopt schedule: adaptive backoff (max 100) + 1 s per call
+    aad) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-adaptive=100 --ipopt-call-limit=1" ;;
+    cad) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-adaptive=100 --ipopt-call-limit=1 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
+    fad) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-adaptive=100 --ipopt-call-limit=1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --ipopt-guided-nodes --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     anoip) x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
     aipopt) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     acvx0) x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;

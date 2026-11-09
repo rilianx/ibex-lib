@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern bool ipopt_guided_nodes; extern double ipopt_total_time, ipopt_corr_total_time, cvx_total_time; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern long ipopt_adaptive; extern double ipopt_corr_time; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern bool ipopt_guided_nodes; extern double ipopt_total_time, ipopt_corr_total_time, cvx_total_time; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -318,6 +318,8 @@ int main(int argc, char** argv) {
 	args::ValueFlag<double> ipopt_start_max_arg(parser, "float", "With --ipopt-diam negative: Ipopt is not called on a box whose starting point has a coordinate larger than this in absolute value. Default: 1e8.", {"ipopt-start-max"});
 	args::ValueFlag<double> ipopt_max_time_arg(parser, "float", "With --loup ipopt*: CPU limit of one Ipopt call in seconds (Ipopt's max_cpu_time). Default: none.", {"ipopt-max-time"});
 	args::Flag bound_trace_arg(parser, "bound-trace", "With --solve: add \"bounds\": [[time, nodes, loup, uplo], ...] (start, each new loup, uplo moves at geometrically spaced times, end).", {"bound-trace"});
+	args::ValueFlag<long> ipopt_adaptive_arg(parser, "int", "With --loup ipopt*: adaptive Ipopt schedule; the gap between scheduled calls resets to 1 after a call that improves the loup and doubles (up to this value) after one that does not. 0: fixed schedule (default).", {"ipopt-adaptive"});
+	args::ValueFlag<double> ipopt_corr_time_arg(parser, "float", "With --ipopt-expansion: CPU timeout (s) of the correction search in the wide box. Default: 1.", {"ipopt-corr-time"});
 	args::ValueFlag<double> ipopt_call_limit_arg(parser, "float", "With --loup ipopt*: CPU seconds after which one Ipopt call is made to give up (its evaluations report an error). <= 0: none. Default: 5.", {"ipopt-call-limit"});
 	args::ValueFlag<double> ipopt_guided_arg(parser, "float", "With --loup ipopt*: guided restarts, an extra Ipopt run from the current node's box (of 10 random points, the farthest from previous Ipopt solutions), while these runs use less than this fraction of the CPU time.", {"ipopt-guided"});
 	args::ValueFlag<int> ipopt_guided_patience_arg(parser, "int", "With --ipopt-guided: after this many guided runs in a row without improving the loup, stop them until the loup improves. Default: 0 (never stop).", {"ipopt-guided-patience"});
@@ -443,6 +445,8 @@ int main(int argc, char** argv) {
 		if (ipopt_diam_arg) ibex::ipopt_diam = ipopt_diam_arg.Get();
 		if (ipopt_expansion_arg) ibex::ipopt_expansion = ipopt_expansion_arg.Get();
 		if (ipopt_call_limit_arg) ibex::ipopt_call_limit = ipopt_call_limit_arg.Get();
+		if (ipopt_adaptive_arg) ibex::ipopt_adaptive = ipopt_adaptive_arg.Get();
+		if (ipopt_corr_time_arg) ibex::ipopt_corr_time = ipopt_corr_time_arg.Get();
 		if (ipopt_guided_arg) ibex::ipopt_guided = ipopt_guided_arg.Get();
 		if (ipopt_guided_patience_arg) ibex::ipopt_guided_patience = ipopt_guided_patience_arg.Get();
 		if (ipopt_guided_nodes_arg) ibex::ipopt_guided_nodes = true;
