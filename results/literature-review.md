@@ -436,28 +436,119 @@ no aparece en ninguno de los tres:
 - Messine–Trombettoni no reportan experimentos. Si existe una implementación de su
   teorema en IbexOpt (alguna rama de Trombettoni), habría que comparar.
 
-## 8. Papers que faltan (actualizado)
+## 8. Jansson (2004, JOGO) y αBB Part II (1998)
 
-Prioridad alta:
-1. **Jansson, C. (2004).** A rigorous lower bound for the optimal value of convex
-   optimization problems. *J. Global Optim.* 28(1):121–137. — **El de JOGO, no el de
-   SIAM** (el entregado es el de LP). Origen del teorema convexo.
-2. **Adjiman, Dallwig, Floudas, Neumaier (1998).** A global optimization method, αBB,
-   for general twice-differentiable constrained NLPs — I. Theoretical advances.
-   *Comput. Chem. Eng.* 22(9):1137–1158. — Para citar el Gershgorin escalado (nuestro
-   d_i). El de 1996 entregado no lo trae.
+### Jansson, C. (2004), *A rigorous lower bound for the optimal value of convex optimization problems*, JOGO 28:121–137
 
-Prioridad media:
-3. **Jansson, C. (2009).** On verified numerical computations in convex programming.
-   *Japan J. Indust. Appl. Math.* 26(2–3):337–363.
-4. **Kearfott (2014)**, On rigorous upper bounds to a global optimum, JOGO 59(2).
-5. **Araya, Messine, Ninin, Trombettoni (2024)**, hibridación afín + XTaylor, JOGO.
-6. **Ryoo & Sahinidis (1996)**, branch-and-reduce, JOGO 8.
-7. **Li & Sun (2000)**, Local convexification of the Lagrangian function in nonconvex
-   optimization, JOTA 104:109–120.
-8. **Dür & Horst (1997)**, Lagrange duality and partitioning techniques in nonconvex
-   global optimization, JOTA 95:347–369.
+**Problema (10).**
+- min f(x) s.a. G(x) ≤ 0, Hx = h, x̲ ≤ x ≤ x̄.
+- f y todas las G_i son convexas; las igualdades son **lineales**.
+- Las cotas simples pueden ser infinitas.
+
+**Lema 1.**
+- Linealiza **cada función por separado** con la desigualdad de gradiente:
+  f(x) ≥ f(x̃) + ∇f(x̃)ᵀ(x − x̃), y lo mismo para cada G_i.
+- Obtiene un LP cuya solución dual factible (ỹ ≥ 0, z̃, u = d⁺, v = −d⁻), con defecto
+  d = ∇f + ∇G ỹ − Hᵀz̃, da la cota
+  f* ≥ f(x̃) + (G(x̃) − ∇G(x̃)ᵀx̃)ᵀỹ + hᵀz̃ + x̲ᵀd⁺ + x̄ᵀd⁻ − ∇f(x̃)ᵀx̃.
+
+**Teorema 1 y Teorema 2.**
+- El Teorema 1 es la versión con intervalos: datos inciertos p ∈ **p** y variables
+  libres (J^±), donde exige d_j = 0 vía un sistema intervalar.
+- El Teorema 2 muestra que la cota es **exacta en un punto KKT**.
+- Sección 4: QP convexo, f* ≥ hᵀz̃ − ½x̃ᵀQx̃ + x̄ᵀd⁻.
+- Lo plantea como **postprocesamiento** de la salida de cualquier solver no lineal,
+  sin tocar su código.
+
+**Equivalencia con nuestra cota.**
+- Algebraicamente, el Lema 1 es nuestra cota tangente del Lagrangiano:
+  L(x̃) + Σ_i d_i (z_i − x̃_i), con z_i el extremo de la caja según el signo de d_i = ∂L/∂x_i.
+  Messine–Trombettoni lo reconocen ("same theorem, different proof").
+
+**Diferencias con lo nuestro.**
+1. **Convexidad.**
+   - Jansson necesita **cada** f y G_i convexas, porque linealiza término a término, y
+     las igualdades lineales.
+   - Nosotros solo necesitamos que el **Lagrangiano agregado** L(·, ỹ, z̃) sea convexo en
+     la caja, y lo certificamos.
+   - Si no se certifica, agregamos −Σ d_i/2·max(y_i − x̃_i)². Con eso cubrimos f y g no
+     convexas e igualdades no lineales.
+2. **Origen de (x̃, ỹ, z̃).**
+   - En Jansson vienen de resolver el problema convexo (o la relajación) con un solver
+     local.
+   - En nosotros vienen del Ipopt que ya corre para el upper bounding del problema
+     original no convexo. El costo marginal es solo la Hessiana intervalar, O(n²) por
+     llamada.
+3. **Igualdades relajadas** |h| ≤ ε_h: restamos Σ|z̃_j|ε_h. Jansson no lo necesita.
+4. **Cotas infinitas.**
+   - Jansson las maneja con J^± y d_j = 0, lo que exige resolver un sistema
+     intervalar.
+   - Nosotros solo aplicamos la cota en cajas acotadas (los nodos del B&B), así que es
+     más simple.
+   - Si quisiéramos usarla en la raíz con dominios infinitos, su Teorema 1 es la
+     receta.
+5. **Parámetros inciertos.**
+   - Jansson los modela.
+   - En IBEX las constantes gruesas [a, b] cumplen ese papel: las tratamos como rangos
+     en `NormalizedSystem`.
+
+Jansson anuncia aplicarla en B&B ("Branch and bound algorithms can be made reliable by
+using such rigorous lower bounds"), pero como cota de **relajaciones convexas**, no del
+problema original.
+
+### Adjiman, Androulakis, Floudas (1998), *αBB … II. Implementation and computational results*, Comput. Chem. Eng. 22(9):1159–1179
+
+**Ojo: es Part II, no Part I.** Part I (pp. 1137–1158) trae la teoría y las fórmulas de
+los métodos de α. Part II los compara empíricamente y usa la numeración de Part I:
+- I.1 Gerschgorin;
+- I.2 E-matrix;
+- I.3 Mori–Kokame;
+- I.4 lower bounding Hessian;
+- I.5 Kharitonov;
+- I.6 Hertz;
+- II.1 Gerschgorin escalado (d_i = 1 o d_i = x_i^U − x_i^L);
+- II.2 H-matrix;
+- II.3 min. max. distance (SDP).
+
+**Resultados relevantes.**
+- **Costo del cálculo de α:** el **~2.5 % del CPU** en casi todos los métodos. Kharitonov
+  sube a 11 % y la versión con SDP a 30 %. Coincide con nuestro cvx < 5 % del tiempo.
+- **Mejores métodos:** E-matrix, Hertz y **Gerschgorin escalado con d = x^U − x^L**
+  (ej. 3.1.3: 330 iteraciones contra 353 de Gerschgorin simple).
+  - Las diferencias entre métodos son modestas, del orden del 10 %.
+  - Esto es consistente con lo que observamos al probar nuestro Gerschgorin escalado:
+    sin ganancia clara frente a d = 1.
+  - Respalda dejar Gerschgorin sin escalar (test 2) por defecto.
+- **Branching:**
+  - La estrategia 4 ramifica según la "influencia global de cada variable en la calidad
+    del subestimador".
+  - Es el antecedente directo de la idea pendiente de ramificar sobre las variables con
+    d_i > 0.
+  - También proponen actualizar las cotas de las variables con un problema convexo por
+    variable. Solo en una fracción de ellas, porque es caro: análogo a la reducción de
+    rangos.
+- **Comparación con αBB:**
+  - αBB resuelve un **NLP convexo por nodo** con un α por término no convexo.
+  - Nosotros no resolvemos nada adicional: tangente más penalidad cuadrática, en forma
+    cerrada sobre la caja.
+
+## 9. Papers que faltan (actualizado)
+
+Prioridad alta (solo uno):
+1. **Adjiman, Dallwig, Floudas, Neumaier (1998).** A global optimization method, αBB,
+   for general twice-differentiable constrained NLPs — **I. Theoretical advances**.
+   *Comput. Chem. Eng.* 22(9):**1137–1158**. — Para citar el Teorema del Gerschgorin
+   escalado (nuestro d_i). Lo entregado fue Part II (pp. 1159–1179).
+
+Prioridad media (opcionales):
+2. **Jansson (2009)**, On verified numerical computations in convex programming, Japan
+   J. Indust. Appl. Math. 26:337–363.
+3. **Kearfott (2014)**, On rigorous upper bounds to a global optimum, JOGO 59(2).
+4. **Araya, Messine, Ninin, Trombettoni (2024)**, hibridación afín + XTaylor, JOGO.
+5. **Ryoo & Sahinidis (1996)**, branch-and-reduce, JOGO 8.
+6. **Li & Sun (2000)**, Local convexification of the Lagrangian, JOTA 104:109–120.
+7. **Dür & Horst (1997)**, Lagrange duality and partitioning, JOTA 95:347–369.
 
 Ya leídos: Van Voorhis (2002), QIBEX (2025), revisión de Neumaier–Shcherbina,
-Messine–Trombettoni (2019), Jansson (2004, SIAM, LP), Kearfott–Castille–Tyagi (2013),
-Adjiman et al. (1996).
+Messine–Trombettoni (2019), Jansson (2004, SIAM, LP), **Jansson (2004, JOGO, convexo)**,
+Kearfott–Castille–Tyagi (2013), Adjiman et al. (1996), **Adjiman et al. (1998, Part II)**.
