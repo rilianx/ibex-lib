@@ -263,3 +263,91 @@ conclusiones):
 
 No están en arXiv (búsqueda por título y autor): Van Voorhis (2002), QIBEX (Elloumi et
 al. 2025), Neumaier–Shcherbina (2004), αBB I/II (1998), Kearfott (2014), Ryoo–Sahinidis.
+
+
+## 6. Lectura completa de los PDF entregados (Van Voorhis 2002, QIBEX 2025, revisión de Neumaier–Shcherbina)
+
+### Van Voorhis (2002), *A global optimization algorithm using Lagrangian underestimates and the interval Newton method*, JOGO 24:349–370
+
+- **Problema:** solo QCQP con cotas finitas (f_i cuadráticas, Hessianos constantes).
+- **Cota inferior:** minimiza un subestimador convexo del Lagrangiano restringido
+  φ(x,v) = f⁰ + Σ v_i (fⁱ − b_i). El subestimador es término a término (ec. 3): los
+  bilineales se escriben como (x_j ± x_k)² − (x_j² + x_k²) y los −p_j x_j² se
+  linealizan con (u_j − x_j)(x_j − l_j) ≥ 0. Es una idea del tipo αBB, pero para
+  cuadráticas y sin Hessiano en intervalos. Por nodo resuelve un QP convexo sobre la caja.
+- **Multiplicadores:** iteraciones de subgradiente / direcciones de deflexión dentro de
+  cada nodo (`cnt` iteraciones), heredados del padre.
+- **Upper bound:** Newton sobre las KKT desde (x̂, v̂); Newton intervalar sobre las
+  condiciones de Fritz-John para descartar cajas o probar unicidad.
+- **Rigor:** no trata el redondeo de punto flotante (los intervalos solo aparecen en el
+  Newton intervalar).
+- **Conclusiones, cita textual relevante:** "it requires several iterations to establish
+  good estimates of the Lagrange multipliers... Perhaps Lagrangian underestimates could
+  be strategically employed at later stages of the branch-and-bound process, when good
+  multiplier estimates have been obtained via RLT or some other relaxation strategy."
+  **Esto es justamente lo que hacemos**: los multiplicadores vienen gratis de Ipopt (el
+  upper bounding), sin iterar en el nodo, y la cota es un plano tangente (sin resolver un
+  QP), con backoff para usarla solo donde rinde.
+
+### Elloumi, Lambert, Neveu, Trombettoni (2025), QIBEX, JOGO 91:331–353
+
+- B&B de intervalos sobre IbexOpt para MIQCQP con una relajación cuadrática convexa
+  (tan fuerte como SDP) obtenida de un SDP resuelto una vez.
+- **Rigor (QIBEX-R):** (1) certifica la convexidad del objetivo de la relajación
+  corrigiendo S₀* + |δ|I con un algoritmo que encierra los autovalores evaluando el
+  polinomio característico en intervalos; (2) certifica la cota inferior con el
+  **Teorema 1** (Jansson 2004; Messine & Trombettoni 2019): para un problema **convexo**
+  y cualquier (x̃, μ̃ ≥ 0, λ̃), f(x*) ≥ L(x̃,μ̃,λ̃) + (z − x̃)ᵀ∇ₓL(x̃,μ̃,λ̃), con z_i en la
+  cota que minimiza cada término. **Es la misma fórmula de nuestro plano tangente.**
+- Costo: certificar la cota multiplica el tiempo por 4–8 (implementación en AMPL
+  interpretado).
+
+**Consecuencia para la novedad:** la cota "Lagrangiano en x̃ + gradiente minimizado sobre
+la caja" para problemas convexos es conocida (Jansson 2004) y ya se usa en IBEX
+(QIBEX, Messine–Trombettoni 2019) sobre una relajación convexa construida aparte. Lo que
+no aparece en ninguno de los tres:
+1. aplicarla **directamente al problema no convexo original**, certificando por caja que
+   su Lagrangiano es convexo (Hessiano en intervalos + test PSD) o convexificándolo con
+   un desplazamiento diagonal tipo αBB del Lagrangiano;
+2. con los **multiplicadores del solver local que ya hace el upper bounding** (Ipopt),
+   sin SDP, sin subgradientes y sin resolver un problema por nodo;
+3. para **NLP general** (no solo cuadráticos), con el control de costo (backoff) y la
+   corrección por la relajación ε_h de las igualdades.
+
+### Guilbeau, Hossain, Karhbet, Kearfott, Sanusi, Zhao, *A review of computation of mathematically rigorous bounds on optima of linear programs*
+
+- Revisa el método de Neumaier–Shcherbina (2004) para cotas duales rigurosas en LP desde
+  multiplicadores aproximados, **corrige dos errores tipográficos de fórmulas** del
+  original y muestra su impacto. Solo LP. Remite a referencias nuevas que importan
+  (abajo).
+
+## 7. Papers que faltan (actualizado)
+
+Prioridad alta:
+1. **Jansson, C. (2004).** A rigorous lower bound for the optimal value of convex
+   optimization problems. *J. Global Optim.* 28(1):121–137. — Origen del Teorema 1.
+2. **Messine, F., Trombettoni, G. (2019).** Reliable bounds for convex relaxation in
+   interval global optimization codes. *AIP Conf. Proc.* 2070(1):020050,
+   doi:10.1063/1.5090017. — Su uso en IbexOpt/IBBA; lo más cercano a lo nuestro dentro
+   de IBEX.
+3. **Kearfott, R.B., Castille, J., Tyagi, G. (2013).** A general framework for convexity
+   analysis in deterministic global optimization. *J. Global Optim.* 56(3):765–785. —
+   Detección/certificación de convexidad en B&B riguroso.
+4. **Adjiman, Dallwig, Floudas, Neumaier (1998)**, αBB I (Comput. Chem. Eng. 22(9)).
+
+Prioridad media:
+5. **Jansson, C. (2009).** On verified numerical computations in convex programming.
+   *Japan J. Indust. Appl. Math.* 26(2–3):337–363.
+6. **Kearfott (2014)**, On rigorous upper bounds to a global optimum, JOGO 59(2).
+7. **Araya, Messine, Ninin, Trombettoni (2024)**, hibridación afín + XTaylor, JOGO (por el
+   bug afín).
+8. **Ryoo & Sahinidis (1996)**, branch-and-reduce, JOGO 8 (si se extiende a reducción de
+   rangos).
+9. **Li & Sun (2000)**, Local convexification of the Lagrangian function in nonconvex
+   optimization, JOTA 104:109–120 (citado por Van Voorhis; convexificación del
+   Lagrangiano).
+10. **Dür & Horst (1997)**, Lagrange duality and partitioning techniques in nonconvex
+    global optimization, JOTA 95:347–369 (convergencia del gap dual con particiones).
+
+Ya no hace falta: Van Voorhis (2002), QIBEX (2025) y Neumaier–Shcherbina (cubierto por
+la revisión de Guilbeau et al.).
