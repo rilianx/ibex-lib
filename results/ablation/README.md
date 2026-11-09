@@ -100,26 +100,33 @@ instances that close (the rest time out in both arms).
 
 ## Time ratio t(A)/t(abase)
 
-Geometric mean of the per-instance ratio (bootstrap IC95) and median. Common
-instance set: some arm takes > 1 s **and** some arm closes the instance
-(instances where every arm times out would only add ratios of 1). Times
-floored at 1 s; a timeout counts as 310 s, so ratios against a timed-out
-base are upper bounds (the base would need more than 310 s).
+Pairwise: for each arm, instances that A **or** abase closes and where one of
+the two takes > 1 s (so n depends on the arm). Geometric mean of the ratio
+(bootstrap IC95), median, W/L = A faster/slower by > 5 %. Times floored at
+1 s; a timeout counts as 310 s, so ratios against a timed-out base are upper
+bounds.
 
-| arm | set | n | geomean [IC95] | median |
-|---|---|---|---|---|
-| aipopt | 223 | 62 | 1.00 [0.94, 1.05] | 1.00 |
-| acvx0 | 223 | 62 | 0.84 [0.69, 0.96] | 1.00 |
-| acvx | 223 | 62 | 0.85 [0.69, 0.98] | 1.00 |
-| afull | 223 | 62 | 0.83 [0.63, 1.02] | 1.01 |
-| aipopt | 75 open | 11 | 0.99 [0.98, 1.00] | 1.00 |
-| acvx0 | 75 open | 11 | 0.03 [0.01, 0.15] | 0.02 |
-| acvx | 75 open | 11 | 0.03 [0.01, 0.13] | 0.00 |
-| afull | 75 open | 11 | 0.03 [0.01, 0.14] | 0.00 |
-| aipopt | all | 73 | 1.00 [0.94, 1.04] | 1.00 |
-| acvx0 | all | 73 | 0.52 [0.36, 0.73] | 0.99 |
-| acvx | all | 73 | 0.51 [0.34, 0.72] | 0.99 |
-| afull | all | 73 | 0.50 [0.33, 0.73] | 1.00 |
+| arm | set | n | geomean [IC95] | median | W/L |
+|---|---|---|---|---|---|
+| aipopt | 223 | 59 | 1.00 [0.94, 1.05] | 1.00 | 8/10 |
+| acvx0 | 223 | 57 | 0.83 [0.66, 0.96] | 0.99 | 16/3 |
+| acvx | 223 | 59 | 0.84 [0.68, 0.98] | 0.99 | 20/13 |
+| afull | 223 | 61 | 0.83 [0.63, 1.02] | 1.01 | 24/22 |
+| aipopt | 75 open | 3 | 0.97 [0.94, 1.01] | 0.97 | 1/0 |
+| acvx0 | 75 open | 11 | 0.03 [0.01, 0.15] | 0.02 | 8/0 |
+| acvx | 75 open | 11 | 0.03 [0.01, 0.13] | 0.00 | 9/0 |
+| afull | 75 open | 11 | 0.03 [0.01, 0.14] | 0.00 | 8/0 |
+| aipopt | all | 62 | 1.00 [0.94, 1.05] | 1.00 | 9/10 |
+| acvx0 | all | 68 | 0.49 [0.33, 0.71] | 0.99 | 24/3 |
+| acvx | all | 70 | 0.49 [0.32, 0.72] | 0.98 | 29/13 |
+| afull | all | 72 | 0.50 [0.32, 0.72] | 1.00 | 32/22 |
+
+aipopt closes no open instance that abase does not (both close chenery-1,
+hs093, hs118, mistake, wall; 3 of them take > 1 s), so it has no timeouts to
+gain on. On the 223 set it saves nodes (0.76) but not time: best makela3 1.3
+-> 0.0 s, eigencco 3.3 -> 0.4, dixchlng 1.6 -> 0.3, launch 1.5 -> 0.7; worst
+ex8_2_4 2.5 -> 5.3, dnieper 4.1 -> 5.9, dualc1 3.5 -> 5.0, ex14_1_7 12.3 ->
+15.0 (more Ipopt calls on wide boxes cost what the saved nodes save).
 
 Open set, the 11 instances some arm closes (abase -> afull, s): abel,
 abelbis, abelbis-1, abelter-1, catena 310 -> 0.0; fccu 310 -> 0.0; polak3
