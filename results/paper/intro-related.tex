@@ -27,9 +27,8 @@ Lagrangian at the local solution, minimized in closed form over the box and corr
 the relaxation of equality constraints, yields a valid lower bound. In IbexOpt with Ipopt
 as local solver, on 298 benchmark instances, the bound closes 8 more instances and
 roughly halves the solving time on the instances that take more than a second, at a
-cost below 1\% of the running time. We also propose an adaptive schedule for the
-upper-bounding calls of the local solver, which improves the anytime behaviour on the
-instances that are not solved.
+cost below 1\% of the running time, and makes the rigorous solver close more instances
+than SCIP~10 on this benchmark.
 \end{abstract}
 
 \section{Introduction}
@@ -116,15 +115,12 @@ shrinks around a nondegenerate KKT point.
   comparison matrix, midpoint--radius test with an interval Cholesky factorization).
   The bound costs less than 1\% of the running time and the time per node grows by at
   most 5\%.
-\item \textbf{An adaptive schedule for the upper-bounding calls} of the local solver:
-  the gap between calls resets after a call that improves the incumbent and doubles
-  otherwise, with a hard limit per call. It does not change the time to solve, but
-  reduces the primal integral by about 20--30\% on the instances that are not solved.
 \item \textbf{An experimental study} on 298 instances of the IbexOpt benchmark: an
-  ablation of each component, including IbexOpt without local solver as a reference,
-  anytime measures (primal and primal--dual integrals) on the 75 instances not solved
-  within the time limit, and a comparison with SCIP~10. With the Lagrangian bound,
-  the rigorous solver closes 236 instances, against 228 without it and 220 for SCIP.
+  ablation (IbexOpt without local solver, with the local solver for upper bounding
+  only, and with the Lagrangian bound) and a comparison with SCIP~10. With the
+  Lagrangian bound, the rigorous solver closes 236 instances, against 228 without it
+  and 220 for SCIP, and its solving time drops to 0.55 of the time without it on the
+  instances that take more than a second.
   \textbf{[TODO: SCIP with $\pm 10^{12}$ bounds for both solvers.]}
 \end{enumerate}
 
@@ -152,22 +148,18 @@ posteriori by the dual-based correction of
 Feasible points are certified either by inner regions, i.e.\ polytopes or boxes proved
 entirely feasible \citep{Araya2014}, or by an existence proof in a small box around an
 approximate local optimum \citep{Kearfott2014}. Ipopt \citep{WachterBiegler2006} is
-the local solver used by IbexOpt for the latter. Our schedule for the upper-bounding
-calls concerns when this local solver is called; the certification of its result
-follows the existing small-box approach.
+the local solver used by IbexOpt for the latter; we keep this upper-bounding
+scheme unchanged and reuse its by-products.
 
-Restarting a local solver from diversified starting points is standard in heuristic
-global optimization, for instance OQNLP's scatter-search multistart with filters that
-avoid starting near known local minima \citep{Ugray2007}. Inside rigorous solvers, the
-interaction between local search and the search tree has been studied mainly for node
-selection \citep{Neveu2016,ReyesAraya2024}. Charibde \citep{Vanaret2020} shares the
-incumbent between an evolutionary algorithm and an interval branch and bound. Global
-solvers typically call their local solver at a fixed frequency or at selected nodes;
-our schedule adapts the frequency to the recent success of the calls, in the spirit of
-the adaptive heuristic scheduling of MIP solvers. \textbf{[TODO: cite a reference on
-adaptive primal-heuristic scheduling in MIP/MINLP.]} Anytime behaviour is
-measured with the primal integral of \citet{Berthold2013}, extended to the
-primal--dual gap.
+How often a global solver calls its local solver is a design choice of every code:
+BARON runs local searches in preprocessing and during the tree under its own rules,
+Couenne solves on average a fixed number of local NLPs per tree level, and SCIP's
+subNLP heuristic decides at each node from the nodes processed since its last run and
+its past success \citep{VigerskeGleixner2018}; multistart is also common
+\citep{Ugray2007}. In all of them, the local solver serves the upper bound only. Inside
+rigorous solvers, local search has also been used for node selection
+\citep{Neveu2016,ReyesAraya2024}, and Charibde \citep{Vanaret2020} shares the
+incumbent between an evolutionary algorithm and an interval branch and bound.
 
 \subsection{Rigorous bounds from approximate dual information}
 
