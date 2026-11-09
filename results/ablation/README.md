@@ -149,3 +149,42 @@ on 14 more open instances, +5 closed. As dual oracle (abase -> acvx0, the
 Lagrangian bound from its multipliers): a further 0.35/0.62 = 0.56 of the
 time and +8 closed. All together: about a third of the time of the solver
 without Ipopt, 18 % of its nodes, +13 closed instances.
+
+## Tuned Ipopt schedule (aad, cad, fad)
+
+`--ipopt-adaptive=100 --ipopt-call-limit=1`: the next scheduled Ipopt call comes
+right after a call that improved the loup and twice the previous gap later
+(up to 100 loup-finder calls) after one that did not (instead of every 100
+calls), and one Ipopt call is cut after 1 s of CPU (instead of 5 s).
+aad = aipopt + this, cad = acvx + this, fad = afull + this. The 223 set was
+rerun (aad2, cad2, fad2) without SCIP sharing the CPUs; aipopt2 (aipopt rerun
+after the container restart) matches aipopt (1.00 [0.99, 1.01]).
+
+223 closed instances (63 with some arm > 1 s; all arms close all 223):
+
+| pair | time ratio [IC95] | faster/slower | nodes |
+|---|---|---|---|
+| aad / aipopt | 1.00 [0.94, 1.05] | 10/12 | 0.94 |
+| cad / acvx | 0.98 [0.92, 1.03] | 17/11 | 0.95 |
+| fad / afull | 0.94 [0.88, 1.00] | 11/8 | 0.97 |
+| fad / abase | 0.79 [0.61, 0.96] | 24/19 | 0.50 |
+
+Open set (69 instances with metrics in every arm, now including the 7
+`no_lower_bound` stops with gap 1):
+
+| arm | closed (open set) | primal integral | primal-dual integral |
+|---|---|---|---|
+| anoip | 4 | 0.550 | 0.732 |
+| abase | 5 | 0.196 | 0.619 |
+| aipopt | 5 | 0.181 | 0.617 |
+| aad | 5 | 0.130 | 0.617 |
+| acvx0 | 13 | 0.196 | 0.545 |
+| acvx | 13 | 0.176 | 0.543 |
+| cad | 13 | 0.145 | 0.542 |
+| afull | 13 | 0.133 | 0.533 |
+| fad | 13 | 0.133 | 0.542 |
+
+The tuned schedule does not change the time to close (at most −6 %, within
+noise) but improves the primal side on open instances (primal integral −28 %
+for aipopt -> aad, −18 % for acvx -> cad), about as much as the guided
+restarts; combining both (fad) adds nothing over either.
