@@ -389,7 +389,7 @@ no aparece en ninguno de los tres:
     estructura convexa, y nuestra certificación es numérica, local a la caja y depende
     de λ̃.
   - Hay casos que su análisis no capta y el nuestro sí: el Lagrangiano puede ser
-    convexo en una caja aunque f o g no lo sean (por ejemplo polak3 y abel, cerradas
+    convexo en una caja aunque f o g no lo sean (candidatos a verificar: polak3 y abel, cerradas
     con la cota).
   - También sugiere una línea futura: ramificar preferentemente sobre las variables
     responsables de d_i > 0, que son las "no convexas" en la caja.
