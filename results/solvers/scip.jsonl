@@ -1,0 +1,1 @@
+{"instance": "ackley_5.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": -8.394490411515987e-07, "uplo": -8.394490411515987e-07, "nodes": 1, "time": 0.016253, "wall": 0.016301631927490234}}
