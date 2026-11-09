@@ -332,7 +332,7 @@ Experiments
 Setup
 
 [Draft.] 298 instances of the COCONUT benchmark (Shcherbina et al. 2003), in the Minibex
-translation distributed with IbEX (benchs/optim/all): the 223 that IbexOpt solves within
+translation distributed with Ibex (benchs/optim/all): the 223 that IbexOpt solves within
 the time limit and 75 that it does not. One thread, 310 s, same machine, three runs in
 parallel; relative precision 10⁻³, absolute 10⁻⁷, ε_(h) = 10⁻⁸. Deterministic budgets
 (backoff in nodes), seed 1. Measures: instances solved; time ratios with a 1 s floor
