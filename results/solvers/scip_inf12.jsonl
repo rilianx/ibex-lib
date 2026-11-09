@@ -6,3 +6,4 @@
 {"instance": "batch.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 259180.33716575688, "uplo": 258990.9472129107, "nodes": 1, "time": 0.013169, "wall": 0.013213872909545898}}
 {"instance": "bearing.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": 1.9251184729317632, "uplo": 1.9251184729317632, "nodes": 2376, "time": 1.384459, "wall": 1.384523868560791}}
 {"instance": "chance.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": 29.89437804150864, "uplo": 29.890856141880352, "nodes": 1, "time": 0.013084, "wall": 0.013120412826538086}}
+{"instance": "chem-1.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "gaplimit", "loup": -47.70651484458981, "uplo": -47.75422009268114, "nodes": 324071, "time": 96.985746, "wall": 96.98581385612488}}
