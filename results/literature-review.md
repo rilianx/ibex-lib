@@ -225,3 +225,41 @@ Prioridad media:
 Búsquedas aún pendientes: subestimadores del Lagrangiano en solvers deterministas
 (ANTIGONE, Couenne, SCIP), "rigorous" + "Lagrangian bound" en COCONUT/GloptLab (Domes,
 Neumaier), y multistart dentro de spatial B&B.
+
+
+## 5. Lectura de los textos completos disponibles en arXiv (nov 2026)
+
+Desde este entorno solo arxiv.org es accesible (reliable-computing.org,
+optimization-online.org, arnold-neumaier.at, hal.science, core.ac.uk, springer y
+acm devuelven 403 por la política de red). Descargados y leídos (abstract, métodos,
+conclusiones):
+
+- **Hladík, *On the efficient Gerschgorin inclusion usage in the global optimization
+  αBB method*** (arXiv 1307.2786). Para el α de αBB con Gershgorin escalado basta la
+  matriz puntual h̲_ii en la diagonal y −max(|h̲_ij|, |h̄_ij|) fuera de ella (= nuestra
+  "matriz de comparación"). La escala estándar es d = ancho de la caja (= nuestro
+  `--cvx-test 3`). Propone dos heurísticas de mejora local de d; la segunda cumple tres
+  condiciones necesarias de optimalidad, corre en tiempo polinomial y en promedio
+  ~1 iteración. En su ejemplo baja α₂ de 12 a 3. **Mejora directa para nuestro
+  desplazamiento**: reemplazar la escala por la heurística 2 de Hladík.
+- **Hladík, *The effect of Hessian evaluations in the global optimization αBB method***
+  (arXiv 1307.2791). El cálculo simbólico del Hessiano, con simplificaciones, reduce
+  mucho el sobreestimado del Hessiano en intervalos y con ello α. IBEX ya diferencia
+  simbólicamente (`Function::DIFF`); ver si la simplificación de IBEX es suficiente.
+- **Hladík, *Positive semidefiniteness and positive definiteness of a linear parametric
+  interval matrix*** (arXiv 1704.05782). Condiciones suficientes/necesarias baratas
+  para PSD de matrices de intervalos (incluye la de centro-radio que implementamos).
+  Motiva explícitamente el uso en B&B de intervalos para chequear convexidad.
+- **Zamani, *New bounds for nonconvex QCQP*** (arXiv 1902.08861). Cotas para QCQP con
+  multiplicadores afines (cuadráticas) y cuadráticos (cúbicas); las relajaciones SDP
+  son duales de cotas cuadráticas. Relacionado a nivel de idea (multiplicadores para
+  cotas), específico de QCQP y sin aritmética de intervalos.
+- **Vanaret et al., *Certified global minima ...*** (arXiv 2003.09867). Charibde
+  (evolutivo + intervalos). Contexto de hibridación; no aborda cotas lagrangianas.
+- arXiv 2308.05244 **no** es el artículo de hibridación afín/XTaylor (es *A hybrid
+  approach to joint spectral radius computation*); el identificador vino mal de una
+  fuente secundaria. El artículo de Araya, Messine, Ninin, Trombettoni (2024) sigue
+  pendiente.
+
+No están en arXiv (búsqueda por título y autor): Van Voorhis (2002), QIBEX (Elloumi et
+al. 2025), Neumaier–Shcherbina (2004), αBB I/II (1998), Kearfott (2014), Ryoo–Sahinidis.
