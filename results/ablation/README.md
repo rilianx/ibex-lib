@@ -100,25 +100,28 @@ instances that close (the rest time out in both arms).
 
 ## Time ratio t(A)/t(abase)
 
-Geometric mean of the per-instance ratio (bootstrap IC95) and median, on a
-common instance set: instances where some arm (any of the 5) takes > 1 s;
-timeouts = 310 s.
+Geometric mean of the per-instance ratio (bootstrap IC95) and median. Common
+instance set: some arm takes > 1 s **and** some arm closes the instance
+(instances where every arm times out would only add ratios of 1). Times
+floored at 1 s; a timeout counts as 310 s, so ratios against a timed-out
+base are upper bounds (the base would need more than 310 s).
 
 | arm | set | n | geomean [IC95] | median |
 |---|---|---|---|---|
-| aipopt | 223 | 62 | 0.88 [0.69, 1.03] | 1.00 |
-| acvx0 | 223 | 62 | 0.71 [0.48, 0.94] | 0.99 |
-| acvx | 223 | 62 | 0.60 [0.36, 0.86] | 0.99 |
-| afull | 223 | 62 | 0.56 [0.32, 0.86] | 1.01 |
-| aipopt | 75 open | 60 | 1.00 [1.00, 1.00] | 1.00 |
-| acvx0 | 75 open | 60 | 0.42 [0.21, 0.74] | 1.00 |
-| acvx | 75 open | 60 | 0.34 [0.16, 0.69] | 1.00 |
-| afull | 75 open | 60 | 0.35 [0.16, 0.70] | 1.00 |
-| aipopt | all | 122 | 0.93 [0.82, 1.01] | 1.00 |
-| acvx0 | all | 122 | 0.55 [0.37, 0.76] | 1.00 |
-| acvx | all | 122 | 0.45 [0.29, 0.67] | 1.00 |
-| afull | all | 122 | 0.45 [0.28, 0.67] | 1.00 |
+| aipopt | 223 | 62 | 1.00 [0.94, 1.05] | 1.00 |
+| acvx0 | 223 | 62 | 0.84 [0.69, 0.96] | 1.00 |
+| acvx | 223 | 62 | 0.85 [0.69, 0.98] | 1.00 |
+| afull | 223 | 62 | 0.83 [0.63, 1.02] | 1.01 |
+| aipopt | 75 open | 11 | 0.99 [0.98, 1.00] | 1.00 |
+| acvx0 | 75 open | 11 | 0.03 [0.01, 0.15] | 0.02 |
+| acvx | 75 open | 11 | 0.03 [0.01, 0.13] | 0.00 |
+| afull | 75 open | 11 | 0.03 [0.01, 0.14] | 0.00 |
+| aipopt | all | 73 | 1.00 [0.94, 1.04] | 1.00 |
+| acvx0 | all | 73 | 0.52 [0.36, 0.73] | 0.99 |
+| acvx | all | 73 | 0.51 [0.34, 0.72] | 0.99 |
+| afull | all | 73 | 0.50 [0.33, 0.73] | 1.00 |
 
-The median is ~1: the typical instance does not change; the geometric mean is
-driven by a minority with large speedups (instances the bound closes in
-seconds that took minutes or timed out).
+Open set, the 11 instances some arm closes (abase -> afull, s): abel,
+abelbis, abelbis-1, abelter-1, catena 310 -> 0.0; fccu 310 -> 0.0; polak3
+310 -> 28; ex8_4_1 310 -> 30; chenery-1 51 -> 51; hs093 204 -> 211; mistake
+230 -> 237.
