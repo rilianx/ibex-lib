@@ -580,7 +580,42 @@ namespace ibex {
           if (dshift[i] > 0) shifted = true;
         }
       }
-      if (cvx_psd_test != 2 && !certify_psd(H)) {
+      // --cvx-test 3: also the scaled Gershgorin shift of alphaBB (Adjiman et
+      // al. 1998), scaling by w_i = max_{y in B} |y_i - x^_i|: S(H+D)S PSD by
+      // Gershgorin with S = diag(w) if d_i >= sum_j!=i |h_ij| w_j/w_i - h_ii.
+      // Of the two shifts, keep the one with the smaller penalty
+      // sum d_i/2 w_i^2 (both are valid).
+      if (cvx_psd_test == 3) {
+        for (int i=0; i<n; i++) for (int j=0; j<n; j++)
+          if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
+        std::vector<double> w(n), dplain(n, 0.0), dscaled(n, 0.0);
+        bool finite = true;
+        for (int i=0; i<n; i++) {
+          if (box[i].is_unbounded()) { finite = false; break; }
+          double v = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
+          w[i] = (Interval(std::max(v - box[i].lb(), box[i].ub() - v))).ub();
+        }
+        Interval pen_plain(0), pen_scaled(0);
+        for (int i=0; i<n; i++) {
+          Interval r(0), rs(0);
+          for (int j=0; j<n; j++) if (j!=i) {
+            r += abs(H[i][j]);
+            if (finite && w[i] > 0) rs += abs(H[i][j]) * Interval(w[j]) / Interval(w[i]);
+          }
+          dplain[i] = std::max(0.0, (r - Interval(H[i][i].lb())).ub());
+          dscaled[i] = (finite && w[i] > 0) ? std::max(0.0, (rs - Interval(H[i][i].lb())).ub()) : dplain[i];
+          if (finite) {
+            pen_plain += Interval(dplain[i]) * sqr(Interval(w[i]));
+            pen_scaled += Interval(dscaled[i]) * sqr(Interval(w[i]));
+          }
+        }
+        bool use_scaled = finite && pen_scaled.ub() < pen_plain.ub();
+        for (int i=0; i<n; i++) {
+          dshift[i] = use_scaled ? dscaled[i] : dplain[i];
+          if (dshift[i] > 0) shifted = true;
+        }
+      }
+      if (cvx_psd_test < 2 && !certify_psd(H)) {
         if (certified) {
           // is even the center indefinite? (float Cholesky of mid(H) + tiny shift)
           int nn = H.nb_rows(); std::vector<double> A(nn*nn), Lc(nn*nn, 0.0); bool pd = true;
