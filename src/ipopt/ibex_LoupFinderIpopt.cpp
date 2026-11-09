@@ -67,6 +67,14 @@ namespace ibex {
   // comes 1 call later after one that improved the loup, twice the previous
   // gap (up to M) after one that did not. 0: fixed schedule
   long ipopt_adaptive=0;
+  // two-stage iteration budget (ibex-ipopt "maxiter=1000/20"): Ipopt's
+  // max_iter is 1000 while no feasible point is known and this value after
+  // (<= 0: always 1000)
+  int ipopt_maxiter_feasible=-1;
+  // 2: run the correction search only when check() rejected Ipopt's point
+  // and Ipopt converged (Solve_Succeeded / Solved_To_Acceptable_Level)
+  // (ibex-ipopt "corrpolicy=2"); 0: always (default)
+  int ipopt_corr_policy=0;
   namespace { long ipopt_ad_interval=1, ipopt_ad_skip=0; }
   // CPU timeout of the correction search with the wide box (--ipopt-expansion)
   double ipopt_corr_time=1;
@@ -281,6 +289,8 @@ namespace ibex {
 	  double loup_in = loup;
 	  Timer ipopt_timer; ipopt_timer.start();
 	  if (ipopt_max_time > 0) app->Options()->SetNumericValue("max_cpu_time", ipopt_max_time);
+	  if (ipopt_maxiter_feasible > 0)
+	    app->Options()->SetIntegerValue("max_iter", loup < POS_INFINITY ? ipopt_maxiter_feasible : 1000);
 	  if (getenv("IBEX_IPOPT_TRACE")) { std::cerr.precision(17); std::cerr << "call " << ipopt_calls << " force " << force << " start " << (force ? solution : start_point(box)) << " box " << box << std::endl; }
 	  ipopt_deadline_on = ipopt_call_limit > 0;
 	  ipopt_deadline = std::clock() + (std::clock_t) (ipopt_call_limit * CLOCKS_PER_SEC);
@@ -342,14 +352,16 @@ namespace ibex {
 	        for (int k=0; k<g.size(); k++) log_viol = std::max(log_viol, g[k].ub());
 	      } else log_viol = NEG_INFINITY;
 	    }
-	    if (check(normsys,solution,loup,false))
+	    bool checked = check(normsys,solution,loup,false);
+	    bool converged = ((int) status == 0 || (int) status == 1);
+	    if (checked)
 		  { 
 		    loup_point0=solution;
 		    if (optimizer->trace) 
 		      cout << "*** ipopt      " ;
 		  }
 
-	    if (true){  // no integer variables in this port
+	    if (ipopt_corr_policy != 2 || (!checked && converged)){  // no integer variables in this port
 	    //	    else if (optimalValue< loup && sys.get_integer_variables()->size() < sys.nb_var){
 	      //	      cout << " solution " << solution << endl;
 	      //	      cout << " optimal value " << optimalValue << " loup " << loup << endl;
