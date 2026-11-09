@@ -6,7 +6,7 @@
 
 \title{Certified Lagrangian lower bounds from local-solver multipliers
 in a rigorous interval branch and bound}
-\author{Draft --- Introduction and Related Work}
+\author{Draft --- outline}
 \date{November 2026}
 
 \begin{document}
@@ -19,8 +19,7 @@ lower bounds come from linear relaxations of the problem over each box and stay 
 long after the incumbent is optimal. Meanwhile, the local NLP solver that these codes
 call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
 multipliers that are discarded. We show that this by-product is enough to compute a
-rigorous lower bound on the original nonconvex problem at the nodes where the local
-solver runs: we enclose the Hessian of the Lagrangian with the solver's multipliers by
+rigorous lower bound on the original nonconvex problem at every node of the search: we enclose the Hessian of the Lagrangian with the solver's multipliers by
 interval arithmetic and either certify that it is positive semidefinite on the box, or
 shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
@@ -124,9 +123,14 @@ shrinks around a nondegenerate KKT point.
   \textbf{[TODO: SCIP with $\pm 10^{12}$ bounds for both solvers.]}
 \end{enumerate}
 
-\textbf{[TODO: paper outline.]}
+The paper is organized as follows. Section~\ref{sec:related} reviews related work.
+Section~\ref{sec:prelim} recalls the interval branch and bound of IbexOpt and how it
+uses a local solver. Section~\ref{sec:bound} presents the certified Lagrangian bound,
+its rigorous evaluation, the convexity certificates and the diagonal shift, and its
+integration in the search. Section~\ref{sec:exp} reports the experiments and
+Section~\ref{sec:concl} concludes.
 
-\section{Related work}
+\section{Related work}\label{sec:related}
 
 \subsection{Rigorous global optimization and upper bounding with local solvers}
 
@@ -284,6 +288,166 @@ These analyses address the convexity of the \emph{problem functions}. Ours conce
 Lagrangian with fixed multipliers on one box, and it is numerical and local. A symbolic
 analysis could complement it by predicting on which instances the certification is
 likely to succeed.
+
+
+\section{Preliminaries}\label{sec:prelim}
+
+\subsection{Interval branch and bound}
+
+\textbf{[Draft.]} Intervals, boxes and outward rounding; an inclusion function $[f]$
+of $f$ satisfies $f([x]) \subseteq [f]([x])$ for every box. IbexOpt keeps the
+objective as an extra variable $y$ with the constraint $y = f(x)$, so that every node
+is a box $[x] \times [y]$ and its lower bound is $\underline{y}$. Equalities are
+relaxed to $|h_j(x)| \le \varepsilon_h$ ($\varepsilon_h = 10^{-8}$ by default) and
+a range constraint $h_j(x) \in [a_j, b_j]$ (thick constant) is kept as such. The search
+stops when $(\text{loup} - \text{uplo})$ is below a relative ($10^{-3}$) or absolute
+($10^{-7}$) precision.
+
+At each node, IbexOpt
+(i)~contracts the box with constraint propagation (HC4, ACID) and with a linear
+relaxation (XTaylor and affine arithmetic, \texttt{--relax both}) solved by an LP
+solver whose optimum is made safe as in \citet{NeumaierShcherbina2004};
+(ii)~raises $\underline{y}$ accordingly;
+(iii)~runs the upper-bounding heuristics;
+(iv)~stores the node in a best-first heap (\texttt{lsmear} branching).
+\textbf{[TODO: one figure with the node loop and where the new bound plugs in.]}
+
+\subsection{Upper bounding with a local solver}\label{sec:ub}
+
+The loup finder combines probing, inner-region heuristics on the linear relaxation
+\citep{Araya2014} and a local NLP solver (Ipopt) called every $k$ loup-finder calls
+(and when another heuristic improves the incumbent, from its point). Ipopt solves the
+problem restricted to the current box from its midpoint and returns
+$(\hat x, \hat\mu, \hat\lambda)$. Because $\hat x$ satisfies the constraints only up to
+Ipopt's tolerances, a short nested search in a small box around $\hat x$ looks for a
+point that interval arithmetic proves feasible; only a certified point updates the
+loup. We keep this scheme unchanged; what we add is to store the last usable
+primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ that Ipopt returns.
+
+\section{A certified Lagrangian lower bound}\label{sec:bound}
+
+\subsection{Weak duality with relaxed equalities}
+
+Write the constraints as $g(x) \le 0$ and $h(x) = 0$ (each $\ge$ constraint negated).
+For any $\mu \ge 0$ and $\lambda$, and any $x$ that the search treats as feasible
+($g(x) \le 0$, $|h(x)| \le \varepsilon_h$),
+\[
+  f(x) \;\ge\; L_{\mu,\lambda}(x) - \varepsilon_h \|\lambda\|_1,
+  \qquad L_{\mu,\lambda} = f + \mu^\top g + \lambda^\top h .
+\]
+Ipopt's multipliers are projected onto the right signs (a multiplier of an
+inequality with the wrong sign is set to $0$), which keeps the inequality valid without
+any assumption on their quality.
+
+\subsection{Tangent bound on a box}
+
+\textbf{Proposition 1.} Let $[x]$ be a box, $\hat x \in [x]$, and $d \in \mathbb{R}^n_+$
+such that $\nabla^2 L(\xi) + \operatorname{diag}(d) \succeq 0$ for all $\xi \in [x]$.
+Then for all $x \in [x]$ feasible for the relaxed problem,
+\[
+  f(x) \ge L(\hat x) + \sum_i \min_{x_i \in [x_i]} \partial_i L(\hat x)(x_i - \hat x_i)
+  - \frac12 \sum_i d_i \max_{x_i \in [x_i]} (x_i - \hat x_i)^2
+  - \varepsilon_h \|\lambda\|_1 .
+\]
+\emph{Proof sketch.} $\phi(x) = L(x) + \frac12 \sum_i d_i (x_i - \hat x_i)^2$ is convex on
+$[x]$ and has gradient $\nabla L(\hat x)$ at $\hat x$; the tangent inequality of $\phi$
+and the bounds on each term give the result. \textbf{[TODO: full proof; remark that
+with $d = 0$ it is the bound of \citet{Jansson2004convex} and
+\citet{MessineTrombettoni2019}, and that the separable penalty could use the exact
+minimum of each one-dimensional concave term over its interval.]}
+
+\textbf{Exactness.} If $d = 0$, $\hat x$ is a KKT point of the problem restricted to
+$[x]$ with multipliers $(\hat\mu, \hat\lambda)$ and computations are exact, the bound
+equals $f(\hat x)$ up to $\varepsilon_h\|\lambda\|_1$ \citep[Thm.~2]{Jansson2004convex}.
+With $d \neq 0$ the penalty is $O(\|d\|\,\mathrm{wid}([x])^2)$ and vanishes as the box
+shrinks. \textbf{[TODO: state as a proposition on convergence along a nested sequence of
+boxes.]}
+
+\subsection{Rigorous evaluation}
+
+All quantities are evaluated with interval arithmetic at the point interval
+$\hat x$ (projected onto the node box): $L(\hat x)$, $\nabla L(\hat x)$, the products
+$\partial_i L(\hat x)\,([x_i] - \hat x_i)$, whose lower bound is the minimum of the
+linear term, and the penalty with the upper bound of $([x_i] - \hat x_i)^2$. The bound
+is the lower end of the resulting interval. Multipliers are floating-point numbers
+used as exact constants. Unbounded boxes, unbounded Hessian entries or non-finite
+values give no bound ($-\infty$).
+
+\subsection{Convexity certificates and the diagonal shift}
+
+$[H]$ is an interval enclosure of $\nabla^2 L$ over $[x]$, obtained by automatic
+differentiation of the gradient enclosures of $f$ and of each $g_k$, $h_k$ weighted by
+the fixed multipliers. Two modes:
+\begin{itemize}
+\item \emph{certify}: prove $[H] \succeq 0$ (every symmetric $H \in [H]$), with tests of
+increasing cost: interval Gerschgorin; the comparison matrix; the midpoint--radius
+condition checked by an interval Cholesky factorization of $H_c - \rho I$.
+\textbf{[TODO: precise statements, cost $O(n^2)$ / $O(n^3)$, reference to
+\citet{Hladik2018}.]} If none succeeds, no bound.
+\item \emph{shift} (default): $d_i = \max\{0, \sum_{j\ne i} |[H]_{ij}| - h^L_{ii}\}$,
+the Gerschgorin rule of \citet[Thm.~3.13 with $d = \mathbf 1$]{Adjiman1998a}; the
+scaled variant (weights $w_i = \max |[x_i] - \hat x_i|$) is also available.
+\end{itemize}
+
+\subsection{Integration in the search}
+
+The bound is computed in the contraction step of every node, after the other
+contractors, with the last stored primal--dual pair (computed at another node, so
+nothing is solved at the current one). If it exceeds $\underline{y}$, it raises it; if
+it exceeds the loup, the node is pruned. \textbf{Backoff:} when the bound does not
+improve the node's lower bound, the next attempt is postponed by twice the previous
+gap (up to 64 nodes); a useful attempt resets the gap. This bounds the cost on
+problems where the Lagrangian bound never helps.
+\textbf{[TODO: pseudocode.]}
+
+\section{Experiments}\label{sec:exp}
+
+\subsection{Setup}
+
+\textbf{[Draft.]} 298 instances of the IbexOpt benchmark (\texttt{benchs/optim/all}:
+COCONUT, GlobalLib and others): the 223 that IbexOpt solves within the time limit and
+75 that it does not. One thread, 310~s, same machine, three runs in parallel; relative
+precision $10^{-3}$, absolute $10^{-7}$, $\varepsilon_h = 10^{-8}$. Deterministic budgets
+(backoff in nodes), seed 1. Measures: instances solved; time ratios with a 1~s floor
+(timeout $=$ 310~s) on the instances some configuration solves and some takes more
+than 1~s, with bootstrap confidence intervals; nodes; time per node.
+\textbf{[TODO: hardware, Ipopt version, LP solver.]}
+
+\subsection{Ablation}
+
+Configurations: no local solver; local solver for upper bounding only (IbexOpt's
+default); + Lagrangian bound with the shift (default); + Lagrangian bound with
+certification only. Table: solved /298, time ratio [IC95], nodes, time per node,
+share of time in the local solver and in the bound. Current results: 223, 228, 236
+solved; time 1.62, 1.00, 0.55. \textbf{[TODO: certify-only arm; table.]}
+
+\subsection{Where the bound helps}
+
+How often the Lagrangian is certified convex on the node box, how often the shifted
+bound improves the node bound or prunes it, as a function of depth; the instances it
+closes (abel, abelbis, abelbis-1, abelter-1, catena, ex8\_4\_1, fccu, polak3) and the
+ones it accelerates (robot, harker, sambal, dnieper\ldots); where it never helps.
+\textbf{[TODO: statistics from \texttt{--cvx-stats}; one figure: fraction of useful
+nodes vs depth.]}
+
+\subsection{Variants of the bound}
+
+Certify vs shift; plain vs scaled Gerschgorin; with and without backoff; PSD tests.
+\textbf{[TODO: table on the instances where the bound is used.]}
+
+\subsection{Comparison with SCIP}
+
+SCIP~10 with the same stopping rule, both solvers on the same domains (missing bounds
+set to $\pm 10^{12}$); pairwise performance profiles; solved instances per model class;
+discussion of rigor (SCIP's feasibility tolerance; wrong optima reported in the
+literature). \textbf{[TODO: results of the $\pm 10^{12}$ runs.]}
+
+\section{Conclusion}\label{sec:concl}
+
+\textbf{[TODO.]} Summary; limits (needs a usable local solution; the shift degrades on
+wide boxes; multipliers from another node); future work: optimality-based range
+reduction with the same tangent \citep{RyooSahinidis1996}, better shifts (scaled,
+E-matrix), branching on the variables with $d_i > 0$ \citep{Adjiman1998b}.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
