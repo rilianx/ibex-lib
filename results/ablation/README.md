@@ -188,3 +188,26 @@ The tuned schedule does not change the time to close (at most −6 %, within
 noise) but improves the primal side on open instances (primal integral −28 %
 for aipopt -> aad, −18 % for acvx -> cad), about as much as the guided
 restarts; combining both (fad) adds nothing over either.
+
+## Full ablation, time to solve only (no anytime)
+
+Common set: instances some arm closes and some arm takes > 1 s (79). Time ratio
+vs abase (geometric mean, 1 s floor, timeout 310 s, IC95). Nodes and time per
+node: geometric means vs abase on the 223 instances every arm closes (time per
+node: instances with >= 100 nodes in both). Shares of the total time on those
+223. aad/cad: rerun without SCIP alongside on the 223 set.
+
+| arm | adds | closed /298 | n (closes) | time vs abase [IC95] | nodes | time/node | local solver % | bound % |
+|---|---|---|---|---|---|---|---|---|
+| anoip | no local solver | 223 | 79 (67) | 1.62 [1.31, 2.10] | 2.95 | 0.85 | 0 | 0 |
+| abase | Ipopt for upper bounding (IbexOpt default) | 228 | 79 (71) | 1.00 | 1.00 | 1.00 | 5.4 | 0 |
+| aipopt | + calls on any box, cascade certification | 228 | 79 (71) | 1.00 [0.95, 1.04] | 0.78 | 1.02 | 5.0 | 0 |
+| aad | + adaptive call schedule | 228 | 79 (71) | 1.00 [0.95, 1.04] | 0.73 | 1.08 | 5.6 | 0 |
+| acvx0 | abase + Lagrangian bound | 236 | 79 (79) | 0.55 [0.38, 0.75] | 0.80 | 1.02 | 5.9 | 0.3 |
+| acvx | aipopt + Lagrangian bound | 236 | 79 (79) | 0.54 [0.36, 0.75] | 0.58 | 1.04 | 5.3 | 0.3 |
+| cad | aad + Lagrangian bound | 236 | 79 (79) | 0.53 [0.36, 0.74] | 0.56 | 1.07 | 5.9 | 0.3 |
+
+Without anytime measures, only two steps matter for the time to solve: a local
+solver for upper bounding (anoip -> abase: 1.62 -> 1.00, standard practice) and
+the Lagrangian bound (abase -> acvx0: 1.00 -> 0.55, +8 closed). The call
+strategies (aipopt, aad) reduce nodes (0.78, 0.73) but not time.

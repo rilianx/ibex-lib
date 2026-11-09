@@ -78,3 +78,5 @@
 {"instance": "ex6_1_1.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -0.020198345333420773, "uplo": -0.32446900601682066, "nodes": 900749, "time": 310.000802, "wall": 310.0008783340454}}
 {"instance": "ex6_1_4.bch", "arm": "scip", "result": {"status": "complete", "scip_status": "optimal", "loup": -0.2945466759360395, "uplo": -0.2945466759360395, "nodes": 51, "time": 0.081277, "wall": 0.08133196830749512}}
 {"instance": "ex6_1_3.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -0.35249781833543936, "uplo": -1.1871395553733808, "nodes": 265895, "time": 310.002025, "wall": 310.0021152496338}}
+{"instance": "ex6_1_3bis.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -0.35188889841484666, "uplo": -21306.72126105805, "nodes": 1643361, "time": 310.01078, "wall": 310.01086926460266}}
+{"instance": "ex6_2_10.bch", "arm": "scip", "result": {"status": "timeout", "scip_status": "timelimit", "loup": -3.051976150533813, "uplo": -68.58669480106248, "nodes": 112748, "time": 310.001126, "wall": 310.0012176036835}}

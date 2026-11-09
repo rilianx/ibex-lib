@@ -552,3 +552,28 @@ Prioridad media (opcionales):
 Ya leídos: Van Voorhis (2002), QIBEX (2025), revisión de Neumaier–Shcherbina,
 Messine–Trombettoni (2019), Jansson (2004, SIAM, LP), **Jansson (2004, JOGO, convexo)**,
 Kearfott–Castille–Tyagi (2013), Adjiman et al. (1996), **Adjiman et al. (1998, Part II)**.
+
+## 10. Local solver calls in other global solvers (upper bounding)
+
+- **BARON** (GAMS/minlp.com option docs): `NumLoc` = number of local searches in
+  preprocessing (default -2: BARON's own rule; i.e. a multistart before/at the
+  root), `DoLocal` = local search for upper bounding during the tree (default on,
+  BARON's rule), `NLPSol` = dynamic choice among NLP solvers during the search.
+  The rule itself is not documented.
+- **ANTIGONE** (GAMS docs): feasible solutions by local NLP solves (CONOPT by
+  default, SNOPT optional), 30 s per NLP solve by default; schedule not documented
+  beyond that.
+- **Couenne**: `local_optimization_heuristic` (default yes) and
+  `log_num_local_optimization_per_level` (default 2): on average 2^k local NLP
+  solves per tree level at randomly chosen nodes (all nodes up to depth k, then
+  half, a quarter...): a depth-based decreasing schedule.
+- **SCIP 8** (Bestuzheva et al., arXiv 2301.00587, sec. 2.8): subNLP heuristic
+  (fix integers, presolve, Ipopt from the LP solution or points of other
+  heuristics); whether to run at a node depends on the nodes since the last
+  run, the iteration limit it would use and its past success (adaptive,
+  success-based); iteration limit = 2x the average of previous runs. A
+  multistart heuristic (sampling + constraint consensus + clustering) feeds
+  starting points to subNLP for continuous problems.
+- Consequence: an adaptive, success-based schedule for local solves is already
+  standard (SCIP), and multistart at the root too (BARON, SCIP). Our call
+  strategy is not a contribution by itself.
