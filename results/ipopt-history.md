@@ -64,3 +64,21 @@ ex8_2_4 2.7 -> 6.0, ex9_2_5 1.0 -> 2.2, haldmads 1.1 -> 2.2.
 Open 75 (62 with metrics in all arms): primal integral 0.182 (tbase) ->
 0.135 (full), primal-dual 0.601 -> 0.505; no feasible point 9 -> 4 (discs,
 ex5_3_3, minlphi, minlphi1).
+
+## full2: full + shifted (alphaBB-like) Lagrangian bound (--cvx-test 2)
+
+Same host as tbase2 / full.
+
+    A      vs B       time diff [IC95]          nodes  total time (223)
+    full2  vs full    -0.020 [-0.031, -0.009]   0.960  908 vs 1032 s
+    full2  vs tbase2  -0.029 [-0.052, -0.008]   0.495  908 vs 1229 s
+
+Faster than full: robot 62.2 -> 29.4 s, dnieper 5.5 -> 2.1, ex6_2_6 8.5 ->
+5.1, ex6_2_8, ex6_2_11, ex8_4_4-1/-2; slower: haldmads 2.2 -> 3.4.
+Open 75: 13 closed (+ catena, ex8_4_1), primal integral 0.120, primal-dual
+0.487 (full: 0.135 / 0.505; tbase: 0.182 / 0.601). Optima agree with
+optima.txt; catena and ex8_4_1 close at the loup every arm finds.
+
+**Total: 223 + 13 = 236 of 298** (start: 224). Against the original base on
+the same host: half the nodes, total time 1229 -> 908 s (-26%), pairwise
+time -0.029 [-0.052, -0.008].
