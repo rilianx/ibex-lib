@@ -58,6 +58,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     cad2) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-adaptive=100 --ipopt-call-limit=1 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     fad2) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-adaptive=100 --ipopt-call-limit=1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --ipopt-guided-nodes --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     # ibex-ipopt schedule (freq 20, maxiter 1000 then 20, correction only when check fails and Ipopt converged)
+    abase3) d=1e8;  x="" ;;  # abase again after the second container restart (host speed)
     ami) d=1e8;  x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2" ;;
     cmi) d=1e8;  x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
     anoip) d=1e8;  x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
