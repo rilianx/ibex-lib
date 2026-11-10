@@ -219,4 +219,25 @@ test_infinity4. Same as in the cloud.
 killed at TLIM+200 = 1400 s). hs090 and hs091 are also `killed` in the cloud runs
 (abase, acvx0). **hs089/acvx0 is new**: in the cloud it ended by `timeout` at 310 s
 (6238 nodes); here it hangs after more than 310 s. anoip ends by timeout on all three.
-Under investigation (backtraces), runs stopped before E2 on the 75 set.
+Backtraces (gdb, same flags as run.sh, --timeout 1200, interrupted at 1250 s; one
+sample each, binary without debug symbols):
+
+```
+hs089 / acvx0                                   hs090 / abase
+CompiledFunction::backward<Gradient>            gaol::interval::operator*=
+Gradient::jacobian                              CompiledFunction::forward<Eval>
+CtcAcid::compute_smearorder                     Eval::eval
+CtcAcid::contract                               LinearizerXTaylor::linear_relax
+CtcCompo::contract                              LinearizerXTaylor::linearize
+Optimizer::contract_and_bound                   LinearizerCompo::linearize
+                                                CtcPolytopeHull::contract
+                                                CtcCompo::contract
+                                                CtcFixPoint::contract
+                                                CtcCompo::contract
+                                                Optimizer::contract_and_bound
+```
+
+Both are inside the contraction of one node (ACID; fixpoint of the polytope hull),
+not in Ipopt nor in the Lagrangian bound, and the time limit is only checked between
+nodes. One sample cannot tell an infinite loop from a node contraction that never
+converges. Runs stopped before E2 on the 75 set, waiting for a decision.
