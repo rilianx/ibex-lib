@@ -75,3 +75,31 @@ two; times floored at 1 s. Fraction within τ of the faster of the two:
 | SCIP vs no Ipopt | 102 | 59 % / 41 % | 75 % / 77 % |
 | SCIP vs + Ipopt | 100 | 54 % / 46 % | 73 % / 80 % |
 | SCIP vs + Ipopt + Lagrangian bound | 94 | 46 % / 54 % | 69 % / 85 % |
+
+## Same domains for both: missing bounds = ±1e12
+
+As in the SCIP 8 paper, every missing variable bound replaced by ±1e12 for both
+solvers (`SCIP_INFBOUND=1e12`, `run_ibex.sh` on sed-bounded copies of the
+Minibex files); IbexOpt = afull. 291 instances (7 SCIP cannot read).
+
+| | closed |
+|---|---|
+| IbexOpt afull ±1e12 | 240 (236 on the original domains: + brownal, ex8_4inf-1, test_infinity4, rk23) |
+| SCIP 10 ±1e12 | 223 (220: + ex8_4inf-1, polak3, test_infinity4) |
+
+- Only IbexOpt (31): aircraftb, avion2, brownal, catena, dixchlng, eigencco,
+  ex6_1_1, ex6_1_3, ex6_1_3bis, ex6_2_9 to ex6_2_14, ex7_2_1, ex7_2_1bis,
+  ex7_2_3, ex8_4_5bis, ex8_5_6, hs093, hs099, hs103, m4wd, pentagon, rk23,
+  rosenbrock10, schwefel5, schwefel5-abs, srcpm, wall.
+- Only SCIP (14): 3pk, 3pk-borne, chenery, ex8_4_3, linear, minlphi, optmass,
+  orthregb, pollut, portfl1, prolog, qp1, qp1-1, qp2.
+- Different optimum (3): bearing (SCIP 1.92512 vs 1.95173); ex8_4inf-1
+  (SCIP -1e16 vs IbexOpt -1e24) and test_infinity4 (SCIP -1.7e7 vs -6.3e48):
+  unbounded problems whose bounded versions have their optimum at the
+  ±1e12 corner, which SCIP reports as solved with a far worse value.
+
+Times (n = 98: closed by one of the two, > 1 s for one; floor 1 s, timeout 310 s):
+geomean t(IbexOpt)/t(SCIP) = 0.59 [0.28, 1.23], median 0.81, IbexOpt faster on
+52, slower on 44; relative t/max: IbexOpt 0.569, SCIP 0.667.
+Performance profile: `perfprof12.py` -> `perfprof12.png/pdf` (fastest at τ=1:
+IbexOpt 54 %, SCIP 47 %; closed: 86 % vs 69 %).
