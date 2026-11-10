@@ -94,3 +94,41 @@ ibex::Optimizer::contract_and_bound(...)
 i.e. the inner projection of a trigonometric term in LoupFinderInHC4 (used only by
 `--loup default`, i.e. anoip) does not return and the time limit is not checked inside
 it. compare.py excludes `killed` runs from the common set.
+
+## E2: certify only vs shift, 223 set
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acert0 acert1" sh results/ipopt-diam/run.sh
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set closed --ref abase abase acvx0 acert0 acert1
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set closed --ref acvx0 acvx0 acert0 acert1
+```
+
+Wall time: 12.5 min (10:42-10:55, 2026-11-10). 223/223 complete in both arms (max
+585 s), nothing killed.
+
+```
+instances with every arm: 223, common set: 76, closed by every arm: 223
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 223 | 76 (76) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 2.9 | 0.0 |
+| acvx0 | 223 | 76 (76) | 0.81 [0.67, 0.94] | 19/0 | 0.80 | 1.01 | 3.3 | 0.3 |
+| acert0 | 223 | 76 (76) | 0.87 [0.71, 1.01] | 6/1 | 0.83 | 1.00 | 3.2 | 0.0 |
+| acert1 | 223 | 76 (76) | 0.78 [0.62, 0.92] | 11/0 | 0.71 | 1.00 | 3.1 | 0.0 |
+
+instances with every arm: 223, common set: 71, closed by every arm: 223
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 223 | 71 (71) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 3.3 | 0.3 |
+| acert0 | 223 | 71 (71) | 1.08 [1.03, 1.13] | 0/15 | 1.04 | 0.99 | 3.2 | 0.0 |
+| acert1 | 223 | 71 (71) | 0.95 [0.83, 1.06] | 5/14 | 0.90 | 0.99 | 3.1 | 0.0 |
+```
+
+- acert0 (Gerschgorin certification only) is slower than the shift: 1.08 [1.03, 1.13]
+  vs acvx0, 0 wins / 15 losses.
+- acert1 (+ comparison matrix and interval Cholesky) is not distinguishable from
+  acvx0 in time (0.95 [0.83, 1.06]), with 5 wins / 14 losses but **fewer nodes (0.90
+  vs acvx0, 0.71 vs abase)**. Unexpected: a certify-only bound should not prune more
+  than the shifted one; to look at per instance (which instances drive the node ratio).
+- The common set differs from E1 (76 vs 93) because anoip is not in these tables.
