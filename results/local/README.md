@@ -132,3 +132,46 @@ instances with every arm: 223, common set: 71, closed by every arm: 223
   vs acvx0, 0.71 vs abase)**. Unexpected: a certify-only bound should not prune more
   than the shifted one; to look at per instance (which instances drive the node ratio).
 - The common set differs from E1 (76 vs 93) because anoip is not in these tables.
+
+Per instance (acert1 vs acvx0): 27 instances differ in nodes, 8 with fewer nodes in
+acert1. The geometric mean is driven by 4 convex problems that acert1 closes at the
+root (0 nodes) because the interval Cholesky certifies convexity there, while the
+Gerschgorin shift of acvx0 does not prune at the root: `dualc5` (23186 nodes, 47.6 s
+-> 0), `dualc1` (522 -> 0), `dualc1__coconut` (534 -> 0), `meanvar` (534 -> 0). The
+shift is better elsewhere: `ex6_2_6` (13914 vs 27000 nodes), `ex6_2_8` (8660 vs
+13672), `dnieper` (150 vs 434). Suggests combining both (certify with Cholesky, shift
+when it fails).
+
+## E3: variants (scaled shift, no backoff), 223 set
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="ascaled anobo" sh results/ipopt-diam/run.sh
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set closed --ref acvx0 acvx0 ascaled anobo
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set closed --ref abase abase acvx0 ascaled anobo
+```
+
+Wall time: 11.5 min (10:55-11:07, 2026-11-10). 223/223 complete in both arms (max
+509 s), nothing killed.
+
+```
+instances with every arm: 223, common set: 71, closed by every arm: 223
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 223 | 71 (71) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 3.3 | 0.3 |
+| ascaled | 223 | 71 (71) | 0.99 [0.95, 1.04] | 6/1 | 1.00 | 1.00 | 3.4 | 0.3 |
+| anobo | 223 | 71 (71) | 1.02 [1.00, 1.05] | 3/1 | 1.00 | 1.00 | 3.3 | 2.3 |
+
+instances with every arm: 223, common set: 76, closed by every arm: 223
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 223 | 76 (76) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 2.9 | 0.0 |
+| acvx0 | 223 | 76 (76) | 0.81 [0.67, 0.94] | 19/0 | 0.80 | 1.01 | 3.3 | 0.3 |
+| ascaled | 223 | 76 (76) | 0.81 [0.66, 0.94] | 19/1 | 0.79 | 1.00 | 3.4 | 0.3 |
+| anobo | 223 | 76 (76) | 0.83 [0.67, 0.96] | 19/2 | 0.79 | 1.01 | 3.3 | 2.3 |
+```
+
+- ascaled (scaled Gerschgorin): same as acvx0 (0.99 [0.95, 1.04], same nodes).
+- anobo (no backoff): same nodes, bound time 2.3 % of the total instead of 0.3 %, so
+  slightly slower (1.02 [1.00, 1.05]); the backoff only saves bound evaluations.
