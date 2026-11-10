@@ -175,3 +175,48 @@ instances with every arm: 223, common set: 76, closed by every arm: 223
 - ascaled (scaled Gerschgorin): same as acvx0 (0.99 [0.95, 1.04], same nodes).
 - anobo (no backoff): same nodes, bound time 2.3 % of the total instead of 0.3 %, so
   slightly slower (1.02 [1.00, 1.05]); the backoff only saves bound evaluations.
+
+## E1: final ablation, 75 set (and all 298)
+
+```bash
+env OUT=results/local/runs-open.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="anoip abase acvx0" sh results/anytime/run.sh
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set open --ref abase anoip abase acvx0
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set all --ref abase anoip abase acvx0
+```
+
+Wall time: 4 h 21 min (11:07-15:28, 2026-11-10).
+
+```
+instances with every arm: 75, common set: 12, closed by every arm: 4
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 6 | 12 (4) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 11.0 | 0.0 |
+| anoip | 4 | 12 (2) | 1.23 [0.99, 1.82] | 1/3 | 1.10 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 14 | 12 (12) | 0.03 [0.00, 0.14] | 8/0 | 1.00 | 1.00 | 11.1 | 0.0 |
+
+instances with every arm: 298, common set: 105, closed by every arm: 223
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 229 | 105 (97) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 5.2 | 0.0 |
+| anoip | 223 | 105 (92) | 1.62 [1.33, 2.04] | 15/59 | 2.94 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 237 | 105 (105) | 0.57 [0.41, 0.75] | 26/0 | 0.80 | 1.01 | 5.6 | 0.2 |
+```
+
+Instances of the 75 "open" set closed in 1200 s (time in s):
+
+- anoip (4): hs118 (0), wall (0), hs093 (554), mistake (733)
+- abase (6): hs118 (0), wall (0), chenery-1 (119), hs093 (603), mistake (639), hs102 (1112)
+- acvx0 (14): the 6 of abase (same times) + abel (0), abelbis-1 (0), abelter-1 (0),
+  catena (0), abelbis (3), fccu (20), ex8_4_1 (69), polak3 (85)
+
+Statuses, every arm: `infeasible` ex7_3_6, launch__coconut; `no_lower_bound` (9):
+3pk, ex8_4inf-1, ex8_5_6-1, like, like-1, modele_opti, ship, test_infinity3,
+test_infinity4. Same as in the cloud.
+
+**Killed (hangs):** abase on hs090, hs091; acvx0 on hs089, hs090, hs091 (no output,
+killed at TLIM+200 = 1400 s). hs090 and hs091 are also `killed` in the cloud runs
+(abase, acvx0). **hs089/acvx0 is new**: in the cloud it ended by `timeout` at 310 s
+(6238 nodes); here it hangs after more than 310 s. anoip ends by timeout on all three.
+Under investigation (backtraces), runs stopped before E2 on the 75 set.
