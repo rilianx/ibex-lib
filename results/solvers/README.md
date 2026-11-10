@@ -84,7 +84,7 @@ Minibex files); IbexOpt = afull. 291 instances (7 SCIP cannot read).
 
 | | closed |
 |---|---|
-| IbexOpt afull ±1e12 | 240 (236 on the original domains: + brownal, ex8_4inf-1, test_infinity4, rk23) |
+| IbexOpt afull ±1e12 | 240 of the 291 (241 of 298; 236 on the original domains: + brownal, ex8_4inf-1, rk23, test_infinity3, test_infinity4) |
 | SCIP 10 ±1e12 | 223 (220: + ex8_4inf-1, polak3, test_infinity4) |
 
 - Only IbexOpt (31): aircraftb, avion2, brownal, catena, dixchlng, eigencco,
