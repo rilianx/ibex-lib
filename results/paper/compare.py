@@ -31,10 +31,12 @@ ap.add_argument('--ref', required=True)
 ap.add_argument('--set', choices=['all', 'closed', 'open'], default='all')
 ap.add_argument('--tlim', type=float, default=310.0)
 ap.add_argument('--floor', type=float, default=1.0)
+ap.add_argument('--closed-file', default='results/ipopt-diam/runs.jsonl')
+ap.add_argument('--open-file', default='results/anytime/runs.jsonl')
 args = ap.parse_args()
 
-files = {'closed': ['results/ipopt-diam/runs.jsonl'], 'open': ['results/anytime/runs.jsonl'],
-         'all': ['results/ipopt-diam/runs.jsonl', 'results/anytime/runs.jsonl']}[args.set]
+files = {'closed': [args.closed_file], 'open': [args.open_file],
+         'all': [args.closed_file, args.open_file]}[args.set]
 arms = list(dict.fromkeys([args.ref] + args.arms))
 R = collections.defaultdict(dict)
 for f in files:

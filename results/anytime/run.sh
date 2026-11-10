@@ -36,6 +36,11 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     # ibex-ipopt schedule (freq 20, maxiter 1000 then 20, correction only when check fails and Ipopt converged)
     ami) x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2" ;;
     cmi) x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
+    acert0) x="--cvx-close --cvx-backoff=64 --cvx-test 0" ;;  # E2: certify only (Gerschgorin)
+    acert1) x="--cvx-close --cvx-backoff=64 --cvx-test 1" ;;  # E2: certify only (+ comparison matrix, interval Cholesky)
+    ascaled) x="--cvx-close --cvx-backoff=64 --cvx-test 3" ;;  # E3: scaled Gerschgorin shift
+    anobo) x="--cvx-close --cvx-test 2" ;;  # E3: shift without backoff
+    astats) x="--cvx-close --cvx-backoff=64 --cvx-test 2 --cvx-stats" ;;  # E4: acvx0 + statistics
     anoip) x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
     aipopt) x="--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     acvx0) x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;

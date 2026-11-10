@@ -62,6 +62,11 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     acvx03) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;  # acvx0 again on the slower host (calibration for cmi)
     ami) d=1e8;  x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2" ;;
     cmi) d=1e8;  x="--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2 --cvx-close --cvx-backoff=64 --cvx-test 2" ;;
+    acert0) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 0" ;;  # E2: certify only (Gerschgorin)
+    acert1) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 1" ;;  # E2: certify only (+ comparison matrix, interval Cholesky)
+    ascaled) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 3" ;;  # E3: scaled Gerschgorin shift
+    anobo) d=1e8;  x="--cvx-close --cvx-test 2" ;;  # E3: shift without backoff
+    astats) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2 --cvx-stats" ;;  # E4: acvx0 + statistics
     anoip) d=1e8;  x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
     aipopt) d=-1;  x="--ipopt-expansion=1e-5 --ipopt-expansion-first=0.1" ;;
     acvx0) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2" ;;

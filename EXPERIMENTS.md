@@ -128,13 +128,27 @@ with pandoc + headless Chromium (no LaTeX needed); with LaTeX, `latexmk -pdf`.
 
 ## 9. Pending experiments (paper, section 5)
 
-| id | what | how |
-|---|---|---|
-| E1 | final ablation on one machine | arms `anoip abase acvx0` on both sets (+ `afull` if kept) |
-| E2 | certify-only vs shift | `acvx0` with `--cvx-test 0` and `--cvx-test 1` (new arms) |
-| E3 | variants | `--cvx-test 3`; `--cvx-backoff=0` |
-| E4 | where the bound helps | `--cvx-stats` on the 298 (counts per node depth; see `results/convexity/`) |
-| E5 | SCIP, same domains | section 7 (already done once: `results/solvers/README.md`) |
+Write all local results to `results/local/` (never append to the cloud files: other
+machine):
 
-Report each one in the corresponding `results/*/README.md` with the command lines used,
-the machine, and the calibration arms.
+```bash
+OUTC=results/local/runs-closed.jsonl; OUTO=results/local/runs-open.jsonl
+env OUT=$OUTC BIN=build-fix/bin/ibexopt-ml JOBS=3 TLIM=310 ARMS="..." sh results/ipopt-diam/run.sh
+env OUT=$OUTO BIN=build-fix/bin/ibexopt-ml JOBS=3 ARMS="..." sh results/anytime/run.sh
+python3 results/paper/compare.py --closed-file $OUTC --open-file $OUTO --ref abase <arms>
+```
+
+| id | what | arms (both sets) |
+|---|---|---|
+| E0 | validation of the build | `abase` on the 223 set: node counts must match `results/ipopt-diam/runs.jsonl` (arm abase) on >= 98 % of the instances |
+| E1 | final ablation | `anoip abase acvx0` |
+| E2 | certify only vs shift | `acert0 acert1` (vs `acvx0`) |
+| E3 | variants | `ascaled anobo` (vs `acvx0`) |
+| E4 | where the bound helps | `astats` (counters `cvx_*` in the JSON) |
+| E5 | SCIP, same domains | section 7, outputs under `results/local/` (`OUT=` for SCIP, `OUT=` for run_ibex.sh) |
+
+Order: E0, then E1, E2, E3 on the 223 set (about 25 min per arm), then the same arms
+on the 75 set (about 2 h per arm), then E4, then E5. Report each in
+`results/local/README.md`: machine (CPU, cores, OS, Ipopt version), command lines,
+the tables printed by `compare.py`, and anything unexpected. Commit and push to
+`ml-branching` after each experiment (results only; ask before changing `src/`).
