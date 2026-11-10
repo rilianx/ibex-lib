@@ -43,3 +43,54 @@ instances with every arm: 223, common set: 75, closed by every arm: 223
 |---|---|---|---|---|---|---|---|---|
 | abase | 223 | 75 (75) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 2.9 | 0.0 |
 ```
+
+## Time limit: 1200 s from E1 on
+
+Given the 2.7x slowdown above, TLIM was raised from 600 to **1200 s** for E1 and
+later (about 440 s of the cloud container, above its 310 s). The E0 `abase` runs are
+kept: all 223 closed in < 600 s (max 578 s), and the search is deterministic, so a
+1200 s limit gives the same result. compare.py is run with `--tlim 1200`.
+
+## E1: final ablation, 223 set
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="anoip abase acvx0" sh results/ipopt-diam/run.sh
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl \
+    --open-file results/local/runs-open.jsonl --set closed --ref abase anoip abase acvx0
+```
+
+Wall time: 26 min (09:21-09:47, 2026-11-10; `abase` skipped, from E0). Max time of a
+closed run: abase 578 s, acvx0 526 s.
+
+```
+instances with every arm: 223, common set: 93, closed by every arm: 219
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 223 | 93 (93) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 2.9 | 0.0 |
+| anoip | 219 | 93 (90) | 1.68 [1.36, 2.14] | 14/56 | 3.00 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 223 | 93 (93) | 0.85 [0.73, 0.95] | 18/0 | 0.80 | 1.01 | 3.2 | 0.3 |
+```
+
+acvx0 passes the acceptance rule against abase (0.85, IC95 [0.73, 0.95] < 1; 18 wins,
+0 losses).
+
+anoip does not close `eigencco`, `dnieper`, `ex7_2_3` (timeout at 1200 s) and
+**`robot` is `killed`** (no output; `timeout` kills it at TLIM+200 s). Same as in the
+cloud runs (`results/ipopt-diam/runs.jsonl`: robot/anoip `killed`). It is a hang, not a
+crash: with `--timeout 30` it is still running at 120 s, at 100 % CPU and 14 MB RSS.
+Backtrace (gdb, interrupted at 40 s):
+
+```
+ibex::Interval::pi()
+ibex::ibwd_trigo(...)
+ibex::CompiledFunction::backward<ibex::InHC4Revise>(...)
+ibex::InHC4Revise::iproj(...)
+ibex::LoupFinderInHC4::find(...)
+ibex::LoupFinderDefault::find(...)
+ibex::Optimizer::update_loup(...)
+ibex::Optimizer::contract_and_bound(...)
+```
+
+i.e. the inner projection of a trigonometric term in LoupFinderInHC4 (used only by
+`--loup default`, i.e. anoip) does not return and the time limit is not checked inside
+it. compare.py excludes `killed` runs from the common set.
