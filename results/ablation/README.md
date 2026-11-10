@@ -211,3 +211,29 @@ Without anytime measures, only two steps matter for the time to solve: a local
 solver for upper bounding (anoip -> abase: 1.62 -> 1.00, standard practice) and
 the Lagrangian bound (abase -> acvx0: 1.00 -> 0.55, +8 closed). The call
 strategies (aipopt, aad) reduce nodes (0.78, 0.73) but not time.
+
+## ibex-ipopt Ipopt configuration (ami, cmi)
+
+`--ipopt-freq 20 --ipopt-maxiter-feasible 20 --ipopt-corr-policy 2` (from the
+~/ibex-ipopt experiments: Ipopt every 20 loup-finder calls, max_iter 1000 until a
+feasible point then 20, correction only when check() rejects Ipopt's point and
+Ipopt converged). ami = abase + this, cmi = acvx0 + this. Run after a container
+restart on a slower host: abase3 and acvx03 rerun abase and acvx0 there (same
+nodes; times x1.38 and x1.27, so the slowdown is not uniform across arms and only
+same-host comparisons are valid).
+
+223 closed set, 66 instances with some arm > 1 s:
+
+| pair (same host) | time [IC95] | faster/slower | nodes | Ipopt time | correction time |
+|---|---|---|---|---|---|
+| ami / abase3 | 1.05 [1.01, 1.09] | 10/36 | 1.03 | 44 -> 150 s | 6.5 -> 2.7 s |
+| cmi / acvx03 | 1.11 [1.06, 1.16] | 8/45 | 1.04 | 44 -> 137 s | 7.7 -> 2.6 s |
+| acvx03 / abase3 (the bound) | 0.78 [0.64, 0.89] | 50/3 | 0.79 | | |
+
+Closed /298: ami 226 (abase 228: loses ex6_2_13 and mistake, both ~300 s
+borderline on the slower host), cmi 235 (acvx0 236: loses mistake).
+
+The correction policy halves the correction time, but calling Ipopt 5x more
+often triples its time and the 20-iteration budget does not pay it back on this
+benchmark (Ipopt is ~3 % of the time here; the −57 % of the original experiment
+was on 9 instances where Ipopt dominates). Rejected, with or without the bound.
