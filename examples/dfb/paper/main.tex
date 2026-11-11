@@ -146,7 +146,9 @@ rung starts from the same boxes and relaxations, and inside the search, with one
 (Section~\ref{sec:experiments}).
 \item \emph{The boundary of the approach.} SC pays on small relaxations, where
 the fixed cost of a call dominates (per pass, up to about 30 rows); beyond,
-it needs more pivots than SoPlex, and each costs more. We explain why, and give a hybrid contractor
+the pivots dominate, and SoPlex makes them cheaper by switching to a row
+representation of the basis that SC does not have. We measure that
+explanation, and give a hybrid contractor
 that chooses the engine per node by the size of the relaxation
 (Sections~\ref{sec:experiments} and~\ref{sec:discussion}).
 \end{itemize}
@@ -507,6 +509,8 @@ slack basis.
 of SoPlex and updated after each pivot by the Forrest--Tomlin
 method~\cite{forrest1972updated}, which reuses the FTRAN of the entering column.
 It refactorizes every 50 pivots and recomputes $x_B$ every 32, to limit drift.
+With one slack per row, the basis of SC has dimension $m$, the number of rows:
+SC works in what SoPlex calls the column representation.
 
 \subsection{Certification}\label{sec:certif}
 
@@ -551,10 +555,14 @@ than 4.0.2 on a sample of eight problems.}
 \item[R3] \emph{the bare simplex}: the simplex of SoPlex driven directly through
 its \texttt{SPxSolver} class, the LP kept loaded, only the objective and the
 column bounds changed between LPs, nothing verified; it is the cheapest way
-to use SoPlex;
-\item[R4] \emph{SC} (Section~\ref{sec:simplex})\todo{en sistemas con
-relajaci\'on af\'in SC usa $10^{-9}$ y R2--R3 $10^{-6}$: falta la corrida de SC
-con $10^{-6}$ para comparar con la misma tolerancia};
+to use SoPlex. As in R2, the rule of SoPlex chooses the representation of the
+basis: by columns (dimension $m$), or by rows (dimension $n$) when the
+relaxation has more than 1.2 rows per variable;
+\item[R4] \emph{SC} (Section~\ref{sec:simplex});%
+\footnote{On systems with the affine relaxation SC keeps the tolerance
+$10^{-9}$ while R2 and R3 use $10^{-6}$. With $10^{-6}$ a pass of SC costs the
+same (0.85 instead of 0.86 times that of the bare simplex, geometric mean over
+the 36 systems) and contracts 1\% less.}
 \item[R5] \emph{the hybrid}: SC on relaxations of at most 30 rows, the bare
 simplex beyond.
 \end{enumerate}
@@ -716,42 +724,49 @@ weight; the hybrid hands these relaxations to the bare simplex.
 \paragraph{Why SC is slower there.}
 What SC saves is a fixed cost per LP, and on these relaxations an LP needs a
 dozen pivots instead of two or three, so the saving no longer weighs. What
-remains is the cost of the pivots, and there SC is behind on both counts: in
-the median of the \texttt{compo} bank it makes 1.16 times the pivots per LP of
-the bare simplex, at 1.25 times its cost per pivot. We took apart one system,
-Katsurabis-14 with \texttt{compo}, where a pass of SC costs 1.6 times that of
-the tuned SoPlex (the same simplex as R3): 26.7 against 17.5 pivots per LP, at
-14.9 against 14.1\,$\mu$s per pivot. The gap in pivots has two sources that
-multiply.
-\begin{itemize}
-\item \emph{The vertex where the previous LP ended} ($\times1.3$). Started
-from the final basis of SoPlex instead of its own, SC drops from 27 to 21
-pivots per LP, and solves without a pivot every LP that SoPlex solves without
-one (73\% from its own basis). On a large degenerate polytope the optimum of
-a bound is a face, and SoPlex stops inside it at vertices that serve the next
-bound better. The same happens on optimization problems, where SoPlex ends
-13--40\% of its LPs at a vertex that is already optimal for the next bound.
-\item \emph{The pivoting rules} ($\times1.15$). From the same basis SC needs
-20.8 pivots per LP against 18.1: SoPlex runs its automatic pricer (devex
-weights, then steepest edge) with the bound-flipping ratio test, and SC takes
-the largest violation with Harris' test.
-\end{itemize}
-Neither gap yielded to the standard remedies. For the vertex, we tried a
-tie-break toward the corners of the box inside the optimal face, a short walk
-inside that face (up to ten primal steps that keep the optimum), the primal
-warm start instead of the dual one, and removing the perturbation of the
-costs: none made SC end at vertices that serve the next bound. For the
-pivoting rules, we tried devex pricing in the dual and in the primal, exact
-dual steepest-edge pricing and the long-step ratio test: with devex, the long
-step and the limit of 60 pivots (Section~\ref{sec:iter}), a pass of SC goes
-from 0.75 to 0.55 times that of R0 on the six affine systems (the bare
-simplex: 0.47), but stays at 1.46 times the bare simplex on the \texttt{compo}
-bank (geometric mean), and changes little on the smaller relaxations. The cost
-per pivot, $\times1.4$ in an earlier version of SC, is no longer the main
-term. What SC lacks on large relaxations is therefore not a known rule that
-remains to be implemented: it is an explanation of why the bases where SoPlex
-stops serve the next bound, which we leave open
-(Section~\ref{sec:discussion}).
+remains is the cost of the pivots, and three different things happen there.
+
+\emph{The representation of the basis} is the main one. A vertex of the
+relaxation can be described by a basis of dimension $m$, with one basic column
+per row, or by a basis of dimension $n$, the $n$ rows and bounds that are
+tight. SC, with one slack per row, always works with the first. SoPlex
+chooses: by columns when the relaxation has at most 1.2 rows per variable, by
+rows otherwise. With \texttt{compo} the rows outnumber the variables several
+times (147 rows for 35 variables on Fourbar-icse), so the bare simplex
+factorizes and solves with a basis of dimension $n$ where SC uses one of
+dimension $m$: with almost the same pivots (1.05 times), SC spends there three
+times as long in the triangular solves of the entering column. To measure how
+much of the gap this explains, we forced the bare simplex to the column
+representation on the \texttt{compo} bank. It becomes 1.34 times slower
+(geometric mean), with the same contraction, and a pass of SC then costs 1.11
+times that of the bare simplex instead of 1.48, and is cheaper on 17 of the 41
+systems; on the systems without the two difficulties below (the
+Redeco and Eco families, Katsura-30, Dietmaier, Directkin, Butcher) the two are
+within 10\% of each other. The representation thus accounts for about three
+quarters of the gap, in logarithm. On the bank of the affine relaxation, where
+merging leaves about as many rows as variables, SoPlex already works by
+columns, and forcing it to rows makes it slower (a pass of SC goes from 0.86
+to 0.79 times that of the bare simplex).
+
+\emph{Stalling} explains most of what remains on a few systems. On
+Katsurabis-14, 61 of the 16\,939 LPs of SC, degenerate ones, pivot until the
+limit of $20m+200$ iterations, and they make 84\% of the pivots that SC needs
+in excess of the bare simplex, which reaches an optimum on all of its LPs.
+With a limit of 150 pivots per LP, a pass of SC goes from 1.88 to 1.48 times
+that of the bare simplex on that system with the same contraction, but on the
+whole bank only from 1.48 to 1.41: the primal steps of SC have no protection
+against stalling, and few systems need one.
+
+\emph{The systems with band structure} (Bratu, BroydenTri, BroydenBanded,
+DiscreteBoundary) are the third case: there SC makes several times the pivots
+of the bare simplex, up to nine times on the six affine systems above 30
+rows, where both engines work by columns. Devex pricing, the long-step ratio
+test and the limit of 60 pivots (Section~\ref{sec:iter}) help on them: they
+bring a pass of SC from 0.75 to 0.55 times that of R0 on those six systems
+(the bare simplex: 0.47), but leave it at 1.46 times the bare simplex on the
+\texttt{compo} bank (geometric mean), and change little on the smaller
+relaxations. We have no explanation for these systems beyond the pivoting
+rules of SoPlex, its automatic pricer with the bound-flipping ratio test.
 
 \begin{figure}[t]
 \centering
@@ -865,16 +880,25 @@ saving over a simplex driven directly. On small relaxations, where an LP needs t
 pivots, that saves 20--25\% of a pass of the bare simplex.
 
 \paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
-falls as the pivots per LP grow, and beyond 30 rows they dominate. There SC
-needs more pivots than SoPlex (Section~\ref{sec:bank}), mostly because of the
-vertex where each LP ends, and to a lesser extent because of its pricing. The
-first reason is the most specific to this setting, and the one we could not
-fix: an LP solver that is asked for one optimum has no reason to prefer one
-vertex of the optimal face over another, and a simplex for the $2n$ bound
-problems does. The standard remedies closed neither
-(Section~\ref{sec:bank}). Meanwhile the hybrid uses each
-engine where it is better; on systems of equations, whose best relaxation is
-\texttt{compo}, this is what makes the redesigned contractor pay.
+falls as the pivots per LP grow, and beyond 30 rows they dominate. There the
+cost of a pivot decides, and SoPlex has an option that SC lacks: when the rows
+outnumber the variables, as with \texttt{compo}, it represents the basis by
+rows, with the dimension of the variables instead of that of the rows.
+Against SoPlex in the column representation SC is within 11\%
+(Section~\ref{sec:bank}); the rest comes from a few degenerate LPs on which
+its primal steps stall, and from systems with band structure on which it
+pivots more. The homogeneous form with one slack per row, which makes the
+certificate and the warm starts simple, is what ties SC to the column
+representation; a self-certifying simplex in the row representation would
+keep the certificate, which needs only the multipliers, and is the natural
+next step. Meanwhile the hybrid uses each engine where it is better; on
+systems of equations, whose best relaxation is \texttt{compo}, this is what
+makes the redesigned contractor pay. On small relaxations one difference
+remains unexplained: SoPlex ends 13--40\% of its LPs on optimization problems
+at a vertex that is already optimal for the next bound, and needs fewer
+pivots than SC (1.8 against 2.8 per LP); neither a tie-break toward the
+corners of the box inside the optimal face nor a short walk inside that face
+made SC end at such vertices.
 
 \paragraph{What did not pay.} The refinements of the dual method left out of
 SC (Section~\ref{sec:iter}), devex pricing, the long-step ratio test and the
@@ -933,11 +957,12 @@ relaxations of up to 30 rows, and 20--25\% less than the simplex of SoPlex
 driven directly, with the same contraction.
 Inside the search, the optimizer takes 20--22\% less CPU time than with SoPlex
 as Ibex uses it, and 5--6\% less than with the bare simplex. On
-larger relaxations the pivots dominate and SoPlex needs fewer, mostly because
-the vertices where it ends an LP are better starting points for the next
-bound; a hybrid that chooses the engine by the size of the relaxation keeps
-the best of both. How to choose, inside the optimal face of a degenerate
-polytope, the vertex that serves the next bound is the open question.
+larger relaxations the pivots dominate, and when the rows outnumber the
+variables SoPlex makes them cheaper by representing the basis by rows:
+against SoPlex in the column representation, the one of SC, a pass of SC is
+within 11\%. A hybrid that chooses the engine by the size of the relaxation
+keeps the best of both. A self-certifying simplex in the row representation
+is the natural next step.
 
 \section*{Code and data availability}
 The code and data used in the experiments are archived at Zenodo
