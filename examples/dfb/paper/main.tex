@@ -707,19 +707,46 @@ while the limit of R0 ends 5\% of the LPs without an optimum.
 
 \paragraph{Large relaxations.}
 On the systems whose relaxation exceeds 30 rows the order of the last two
-rungs is reversed (Figure~\ref{fig:frontier}): on the \texttt{compo} bank a pass of SC costs 1.42 times
-that of the bare simplex (1.48 in geometric mean) and is cheaper on only 7 of the 41
-systems, and on the six affine ones it costs 1.56 times and loses on all.
-Merging and tuning SoPlex keep their weight. There an LP needs a dozen
-pivots, the fixed cost of a call no longer dominates, and SC needs more
-pivots, each more expensive (medians on the \texttt{compo} bank: 1.16 times the
-pivots per LP of the bare simplex, at 1.25 times its cost per pivot;
-Section~\ref{sec:discussion}); the hybrid hands
-these relaxations to the bare simplex. Devex pricing, the long-step ratio test
-and the limit of 60 pivots (Section~\ref{sec:iter}) bring a pass of SC from
-0.75 to 0.55 times that of R0 on the six affine systems (the bare simplex:
-0.47), but leave it at 1.46 times the bare simplex on the \texttt{compo} bank
-(geometric mean), and change little on the smaller relaxations.
+rungs is reversed (Figure~\ref{fig:frontier}): on the \texttt{compo} bank a
+pass of SC costs 1.42 times that of the bare simplex (1.48 in geometric mean)
+and is cheaper on only 7 of the 41 systems, and on the six affine ones it
+costs 1.56 times and loses on all. Merging and tuning SoPlex keep their
+weight; the hybrid hands these relaxations to the bare simplex.
+
+\paragraph{Why SC is slower there.}
+What SC saves is a fixed cost per LP, and on these relaxations an LP needs a
+dozen pivots instead of two or three, so the saving no longer weighs. What
+remains is the cost of the pivots, and there SC is behind on both counts: in
+the median of the \texttt{compo} bank it makes 1.16 times the pivots per LP of
+the bare simplex, at 1.25 times its cost per pivot. We took apart one system,
+Katsurabis-14 with \texttt{compo}, where a pass of SC costs 1.6 times that of
+the tuned SoPlex (the same simplex as R3): 26.7 against 17.5 pivots per LP, at
+14.9 against 14.1\,$\mu$s per pivot. The gap in pivots has two sources that
+multiply.
+\begin{itemize}
+\item \emph{The vertex where the previous LP ended} ($\times1.3$). Started
+from the final basis of SoPlex instead of its own, SC drops from 27 to 21
+pivots per LP, and solves without a pivot every LP that SoPlex solves without
+one (73\% from its own basis). On a large degenerate polytope the optimum of
+a bound is a face, and SoPlex stops inside it at vertices that serve the next
+bound better. The same happens on optimization problems, where SoPlex ends
+13--40\% of its LPs at a vertex that is already optimal for the next bound.
+\item \emph{The pivoting rules} ($\times1.15$). From the same basis SC needs
+20.8 pivots per LP against 18.1: SoPlex runs its automatic pricer (devex
+weights, then steepest edge) with the bound-flipping ratio test, and SC takes
+the largest violation with Harris' test.
+\end{itemize}
+SC therefore lacks two things on large relaxations. The first is a rule that
+chooses, inside the optimal face, the vertex that serves the next bound:
+neither a tie-break toward the corners of the box nor a short walk inside the
+face (up to ten primal steps that keep the optimum) made SC end at such
+vertices. The second is the pricing of SoPlex: our devex pricing, the
+long-step ratio test and the limit of 60 pivots (Section~\ref{sec:iter})
+bring a pass of SC from 0.75 to 0.55 times that of R0 on the six affine
+systems (the bare simplex: 0.47), but leave it at 1.46 times the bare simplex
+on the \texttt{compo} bank (geometric mean), and change little on the smaller
+relaxations. The cost per pivot, $\times1.4$ in an earlier version of SC, is
+no longer the main term.
 
 \begin{figure}[t]
 \centering
@@ -834,31 +861,14 @@ pivots, that saves 20--25\% of a pass of the bare simplex.
 
 \paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
 falls as the pivots per LP grow, and beyond 30 rows they dominate. There SC
-needs more pivots than SoPlex, for two reasons that multiply, and each pivot
-costs somewhat more. On
-Katsurabis-14 with \texttt{compo}, a pass of SC costs 1.6 times that of the
-tuned SoPlex (the same simplex as R3) on the bank, and the gap lies almost
-entirely in the pivots:
-26.7 against 17.5 per LP, at 14.9 against 14.1\,$\mu$s per pivot. The
-starting point, $\times1.3$: started from the final basis of SoPlex instead of
-its own, SC drops from 27 to 21 pivots per LP and solves without a pivot every
-LP that SoPlex solves without one (73\% from its own basis), because on a
-large degenerate polytope the optimum of a bound is a face, and SoPlex stops
-inside it at vertices that serve the next bound better. The pivoting rules,
-$\times1.15$: 20.8 against 18.1 pivots from the same basis. The first reason is the most specific
-to this setting and the one we could not fix: on optimization problems SoPlex
-ends 13--40\% of its LPs at a vertex that is already optimal for the next
-bound, and started from those bases SC needs as few pivots, but neither a
-tie-break toward the corners of the box inside the optimal face nor a short
-walk inside that face (up to ten primal steps that keep the optimum) made SC
-end at such vertices. The second is a matter of pivoting rules: our devex pricing and long-step
-ratio test did not close it (see below), and we expect that the pricing of
-SoPlex would. The cost per pivot, $\times1.4$ in an earlier version of SC, is
-within 6\% on this system, and 1.25 times that of the bare simplex in the
-median of the \texttt{compo} bank. Meanwhile
-the hybrid uses each engine where it is better; on systems of equations,
-whose best relaxation is \texttt{compo}, this is what makes the redesigned
-contractor pay.
+needs more pivots than SoPlex (Section~\ref{sec:bank}), mostly because of the
+vertex where each LP ends, and to a lesser extent because of its pricing. The
+first reason is the most specific to this setting, and the one we could not
+fix: an LP solver that is asked for one optimum has no reason to prefer one
+vertex of the optimal face over another, and a simplex for the $2n$ bound
+problems does. The second is engineering. Meanwhile the hybrid uses each
+engine where it is better; on systems of equations, whose best relaxation is
+\texttt{compo}, this is what makes the redesigned contractor pay.
 
 \paragraph{What did not pay.} The refinements of the dual method left out of
 SC (Section~\ref{sec:iter}), devex pricing, the long-step ratio test and the
