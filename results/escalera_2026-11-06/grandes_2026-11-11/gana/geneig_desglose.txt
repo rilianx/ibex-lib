@@ -1,0 +1,86 @@
+== Geneig-icse  muestras: SoPlex 11628  SC 5252  (SoPlex/SC 2.21)
+    FTRAN/BTRAN/actualizar LU               31.7%  (0.70 x SC total)
+    refactorizar                            23.4%  (0.52 x SC total)
+    resto del simplex                       18.8%  (0.42 x SC total)
+    ratio test                              13.3%  (0.29 x SC total)
+    pricing                                  5.8%  (0.13 x SC total)
+    init (vectores, lado derecho, pricer)    4.4%  (0.10 x SC total)
+    extraer y verificar solucion             2.7%  (0.06 x SC total)
+    cambiar objetivo/cotas                   0.0%  (0.00 x SC total)
+  SC:
+    resto del simplex                       49.6%
+    FTRAN/BTRAN/actualizar LU               43.9%
+    refactorizar                             6.5%
+-- hs117 resto del simplex
+         35  soplex::SPxSolver::setupPupdate  <- soplex::SPxSolver::setupPupdate
+         21  soplex::SPxSolver::updateTest  <- soplex::SPxSolver::updateTest
+         16  soplex::SPxSolver::computePvec  <- soplex::SPxSolver::computePvec
+         16  soplex::SPxSolver::solve  <- soplex::SPxSolver::solve
+         14  soplex::SPxSolver::computeTest  <- soplex::SPxSolver::computeTest
+         12  soplex::SPxSolver::enter  <- soplex::SPxSolver::enter
+         11  soplex::SPxScaler::scaleObj  <- -
+         10  soplex::SPxSolver::computeFrhs1  <- soplex::SPxSolver::computeFrhs1
+-- hs117 extraer y verificar solucion
+         23  soplex::SPxSolver::getPrimal  <- soplex::SPxSolver::getPrimal
+         17  soplex::SPxSolver::unShift  <- soplex::SPxSolver::unShift
+         11  soplex::SPxScaler::unscaleDualray  <- -
+          9  soplex::SPxSolver::qualConstraintViolation  <- soplex::SPxSolver::qualConstraintViolation
+          7  soplex::DataSet<soplex::SVSetBase<double>::DLPSV>::number  <- soplex::SPxSolver::getPrimal
+          3  soplex::SPxSolver::getDual  <- soplex::SPxSolver::getDual
+          1  soplex::SPxSolver::getDualfarkas  <- soplex::SPxSolver::getDualfarkas
+-- hs117 init (vectores, lado derecho, pricer)
+         23  soplex::SPxSolver::computePvec  <- soplex::SPxSolver::computePvec
+         18  soplex::SPxSolver::computeTest  <- soplex::SPxSolver::computeTest
+          9  soplex::SPxSolver::setEnterBounds  <- soplex::SPxSolver::setEnterBounds
+          7  soplex::SPxSolver::computeFrhs1  <- soplex::SPxSolver::computeFrhs1
+          5  soplex::SPxSolver::setPrimalBounds  <- soplex::SPxSolver::setPrimalBounds
+          4  soplex::SPxSolver::computeCoTest  <- soplex::SPxSolver::computeCoTest
+          3  soplex::SLUFactor::solveLeft  <- soplex::SPxSolver::init
+          3  void soplex::spx_realloc<int*>  <- soplex::SPxSolver::reDim
+-- hs117 refactorizar
+         36  soplex::CLUFactor::updateRow  <- soplex::SPxBasis::factorize
+         30  soplex::CLUFactor::selectPivots  <- soplex::SPxBasis::factorize
+         24  soplex::CLUFactor::initFactorMatrix  <- soplex::SPxBasis::factorize
+         18  soplex::CLUFactor::eliminatePivot  <- soplex::SPxBasis::factorize
+         15  soplex::CLUFactor::setupColVals  <- soplex::SPxBasis::factorize
+         12  soplex::CLUFactor::factor  <- soplex::SPxBasis::factorize
+         12  soplex::CLUFactor::setupRowVals  <- soplex::SPxBasis::factorize
+         11  soplex::CLUFactor::initFactorRings  <- soplex::SPxBasis::factorize
+-- Geneig-icse resto del simplex
+        388  soplex::SPxSolver::setupPupdate  <- soplex::SPxSolver::setupPupdate
+        235  soplex::SPxSolver::getEnterVals  <- soplex::SPxSolver::getEnterVals
+        214  soplex::SPxSolver::enter  <- soplex::SPxSolver::enter
+        192  soplex::SPxSolver::clearUpdateVecs  <- soplex::SPxSolver::clearUpdateVecs
+        124  soplex::SPxSolver::updateCoTest  <- soplex::SPxSolver::updateCoTest
+        111  soplex::SPxSolver::solve  <- soplex::SPxSolver::solve
+         74  soplex::SPxSolver::computePvec  <- soplex::SPxSolver::computePvec
+         67  soplex::SPxSolver::coTest  <- soplex::SPxSolver::coTest
+-- Geneig-icse extraer y verificar solucion
+        101  soplex::SPxSolver::qualConstraintViolation  <- soplex::SPxSolver::qualConstraintViolation
+         75  soplex::SPxSolver::unShift  <- soplex::SPxSolver::unShift
+         66  soplex::SPxSolver::getPrimal  <- soplex::SPxSolver::getPrimal
+         28  soplex::SPxScaler::unscaleDualray  <- -
+         20  soplex::DataSet<soplex::SVSetBase<double>::DLPSV>::number  <- soplex::SPxSolver::getPrimal
+         15  soplex::SPxSolver::getDual  <- soplex::SPxSolver::getDual
+          6  soplex::SPxColId::SPxColId  <- soplex::SPxSolver::getPrimal
+          2  soplex::SPxSolver::clearDualBounds  <- soplex::SPxSolver::clearDualBounds
+-- Geneig-icse init (vectores, lado derecho, pricer)
+         74  soplex::SPxSolver::computePvec  <- soplex::SPxSolver::computePvec
+         60  soplex::SPxSolver::computeCoTest  <- soplex::SPxSolver::computeCoTest
+         43  soplex::CLUFactor::solveUright  <- soplex::SPxSolver::init
+         38  soplex::SPxSolver::computeFrhs2  <- soplex::SPxSolver::computeFrhs2
+         35  soplex::CLUFactor::solveLleft  <- soplex::SPxSolver::init
+         30  soplex::CLUFactor::solveLright  <- soplex::SPxSolver::init
+         26  soplex::SPxSolver::computeTest  <- soplex::SPxSolver::computeTest
+         21  soplex::SPxSolver::computeEnterCoPrhs  <- soplex::SPxSolver::computeEnterCoPrhs
+-- Geneig-icse refactorizar
+        900  soplex::CLUFactor::updateRow  <- soplex::SPxBasis::factorize
+        397  soplex::CLUFactor::eliminatePivot  <- soplex::SPxBasis::factorize
+        307  soplex::CLUFactor::selectPivots  <- soplex::SPxBasis::factorize
+        306  soplex::CLUFactor::initFactorMatrix  <- soplex::SPxBasis::factorize
+        130  soplex::CLUFactor::setupColVals  <- soplex::SPxBasis::factorize
+        106  soplex::CLUFactor::setupRowVals  <- soplex::SPxBasis::factorize
+         79  soplex::CLUFactor::initFactorRings  <- soplex::SPxBasis::factorize
+         62  soplex::CLUFactor::remaxCol  <- soplex::SPxBasis::factorize
+
+[exited with code 0]

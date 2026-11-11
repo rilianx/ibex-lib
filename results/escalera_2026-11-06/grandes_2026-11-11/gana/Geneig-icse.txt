@@ -1,0 +1,62 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[spx] k 0 st 1 it 18 rep 1 tipo -1 filas 22 cols 22
+[spx] k 5 st 1 it 0 rep 1 tipo -1 filas 22 cols 22
+[spx] k 2 st 1 it 2 rep 1 tipo -1 filas 22 cols 22
+[spx] k 3 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 4 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 2 st 1 it 3 rep 1 tipo 1 filas 22 cols 22
+[spx] k 0 st 1 it 3 rep 1 tipo -1 filas 22 cols 22
+[spx] k 1 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 14 st 1 it 7 rep 1 tipo -1 filas 22 cols 22
+[spx] k 15 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 18 st 1 it 5 rep 1 tipo -1 filas 22 cols 22
+[spx] k 14 st 1 it 12 rep 1 tipo 1 filas 22 cols 22
+[spx] k 15 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 10 st 1 it 2 rep 1 tipo -1 filas 22 cols 22
+[spx] k 18 st 1 it 6 rep 1 tipo -1 filas 22 cols 22
+[spx] k 16 st 1 it 5 rep 1 tipo -1 filas 22 cols 22
+[spx] k 12 st 1 it 3 rep 1 tipo -1 filas 22 cols 22
+[spx] k 20 st 1 it 3 rep 1 tipo 1 filas 22 cols 22
+[spx] k 19 st 1 it 1 rep 1 tipo -1 filas 22 cols 22
+[spx] k 17 st 1 it 3 rep 1 tipo 1 filas 22 cols 22
+[spx] LPs 2000 factorizaciones 2427 (1.214 por LP) | pivotes 9099, primales 84.2% | LPs solo primales 79.3%, mixtos 4.4%
+[spx] excepcion: XSOLVE14 Abort solving due to looping
+[spx] excepcion: XSOLVE14 Abort solving due to looping
+[spx] LPs 4000 factorizaciones 6267 (1.567 por LP) | pivotes 20217, primales 73.9% | LPs solo primales 74.2%, mixtos 4.9%
+[spx] excepcion: XSOLVE14 Abort solving due to looping
+[spx] excepcion: XSOLVE14 Abort solving due to looping
+[spx] excepcion: XSOLVE14 Abort solving due to looping
+[spx] LPs 6000 factorizaciones 15303 (2.551 por LP) | pivotes 36069, primales 63.0% | LPs solo primales 72.5%, mixtos 5.7%
+[spx] LPs 8000 factorizaciones 19167 (2.396 por LP) | pivotes 47433, primales 65.9% | LPs solo primales 73.3%, mixtos 6.1%
+[spx] LPs 10000 factorizaciones 22382 (2.239 por LP) | pivotes 57879, primales 67.8% | LPs solo primales 73.8%, mixtos 6.2%
+[spx] LPs 12000 factorizaciones 29396 (2.450 por LP) | pivotes 70053, primales 68.3% | LPs solo primales 73.4%, mixtos 6.8%
+[spx] LPs 14000 factorizaciones 34106 (2.437 por LP) | pivotes 80927, primales 69.0% | LPs solo primales 73.7%, mixtos 6.5%
+[spx] LPs 16000 factorizaciones 35815 (2.239 por LP) | pivotes 87270, primales 69.3% | LPs solo primales 73.3%, mixtos 5.7%
+[spx] LPs 18000 factorizaciones 37051 (2.059 por LP) | pivotes 91294, primales 68.9% | LPs solo primales 71.4%, mixtos 5.1%
+[spx] LPs 20000 factorizaciones 39905 (1.996 por LP) | pivotes 98693, primales 67.9% | LPs solo primales 69.9%, mixtos 5.1%
+[spx] estados: -15:29 1:19922 3:49
+[spx] LPs 22000 factorizaciones 42669 (1.940 por LP) | pivotes 106670, primales 67.5% | LPs solo primales 68.7%, mixtos 5.3%
+[spx] LPs 24000 factorizaciones 45384 (1.892 por LP) | pivotes 113396, primales 67.0% | LPs solo primales 66.8%, mixtos 5.2%
+[spx] LPs 26000 factorizaciones 48960 (1.884 por LP) | pivotes 121093, primales 66.9% | LPs solo primales 65.8%, mixtos 5.2%
+[spx] LPs 28000 factorizaciones 50198 (1.793 por LP) | pivotes 125031, primales 66.5% | LPs solo primales 64.0%, mixtos 5.0%
+[spx] LPs 30000 factorizaciones 52371 (1.746 por LP) | pivotes 131228, primales 67.1% | LPs solo primales 64.9%, mixtos 4.8%
+[spx] LPs 32000 factorizaciones 54881 (1.716 por LP) | pivotes 138998, primales 68.0% | LPs solo primales 66.0%, mixtos 4.7%
+[spx] LPs 34000 factorizaciones 56713 (1.669 por LP) | pivotes 147371, primales 68.7% | LPs solo primales 66.7%, mixtos 4.5%
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=995  vacios probados por DFB=136 (13.7% de los nodos)  LPs=69247  pivotes=409367
+[dfb] piv/LP=5.92  degen=23.5%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 21.97 por linealizacion (995 llamadas)
+[abcaja] DFB  : LPs=33892 | optimo certificado=30083  optimo sin certificado=3738  vacio probado=68  no optimo=3 | saltadas=6964
+[abcaja] caja : LPs=35355 | optimo certificado=30475  optimo sin certificado=4778  vacio probado=68  no optimo=34 | saltadas=5503
+[abcaja] nodos=995 | contraccion media DFB=0.33627 caja=0.33536 | nodos vaciados DFB=68 caja=68 | gana DFB=49 caja=21
+[abcaja] costo DFB  : pasada 1.710 s  pivotes=257920  us/LP=50.43  piv/LP=7.62  us/piv=6.627
+[abcaja] costo caja : pasada 3.398 s  pivotes=151447  us/LP=96.09  piv/LP=4.29  us/piv=22.431
+[dfb] vueltas del bucle=291907  (8.62 por resolucion, contra 12.08 pivotes)
+[dfb] compute_basics=69110  (0.17 por pivote)
+[dfb] estados: solves=33896  optimal=99.8%  infeasible=0.3%  iterlimit=0.0%  otros(singular/unbounded)=0.1%  | warm=32894 cold=1002 fact_fallo=2
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=995 tableau=0
+[lustats] factorizaciones=5593 updates=253426 btran=320741 ftran=360018
+[replay] cajas=1000 vacias=68 contraccion_media=0.33459 cpu_contractor=5.4014 s us_por_llamada=5401.4 LPs=69247 pivotes=409367

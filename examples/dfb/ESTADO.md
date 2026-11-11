@@ -2368,3 +2368,21 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   ×0.99 en tiempo; contracción SC 0.1562 → 0.1554, simplex directo 0.1614 →
   0.1609. Cambian sobre todo Bratu-0150 (3.53 → 2.10, contracción 0.345 →
   0.330), BroydenTri-0100 (5.69 → 2.57), I5 (1.76 → 1.46).
+- **Por qué SC gana al simplex directo en relajaciones pequeñas (2026-11-11,
+  `grandes_2026-11-11/gana/`, `perf --call-graph dwarf`, 1 core, ex6_2_10,
+  ex7_2_3, hs117, Eco10, Geneig-icse).** `SPxSolver::solve` (R3) hace en cada
+  LP un trabajo fijo que SC no hace: (1) refactoriza antes de declarar óptimo
+  (`spxsolve.cpp:404/718`, «refactorize to eliminate accumulated errors») y
+  otra vez si el pricer no encuentra entrante con updates pendientes
+  (`:444/757`): 0.55–1.7 factorizaciones por LP contra ~0.05 de SC; 15–24 %
+  del tiempo de SoPlex; (2) `init` y recálculo de vectores (`computePvec`,
+  `computeTest`, `computeFrhs`): 4–25 %; (3) chequeo de precisión
+  (`precisionReached` → `qualConstraintViolation`, `qualBoundViolation`,
+  `qualRedCostViolation`), `unShift` y extraer la solución: 3–14 %. Suma
+  44–53 % en las cuatro chicas (30 % en Geneig-icse). En µs por LP, SoPlex sin
+  ese trabajo fijo: ex6_2_10 5.5 contra SC 9.3, ex7_2_3 5.9/7.0, hs117
+  11.6/14.8, Eco10 14.5/26.6: la parte de pivoteo de SoPlex es más barata que
+  todo SC (SC pivotea 1.4–3.7× más), y el trabajo fijo es lo que da vuelta el
+  resultado. **Corrección para el paper:** R3 no es «nothing verified»:
+  `SPxSolver::solve` sí verifica la precisión antes de declarar óptimo; lo que
+  se salta es la verificación y el des-escalado de la clase `SoPlex`.

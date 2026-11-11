@@ -1,0 +1,41 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[spx] k 0 st 1 it 3 rep 1 tipo 1 filas 4 cols 7
+[spx] k 1 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 2 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 4 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 0 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 3 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 5 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 6 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 0 st 1 it 3 rep 1 tipo 1 filas 4 cols 7
+[spx] k 4 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 1 st 1 it 1 rep 1 tipo -1 filas 4 cols 7
+[spx] k 0 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 2 st 1 it 1 rep 1 tipo -1 filas 4 cols 7
+[spx] k 3 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 5 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 4 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 6 st 1 it 1 rep 1 tipo -1 filas 4 cols 7
+[spx] k 0 st 1 it 3 rep 1 tipo 1 filas 4 cols 7
+[spx] k 4 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] k 2 st 1 it 0 rep 1 tipo -1 filas 4 cols 7
+[spx] LPs 2000 factorizaciones 1093 (0.547 por LP) | pivotes 1452, primales 45.6% | LPs solo primales 30.1%, mixtos 0.0%
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=497  vacios probados por DFB=192 (38.7% de los nodos)  LPs=7515  pivotes=13855
+[dfb] piv/LP=1.85  degen=23.4%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 4.00 por linealizacion (497 llamadas)
+[dfb] filas paralelas: fundidas=1491 quitadas=0 (3.00 y 0.00 por linealizacion)
+[abcaja] DFB  : LPs=3707 | optimo certificado=514  optimo sin certificado=3097  vacio probado=96  no optimo=0 | saltadas=2003
+[abcaja] caja : LPs=3808 | optimo certificado=2153  optimo sin certificado=1559  vacio probado=96  no optimo=0 | saltadas=1902
+[abcaja] nodos=497 | contraccion media DFB=0.38214 caja=0.38214 | nodos vaciados DFB=96 caja=96 | gana DFB=0 caja=0
+[abcaja] costo DFB  : pasada 0.035 s  pivotes=10862  us/LP=9.30  piv/LP=2.94  us/piv=3.174
+[abcaja] costo caja : pasada 0.045 s  pivotes=2993  us/LP=11.72  piv/LP=0.79  us/piv=14.908
+[dfb] vueltas del bucle=14569  (3.94 por resolucion, contra 3.74 pivotes)
+[dfb] compute_basics=7318  (0.53 por pivote)
+[dfb] estados: solves=3707  optimal=97.5%  infeasible=2.6%  iterlimit=0.0%  otros(singular/unbounded)=0.0%  | warm=3210 cold=497 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=743 (1.50 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=497 tableau=0
+[lustats] factorizaciones=497 updates=10751 btran=13917 ftran=21390
+[replay] cajas=540 vacias=139 contraccion_media=0.43134 cpu_contractor=0.1748 s us_por_llamada=323.8 LPs=7515 pivotes=13855

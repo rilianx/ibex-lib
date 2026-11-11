@@ -1,0 +1,45 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[spx] k 0 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 0 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 1 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 2 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 3 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 4 st 1 it 0 rep 1 tipo 1 filas 6 cols 16
+[spx] k 5 st 1 it 3 rep 1 tipo -1 filas 6 cols 16
+[spx] k 8 st 1 it 2 rep 1 tipo -1 filas 6 cols 16
+[spx] k 14 st 1 it 2 rep 1 tipo -1 filas 6 cols 16
+[spx] k 10 st 1 it 1 rep 1 tipo -1 filas 6 cols 16
+[spx] k 9 st 1 it 1 rep 1 tipo -1 filas 6 cols 16
+[spx] k 6 st 1 it 3 rep 1 tipo -1 filas 6 cols 16
+[spx] k 12 st 1 it 1 rep 1 tipo -1 filas 6 cols 16
+[spx] k 7 st 1 it 0 rep 1 tipo -1 filas 6 cols 16
+[spx] k 11 st 1 it 3 rep 1 tipo -1 filas 6 cols 16
+[spx] k 13 st 1 it 2 rep 1 tipo -1 filas 6 cols 16
+[spx] k 15 st 1 it 2 rep 1 tipo -1 filas 6 cols 16
+[spx] k 0 st 1 it 3 rep 1 tipo 1 filas 6 cols 16
+[spx] k 1 st 1 it 2 rep 1 tipo -1 filas 6 cols 16
+[spx] k 3 st 1 it 1 rep 1 tipo -1 filas 6 cols 16
+[spx] LPs 2000 factorizaciones 2103 (1.052 por LP) | pivotes 4901, primales 86.7% | LPs solo primales 88.8%, mixtos 0.0%
+[spx] LPs 4000 factorizaciones 4222 (1.056 por LP) | pivotes 9492, primales 84.5% | LPs solo primales 88.2%, mixtos 0.0%
+[spx] LPs 6000 factorizaciones 6296 (1.050 por LP) | pivotes 13936, primales 83.2% | LPs solo primales 87.3%, mixtos 0.0%
+[spx] LPs 8000 factorizaciones 8389 (1.049 por LP) | pivotes 18244, primales 82.3% | LPs solo primales 86.4%, mixtos 0.0%
+[spx] LPs 10000 factorizaciones 10458 (1.046 por LP) | pivotes 22182, primales 81.6% | LPs solo primales 85.8%, mixtos 0.0%
+[spx] LPs 12000 factorizaciones 12537 (1.045 por LP) | pivotes 26114, primales 81.0% | LPs solo primales 85.2%, mixtos 0.0%
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=841  vacios probados por DFB=324 (38.6% de los nodos)  LPs=27635  pivotes=69354
+[dfb] piv/LP=2.51  degen=16.4%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 6.00 por linealizacion (841 llamadas)
+[abcaja] DFB  : LPs=13905 | optimo certificado=11228  optimo sin certificado=2514  vacio probado=162  no optimo=1 | saltadas=7985
+[abcaja] caja : LPs=13730 | optimo certificado=11200  optimo sin certificado=2368  vacio probado=162  no optimo=0 | saltadas=8160
+[abcaja] nodos=841 | contraccion media DFB=0.38434 caja=0.38434 | nodos vaciados DFB=162 caja=162 | gana DFB=1 caja=1
+[abcaja] costo DFB  : pasada 0.207 s  pivotes=39892  us/LP=14.82  piv/LP=2.87  us/piv=5.165
+[abcaja] costo caja : pasada 0.288 s  pivotes=29462  us/LP=20.91  piv/LP=2.15  us/piv=9.742
+[dfb] vueltas del bucle=53837  (3.88 por resolucion, contra 4.99 pivotes)
+[dfb] compute_basics=27652  (0.40 por pivote)
+[dfb] estados: solves=13907  optimal=98.9%  infeasible=1.2%  iterlimit=0.0%  otros(singular/unbounded)=0.0%  | warm=13064 cold=843 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=1287 (1.54 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=841 tableau=0
+[lustats] factorizaciones=1194 updates=37281 btran=56233 ftran=80646
+[replay] cajas=844 vacias=165 contraccion_media=0.38653 cpu_contractor=0.6861 s us_por_llamada=812.9 LPs=27635 pivotes=69354
