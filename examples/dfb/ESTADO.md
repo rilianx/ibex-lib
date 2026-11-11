@@ -2360,3 +2360,11 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   BroydenTri 4.3, DiscreteBoundary 1.8, BroydenBanded 1.6). En el banco afín
   la regla ya elige columnas (m ≈ n tras fusionar): forzar filas ahí empeora a
   SoPlex (SC/simplex directo 0.86 → 0.79).
+- **Límite de 100 iteraciones en todos los motores (2026-11-11, `run4/`, SC y
+  simplex directo ambos con 100 contra ambos con 20m+200, 14 en paralelo).**
+  Optimización (35 del banco) y sistemas afines (36): nada cambia (SC/simplex
+  directo 0.711 → 0.710 y 0.858 → 0.853; misma contracción; tiempos ±1 %).
+  Compo (41): SC/simplex directo 1.477 → 1.407; SC ×0.94 y simplex directo
+  ×0.99 en tiempo; contracción SC 0.1562 → 0.1554, simplex directo 0.1614 →
+  0.1609. Cambian sobre todo Bratu-0150 (3.53 → 2.10, contracción 0.345 →
+  0.330), BroydenTri-0100 (5.69 → 2.57), I5 (1.76 → 1.46).
