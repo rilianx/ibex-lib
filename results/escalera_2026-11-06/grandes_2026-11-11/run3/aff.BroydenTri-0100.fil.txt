@@ -1,0 +1,8 @@
+[dfb] piv/LP=14.55  degen=73.4%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[abcaja] DFB  : LPs=2369 | optimo certificado=1346  optimo sin certificado=1020  vacio probado=0  no optimo=3 | saltadas=3831
+[abcaja] caja : LPs=3295 | optimo certificado=1471  optimo sin certificado=1824  vacio probado=0  no optimo=0 | saltadas=2905
+[abcaja] nodos=31 | contraccion media DFB=0.04098 caja=0.04098 | nodos vaciados DFB=0 caja=0 | gana DFB=9 caja=1
+[abcaja] costo DFB  : pasada 0.605 s  pivotes=67684  us/LP=255.20  piv/LP=28.58  us/piv=8.933
+[abcaja] costo caja : pasada 0.189 s  pivotes=14712  us/LP=57.13  piv/LP=4.47  us/piv=12.795
+[dfb] estados: solves=2374  optimal=99.7%  infeasible=0.3%  iterlimit=0.0%  otros(singular/unbounded)=0.2%  | warm=2335 cold=39 fact_fallo=3
+[replay] cajas=33 vacias=0 contraccion_media=0.03850 cpu_contractor=0.9334 s us_por_llamada=28284.6 LPs=5664 pivotes=82396

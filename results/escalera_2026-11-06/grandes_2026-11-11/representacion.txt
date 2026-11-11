@@ -1,0 +1,84 @@
+== cmp: completas 41 de 41
+  c0    pasada SC/bare gm 1.48 | pivotes gm 1.29 | t/pivote gm 1.14 | contr SC 0.1562 bare 0.1614 | sin optimo SC 2001 bare 1087 | SC gana 6/41
+  col   pasada SC/bare gm 1.11 | pivotes gm 1.52 | t/pivote gm 0.73 | contr SC 0.1563 bare 0.1604 | sin optimo SC 2002 bare 1315 | SC gana 17/41
+   Discrete-Integralf2-21     c0 0.70 piv 0.90 con 0.1349 | col 0.96 piv 1.98 con 0.1349
+   Geneig-icse                c0 0.75 piv 0.72 con 0.3661 | col 0.61 piv 1.17 con 0.3661
+   ponts-geo                  c0 0.84 piv 1.64 con 0.0161 | col 0.80 piv 2.03 con 0.0161
+   Yamamua1-0100sp            c0 0.92 piv 0.55 con 0.0255 | col 0.95 piv 1.61 con 0.0255
+   Brent-10                   c0 0.95 piv 0.75 con 0.0556 | col 0.76 piv 1.03 con 0.0555
+   Yamamura1-0200sp           c0 0.99 piv 0.51 con 0.0782 | col 0.85 piv 1.17 con 0.0782
+   Trigo1-0035sp              c0 1.01 piv 0.61 con 0.0303 | col 0.79 piv 0.77 con 0.0303
+   Brown-30                   c0 1.18 piv 4.70 con 0.2796 | col 1.18 piv 4.70 con 0.2796
+   Redeco8                    c0 1.26 piv 1.06 con 0.1931 | col 0.91 piv 1.21 con 0.1931
+   Dietmaier                  c0 1.30 piv 1.07 con 0.2479 | col 0.94 piv 1.23 con 0.2519
+   Eco9                       c0 1.34 piv 1.08 con 0.1803 | col 0.93 piv 1.14 con 0.1803
+   Redeco9                    c0 1.35 piv 1.14 con 0.1980 | col 0.96 piv 1.22 con 0.1980
+   Katsura-30                 c0 1.36 piv 0.95 con 0.1769 | col 0.97 piv 1.07 con 0.1769
+   Butcher8-a                 c0 1.36 piv 1.09 con 0.1761 | col 1.01 piv 1.14 con 0.1761
+   Eco10                      c0 1.39 piv 1.11 con 0.1744 | col 0.94 piv 1.14 con 0.1744
+   CountercurrentReactors2-30 c0 1.39 piv 1.05 con 0.0730 | col 0.53 piv 0.72 con 0.0731
+   Fourbarbis                 c0 1.39 piv 1.29 con 0.3088 | col 1.04 piv 1.46 con 0.3088
+   Directkin                  c0 1.40 piv 1.03 con 0.2183 | col 1.02 piv 1.16 con 0.2183
+   Redeco10                   c0 1.41 piv 1.10 con 0.1904 | col 0.96 piv 1.22 con 0.1904
+   ExtendedWood-16            c0 1.41 piv 1.04 con 0.2359 | col 0.99 piv 1.12 con 0.2359
+   I5bis                      c0 1.44 piv 1.09 con 0.1047 | col 1.06 piv 1.17 con 0.1047
+   Fourbar-icse               c0 1.45 piv 1.05 con 0.2583 | col 1.20 piv 1.20 con 0.2583
+   Eco11                      c0 1.49 piv 1.18 con 0.1652 | col 0.98 piv 1.17 con 0.1652
+   Neveu1                     c0 1.50 piv 1.32 con 0.0003 | col 1.28 piv 2.57 con 0.0003
+   Design                     c0 1.58 piv 1.19 con 0.2362 | col 1.09 piv 1.17 con 0.2362
+   CountercurrentReactors-30  c0 1.59 piv 1.32 con 0.0033 | col 1.03 piv 1.32 con 0.0033
+   Redeco11                   c0 1.66 piv 1.34 con 0.1519 | col 1.05 piv 1.28 con 0.1519
+   Virasoro-prod              c0 1.68 piv 1.09 con 0.1852 | col 1.31 piv 1.22 con 0.1852
+   Designsp                   c0 1.73 piv 1.16 con 0.2530 | col 1.16 piv 1.14 con 0.2530
+   I5                         c0 1.76 piv 1.52 con 0.1218 | col 1.31 piv 1.64 con 0.1216
+   Designbis                  c0 1.77 piv 1.33 con 0.2452 | col 1.22 piv 1.30 con 0.2452
+   transistor-icse            c0 1.79 piv 1.21 con 0.2530 | col 1.17 piv 1.15 con 0.2530
+   Eco12                      c0 1.80 piv 1.43 con 0.1064 | col 1.07 piv 1.22 con 0.1064
+   BroydenBanded-120          c0 1.82 piv 1.98 con 0.0214 | col 1.59 piv 2.89 con 0.0214
+   Trigexp2-23                c0 1.84 piv 1.44 con 0.0217 | col 1.36 piv 1.74 con 0.0217
+   Katsurabis-14              c0 1.86 piv 1.52 con 0.1369 | col 1.43 piv 1.75 con 0.1369
+   Synthesis                  c0 1.87 piv 1.28 con 0.1353 | col 1.25 piv 1.29 con 0.1353
+   DiscreteBoundary-0200      c0 1.91 piv 2.63 con 0.0512 | col 1.77 piv 2.98 con 0.0512
+   synthesis                  c0 1.94 piv 1.35 con 0.1310 | col 1.34 piv 1.50 con 0.1310
+   Bratu-0150                 c0 3.57 piv 4.80 con 0.3450 | col 2.89 piv 6.10 con 0.3450
+   BroydenTri-0100            c0 5.51 piv 14.90 con 0.1174 | col 4.27 piv 15.41 con 0.1174
+== aff: completas 36 de 36
+  c0    pasada SC/bare gm 0.86 | pivotes gm 1.83 | t/pivote gm 0.47 | contr SC 0.1662 bare 0.1654 | sin optimo SC 90 bare 35 | SC gana 25/36
+  col   pasada SC/bare gm 0.86 | pivotes gm 1.83 | t/pivote gm 0.47 | contr SC 0.1662 bare 0.1654 | sin optimo SC 90 bare 35 | SC gana 25/36
+  fil   pasada SC/bare gm 0.79 | pivotes gm 1.02 | t/pivote gm 0.77 | contr SC 0.1662 bare 0.1652 | sin optimo SC 90 bare 591 | SC gana 25/36
+   exnewton                   c0 0.38 piv 0.88 con 0.0000 | col 0.43 piv 0.88 con 0.0000 | fil 0.38 piv 0.42 con 0.0000
+   Pramanik                   c0 0.48 piv 1.08 con 0.2398 | col 0.48 piv 1.08 con 0.2398 | fil 0.50 piv 0.84 con 0.2398
+   Rose                       c0 0.50 piv 1.06 con 0.1325 | col 0.50 piv 1.06 con 0.1325 | fil 0.50 piv 0.59 con 0.1325
+   Geneig-icse                c0 0.51 piv 1.70 con 0.3363 | col 0.51 piv 1.70 con 0.3363 | fil 0.40 piv 0.61 con 0.3363
+   ponts-geo                  c0 0.53 piv 1.98 con 0.0160 | col 0.53 piv 1.98 con 0.0160 | fil 0.45 piv 0.52 con 0.0160
+   SjirkBoon                  c0 0.60 piv 1.24 con 0.2684 | col 0.60 piv 1.24 con 0.2684 | fil 0.60 piv 1.10 con 0.2684
+   Geneigbis                  c0 0.61 piv 1.13 con 0.3358 | col 0.60 piv 1.13 con 0.3358 | fil 0.55 piv 0.60 con 0.3358
+   ExtendedWood-08            c0 0.61 piv 1.09 con 0.2615 | col 0.62 piv 1.09 con 0.2615 | fil 0.63 piv 0.79 con 0.2615
+   Geneig                     c0 0.61 piv 1.17 con 0.3342 | col 0.61 piv 1.17 con 0.3342 | fil 0.57 piv 0.64 con 0.3342
+   Brent-10                   c0 0.62 piv 1.30 con 0.0368 | col 0.62 piv 1.30 con 0.0368 | fil 0.56 piv 0.50 con 0.0368
+   Neveu1                     c0 0.66 piv 1.43 con 0.0004 | col 0.65 piv 1.43 con 0.0004 | fil 0.52 piv 0.33 con 0.0004
+   Fredtest                   c0 0.67 piv 1.19 con 0.3116 | col 0.67 piv 1.39 con 0.3116 | fil 0.69 piv 1.02 con 0.3116
+   Directkin                  c0 0.71 piv 1.43 con 0.2254 | col 0.70 piv 1.43 con 0.2254 | fil 0.68 piv 0.85 con 0.2254
+   Fourbarbis-1               c0 0.74 piv 1.74 con 0.2755 | col 0.76 piv 1.74 con 0.2755 | fil 0.79 piv 1.17 con 0.2755
+   Yamamua1-0016sp            c0 0.78 piv 1.41 con 0.0172 | col 0.80 piv 1.41 con 0.0172 | fil 0.63 piv 0.38 con 0.0172
+   Discrete-Integral-6        c0 0.79 piv 1.68 con 0.2200 | col 0.76 piv 1.68 con 0.2200 | fil 0.81 piv 1.53 con 0.2200
+   Redeco9                    c0 0.79 piv 1.52 con 0.1302 | col 0.81 piv 1.52 con 0.1302 | fil 0.79 piv 1.15 con 0.1302
+   Trigexp2-11                c0 0.86 piv 2.38 con 0.0147 | col 0.86 piv 2.38 con 0.0147 | fil 0.86 piv 1.35 con 0.0147
+   Eco10                      c0 0.87 piv 1.60 con 0.1143 | col 0.86 piv 1.60 con 0.1143 | fil 0.91 piv 1.45 con 0.1143
+   I5bis                      c0 0.88 piv 1.77 con 0.0702 | col 0.89 piv 1.77 con 0.0702 | fil 0.88 piv 1.17 con 0.0702
+   Trigo1-0015                c0 0.89 piv 1.96 con 0.1912 | col 0.90 piv 1.96 con 0.1912 | fil 0.61 piv 0.77 con 0.1912
+   Design                     c0 0.94 piv 1.71 con 0.2780 | col 0.93 piv 1.71 con 0.2780 | fil 0.99 piv 1.48 con 0.2780
+   Brown-30                   c0 0.95 piv 1.85 con 0.3332 | col 0.96 piv 1.85 con 0.3332 | fil 0.56 piv 0.47 con 0.3332
+   transistor                 c0 0.97 piv 1.75 con 0.2694 | col 0.96 piv 1.75 con 0.2694 | fil 1.01 piv 1.50 con 0.2694
+   CountercurrentReactors2-14 c0 0.97 piv 1.84 con 0.0972 | col 0.98 piv 1.84 con 0.0972 | fil 1.00 piv 1.50 con 0.0972
+   Discrete-Integralf2-21     c0 1.05 piv 2.79 con 0.1545 | col 1.05 piv 2.79 con 0.1545 | fil 0.69 piv 1.15 con 0.1545
+   Katsura-17                 c0 1.10 piv 1.73 con 0.1463 | col 1.11 piv 1.73 con 0.1463 | fil 1.05 piv 1.58 con 0.1463
+   Designbis                  c0 1.11 piv 2.00 con 0.2694 | col 1.09 piv 2.00 con 0.2694 | fil 1.14 piv 1.59 con 0.2694
+   Designsp                   c0 1.17 piv 2.12 con 0.2506 | col 1.18 piv 2.12 con 0.2506 | fil 1.18 piv 1.52 con 0.2506
+   Yamamura1-0040sp           c0 1.18 piv 1.84 con 0.0276 | col 1.19 piv 1.84 con 0.0276 | fil 0.85 piv 0.42 con 0.0276
+   transistor-icse            c0 1.23 piv 2.24 con 0.2639 | col 1.24 piv 2.24 con 0.2639 | fil 1.20 piv 1.59 con 0.2639
+   BroydenBanded-120          c0 1.24 piv 3.59 con 0.0260 | col 1.23 piv 3.59 con 0.0260 | fil 1.17 piv 2.08 con 0.0260
+   Bratu-0120                 c0 1.36 piv 3.39 con 0.1134 | col 1.38 piv 3.39 con 0.1134 | fil 1.24 piv 1.25 con 0.1134
+   Katsurabis-14              c0 1.42 piv 2.24 con 0.1675 | col 1.44 piv 2.24 con 0.1675 | fil 1.32 piv 1.66 con 0.1675
+   DiscreteBoundary-0200      c0 1.98 piv 8.97 con 0.0129 | col 1.97 piv 8.97 con 0.0129 | fil 1.70 piv 6.08 con 0.0129
+   BroydenTri-0100            c0 3.09 piv 7.93 con 0.0410 | col 3.13 piv 7.93 con 0.0410 | fil 3.20 piv 4.60 con 0.0410

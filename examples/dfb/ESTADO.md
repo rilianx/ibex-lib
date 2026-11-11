@@ -2347,3 +2347,16 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   brecha es difusa: LU ×1.45 y código propio ×1.3 (SC recorre todas las
   columnas y filas en cada pivote y llama `dual_step_comun` en cada iteración
   primal). No hay un arreglo único.
+- **La causa principal en compo es la representación (2026-11-11, `run3/`,
+  `representacion.txt`).** `ibex_CajaSPx.cpp` aplica la regla de SoPlex: con
+  más de 1.2 filas por columna usa la representación POR FILAS (base de
+  dimensión n, las variables), no por columnas (base de dimensión m, las
+  filas). SC siempre trabaja por columnas, con una holgura por fila. Forzando
+  el simplex directo a columnas (`DFBH_SPX_REP=columnas`, interruptor nuevo),
+  la pasada SC/simplex directo en el banco compo baja de gm 1.48 a 1.11 y SC
+  gana en 17 de 41 (antes 6); los sistemas típicos quedan en 0.91–1.05
+  (Redeco, Eco, Dietmaier, Katsura-30, Directkin, Butcher). Lo que queda:
+  estancamiento (Katsurabis-14 1.43, I5 1.31) y sistemas en banda (Bratu 2.9,
+  BroydenTri 4.3, DiscreteBoundary 1.8, BroydenBanded 1.6). En el banco afín
+  la regla ya elige columnas (m ≈ n tras fusionar): forzar filas ahí empeora a
+  SoPlex (SC/simplex directo 0.86 → 0.79).

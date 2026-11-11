@@ -69,7 +69,12 @@ void CajaSPx::cargar(int n, int m, const double* lb, const double* ub, const dou
     C.sx.setFeastol(tol < 1e-12 ? 1e-12 : tol);
     C.sx.setOpttol(tol < 1e-12 ? 1e-12 : tol);
     /* la regla de representacion de la clase SoPlex (REPRESENTATION_AUTO, 1.2) */
-    if ((n + 1) * 1.2 >= (m + 1)) { C.sx.setRep(SPxSolver::COLUMN); C.sx.setType(SPxSolver::LEAVE); }
+    /* `DFBH_SPX_REP=columnas|filas` (2026-11-11): fuerza la representacion,
+     * para medir cuanto del costo por pivote depende de ella. Sin la variable,
+     * la regla de SoPlex: por filas cuando hay mas de 1.2 filas por columna. */
+    static const char* rep_env = getenv("DFBH_SPX_REP");
+    const bool por_col = rep_env ? std::string(rep_env) == "columnas" : ((n + 1) * 1.2 >= (m + 1));
+    if (por_col) { C.sx.setRep(SPxSolver::COLUMN); C.sx.setType(SPxSolver::LEAVE); }
     else                          { C.sx.setRep(SPxSolver::ROW);    C.sx.setType(SPxSolver::ENTER); }
     /* `DFBH_CAJA_TOPE=igual`: el tope de iteraciones de SC (20m+200) en vez del de Ibex (100) */
     static const bool tope_igual = getenv("DFBH_CAJA_TOPE") && std::string(getenv("DFBH_CAJA_TOPE")) == "igual";
