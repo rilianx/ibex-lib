@@ -1,0 +1,17 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[perf] solves=57577  solve=24.174s (load aparte 0.301s) | pivot 19%  ratio-test dual 16%  primal 48%  refresh 3%  basics 4%  y_fact 2%  setobj 1% | ESCALAR LA CAJA 1%  reparar cotas 1%  cola 1%  arranque en frio 1%  bucle 9%  resto 2% | load = 2% de todo
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=1000  vacios probados por DFB=96 (9.7% de los nodos)  LPs=57577  pivotes=1041039
+[dfb] piv/LP=18.09  degen=11.5%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 150.99 por linealizacion (1000 llamadas)
+[dfb] filas paralelas: fundidas=15924 quitadas=0 (15.93 y 0.00 por linealizacion)
+[dfb] vueltas del bucle=1098615  (19.09 por resolucion, contra 18.09 pivotes)
+[dfb] compute_basics=125235  (0.13 por pivote)
+[dfb] estados: solves=57577  optimal=99.9%  infeasible=0.2%  iterlimit=0.1%  otros(singular/unbounded)=0.1%  | warm=56576 cold=1001 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=1000 tableau=0
+[dfb] warm medir: nodos dual=45 primal=955 | costo por LP (prom. movil) dual 1120.6 us, primal 518.0 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 1
+[replay] cajas=1000 vacias=96 contraccion_media=0.25832 cpu_contractor=29.0515 s us_por_llamada=29051.5 LPs=57577 pivotes=1041039

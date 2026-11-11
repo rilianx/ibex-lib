@@ -2311,3 +2311,25 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   `sinpert`): sistemas ×1.01–1.02, opt ×0.99. compo, final contra el de las tablas: sistemas ×1.03 / ×1.05 /
   ×1.09, 366 = 366; opt ×1.00, 881 → 878. Las tablas afines del paper valen para la configuración final;
   las de compo en sistemas quedan 3–9 % optimistas.
+
+- **Por qué SC pierde en relajaciones grandes (2026-11-11,
+  `results/escalera_2026-11-06/grandes_2026-11-11/`, SC base contra el simplex
+  directo en la misma corrida, 14 en paralelo).** Tres mecanismos distintos:
+  (1) *costo por pivote* en la mayoría (Redeco, Eco, Design, Fourbar, Directkin,
+  Dietmaier, Butcher, Katsura-30, Virasoro): pivotes ×1.05–1.2, pasada
+  ×1.3–1.7. Perfil (`perf`, `perfil.txt`) en Fourbar-icse: SC 72 k muestras
+  (propio 35.5 k + LU 36.6 k) contra SoPlex 50.5 k (propio 26.4 k + LU 24.1 k):
+  la LU cuesta ×1.5 por pivote (SC usa los solves densos `solveUleft`,
+  `solveLleft`, `solveLleftForest` y `vSolveUright` ×3.5; SoPlex los ralos) y
+  los bucles propios ×1.35 (`primal_step_revisado`, `fila_revisada`,
+  `row_of_A` recorren todas las columnas). (2) *estancamiento* en pocos:
+  Katsurabis-14, 61 LPs de 16 939 llegan al tope 20m+200 y son el 84 % de la
+  brecha de pivotes; con `DFBH_LPCAP=150` pivotes ×1.52 → ×1.08 y pasada
+  ×1.88 → ×1.48 sin perder contracción; también I5, Fourbarbis,
+  DiscreteBoundary. En el banco entero el tope 150 mueve poco: pasada gm
+  1.48 → 1.41 (tope 60: 1.38, contracción 0.1562 → 0.1545). (3) *sistemas en
+  banda* (Bratu, BroydenTri, BroydenBanded, Brown): pivotes ×2–15 aun con
+  tope. La explicación «SoPlex termina en mejores vértices» no se sostiene
+  como causa general. **Tolerancia en sistemas afines:** SC con 1e-6 en vez de
+  1e-9 (36 sistemas): pasada gm 0.86 → 0.85, contracción 0.1662 → 0.1644
+  (simplex directo 0.1654): no cambia la comparación.

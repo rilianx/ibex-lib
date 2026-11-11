@@ -1,0 +1,16 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[perf] solves=13113  solve=1.514s (load aparte 0.074s) | pivot 18%  ratio-test dual 15%  primal 33%  refresh 5%  basics 6%  y_fact 3%  setobj 1% | ESCALAR LA CAJA 2%  reparar cotas 1%  cola 1%  arranque en frio 2%  bucle 15%  resto 4% | load = 5% de todo
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=998  vacios probados por DFB=70 (7.1% de los nodos)  LPs=13113  pivotes=98625
+[dfb] piv/LP=7.53  degen=21.1%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 41.55 por linealizacion (998 llamadas)
+[dfb] filas paralelas: fundidas=3992 quitadas=0 (4.00 y 0.00 por linealizacion)
+[dfb] vueltas del bucle=111738  (8.53 por resolucion, contra 7.53 pivotes)
+[dfb] compute_basics=26194  (0.27 por pivote)
+[dfb] estados: solves=13113  optimal=99.5%  infeasible=0.6%  iterlimit=0.0%  otros(singular/unbounded)=0.0%  | warm=12115 cold=998 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=998 tableau=0
+[dfb] warm medir: nodos dual=80 primal=918 | costo por LP (prom. movil) dual 192.8 us, primal 166.7 us
+[replay] cajas=1000 vacias=72 contraccion_media=0.19204 cpu_contractor=2.1273 s us_por_llamada=2127.3 LPs=13113 pivotes=98625

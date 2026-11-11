@@ -1,0 +1,21 @@
+Couldn't record kernel reference relocation symbol
+Symbol resolution may be skewed if relocation was used (e.g. kexec).
+Check /proc/kallsyms permission or run as root.
+[dfb] pivoteo=dual (puro: reubica todo, k incluida)
+[dfb] nodos=1000  vacios probados por DFB=192 (19.3% de los nodos)  LPs=115142  pivotes=2031115
+[dfb] piv/LP=17.65  degen=5.9%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 150.99 por linealizacion (1000 llamadas)
+[dfb] filas paralelas: fundidas=15924 quitadas=0 (15.93 y 0.00 por linealizacion)
+[abcaja] DFB  : LPs=57577 | optimo certificado=56760  optimo sin certificado=720  vacio probado=96  no optimo=1 | saltadas=5799
+[abcaja] caja : LPs=57565 | optimo certificado=56525  optimo sin certificado=944  vacio probado=96  no optimo=0 | saltadas=5811
+[abcaja] nodos=1000 | contraccion media DFB=0.25832 caja=0.25832 | nodos vaciados DFB=96 caja=96 | gana DFB=47 caja=72
+[abcaja] costo DFB  : pasada 21.422 s  pivotes=1041039  us/LP=372.05  piv/LP=18.09  us/piv=20.577
+[abcaja] costo caja : pasada 15.020 s  pivotes=990076  us/LP=260.91  piv/LP=17.20  us/piv=15.170
+[dfb] vueltas del bucle=1098615  (19.09 por resolucion, contra 35.28 pivotes)
+[dfb] compute_basics=125235  (0.07 por pivote)
+[dfb] estados: solves=57577  optimal=99.9%  infeasible=0.2%  iterlimit=0.1%  otros(singular/unbounded)=0.1%  | warm=56576 cold=1001 fact_fallo=0
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=1000 tableau=0
+[dfb] warm medir: nodos dual=45 primal=955 | costo por LP (prom. movil) dual 910.1 us, primal 402.5 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 1
+[replay] cajas=1000 vacias=96 contraccion_media=0.25832 cpu_contractor=37.9141 s us_por_llamada=37914.1 LPs=115142 pivotes=2031115

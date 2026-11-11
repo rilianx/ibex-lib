@@ -1,0 +1,56 @@
+== Redeco10 muestras: solo SC 8613  SC+SoPlex 8691
+  SC propio                solo SC   1523   SC+SoPlex   1460   diferencia    -63
+  LU (codigo de SoPlex)    solo SC   1716   SC+SoPlex   2690   diferencia    974
+  SoPlex resto             solo SC    108   SC+SoPlex   1533   diferencia   1425
+  otros                    solo SC   5266   SC+SoPlex   3008   diferencia  -2258
+  -> SC: propio 1523 + LU 1716 = 3239 | SoPlex: propio 1533 + LU 974 = 2507
+  SC propio, detalle:
+       378 ibex::DFBSimplex::primal_step_revisado(ibex::IntervalVector const&, bool&)                     
+       217 ibex::DFBSimplex::dual_step_comun(ibex::IntervalVector const&, bool&)                          
+       146 ibex::DFBBasis::row_of_A(double const*, double*) const                                         
+       111 ibex::DFBBasis::A_times(double const*, double*) const                                          
+       110 ibex::DFBSimplex::fila_revisada(int)                                                           
+       108 ibex::DFBSimplex::reparar_cotas_infinitas(ibex::IntervalVector const&)                         
+        69 ibex::DFBSimplex::pivot_revisado(int, int)                                                     
+        65 ibex::DFBSimplex::load(ibex::Matrix const&, int)                                               
+        63 ibex::DFBSimplex::solve_nucleo(int, bool, ibex::IntervalVector const&, int, bool)              
+        46 ibex::DFBBasis::load_matrix(ibex::Matrix const&)                                               
+        46 ibex::DFBSimplex::refrescar_desde_factorizacion(int, bool, ibex::IntervalVector const&, bool)  
+  LU en SC, detalle:
+       342 (en SC+SoPlex   438) soplex::CLUFactor::vSolveUright(double*, int*, double*, int*, int, dou
+       296 (en SC+SoPlex   385) soplex::CLUFactor::vSolveLright(double*, int*, int&, double)          
+       240 (en SC+SoPlex   425) soplex::CLUFactor::forestUpdate(int, double*, int, int*)              
+       160 (en SC+SoPlex   139) soplex::CLUFactor::solveLleftForest(double*, int*, double)            
+       104 (en SC+SoPlex   112) soplex::CLUFactor::solveLright(double*)                               
+        98 (en SC+SoPlex   138) soplex::CLUFactor::solveUleft(double*, double*)                       
+        92 (en SC+SoPlex    95) soplex::CLUFactor::solveUright(double*, double*) const                
+        80 (en SC+SoPlex    75) soplex::CLUFactor::solveLleft(double*) const                          
+        74 (en SC+SoPlex   155) soplex::CLUFactor::vSolveRight4update(double, double*, int*, double*, 
+  SoPlex resto, detalle:
+       225 soplex::SPxSolver::setupPupdate()                                                              
+       163 soplex::SPxFastRT::minDelta(double&, double&, soplex::UpdateVector&, soplex::VectorBase<double>
+       133 soplex::SPxSolver::computePvec()                                                               
+== Fourbar-icse muestras: solo SC 116811  SC+SoPlex 152290
+  SC propio                solo SC  35489   SC+SoPlex  34414   diferencia  -1075
+  LU (codigo de SoPlex)    solo SC  36556   SC+SoPlex  60693   diferencia  24137
+  SoPlex resto             solo SC   1109   SC+SoPlex  26391   diferencia  25282
+  otros                    solo SC  43657   SC+SoPlex  30792   diferencia -12865
+  -> SC: propio 35489 + LU 36556 = 72045 | SoPlex: propio 26391 + LU 24137 = 50528
+  SC propio, detalle:
+     11377 ibex::DFBSimplex::primal_step_revisado(ibex::IntervalVector const&, bool&)                     
+      6879 ibex::DFBSimplex::dual_step_comun(ibex::IntervalVector const&, bool&)                          
+      3995 ibex::DFBSimplex::fila_revisada(int)                                                           
+      3509 ibex::DFBBasis::row_of_A(double const*, double*) const                                         
+      2336 ibex::DFBSimplex::reparar_cotas_infinitas(ibex::IntervalVector const&)                         
+      1864 ibex::DFBSimplex::pivot_revisado(int, int)                                                     
+  LU en SC, detalle:
+      9987 (en SC+SoPlex 12857) soplex::CLUFactor::vSolveUright(double*, int*, double*, int*, int, dou
+      5807 (en SC+SoPlex  9151) soplex::CLUFactor::vSolveLright(double*, int*, int&, double)          
+      4304 (en SC+SoPlex  7398) soplex::CLUFactor::forestUpdate(int, double*, int, int*)              
+      2901 (en SC+SoPlex  3145) soplex::CLUFactor::solveUleft(double*, double*)                       
+      2569 (en SC+SoPlex  2827) soplex::CLUFactor::solveLleft(double*) const                          
+      2288 (en SC+SoPlex  2331) soplex::CLUFactor::solveLleftForest(double*, int*, double)            
+  SoPlex resto, detalle:
+      6396 soplex::SPxFastRT::minDelta(double&, double&, soplex::UpdateVector&, soplex::VectorBase<double>
+      6111 soplex::SPxSolver::setupPupdate()                                                              
+      1144 soplex::SPxSolver::updateFtest()                                                               

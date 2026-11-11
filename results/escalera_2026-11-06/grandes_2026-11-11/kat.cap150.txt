@@ -1,0 +1,18 @@
+[dfb] pivoteo=primal (dual en la cota 0, primal de la 1 en adelante)
+[dfb] nodos=542  vacios probados por DFB=68 (12.6% de los nodos)  LPs=33742  pivotes=620511
+[dfb] piv/LP=18.39  degen=10.0%  degen-enmascarados=0.0%  LPs perturbados=0  pivotes de limpieza=0
+[dfb] filas de la relajacion: 104.91 por linealizacion (542 llamadas)
+[dfb] filas paralelas: fundidas=15080 quitadas=0 (27.83 y 0.00 por linealizacion)
+[abcaja] DFB  : LPs=16767 | optimo certificado=14474  optimo sin certificado=2244  vacio probado=34  no optimo=15 | saltadas=13747
+[abcaja] caja : LPs=16975 | optimo certificado=14774  optimo sin certificado=2167  vacio probado=34  no optimo=0 | saltadas=13539
+[abcaja] nodos=542 | contraccion media DFB=0.13687 caja=0.13706 | nodos vaciados DFB=34 caja=34 | gana DFB=183 caja=110
+[abcaja] costo DFB  : pasada 5.357 s  pivotes=322814  us/LP=319.48  piv/LP=19.26  us/piv=16.594
+[abcaja] costo caja : pasada 4.134 s  pivotes=297697  us/LP=243.49  piv/LP=17.54  us/piv=13.885
+[dfb] vueltas del bucle=339476  (20.25 por resolucion, contra 37.01 pivotes)
+[dfb] compute_basics=37304  (0.07 por pivote)
+[dfb] estados: solves=16768  optimal=99.1%  infeasible=0.3%  iterlimit=0.7%  otros(singular/unbounded)=0.1%  | warm=16212 cold=556 fact_fallo=6
+[dfb] LPs de la cota inferior del objetivo con certificado=0 (0.00 por nodo); LPs extra para sensibilidades=0
+[dfb] motor por nodo: revisado=542 tableau=0
+[dfb] warm medir: nodos dual=48 primal=494 | costo por LP (prom. movil) dual 537.5 us, primal 263.4 us
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 109
+[replay] cajas=542 vacias=34 contraccion_media=0.13687 cpu_contractor=11.0459 s us_por_llamada=20379.8 LPs=33742 pivotes=620511
