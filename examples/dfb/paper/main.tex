@@ -736,17 +736,22 @@ bound better. The same happens on optimization problems, where SoPlex ends
 weights, then steepest edge) with the bound-flipping ratio test, and SC takes
 the largest violation with Harris' test.
 \end{itemize}
-SC therefore lacks two things on large relaxations. The first is a rule that
-chooses, inside the optimal face, the vertex that serves the next bound:
-neither a tie-break toward the corners of the box nor a short walk inside the
-face (up to ten primal steps that keep the optimum) made SC end at such
-vertices. The second is the pricing of SoPlex: our devex pricing, the
-long-step ratio test and the limit of 60 pivots (Section~\ref{sec:iter})
-bring a pass of SC from 0.75 to 0.55 times that of R0 on the six affine
-systems (the bare simplex: 0.47), but leave it at 1.46 times the bare simplex
-on the \texttt{compo} bank (geometric mean), and change little on the smaller
-relaxations. The cost per pivot, $\times1.4$ in an earlier version of SC, is
-no longer the main term.
+Neither gap yielded to the standard remedies. For the vertex, we tried a
+tie-break toward the corners of the box inside the optimal face, a short walk
+inside that face (up to ten primal steps that keep the optimum), the primal
+warm start instead of the dual one, and removing the perturbation of the
+costs: none made SC end at vertices that serve the next bound. For the
+pivoting rules, we tried devex pricing in the dual and in the primal, exact
+dual steepest-edge pricing and the long-step ratio test: with devex, the long
+step and the limit of 60 pivots (Section~\ref{sec:iter}), a pass of SC goes
+from 0.75 to 0.55 times that of R0 on the six affine systems (the bare
+simplex: 0.47), but stays at 1.46 times the bare simplex on the \texttt{compo}
+bank (geometric mean), and changes little on the smaller relaxations. The cost
+per pivot, $\times1.4$ in an earlier version of SC, is no longer the main
+term. What SC lacks on large relaxations is therefore not a known rule that
+remains to be implemented: it is an explanation of why the bases where SoPlex
+stops serve the next bound, which we leave open
+(Section~\ref{sec:discussion}).
 
 \begin{figure}[t]
 \centering
@@ -866,7 +871,8 @@ vertex where each LP ends, and to a lesser extent because of its pricing. The
 first reason is the most specific to this setting, and the one we could not
 fix: an LP solver that is asked for one optimum has no reason to prefer one
 vertex of the optimal face over another, and a simplex for the $2n$ bound
-problems does. The second is engineering. Meanwhile the hybrid uses each
+problems does. The standard remedies closed neither
+(Section~\ref{sec:bank}). Meanwhile the hybrid uses each
 engine where it is better; on systems of equations, whose best relaxation is
 \texttt{compo}, this is what makes the redesigned contractor pay.
 
