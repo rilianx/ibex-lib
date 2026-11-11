@@ -2386,3 +2386,16 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   resultado. **Corrección para el paper:** R3 no es «nothing verified»:
   `SPxSolver::solve` sí verifica la precisión antes de declarar óptimo; lo que
   se salta es la verificación y el des-escalado de la clase `SoPlex`.
+- **¿Basta un SoPlex parchado? No (2026-11-11, `run5/`, `examples/dfb/sxp/`,
+  `ibexreplay_sxp`).** Interruptores en `SPxSolver::solve`:
+  `SOPLEX_SIN_REFACT_OPT` (no refactoriza al óptimo; factorizaciones por LP
+  0.79 → 0.10 en ex7_2_3) y `SOPLEX_SIN_PRECISION` (salta `precisionReached`).
+  El simplex directo con ambos es solo 6 % más barato en optimización (74
+  problemas de la Tabla 1) y 2.5 % en sistemas afines (36), con la misma
+  contracción; SC/simplex directo pasa de 0.73 a 0.78 (opt, gm) y de 0.86 a
+  0.89 (afín); SC sigue ganando en 68/74 y 21/36. El perfil sobreestimaba la
+  refactorización: con bases de 5–16 filas es barata. Lo que SC se ahorra es
+  el costo estructural de una llamada a `SPxSolver::solve` (init, recálculo
+  de vectores, preparar y deshacer cada solve), que no se quita con
+  interruptores. Coincide con el parche de octubre (`SOPLEX_REFACT_FIN`, sin
+  efecto en µs/LP).
