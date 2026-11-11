@@ -37,6 +37,24 @@ namespace ibex {
  */
 class TimeOutException : public Exception { };
 
+class Timer;
+/**
+ * \brief Time limit of the running search, checked from inside contractors.
+ *
+ * The optimizer checks its time limit between nodes only; a contraction that
+ * does not converge (fixpoint of the polytope hull, ACID, propagation) can then
+ * run forever. When set, check_search_deadline() throws TimeOutException once
+ * search_timer exceeds search_timeout. It is checked every 256 calls (the
+ * clock is a system call).
+ */
+extern Timer* search_timer;
+extern double search_timeout;
+void check_search_deadline_slow();
+inline void check_search_deadline() {
+	static unsigned int n = 0;
+	if (search_timer && ((++n) & 255) == 0) check_search_deadline_slow();
+}
+
 
 /** \ingroup tools
  *

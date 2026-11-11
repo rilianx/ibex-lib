@@ -145,6 +145,15 @@ namespace ibex {
   
   LoupFinderIpopt::LoupFinderIpopt(const System& sys,const System& normsys, const ExtendedSystem& extsys) : sys(sys), normsys(normsys), extsys(extsys), solution(sys.nb_var), the_box(sys.box), ipopt_box(sys.box) {
 	try {
+		// symbolic differentiation blows up on huge expressions (hs089 to hs091, sizes 33554 to 62392; hs088, 21460, is fine:
+		// a constraint of tens of thousands of nodes; copying and simplifying its
+		// derivative never ends, before the search starts): skip it, as when it
+		// fails (Ipopt then runs without the exact Hessian)
+		{
+			long total = sys.goal ? sys.goal->expr().size : 0;
+			for (int i=0; i<sys.nb_ctr; i++) total += sys.ctrs[i].f.expr().size;
+			if (total > 30000) { cerr << "expression size " << total << endl; throw DimException("expression too large for symbolic differentiation"); }
+		}
 		df = new Function(*sys.goal,Function::DIFF);
 		//                cout << " nb ctr " << sys.nb_ctr << endl;
 		if (sys.nb_ctr>0) {
@@ -191,6 +200,9 @@ namespace ibex {
       // a NaN in the Jacobian or Hessian goes to MUMPS, which may then crash
       // (water, starting near a division by 0 once Ipopt runs on wide boxes)
       app->Options()->SetStringValue("check_derivatives_for_naninf","yes");
+      // without symbolic derivatives (failed or skipped), eval_h has nothing to
+      // evaluate: Ipopt must approximate the Hessian (it crashed in eval_h before)
+      if (df==NULL) app->Options()->SetStringValue("hessian_approximation","limited-memory");
       // Initialize the IpoptApplication and process the options
       
       ApplicationReturnStatus status;

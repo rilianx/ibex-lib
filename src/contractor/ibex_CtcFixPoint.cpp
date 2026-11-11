@@ -8,6 +8,7 @@
 // Last Update : Feb 13, 2025
 //============================================================================
 
+#include "ibex_Timer.h"
 #include "ibex_CtcFixPoint.h"
 
 namespace ibex {
@@ -40,6 +41,7 @@ void CtcFixPoint::contract(IntervalVector& box, ContractContext& context) {
 
 	do {
 		old_box=box;
+		check_search_deadline();
 
 		flags.clear();
 

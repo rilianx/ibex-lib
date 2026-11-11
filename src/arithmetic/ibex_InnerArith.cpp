@@ -899,8 +899,12 @@ static bool ibwd_trigo(const Interval& y, Interval& x, const Interval& xin, int 
 		nb_period = ((inflate? xin : x) + Interval::half_pi()) / Interval::pi(); break;
 	}
 
-	if (nb_period.lb() < std::numeric_limits<long>::min() ||
-			nb_period.ub() > std::numeric_limits<long>::max()) {
+	// Beyond 2^52 periods, a period is narrower than one ulp of x: its inner
+	// enclosure is empty, so the search for a period meeting x below scanned up
+	// to ~1e18 candidates (hang of LoupFinderInHC4 on robot). Give up instead,
+	// as when the period index overflows a long (no inner projection found).
+	if (nb_period.lb() < -4503599627370496.0 ||
+			nb_period.ub() > 4503599627370496.0) {
 		if (inflate) x=xin;
 		else x.set_empty();
 		return inflate;

@@ -9,6 +9,7 @@
  * Created     : Feb 27, 2012
  * ---------------------------------------------------------------------------- */
 
+#include "ibex_Timer.h"
 #include "ibex_CtcPropag.h"
 #include "ibex_Cell.h"
 #include "ibex_Bsc.h"
@@ -106,6 +107,7 @@ void CtcPropag::contract(IntervalVector& box, ContractContext& context) {
 	//   }
 	//cout << "=========== Start propagation ==========" << endl;
 	while (!agenda.empty()) {
+		check_search_deadline();
 
 		agenda.pop(c);
 

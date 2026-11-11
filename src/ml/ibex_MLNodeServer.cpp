@@ -1529,6 +1529,9 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 	}
 
 	const char* status = "complete";
+	// time limit also inside the contraction of a node (a non-converging
+	// fixpoint used to hang the search: hs089-hs091)
+	search_timer = rp.timeout > 0 ? &timer : NULL; search_timeout = rp.timeout;
 
 	// Note: this is Optimizer::optimize()'s loop, minus the reporting, plus the
 	// sampling and the optional learned rule. Sampling restores the search
@@ -1622,6 +1625,7 @@ long MLNodeServer::collect(const IntervalVector& init_box, double obj_init_bound
 	}
 
 	timer.stop();
+	search_timer = NULL;
 	last_time = timer.get_time();
 	last_decisions = (long) nb_cells / 2;
 	{ BoundEvent e = { (long) nb_cells, last_time, loup, uplo }; bound_history.push_back(e); }
@@ -1663,6 +1667,9 @@ long MLNodeServer::run_interactive(const IntervalVector& init_box, double obj_in
 	update_uplo();
 
 	const char* status = "complete";
+	// time limit also inside the contraction of a node (a non-converging
+	// fixpoint used to hang the search: hs089-hs091)
+	search_timer = rp.timeout > 0 ? &timer : NULL; search_timeout = rp.timeout;
 
 	try {
 		while (!buffer.empty()) {
@@ -1770,6 +1777,7 @@ long MLNodeServer::run_interactive(const IntervalVector& init_box, double obj_in
 	}
 
 	timer.stop();
+	search_timer = NULL;
 	last_time = timer.get_time();
 	last_decisions = decisions;
 	last_status = status;

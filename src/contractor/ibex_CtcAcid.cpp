@@ -8,6 +8,7 @@
 // Last Update : Jul 20, 2018
 //============================================================================
 
+#include "ibex_Timer.h"
 #include "ibex_CtcAcid.h"
 #include <algorithm>
 
@@ -87,6 +88,7 @@ void CtcAcid::contract(IntervalVector& box, ContractContext& context) {
 
 		// [gch]: impact handling:
 
+		check_search_deadline();
 		var3BCID(box, v2);                             // appel 3BCID sur la variable v2
 
 		if (box.is_empty()) {

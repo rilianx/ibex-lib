@@ -18,6 +18,12 @@ static int ____IGNORE___ = (StaticTimer::start(), 0);
 
 StaticTimer::Time StaticTimer::local_time = 0;
 
+Timer* search_timer = NULL;
+double search_timeout = 0;
+void check_search_deadline_slow() {
+	if (search_timer && search_timeout > 0) search_timer->check(search_timeout);
+}
+
 Timer::Timer(): start_time(0.0), active(false) {
 }
 
