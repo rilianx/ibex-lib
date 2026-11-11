@@ -78,6 +78,7 @@ for prog in ('opt','sol'):
     sel=[i for i in D if i[0]==prog and (filas[i]<=30)==(cl=='<=30')]
     for nm,a,b in (('SC','b0fd','b0d'),('SoPlex Ibex','b0fc','b0c')):
         pr=[(D[i][a],D[i][b]) for i in sel if a in D[i] and b in D[i]]
+        if not pr: continue
         A=sum(x/max(x,y) for x,y in pr)/len(pr); B=sum(y/max(x,y) for x,y in pr)/len(pr)
         g=math.exp(sum(math.log(x/y) for x,y in pr)/len(pr))
         print('  %s %s %-12s %.2f:%.2f %.2f gm %.2f (%d)'%(prog,cl,nm,A,B,A/B,g,len(pr)))
