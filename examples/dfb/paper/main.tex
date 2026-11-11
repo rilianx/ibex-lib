@@ -488,10 +488,10 @@ rule), which avoids tiny pivots.
 \paragraph{Rules left out.} We also implemented the standard refinements of
 the dual method~\cite{koberstein2005dual}: devex
 pricing~\cite{harris1973devex} for the leaving variable, the long-step (bound
-flipping) ratio test~\cite{maros2003generalized}, and a cap of 60 pivots per LP, far below the iteration limit of $20m+200$
-(Section~\ref{sec:pass}), which the certificate makes safe
-(Proposition~\ref{prop:mono}): an LP stopped at the cap still gives a certified
-bound. On average
+flipping) ratio test~\cite{maros2003generalized}, and lowering the iteration limit from $20m+200$ (Section~\ref{sec:pass}) to
+60 pivots per LP, which the certificate makes safe
+(Proposition~\ref{prop:mono}): an LP stopped at the limit still gives a
+certified bound. On average
 they did not pay (Section~\ref{sec:discussion}), and SC uses the textbook
 rules above: on the small LPs of a pass, the choice of pivots matters less
 than the work that surrounds them.
@@ -756,7 +756,7 @@ to 0.79 times that of the bare simplex).
 Katsurabis-14, 61 of the 16\,939 LPs of SC, degenerate ones, pivot until the
 limit of $20m+200$ iterations, and they make 84\% of the pivots that SC needs
 in excess of the bare simplex, which reaches an optimum on all of its LPs.
-With a cap of 150 pivots per LP in place of that limit, a pass of SC goes from 1.88 to 1.48 times
+With that limit lowered to 150 pivots per LP, a pass of SC goes from 1.88 to 1.48 times
 that of the bare simplex on that system with the same contraction, but on the
 whole bank only from 1.48 to 1.41: the primal steps of SC have no protection
 against stalling, and few systems need one.
@@ -765,7 +765,7 @@ against stalling, and few systems need one.
 DiscreteBoundary) are the third case: there SC makes several times the pivots
 of the bare simplex, up to nine times on the six affine systems above 30
 rows, where both engines work by columns. Devex pricing, the long-step ratio
-test and the cap of 60 pivots (Section~\ref{sec:iter}) help on them: they
+test and the limit lowered to 60 pivots (Section~\ref{sec:iter}) help on them: they
 bring a pass of SC from 0.75 to 0.55 times that of R0 on those six systems
 (the bare simplex: 0.47), but leave it at 1.46 times the bare simplex on the
 \texttt{compo} bank (geometric mean), and change little on the smaller
@@ -850,7 +850,7 @@ hybrid, which runs the bare simplex there, matches it. Only three optimization
 families exceed 30 rows (33--49 rows); SC remains the best on them (0.82
 against 0.97 for the bare simplex), so the hybrid could keep SC on
 optimization problems at any size. Devex, the long-step ratio test and the
-cap of 60 pivots change these ratios by at most 0.01.
+limit lowered to 60 pivots change these ratios by at most 0.01.
 
 \paragraph{The threshold of the hybrid.}
 From the runs of every rung we evaluated offline the hybrid that takes, for
@@ -906,7 +906,7 @@ made SC end at such vertices.
 
 \paragraph{What did not pay.} The refinements of the dual method left out of
 SC (Section~\ref{sec:iter}), devex pricing, the long-step ratio test and the
-cap of 60 pivots, help on some families and hurt on others: together they
+limit lowered to 60 pivots, help on some families and hurt on others: together they
 make the Bratu systems 1.3--1.5 times faster and the BroydenBanded ones up to
 2.6 times slower, and on average they leave the time of the search unchanged
 (Section~\ref{sec:main}). Several ideas that use the certificate or the
