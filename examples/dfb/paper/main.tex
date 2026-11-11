@@ -52,20 +52,17 @@ of nonlinear systems and of global optima. Their polytope-hull contractor
 bounds each of the $n$ variables of a node over a linear relaxation by solving
 $2n$ small linear programs (LPs) with a floating-point LP solver, whose dual
 solutions are certified afterwards by the Neumaier--Shcherbina bound. That
-bound is valid for any multipliers, so any LP solver is safe to use; yet a general-purpose solver still pays, at every call, the setup and the
-checks of a solver built for one LP. We present a self-certifying simplex (SC)
-built for the $2n$ LPs: it solves them on one shared basis, without a
-phase~1, verification or refactorization before an optimum, and without a
-per-call setup. A
-ladder of configurations in the solver Ibex, from SoPlex as Ibex
-uses it, through the merging of twin rows, a tuned SoPlex and its simplex
-driven directly, to SC, attributes the gain to each step. On a bank of
-recorded passes, with the same input boxes and relaxations, a pass of SC on
+bound is valid for any multipliers, so any LP solver is safe to use; yet a general-purpose solver treats each of the $2n$ LPs as a new
+problem. We present a self-certifying simplex (SC) dedicated to the pass: it
+solves the $2n$ LPs in sequence on one basis, updating only what changes from
+one LP to the next. The certificate makes this simple: any basis yields a valid bound and can
+be made dual feasible, so SC never verifies, refactorizes before an optimum
+or runs a phase~1. A ladder of configurations in Ibex, from SoPlex as Ibex uses it to SC,
+attributes the gain to each step. On recorded passes, from the same boxes and relaxations, a pass of SC on
 relaxations of up to 30 rows costs 0.39--0.43 times that of SoPlex as Ibex
 uses it, and 20--25\% less than the simplex of SoPlex driven directly, with
-the same contraction. Inside
-the search, the optimizer takes about 20\% less CPU time than with SoPlex as
-Ibex uses it. On larger relaxations SC is slower, and a hybrid that chooses the engine by
+the same contraction. Inside the search, the optimizer takes about 20\% less CPU time than with
+SoPlex as Ibex uses it. On larger relaxations SC is slower, and a hybrid that chooses the engine by
 the size of the relaxation keeps the best of both.
 \end{abstract}
 
@@ -94,28 +91,31 @@ Neumaier--Shcherbina procedure~\cite{neumaier2004safe}, and an infeasibility
 claim is accepted only if the returned Farkas ray passes the same verification.
 This design has a cost that is easy to miss: the $2n$ LPs of a node are small
 and closely related, typically two or three pivots apart, and each is a
-separate call to a general-purpose solver, which sets up its vectors,
-refactorizes the basis before declaring an optimum and verifies its solution;
-on these LPs that work is a large part of the cost of a call
+separate call to a general-purpose solver, which prepares the LP as a new
+problem, rebuilding its vectors, and refactorizes the basis and checks its
+solution before declaring an optimum; on these LPs that work is a large part
+of the cost of a call
 (Section~\ref{sec:experiments}).
 
 The certificate already makes any LP solver safe to use: with the relaxation
 written in a homogeneous form, with one interval-bounded slack per row,
 \emph{any} multiplier vector yields a valid bound on the box and on every
-sub-box, whatever solver produced it. But a black box cannot take advantage of
-this, because the work it does to make its answer correct is internal to each
-call. We design the simplex around the certificate instead: since its
-multipliers never need to be correct, it performs no verification of its own and does not
-refactorize before declaring an optimum. Since every basis can also be made dual feasible by relocating its
-nonbasic variables, each of the $2n$ bound problems, and each problem after
-the box contracts, starts without a phase~1 (the search for a feasible
-starting basis), and the $2n$ problems share one basis. We call this simplex
-\emph{self-certifying} (SC). A simplex driven directly, which also keeps
-its basis from one LP to the next, still prepares each solve as a separate
-problem, and we find that this per-call setup, more than the checks, is what
-SC saves against it. How much it is worth depends on the size of the
-relaxation and on what else the contractor does, and measuring that is part of
-the contribution.
+sub-box, whatever solver produced it. A black box cannot take advantage of
+this, because it treats each call as a new problem. We design the simplex for
+the pass instead: the relaxation is loaded once, and the $2n$ LPs are solved
+in sequence on one basis, keeping the factorization and updating only what
+the new objective and the contracted box change. The certificate is what
+makes such a simplex simple. Its multipliers never need to be correct, so it
+performs no verification of its own and does not refactorize before
+declaring an optimum; and every basis can be made dual feasible by relocating
+its nonbasic variables, so no LP of the pass, and no LP after the box
+contracts, needs a phase~1 (the search for a feasible starting basis). We call
+this simplex \emph{self-certifying} (SC). Against the simplex of SoPlex driven
+directly, which also keeps its basis from one LP to the next, we find that
+what SC saves is mostly the preparation of each LP as a new problem: switching
+off the refactorization and the checks of SoPlex recovers little. How much it
+is worth depends on the size of the relaxation and on what else the
+contractor does, and measuring that is part of the contribution.
 
 \paragraph{Positioning.} The certificate itself is not new: it is the safe
 bound of Neumaier and Shcherbina~\cite{neumaier2004safe}, already applied to
@@ -130,10 +130,10 @@ certification. Section~\ref{sec:background} gives the details.
 
 \paragraph{Contributions.} The paper makes three contributions.
 \begin{itemize}
-\item \emph{A simplex designed for the certificate.} SC omits the
-verification, the refactorization before an optimum, the phase~1 and the
-per-call setup of a general-purpose solver, and solves the $2n$ problems of a
-node on one shared basis (Section~\ref{sec:simplex}). The properties it relies on, validity of
+\item \emph{A simplex dedicated to the pass.} SC solves the $2n$ problems of
+a node in sequence on one basis, without preparing each as a new problem,
+without a phase~1, and without the verification and the refactorization
+before an optimum of a general-purpose solver (Section~\ref{sec:simplex}). The properties it relies on, validity of
 the certificate for any multipliers, exactness at an optimum and dual
 feasibility for free, follow from the Neumaier--Shcherbina bound and LP
 duality; we state them in Section~\ref{sec:dfb} because the design rests on
@@ -407,9 +407,13 @@ bound, and \emph{primal feasible} if the basic variables lie within their
 bounds. This section describes how the simplex solves the $2n$ problems of a
 node; the design choices are evaluated in Section~\ref{sec:experiments}.
 
-\paragraph{What the certificate makes unnecessary.} Since the certificate of
-Section~\ref{sec:dfb} is valid for any $\lambda$ (Proposition~\ref{prop:valid}),
-the simplex never has to return a correct solution, only a good basis. A
+\paragraph{A simplex for one pass.} SC is not a general LP solver. It
+solves the $2n$ LPs of one pass over a relaxation loaded once, in sequence and
+on one basis: between two LPs it keeps its factorization and recomputes only
+what the new objective and the contracted box change. The certificate is
+what makes this simple. Since it is valid for any $\lambda$
+(Proposition~\ref{prop:valid}), the simplex never has to return a correct
+solution, only a good basis. A
 general-purpose LP solver, before declaring an optimum, refactorizes the basis
 to remove the error accumulated by the updates of its factorization,
 recomputes its vectors and verifies the solution, and the contractor then
@@ -421,7 +425,9 @@ Likewise, since every basis can be made dual feasible
 or the box contracts, and the $2n$ problems share one basis; with the primal
 warm start of Section~\ref{sec:warm} none is needed either, because the
 previous optimal basis stays primal feasible. Section~\ref{sec:bank} measures
-what these omissions are worth.
+what this design is worth: against the simplex of SoPlex driven directly, the
+gain comes mostly from not preparing each LP as a new problem, more than from
+the omitted checks.
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
@@ -526,8 +532,9 @@ $r$, $\lambda=\rho_r$ is a Farkas ray, and the residual test turns it into a
 proof of emptiness. Certifying a bound costs the same as the
 Neumaier--Shcherbina post-processing of an external solver's dual
 (1.3--3.1\,$\mu$s per LP on three optimization problems); the difference
-between the approaches is not the cost of a certificate but where $\lambda$
-comes from.
+between the approaches is not the cost of a certificate but how $\lambda$ is
+produced: by a call that treats each LP as a new problem, or by one simplex
+that serves the whole pass.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
@@ -889,14 +896,15 @@ they contract alike. Its advantage is the cost of an LP. The ladder separates
 two parts of the cost of a call of SoPlex as Ibex makes it: the interface and
 its options (R1 to R3), which a careful integration of SoPlex removes, and
 what the simplex of SoPlex itself does at every LP, which only a simplex
-designed for the certificate can omit. SC pivots more than SoPlex, and each LP still costs it less.
+dedicated to the pass can omit. SC pivots more than SoPlex, and each LP still costs it less.
 Against the calls of the \texttt{SoPlex} class, the emulation of
 Section~\ref{sec:bank} attributes most of the gap to the refactorization and
 the verification that SC omits. Against \texttt{SPxSolver} driven directly,
-removing those two from SoPlex recovers little: what SC saves is the setup
-that a solver built for one LP repeats at every call. That SC needs no
-phase~1 when the objective or the box changes, and keeps one basis for the
-whole pass, is what lets it skip that setup: the certificate makes any basis usable, so between two LPs only what the new
+removing those two from SoPlex recovers little: what SC saves is the
+preparation of each LP as a new problem, which a solver built for one LP
+repeats at every call. That SC needs no phase~1 when the objective or the box
+changes, and keeps one basis for the whole pass, is what lets it skip that
+preparation: the certificate makes any basis usable, so between two LPs only what the new
 objective changes has to be recomputed. On small relaxations, where an LP needs two or three
 pivots, that saves 20--25\% of a pass of the bare simplex.
 
@@ -967,13 +975,13 @@ bound without that second LP.
 
 A polytope-hull contractor solves $2n$ small, closely related LPs per node and
 certifies each bound with the Neumaier--Shcherbina bound, which is valid for
-any multipliers. A general-purpose LP solver cannot take advantage of this,
-because the work it does to make its answer correct is internal to each call.
-A simplex designed around the certificate omits that work: it verifies
-nothing and does not refactorize before declaring an optimum, and it solves
-the $2n$ problems on one shared basis, without a phase~1 and without
-rebuilding its state between two LPs; switching off the refactorization and
-the checks in SoPlex recovers little of the difference. Measured as a ladder
+any multipliers. A general-purpose LP solver cannot take advantage of this: it
+treats each LP as a new problem. A simplex dedicated to the pass solves the
+$2n$ problems in sequence on one basis, updating only what changes from one
+LP to the next; the certificate makes it simple, since it never verifies or
+refactorizes before an optimum and needs no phase~1. Switching off the
+refactorization and the checks in SoPlex recovers little of the difference:
+the gain is in not preparing each LP as a new problem. Measured as a ladder
 inside the same contractor, from the same boxes and relaxations, a pass of
 this simplex costs 0.39--0.43 times that of SoPlex as Ibex uses it on
 relaxations of up to 30 rows, and 20--25\% less than the simplex of SoPlex
