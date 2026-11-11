@@ -2333,3 +2333,17 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   como causa general. **Tolerancia en sistemas afines:** SC con 1e-6 en vez de
   1e-9 (36 sistemas): pasada gm 0.86 → 0.85, contracción 0.1662 → 0.1644
   (simplex directo 0.1654): no cambia la comparación.
+- **Dos remedios probados para el costo por pivote (2026-11-11, mismo
+  directorio, `run2/` y `per/`).** (a) BTRAN ralo (`DFB_SX_BTRAN=ralo`,
+  `solveLeft(SSVector, SVector)` con el vector unitario; apagado): en el banco
+  compo la pasada SC/simplex directo pasa de gm 1.49 a 1.55, peor en casi todos
+  los sistemas típicos (+5–8 %); con m ≈ 50–150 el solve ralo no compensa. (b)
+  Periodo de refactorización (`DFB_REFACTOR_PERIOD`): con 20 en vez de 50,
+  Fourbar-icse 1.45 → 1.39, Redeco10 1.40 → 1.31, Design 1.60 → 1.48; con 5
+  empeora. Perfil con el binario actual (Fourbar-icse): FTRAN `vSolveUright`
+  9.9 k muestras en SC contra 3.1 k en SoPlex con los mismos pivotes,
+  `vSolveLright` 5.8 k contra 3.5 k; SoPlex gasta ~4.5 k en refactorizar
+  (`eliminatePivot`, `selectPivots`, `initFactorMatrix`) y SC casi nada. La
+  brecha es difusa: LU ×1.45 y código propio ×1.3 (SC recorre todas las
+  columnas y filas en cada pivote y llama `dual_step_comun` en cada iteración
+  primal). No hay un arreglo único.

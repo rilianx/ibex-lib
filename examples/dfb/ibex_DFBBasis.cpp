@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <string>
 
 using namespace soplex;
 
@@ -20,12 +21,13 @@ void DFBBasis::reset_counters() {
     n_factorizations = n_updates = n_btran = n_ftran = 0;
 }
 
-DFBBasis::DFBBasis() : m(0), na(0), obj_row(0), rhs(1), sol(1), eta(NULL),
+DFBBasis::DFBBasis() : m(0), na(0), obj_row(0), rhs(1), sol(1), eta(NULL), ssol(NULL),
                        updates_since_factor(0), col_preparada(-1) {
 }
 
 DFBBasis::~DFBBasis() {
     delete eta;
+    delete ssol;
 }
 
 void DFBBasis::load_matrix(const Matrix& Abar) {
@@ -184,6 +186,28 @@ bool DFBBasis::aplicar_cambio(int j, int col) {
 }
 
 void DFBBasis::btran_row(int j, double* out) {
+    /* `DFB_SX_BTRAN=ralo` (2026-11-11, apagado): el lado derecho es un vector
+     * unitario; la variante rala de SLUFactor sigue solo sus no nulos, como
+     * hace el simplex de SoPlex. Experimento para medir cuanto del costo por
+     * pivote en relajaciones grandes viene del solve denso. */
+    static const bool ralo = getenv("DFB_SX_BTRAN") && std::string(getenv("DFB_SX_BTRAN")) == "ralo";
+    if (ralo) {
+        try {
+            if (!ssol || ssol->dim() != m) { delete ssol; ssol = new soplex::SSVector(m); }
+            ssol->clear();
+            lu.solveLeft(*ssol, unit_nz[j]);
+            ++n_btran;
+            for (int r = 0; r < m; ++r) out[r] = 0.0;
+            if (ssol->isSetup()) {
+                for (int t = 0; t < ssol->size(); ++t) { const int i = ssol->index(t); out[i] = (*ssol)[i]; }
+            } else {
+                for (int r = 0; r < m; ++r) out[r] = (*ssol)[r];
+            }
+        } catch (...) {
+            for (int r = 0; r < m; ++r) out[r] = 0.0;
+        }
+        return;
+    }
     try {
         for (int r = 0; r < m; ++r) rhs[r] = 0.0;
         rhs[j] = 1.0;

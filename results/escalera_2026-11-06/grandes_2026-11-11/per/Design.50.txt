@@ -1,0 +1,4 @@
+[abcaja] nodos=1000 | contraccion media DFB=0.23620 caja=0.23696 | nodos vaciados DFB=157 caja=157 | gana DFB=132 caja=34
+[abcaja] costo DFB  : pasada 0.861 s  pivotes=90840  us/LP=83.06  piv/LP=8.78  us/piv=9.469
+[abcaja] costo caja : pasada 0.537 s  pivotes=76368  us/LP=52.19  piv/LP=7.44  us/piv=7.023
+[dfb] warm medir: nodos dual=57 primal=943 | costo por LP (prom. movil) dual 128.6 us, primal 36.9 us

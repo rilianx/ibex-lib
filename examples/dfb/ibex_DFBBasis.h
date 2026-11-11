@@ -164,6 +164,7 @@ private:
     LUSinReloj lu;
     soplex::DVector   rhs, sol;
     soplex::SSVector* eta;   //!< se recrea en load_matrix con la dimension m
+    soplex::SSVector* ssol;   /* BTRAN ralo (DFB_SX_BTRAN=ralo) */
 #else
     /* `-DDFB_LU7` (2026-10-17): la LU y los vectores de SoPlex 7 van detras de un
      * puntero opaco (ibex_DFBBasis7.cpp), para no mezclar encabezados de 4.0.2 y 7. */
