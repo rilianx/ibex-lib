@@ -241,3 +241,57 @@ Both are inside the contraction of one node (ACID; fixpoint of the polytope hull
 not in Ipopt nor in the Lagrangian bound, and the time limit is only checked between
 nodes. One sample cannot tell an infinite loop from a node contraction that never
 converges. Runs stopped before E2 on the 75 set, waiting for a decision.
+
+## Hang fix (2d36f15a1) and reruns
+
+Binary rebuilt at 2d36f15a1 ("Fix three hangs that ignored the time limit":
+ibwd_trigo period scan, LoupFinderIpopt symbolic differentiation of huge
+expressions, deadline checked inside CtcFixPoint/CtcAcid/CtcPropag), same Ipopt 3.11.9.
+
+Check that the fix does not change other runs: 8 instances of the 223 set (ex6_2_6,
+ex6_2_11, hs117, dualc1, ex8_4_4bis, hs100, dnieper, ex6_2_8) x {abase, acvx0}:
+same node counts on 16/16, times within 5 %. The other runs are kept.
+
+Deleted every line of robot, hs089, hs090, hs091 from `results/local/` and reran them
+(robot: the 7 arms of the 223 set; hs089-091: anoip, abase, acvx0, acert0) with
+`INSTANCES=<list>`, JOBS=7+7, TLIM=1200. No `killed` run left:
+
+- robot closes with every arm: anoip 86214 nodes / 193 s (was `killed`), abase 75724 /
+  173 s, acvx0 49994 / 86 s, acert0 76026 / 171 s, acert1 75972 / 171 s, ascaled
+  50278 / 88 s, anobo 47382 / 84 s.
+- hs089, hs090, hs091: `timeout` at 1200 s with every arm (was `killed` for abase,
+  acvx0, acert0). hs090 gets a loup (1.5823 with abase, acvx0, acert0); hs089 and
+  hs091 none.
+
+Tables after the reruns (the E1-E3 tables above are the earlier ones; only the common
+sets and robot change):
+
+```
+### 223 set, E1
+instances with every arm: 223, common set: 94, closed by every arm: 220
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 223 | 94 (94) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 2.9 | 0.0 |
+| anoip | 220 | 94 (91) | 1.67 [1.36, 2.17] | 14/57 | 2.98 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 223 | 94 (94) | 0.85 [0.72, 0.95] | 19/0 | 0.80 | 1.00 | 3.3 | 0.3 |
+### 223 set, E2
+| acvx0 | 223 | 71 (71) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 3.3 | 0.3 |
+| acert0 | 223 | 71 (71) | 1.08 [1.03, 1.13] | 0/15 | 1.04 | 0.99 | 3.2 | 0.0 |
+| acert1 | 223 | 71 (71) | 0.95 [0.83, 1.06] | 5/14 | 0.90 | 0.99 | 3.1 | 0.0 |
+### 223 set, E3
+| acvx0 | 223 | 71 (71) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 3.3 | 0.3 |
+| ascaled | 223 | 71 (71) | 0.99 [0.95, 1.04] | 6/1 | 1.00 | 1.00 | 3.4 | 0.3 |
+| anobo | 223 | 71 (71) | 1.02 [1.00, 1.05] | 2/1 | 1.00 | 1.01 | 3.3 | 2.4 |
+### 75 set, E1 (unchanged)
+| abase | 6 | 12 (4) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 11.0 | 0.0 |
+| anoip | 4 | 12 (2) | 1.23 [0.99, 1.82] | 1/3 | 1.10 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 14 | 12 (12) | 0.03 [0.00, 0.14] | 8/0 | 1.00 | 1.00 | 11.1 | 0.0 |
+### all 298, E1
+instances with every arm: 298, common set: 106, closed by every arm: 224
+| abase | 229 | 106 (98) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 5.2 | 0.0 |
+| anoip | 224 | 106 (93) | 1.61 [1.33, 2.04] | 15/60 | 2.93 | 0.85 | 0.0 | 0.0 |
+| acvx0 | 237 | 106 (106) | 0.57 [0.40, 0.75] | 27/0 | 0.80 | 1.00 | 5.7 | 0.2 |
+```
+
+E2 on the 75 set is partial (acert0: 44 of 75, run with the old binary before the fix;
+the paused runs were killed without writing lines and are rerun with the new one).
