@@ -52,11 +52,11 @@ of nonlinear systems and of global optima. Their polytope-hull contractor
 bounds each of the $n$ variables of a node over a linear relaxation by solving
 $2n$ small linear programs (LPs) with a floating-point LP solver, whose dual
 solutions are certified afterwards by the Neumaier--Shcherbina bound. That
-bound is valid for any multipliers, so any LP solver is safe to use; yet a general-purpose solver still spends, inside each call, the work
-of making its own answer correct. We present a self-certifying simplex (SC)
-that omits that work: it performs no verification and does not
-refactorize before declaring an optimum; it also needs no phase~1 and solves
-the $2n$ LPs on one shared basis. A
+bound is valid for any multipliers, so any LP solver is safe to use; yet a general-purpose solver still pays, at every call, the setup and the
+checks of a solver built for one LP. We present a self-certifying simplex (SC)
+built for the $2n$ LPs: it solves them on one shared basis, without a
+phase~1, verification or refactorization before an optimum, and without a
+per-call setup. A
 ladder of configurations in the solver Ibex, from SoPlex as Ibex
 uses it, through the merging of twin rows, a tuned SoPlex and its simplex
 driven directly, to SC, attributes the gain to each step. On a bank of
@@ -110,10 +110,10 @@ refactorize before declaring an optimum. Since every basis can also be made dual
 nonbasic variables, each of the $2n$ bound problems, and each problem after
 the box contracts, starts without a phase~1 (the search for a feasible
 starting basis), and the $2n$ problems share one basis. We call this simplex
-\emph{self-certifying} (SC). The first two omissions are the gain that we
-measure; the last two are what lets a single simplex serve the whole pass, and
-a simplex driven directly, which also keeps its basis from one LP to the next,
-shares them. How much it is worth depends on the size of the
+\emph{self-certifying} (SC). A simplex driven directly, which also keeps
+its basis from one LP to the next, still prepares each solve as a separate
+problem, and we find that this per-call setup, more than the checks, is what
+SC saves against it. How much it is worth depends on the size of the
 relaxation and on what else the contractor does, and measuring that is part of
 the contribution.
 
@@ -131,9 +131,9 @@ certification. Section~\ref{sec:background} gives the details.
 \paragraph{Contributions.} The paper makes three contributions.
 \begin{itemize}
 \item \emph{A simplex designed for the certificate.} SC omits the
-verification, the refactorization before an optimum and the phase~1 of a
-general-purpose solver, and solves the $2n$ problems of a node on one shared
-basis (Section~\ref{sec:simplex}). The properties it relies on, validity of
+verification, the refactorization before an optimum, the phase~1 and the
+per-call setup of a general-purpose solver, and solves the $2n$ problems of a
+node on one shared basis (Section~\ref{sec:simplex}). The properties it relies on, validity of
 the certificate for any multipliers, exactness at an optimum and dual
 feasibility for free, follow from the Neumaier--Shcherbina bound and LP
 duality; we state them in Section~\ref{sec:dfb} because the design rests on
@@ -421,7 +421,7 @@ Likewise, since every basis can be made dual feasible
 or the box contracts, and the $2n$ problems share one basis; with the primal
 warm start of Section~\ref{sec:warm} none is needed either, because the
 previous optimal basis stays primal feasible. Section~\ref{sec:bank} measures
-what omitting the refactorization and the verification is worth.
+what these omissions are worth.
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
@@ -558,8 +558,10 @@ the primal algorithm, did not help, and SoPlex~7.1.6 was 1.2--1.9 times slower
 than 4.0.2 on a sample of eight problems.}
 \item[R3] \emph{the bare simplex}: the simplex of SoPlex driven directly through
 its \texttt{SPxSolver} class, the LP kept loaded, only the objective and the
-column bounds changed between LPs, nothing verified; it is the cheapest way
-to use SoPlex. As in R2, the rule of SoPlex chooses the representation of the
+column bounds changed between LPs, without the checks, copies and
+unscaling of the \texttt{SoPlex} class; \texttt{SPxSolver} itself still
+refactorizes before declaring an optimum and checks the precision of its
+solution. It is the cheapest way to use SoPlex. As in R2, the rule of SoPlex chooses the representation of the
 basis: by columns (dimension $m$), or by rows (dimension $n$) when the
 relaxation has more than 1.2 rows per variable;
 \item[R4] \emph{SC} (Section~\ref{sec:simplex});%
@@ -687,10 +689,22 @@ change, brings a pass of SC from 0.55--0.60 to 0.89--0.93 times that of R2
 (geometric means on 100 of the 104 instances; the emulation failed on four):
 refactorizing at every LP accounts for 48--55\% of the gap (in logarithm),
 verifying the solution for 21--23\%, and recomputing the vectors and copying
-the solution for 9--10\%. The bare simplex (R3) already skips the
-verification and the copies, since it keeps the LP loaded and verifies
-nothing; what separates it from SC is the refactorization before declaring an
-optimum and the setup of each solve.
+the solution for 9--10\%. Against the bare simplex (R3) the picture changes, since R3 already skips
+the checks and copies of the \texttt{SoPlex} class. Its own refactorization
+before an optimum and precision check are not what separates it from SC:
+with two switches added to \texttt{SPxSolver} that skip them, the
+factorizations per LP drop from 0.79 to 0.10 on ex7\_2\_3, yet a pass of the
+bare simplex becomes only 6\% cheaper on the optimization problems and 2.5\%
+on the small systems, with the same contraction, and SC remains 22\% and
+11\% cheaper (geometric means; it wins on 68 of the 74 problems and 21 of the
+36 systems). On bases of 5 to 16 rows a factorization is cheap. What remains
+is the cost of a call of \texttt{SPxSolver::solve} as such: it prepares every
+LP as a new problem, rebuilding its primal and dual vectors and its pricing
+and ratio-test vectors from the factorization (4--25\% of its time in profiles
+of four problems), and runs a per-pivot bookkeeping built for general LPs. SC
+is built for the $2n$ LPs of a pass: between two LPs it recomputes the multipliers and reduced costs for the new
+objective, and the basic values when the dual warm start relocates nonbasic
+variables, and keeps its factorization.
 
 \paragraph{Merging pays more with SC.}
 Ordered as a ladder, each step is measured on the engine of its rung, and
@@ -875,12 +889,15 @@ they contract alike. Its advantage is the cost of an LP. The ladder separates
 two parts of the cost of a call of SoPlex as Ibex makes it: the interface and
 its options (R1 to R3), which a careful integration of SoPlex removes, and
 what the simplex of SoPlex itself does at every LP, which only a simplex
-designed for the certificate can omit. SC pivots more than SoPlex, but it
-neither refactorizes before declaring an optimum nor verifies its answer, and
-the emulation of Section~\ref{sec:bank} attributes most of the gap to these
-two. That it needs no phase~1 when the objective or the box changes, and keeps
-one basis for the whole pass, is what makes such a simplex possible, not a
-saving over a simplex driven directly. On small relaxations, where an LP needs two or three
+designed for the certificate can omit. SC pivots more than SoPlex, and each LP still costs it less.
+Against the calls of the \texttt{SoPlex} class, the emulation of
+Section~\ref{sec:bank} attributes most of the gap to the refactorization and
+the verification that SC omits. Against \texttt{SPxSolver} driven directly,
+removing those two from SoPlex recovers little: what SC saves is the setup
+that a solver built for one LP repeats at every call. That SC needs no
+phase~1 when the objective or the box changes, and keeps one basis for the
+whole pass, is what lets it skip that setup: the certificate makes any basis usable, so between two LPs only what the new
+objective changes has to be recomputed. On small relaxations, where an LP needs two or three
 pivots, that saves 20--25\% of a pass of the bare simplex.
 
 \paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
@@ -954,7 +971,9 @@ any multipliers. A general-purpose LP solver cannot take advantage of this,
 because the work it does to make its answer correct is internal to each call.
 A simplex designed around the certificate omits that work: it verifies
 nothing and does not refactorize before declaring an optimum, and it solves
-the $2n$ problems on one shared basis, without a phase~1. Measured as a ladder
+the $2n$ problems on one shared basis, without a phase~1 and without
+rebuilding its state between two LPs; switching off the refactorization and
+the checks in SoPlex recovers little of the difference. Measured as a ladder
 inside the same contractor, from the same boxes and relaxations, a pass of
 this simplex costs 0.39--0.43 times that of SoPlex as Ibex uses it on
 relaxations of up to 30 rows, and 20--25\% less than the simplex of SoPlex
