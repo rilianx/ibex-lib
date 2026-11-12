@@ -534,6 +534,7 @@ namespace ibex {
     }
 
     int cvx_psd_test = 0;   // 0: Gershgorin; 1: + comparison matrix and midpoint-radius (Cholesky)
+                            // 2: Gershgorin shift; 3: best of plain/scaled shift; 4: certify as 1, else shift as 3
 
     bool LoupFinderIpopt::certify_psd(const IntervalMatrix& H0) {
       int n0 = H0.nb_rows();
@@ -637,7 +638,10 @@ namespace ibex {
       // Gershgorin with S = diag(w) if d_i >= sum_j!=i |h_ij| w_j/w_i - h_ii.
       // Of the two shifts, keep the one with the smaller penalty
       // sum d_i/2 w_i^2 (both are valid).
-      if (cvx_psd_test == 3) {
+      // --cvx-test 4: first try to certify H PSD (Gershgorin, comparison matrix,
+      // midpoint-radius Cholesky, as --cvx-test 1); if certified, no shift (the
+      // plain tangent bound); otherwise the shift of --cvx-test 3.
+      if (cvx_psd_test == 3 || (cvx_psd_test == 4 && !certify_psd(H))) {
         for (int i=0; i<n; i++) for (int j=0; j<n; j++)
           if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
         std::vector<double> w(n), dplain(n, 0.0), dscaled(n, 0.0);

@@ -39,6 +39,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     acert0) x="--cvx-close --cvx-backoff=64 --cvx-test 0" ;;  # E2: certify only (Gerschgorin)
     acert1) x="--cvx-close --cvx-backoff=64 --cvx-test 1" ;;  # E2: certify only (+ comparison matrix, interval Cholesky)
     ascaled) x="--cvx-close --cvx-backoff=64 --cvx-test 3" ;;  # E3: scaled Gerschgorin shift
+    acomb) x="--cvx-close --cvx-backoff=64 --cvx-test 4" ;;  # certify (Cholesky) else scaled shift
     anobo) x="--cvx-close --cvx-test 2" ;;  # E3: shift without backoff
     astats) x="--cvx-close --cvx-backoff=64 --cvx-test 2 --cvx-stats" ;;  # E4: acvx0 + statistics
     anoip) x=""; L=default ;;  # no Ipopt at all (LoupFinderDefault)
