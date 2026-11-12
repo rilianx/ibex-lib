@@ -295,3 +295,54 @@ instances with every arm: 298, common set: 106, closed by every arm: 224
 
 E2 on the 75 set is partial (acert0: 44 of 75, run with the old binary before the fix;
 the paused runs were killed without writing lines and are rerun with the new one).
+
+## E2: certify only vs shift, 75 set (and all 298)
+
+```bash
+env OUT=results/local/runs-open.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acert0 acert1" sh results/anytime/run.sh
+C="python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl --open-file results/local/runs-open.jsonl"
+$C --set open --ref acvx0 acvx0 acert0 acert1
+$C --set open --ref abase abase acvx0 acert0 acert1
+$C --set all --ref acvx0 acvx0 acert0 acert1
+```
+
+acert0: 44 instances run with the binary before the hang fix (11-10, 15:28-16:48),
+hs089-091 and the other 31 after it (11-11 and 11-12, 07:40-09:41); acert1: all 75
+after the fix (the fix does not change node counts, see above). Server idle before
+the run (load 0.4). No killed run.
+
+```
+instances with every arm: 75, common set: 10, closed by every arm: 12
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 14 | 10 (9) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 6.9 | 0.1 |
+| acert0 | 12 | 10 (7) | 2.65 [0.96, 11.17] | 1/2 | 1.00 | 0.98 | 6.5 | 0.1 |
+| acert1 | 14 | 10 (9) | 0.63 [0.12, 2.27] | 3/1 | 0.98 | 0.98 | 6.7 | 0.1 |
+
+instances with every arm: 75, common set: 13, closed by every arm: 6
+| arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| abase | 6 | 13 (4) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 6.7 | 0.0 |
+| acvx0 | 14 | 13 (12) | 0.03 [0.01, 0.17] | 8/0 | 1.00 | 1.00 | 6.7 | 0.1 |
+| acert0 | 12 | 13 (10) | 0.07 [0.01, 0.34] | 6/0 | 1.00 | 1.01 | 6.6 | 0.1 |
+| acert1 | 14 | 13 (12) | 0.02 [0.00, 0.14] | 9/0 | 0.96 | 1.01 | 6.9 | 0.1 |
+
+instances with every arm: 298, common set: 81, closed by every arm: 235
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 237 | 81 (80) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 5.0 | 0.2 |
+| acert0 | 235 | 81 (78) | 1.20 [1.05, 1.50] | 1/17 | 1.04 | 0.99 | 4.7 | 0.1 |
+| acert1 | 237 | 81 (80) | 0.91 [0.72, 1.09] | 8/15 | 0.90 | 0.99 | 4.8 | 0.1 |
+```
+
+Closed in the 75 set (time in s):
+
+- acert0 (12): abel, abelbis-1, abelter-1, hs118, wall (0), abelbis (3), fccu (20),
+  polak3 (69), chenery-1 (124), hs093 (600), mistake (643), hs102 (1095). Misses
+  catena and ex8_4_1 (closed by acvx0).
+- acert1 (14): the same + catena (0), **portfl1 (0, closed by no other arm)**; misses
+  ex8_4_1 (acvx0: 69 s). mistake 511 s (acvx0 643 s).
+
+On all 298: acert0 is slower than the shift (1.20 [1.05, 1.50]); acert1 is not
+distinguishable from acvx0 (0.91 [0.72, 1.09], 8 wins / 15 losses) and closes the
+same number of instances (237), not the same ones (portfl1 vs ex8_4_1).
