@@ -417,7 +417,7 @@ polak3 44 % (2 493 pruned, closes in 85 s), hs113 42 %, abelbis 41 %, linear 32 
 (12 419 pruned, still timeout), sambal 32 %, dipigri 31 %. robot: 50 certified but
 5 567 pruned (the shift prunes without certification).
 
-## E5: SCIP (in progress)
+## E5: SCIP
 
 SCIP 10.0 through PySCIPOpt 6.3.0 (`pip install --target $HOME/pyscip pyscipopt`, same
 SCIP version as the cloud runs); matplotlib 3.11.2 in `$HOME/pympl`.
@@ -481,3 +481,65 @@ Wall time 1 h 42 min (2026-11-12, 15:53-17:35), server idle before (load 0.8).
   the original domains rk23 ends by timeout (loup 0.0833). Both count as not solved by
   SCIP in the local profiles.
 - infeasible according to SCIP: ex5_3_3, ex7_3_6, launch__coconut, wall (as in E5a).
+
+### E5c: IbexOpt `afull12` on the same ±1e12 domains
+
+```bash
+BIN=build-fix/bin/ibexopt-ml OUT=results/local/ibex_inf12.jsonl JOBS=14 TLIM=1200 sh results/solvers/run_ibex.sh
+```
+
+Wall time 1 h 23 min (2026-11-12, 17:52-19:15), server idle before (load 0.85).
+
+| status | local (1200 s) | cloud (310 s) |
+|---|---|---|
+| complete | 243 | 241 |
+| timeout | 48 | 48 |
+| no_lower_bound | 5 | 5 |
+| infeasible | 2 | 2 |
+| killed | 0 | 2 |
+
+- No hangs or kills: hs090 and hs091 (killed in the cloud, before the 2d36f15a1 fix)
+  now end by timeout; hs089 (1197 s) and hs102 (1133 s) close within 1200 s.
+- Same node count as the cloud on 239 of the 241 instances both close; the two
+  differences are ex9_2_5 (4 -> 6 nodes, the instance that also differs between
+  astats and acvx0 in E4) and rk23 (1478 -> 1972 nodes, 25 s cloud -> 55 s local).
+- vs acvx0 on the original domains (237 closed): afull12 closes 243. Gained:
+  brownal, ex8_4inf-1, hs089, rk23, test_infinity3, test_infinity4; lost: none
+  (3pk goes from no_lower_bound to timeout). Geometric-mean time ratio
+  afull12/acvx0 on the 237 closed by both: 0.95.
+
+### E5d: performance profiles
+
+Local copies of `results/solvers/perfprof.py` and `perfprof12.py`
+(`results/local/perfprof_local.py`, `results/local/perfprof12_local.py`): they read the
+`results/local/` files, use `acvx0` for the Lagrangian-bound arm on the original
+domains (the cloud's `afull`), use 1200 instead of 310 as default time, and take a
+list of SCIP `error` instances to count as **not solved by SCIP** instead of dropping
+them (the SCIP LP failures ex8_4_6bis and rk23; the untranslated instances are still
+dropped).
+
+```bash
+PYTHONPATH=$HOME/pympl python3 results/local/perfprof_local.py results/local/perfprof.png ex8_4_6bis.bch
+PYTHONPATH=$HOME/pympl python3 results/local/perfprof12_local.py results/local/perfprof12.png ex8_4_6bis.bch rk23.bch
+```
+
+Fraction of instances closed within τ = 2^10 (instances closed by one of the two and
+> 1 s for one of them):
+
+| profile | n | IbexOpt | SCIP |
+|---|---|---|---|
+| original domains, anoip | 125 | 82 % | 81 % |
+| original domains, abase | 121 | 83 % | 78 % |
+| original domains, acvx0 | 117 | 87 % | 75 % |
+| ±1e12 domains, afull12 | 114 | 88 % (100) | 73 % (83) |
+
+±1e12 domains, local vs cloud (same filter): cloud n = 97, SCIP 67, IbexOpt 83, both
+53; local n = 114, SCIP 83, IbexOpt 100, both 69. Closed only by SCIP: the same 14
+instances in both (3pk, 3pk-borne, chenery, ex8_4_3, linear, minlphi, optmass,
+orthregb, pollut, portfl1, prolog, qp1, qp1-1, qp2). Closed only by IbexOpt: the
+cloud's list minus hs103 (now closed by SCIP too), plus hs102 (closes at 1200 s) and
+wall (SCIP: infeasible). On the 69 closed by both, IbexOpt is faster on 26 and SCIP
+on 43 (times floored at 1 s).
+
+![original domains](perfprof.png)
+![±1e12 domains](perfprof12.png)
