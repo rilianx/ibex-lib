@@ -3,6 +3,8 @@
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 \usepackage[margin=2.6cm]{geometry}
 \usepackage{xcolor}
 \usepackage{pgfplots}
@@ -379,7 +381,38 @@ abandons the pass in both cases; we corrected it, the correction has been
 submitted to the Ibex distribution, and every configuration of
 Section~\ref{sec:experiments} uses it, including the one that stands for
 Ibex. Ibex limits SoPlex to 100 iterations per LP, and every engine of
-Section~\ref{sec:experiments}, SC included, uses that limit.
+Section~\ref{sec:experiments}, SC included, uses that limit. Algorithm~\ref{alg:pass}
+summarizes the pass.
+
+\begin{algorithm}[t]
+\caption{One pass over the bounds of a node. \textsc{Solve} is the LP engine:
+SC (Algorithm~\ref{alg:sc}) or an external solver, warm-started from the
+previous LP and limited to 100 iterations.}\label{alg:pass}
+\begin{algorithmic}[1]
+\Require relaxation $\Abar z=0$ with twin rows merged, box $\iv{z}$
+\Ensure contracted box $\iv{z}$, or $\emptyset$
+\State $L\gets\{(k,\sigma): k\le n,\ \sigma\in\{\min,\max\}\}$
+  \Comment{bounds still to solve}
+\While{$L\neq\emptyset$}
+  \State remove from $L$ every bound attained by a primal point found earlier in the pass
+  \If{$L=\emptyset$} \textbf{break} \EndIf
+  \State $(k,\sigma)\gets$ the bound of $L$ nearest to the last primal point; remove it from $L$
+  \State $(\mathit{st},\lambda)\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$
+  \If{$\mathit{st}=\text{infeasible}$ \textbf{and} $0\in\iv{R}(\lambda,\iv{z})$}
+     \Comment{the ray does not certify}
+    \State $(\mathit{st},\lambda)\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$ from a cold start
+  \EndIf
+  \If{$0\notin\iv{R}(\lambda,\iv{z})$} \Return $\emptyset$
+     \Comment{Proposition~\ref{prop:valid}}
+  \EndIf
+  \If{$\mathit{st}\neq\text{infeasible}$ \textbf{and} $0\notin\iv{\gamma}_k$}
+     \Comment{optimal, or stopped at the limit}
+    \State $\iv{z}_k\gets\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$
+  \EndIf
+\EndWhile
+\State \Return $\iv{z}$
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Merging twin rows}\label{sec:merge}
 
@@ -426,6 +459,49 @@ previous optimal basis stays primal feasible. Section~\ref{sec:bank} measures
 what this design is worth: against the simplex of SoPlex driven directly, the
 gain comes mostly from not preparing each LP as a new problem, more than from
 the omitted checks.
+Algorithm~\ref{alg:sc} shows one call; Sections~\ref{sec:warm}
+to~\ref{sec:certif} explain its steps.
+
+\begin{algorithm}[t]
+\caption{\textsc{Solve} in SC: one LP of the pass. The relaxation is loaded
+once per node; the basis, its LU factors, $x_B$, $\lambda$ and $d$ persist
+from one call to the next. Comments marked $\star$ point to the work a
+general-purpose solver does differently.}\label{alg:sc}
+\begin{algorithmic}[1]
+\Require bound $(k,\sigma)$, so $c=\pm e_k$; box $\iv{z}$, contracted since the previous call
+\If{first LP of the node}
+  \State $B\gets -I_m$ \Comment{dual feasible for every $\mathrm{LP}_k$ (Prop.~\ref{prop:start})}
+\Else
+  \State keep $B$ and its LU factors
+    \Comment{$\star$ a solver loads and starts a new problem}
+  \State recompute $\lambda$ and $d$ for $c$ with the current factors
+  \If{dual warm start}
+    \State relocate each nonbasic $z_j$ to the bound given by the sign of $d_j$;
+      recompute $x_B$
+  \EndIf
+\EndIf
+\For{$t=1,\dots,100$}
+  \If{some basic variable violates its bounds} \Comment{dual step}
+    \State $r\gets$ the basic variable with the largest violation;
+      $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$
+    \State $q\gets$ ratio test on $d_j/\alpha_{rj}$ with Harris' rule
+    \If{no $q$ exists} \Return (infeasible, $\rho_r$)
+      \Comment{Farkas ray}
+    \EndIf
+  \ElsIf{some nonbasic $d_j$ has the wrong sign} \Comment{primal step}
+    \State $q\gets$ the nonbasic variable with the largest such $|d_j|$;
+      $\alpha_q\gets B^{-1}\Abar_{:q}$
+    \State $r\gets$ ratio test on $x_B$ over the stable pivots of $\alpha_q$
+  \Else
+    \State \Return (optimal, $\lambda$)
+      \Comment{$\star$ a solver refactorizes and verifies first}
+  \EndIf
+  \State pivot $(r,q)$: update $x_B$, $\lambda$, $d$, and the LU factors (Forrest--Tomlin)
+  \State refactorize every 50 pivots; recompute $x_B$ every 32
+\EndFor
+\State \Return (iteration limit, $\lambda$) \Comment{$\lambda$ still certifies (Prop.~\ref{prop:valid})}
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Starting and warm-starting}\label{sec:warm}
 
