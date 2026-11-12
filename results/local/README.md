@@ -441,8 +441,12 @@ Wall time 1 h 42 min (2026-11-12, 13:54-15:36), server idle before.
 - Same statuses as the cloud except: **hs103 closes** (timeout at 310 s in the cloud),
   and **ex8_4_6bis is `error`** (timeout in the cloud). The 8 other errors are the
   same as in the cloud (brownal, cresc4, hs088-hs091, minlphi1, modele_opti: not
-  translated). ex8_4_6bis runs fine with a 30 s limit (timeout, loup 7.837); being
-  reproduced with 1200 s.
+  translated). ex8_4_6bis: **SCIP aborts with an internal LP error** after ~935 s CPU
+  (`[solve.c:5333] ERROR: Error <-6>` -> `SCIP: error in LP solver!`), reproduced
+  alone with 1200 s (exit 1, 490 MB RSS, no hang); with 30 s it ends by timeout
+  (loup 7.837), and the cloud's 310 s stopped it before the failure. It is a SCIP
+  failure, not a translation error: in the profiles below it counts as not solved by
+  SCIP (perfprof.py would drop every `error` instance).
 - infeasible according to SCIP: ex5_3_3, ex7_3_6, launch__coconut, wall (same as the
   cloud). IbexOpt closes wall with a feasible point (acvx0: loup -1.0000047, uplo
   -1.0010057, 14 nodes), so SCIP's infeasibility claim on wall is wrong; the cloud
