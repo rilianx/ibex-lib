@@ -455,3 +455,29 @@ Wall time 1 h 42 min (2026-11-12, 13:54-15:36), server idle before.
   not solved).
 - SCIP is also ~2.2x slower here than in the cloud (geometric mean on the 54 instances
   both close in > 1 s), like IbexOpt (2.7x).
+
+### E5b: SCIP with missing bounds replaced by ±1e12
+
+```bash
+PYTHONPATH=$HOME/pyscip SCIP_INFBOUND=1e12 OUT=results/local/scip_inf12.jsonl JOBS=14 TLIM=1200 sh results/solvers/run.sh
+```
+
+Wall time 1 h 42 min (2026-11-12, 15:53-17:35), server idle before (load 0.8).
+
+| status | local (1200 s) | cloud (310 s) |
+|---|---|---|
+| complete | 224 | 223 |
+| timeout | 61 | 64 |
+| error | 9 | 7 |
+| infeasible | 4 | 4 |
+
+- Same statuses as the cloud except: **hs103 closes** (966.9 s, loup 543.668, as in
+  E5a), and **ex8_4_6bis and rk23 are `error`** (timeout in the cloud). The 7 other
+  errors are the untranslated ones (cresc4, hs088-hs091, minlphi1, modele_opti;
+  brownal is translated with these domains).
+- rk23 reproduced alone (1200 s): `[solve.c:4948] ERROR: (node 2403741) unresolved
+  numerical troubles in LP 2700179 -- aborting` -> `SCIP: error in LP solver!`, exit 1
+  after 957 s CPU, 1.3 GB RSS, no hang. Same kind of failure as ex8_4_6bis in E5a; on
+  the original domains rk23 ends by timeout (loup 0.0833). Both count as not solved by
+  SCIP in the local profiles.
+- infeasible according to SCIP: ex5_3_3, ex7_3_6, launch__coconut, wall (as in E5a).
