@@ -1,0 +1,8 @@
+[abcaja] DFB  : LPs=54911 | optimo certificado=49220  optimo sin certificado=5548  vacio probado=41  no optimo=102 | saltadas=2708
+[abcaja] caja : LPs=50860 | optimo certificado=34559  optimo sin certificado=15053  vacio probado=41  no optimo=1207 | saltadas=6721
+[abcaja] nodos=1000 | contraccion media DFB=0.06937 caja=0.14091 | nodos vaciados DFB=41 caja=41 | gana DFB=45 caja=874
+[abcaja] costo DFB  : pasada 15.161 s  pivotes=730310  us/LP=276.10  piv/LP=13.30  us/piv=20.760
+[abcaja] costo caja : pasada 30.313 s  pivotes=1093798  us/LP=595.99  piv/LP=21.51  us/piv=27.713
+[dfb] estados: solves=55022  optimal=96.2%  infeasible=0.4%  iterlimit=3.5%  otros(singular/unbounded)=0.1%  | warm=53811 cold=1211 fact_fallo=7
+[corte_cert] LPs cortados por el tope cuya cota se aplico: 3198
+[replay] cajas=1000 vacias=41 contraccion_media=0.06937 cpu_contractor=47.2278 s us_por_llamada=47227.8 LPs=105771 pivotes=1824108

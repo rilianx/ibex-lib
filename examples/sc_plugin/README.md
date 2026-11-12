@@ -25,7 +25,7 @@ What a pass does:
 - a bound already attained by the last primal point (relative distance
   below 1e-8) is skipped;
 - the next LP is the bound nearest to that point;
-- the limit is 20m+200 pivots per LP;
+- the limit is 100 pivots per LP, as Ibex gives SoPlex;
 - the LU of the basis comes from SoPlex (`SLUFactor`), with Forrest–Tomlin
   updates and a refactorization every 50 updates;
 - x_B is recomputed every 32 pivots;
@@ -57,7 +57,7 @@ global or static mutable state and reads no environment variables.
 #include "ibex_CtcSC.h"
 
 CtcSC(Linearizer& lr, CtcSC::WarmStart ws = CtcSC::DUAL,
-      double tol = 1e-9, int max_iter = -1 /* 20m+200 */);
+      double tol = 1e-9, int max_iter = -1 /* 100 */);
 ```
 
 - `CtcSC::DUAL` relocates the nonbasic variables and then uses dual steps.

@@ -217,7 +217,7 @@ void CtcSC::pass(IntervalVector& box) {
 	const int m  = A.nb_rows();
 	const int na = nb_var + m;
 	const int nc = 2*nb_var;
-	const int tope = max_iter > 0 ? max_iter : 20*m + 200;
+	const int tope = max_iter > 0 ? max_iter : 100;
 
 	Af.resize(m, na);
 	for (int i = 0; i < m; ++i)

@@ -46,6 +46,17 @@ passes are not affected, because they replay fixed calls.
 Every script reads `work/S` and `work/M`, or the folders named by the
 environment variables `S` and `M`.
 
+The paper uses the limit of 100 iterations per LP in every engine. The runs
+with that limit are in `work/S100` (unpack `datos_l100.tgz` into `work/`); run
+the scripts with `S=work/S100`. `l100.sh` ran them, 14 at a time. Rungs that
+did not change come from `work/S`: the recorded banks (symbolic links), and R0 and
+R1 inside the search (copied into `escf_c`, `escfa_c`), which already used the limit of Ibex. `work/S` holds the
+earlier runs, where the tuned SoPlex, the bare simplex and SC used the limit
+20m+200. Most ratios of the paper differ between the two by 0.01–0.04; the
+largest change is SC over the bare simplex on large relaxations (1.48 against
+1.42 in geometric mean on the `compo` bank, 1.23 against 1.15 beyond 120 rows
+inside the search).
+
 | Folder in `work/` | Contents |
 |---|---|
 | `M/banco`, `S/bancoopt` | bank of passes, affine relaxation: 1000 recorded calls (box and relaxation) per instance |
@@ -61,6 +72,7 @@ environment variables `S` and `M`.
 | `S/emu` | emulated work of SoPlex inside SC, cascade e0–e4 |
 | `S/peso` | weight of the pass in the CPU time of a search |
 | `S/kat2` | cost split on Katsurabis-14 |
+| `S100/...` | the same folders, with the limit of 100 (`bescf_c` is a copy of `bescf`, whose b0 and b0f already use the nearest bound; `escf_c`, `escfa_c` take R0 and R0f from `S/escf_c`, `S/escfa_c`; `r0c` is empty) |
 | `S/*_jobs.txt`, `S/*_lista.txt`, `S/bopt_sel.txt` | job lists and the selection of one instance per family |
 
 The folders `banco/`, `banco_compo/`, `r0_cercana/`, `hibrido/`, `emulado/`,
@@ -85,8 +97,10 @@ R0 and R1 use the nearest bound first, as `CtcPolytopeHull` does in Ibex
 them. The `nat` order in `escf.sh`, `bescf.sh` and `bcmp.sh` belongs to an
 earlier R0 that the paper no longer uses; the `_c` folders replace it.
 
-The SC rung of `escf.sh` (`R3`) sets `DFB_SX_BFRT=0 DFB_SX_DEVEX=0 DFBH_LPCAP=0`.
-Since commit f1b3717e5 these are the defaults of the binaries.
+The SC rung of `l100.sh` (`R3`) sets `DFB_SX_BFRT=0 DFB_SX_DEVEX=0 DFBH_LPCAP=100`,
+and the SoPlex rungs `DFBH_CAJA_TOPE=100`. These are the defaults of the
+binaries (devex and the long step since commit f1b3717e5, the limit since the
+commit that adds `work/S100`).
 
 ## 4. From results to the paper
 
@@ -97,19 +111,16 @@ Since commit f1b3717e5 these are the defaults of the binaries.
 | Median pass times and contraction in Section 5.1 | `python3 bescf_extra_c.py` |
 | Effect of the order of R0 | `python3 r0c_tab.py` |
 | Table 2, solver | `python3 esc_fam_c.py` |
-| Hybrid threshold | `python3 hyb_tab.py` |
+| Hybrid inside the search | `python3 hyb_tab.py` (needs `escf` with R0: point `S` to a folder where `escf` links to `escf_c`) |
+| Offline threshold and SC over R3 by rows | `python3 umbral.py` (same remark) |
+| Figure 1, emulated work, weight of the pass | `OUT=examples/dfb/paper python3 fig_peso_emu.py` |
+| Side experiments of Section 5.1 (representation, patched SoPlex, tolerance) | `grandes_2026-11-11/an6.py` (runs: `job6.sh`, `run6/`, base in `run4/`) |
 
-These figures were computed inline from the archived outputs, without a
-script:
-
-- the emulated work (`S/emu`, `emu.sh`);
-- the weight of the pass (`S/peso`, `peso.sh`);
-- the Katsurabis-14 split (`S/kat2`);
-- the data of Figure 1 (`examples/dfb/paper/fig_*.dat`), which is SC over R3
-  per instance from the same bank replays.
+The Katsurabis-14 split (`S/kat2`) was computed inline from the archived
+outputs.
 
 Each script prints its numbers for every class of instance, not only the ones
 quoted in the paper.
 
-All the runs were made on two Intel Xeon E5-2620 v4 (2.1 GHz), eight runs at a
-time, with at most 6 GB each.
+All the runs were made on two Intel Xeon E5-2620 v4 (2.1 GHz, 16 cores), with
+at most 6 GB each: `work/S` eight runs at a time, `work/S100` fourteen.

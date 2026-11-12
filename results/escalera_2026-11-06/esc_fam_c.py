@@ -32,7 +32,7 @@ for (prog,lin,n,s) in R:
     m=filas[(prog,n,lin)]; c='<=30' if m<=30 else '>30'
     key=(prog,c,familia(prog,n))
     if key not in elig or m>elig[key][0]: elig[key]=(m,lin,n)
-nom=[('R0f','+ merge twin rows'),('R1','+ SoPlex tuning'),('R2','bare simplex (SPxSolver)'),('R3','SC base'),('R6','SC + limit, devex, long-step'),('R7','hybrid (SC <=30 rows)')]
+nom=[('R0f','+ merge twin rows'),('R1','+ SoPlex tuning'),('R2','bare simplex (SPxSolver)'),('R3','SC base'),('R6','SC + devex, long-step'),('R7','hybrid (SC <=30 rows)')]
 for prog in ('opt','sol'):
   for c in ('<=30','>30'):
     sel=[(v[1],v[2]) for k,v in elig.items() if k[0]==prog and k[1]==c]

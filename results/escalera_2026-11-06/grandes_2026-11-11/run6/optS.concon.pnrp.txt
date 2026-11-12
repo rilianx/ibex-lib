@@ -1,0 +1,1 @@
+ibexreplay_sxp: affine/ibex_Affine2_fAF2.cpp:401: ibex::AffineMain<T>& ibex::AffineMain<T>::inflate(double) [with T = ibex::AF_fAF2]: Assertion `ddelta>=0' failed.

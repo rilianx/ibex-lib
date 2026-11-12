@@ -44,7 +44,7 @@ namespace ibex {
  *  - the first LP is min x_0; then, among the bounds not yet attained by the
  *    last primal point (relative distance >= 1e-8), the nearest one to that
  *    point is solved next; each LP is warm-started from the previous basis;
- *  - an LP stopped by the iteration limit (20m+200 by default) still gives a
+ *  - an LP stopped by the iteration limit (100 pivots by default) still gives a
  *    certified bound; an infeasibility whose ray does not certify emptiness
  *    is solved once more from a cold start;
  *  - the box is contracted after each LP, and the pass stops as soon as the
@@ -73,7 +73,7 @@ public:
 	 * \param ws        warm-start strategy
 	 * \param tol       feasibility tolerance of the simplex (1e-9; 1e-6 is
 	 *                  better for relaxations with nearly parallel rows)
-	 * \param max_iter  pivots per LP; -1 means 20m+200 (m rows)
+	 * \param max_iter  pivots per LP; -1 means 100, the limit Ibex gives SoPlex
 	 */
 	CtcSC(Linearizer& lr, WarmStart ws=DUAL, double tol=1e-9, int max_iter=-1);
 

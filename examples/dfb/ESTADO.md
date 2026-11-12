@@ -2399,3 +2399,25 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   de vectores, preparar y deshacer cada solve), que no se quita con
   interruptores. Coincide con el parche de octubre (`SOPLEX_REFACT_FIN`, sin
   efecto en µs/LP).
+- **Rehecho todo con el límite de 100 iteraciones por LP en todos los motores
+  (2026-11-11, `results/escalera_2026-11-06/l100.sh`, `work/S100`,
+  `datos_l100.tgz`, 14 a la vez; laterales en `grandes_2026-11-11/job6.sh`,
+  `run6/`, `an6.py`).** SC (`DFBH_LPCAP=100`) y SoPlex ajustado/directo
+  (`DFBH_CAJA_TOPE=100`); SC+ = devex + paso largo, sin tope propio. R0 y R1
+  del solver no cambian (ya usaban el de Ibex) y se toman de `work/S`.
+  Cambios: casi todo 0.01–0.04. Tabla 1: opt 0.93/0.68/0.52/0.39, sistemas ≤30
+  0.84/0.66/0.51/0.42, compo 0.85/0.69/0.55/0.79; SC/directo compo gm 1.48 →
+  1.42, gana 7 → 4/41. Tabla 2: SC opt 0.78/0.79, sistemas chicos 0.83/0.83,
+  grandes 0.91/0.87; híbrido 0.77/0.75 (ahora el mejor en grandes, 0.98 del
+  directo). Representación forzada a columnas: SC/directo 1.41 → 1.04, gana
+  18/41 (≈90 % de la brecha). SoPlex parchado: 7 % y 4 % más barato, SC sigue
+  22 %/12 % adelante (69/74, 22/36). Emulación 0.55–0.60 → 0.88–0.92.
+  Peso de la pasada: 16 % opt, 5 % sistemas. Estancamiento en Katsurabis-14:
+  17 de 16 562 LPs de SC llegan al límite (con 100 la pasada queda en 1.48 del
+  directo, mismo valor que el experimento de 150 de antes). En el solver, por
+  familia, devex/paso largo es ruido puro (BroydenBanded-200: 94 s en una
+  medición, 14 s en otra, misma configuración): para el efecto por familia se
+  usa el banco. Por omisión ahora: `DFBH_LPCAP=100`, `DFBH_CAJA_TOPE=100` en
+  ibexopt/ibexsolve_dfb/ibexreplay (fuentes; binarios de experimentos no
+  recompilados) y `max_iter=-1` → 100 en `examples/sc_plugin`. Paper
+  actualizado (ya no hay 20m+200 ni tope de 60/150).

@@ -49,7 +49,9 @@ int main(int argc, char** argv) {
         if (!getenv("DFB_SX_FEASTOL"))        setenv("DFB_SX_FEASTOL", tol, 0);
         if (!getenv("DFB_SX_DUALTOL"))        setenv("DFB_SX_DUALTOL", tol, 0);
         if (!getenv("DFB_SX_TOLANCHO"))       setenv("DFB_SX_TOLANCHO", "0", 0);
-        if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "igual", 0);
+        if (!getenv("DFBH_CAJA_TOPE"))        setenv("DFBH_CAJA_TOPE", "100", 0);
+        /* Limite de 100 iteraciones por LP en todos los motores (2026-11-11), el que Ibex da a SoPlex */
+        if (!getenv("DFBH_LPCAP"))            setenv("DFBH_LPCAP", "100", 0);
         /* Tope de 60 pivotes por LP en SC (2026-10-21): cualquier base certifica, asi
          * que cortar da una cota valida. Las cajas negras siguen con 20m+200: una caja
          * cortada por iteraciones no deja certificado y pierde la cota entera. */
