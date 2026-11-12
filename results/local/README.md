@@ -378,3 +378,41 @@ instances with every arm: 298, common set: 81, closed by every arm: 237
   with it (258 s vs 120 s).
 - anobo: same instances as acvx0, time not distinguishable (1.01 [0.98, 1.05]); the
   bound takes 2.8 % of the time instead of 0.3 %.
+
+## E4: where the bound helps (astats = acvx0 + --cvx-stats), both sets
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astats" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astats" sh results/anytime/run.sh
+python3 results/local/e4/summarize.py      # -> results/local/e4/summary.md (new file, analysis only)
+```
+
+Wall time: 223 set 9.5 min, 75 set 1 h 21 min (2026-11-12, 12:22-13:53). No killed run.
+Statuses identical to acvx0 (223 complete; 75 set: 14 complete, 50 timeout, 9
+no_lower_bound, 2 infeasible).
+
+**Unexpected:** --cvx-stats should only count, but the node counts equal acvx0's on
+235/237 instances closed by both: ex9_2_5 (10 -> 6 nodes) and robot (49994 -> 50172)
+differ. To check in the code (does the measurement touch any state used by the search?).
+
+Counters summed over the instances (percent of `cvx_nodes`, the nodes where the bound
+is evaluated):
+
+| counter | 223 set | 75 set | all 298 | instances > 0 (298) |
+|---|---|---|---|---|
+| cvx_nodes | 5 152 511 | 53 957 296 | 59 109 807 | |
+| cvx_with_dual (Ipopt multipliers available) | 12.43 % | 11.95 % | 11.99 % | |
+| cvx_certified (Lagrangian Hessian certified PSD) | 0.00 % (200) | 0.85 % | 0.77 % | 20 |
+| cvx_better_lb (bound above the node's lb) | 1.94 % | 0.44 % | 0.57 % | 74 |
+| cvx_close (bound would close the node) | 0.73 % | 0.04 % | 0.10 % | 47 |
+| cvx_raised | 1.23 % | 0.36 % | 0.44 % | |
+| cvx_pruned | 0.52 % | 0.05 % | 0.09 % | 57 |
+| cvx_center_indef | 0 | 0 | 0 | |
+
+The bound acts on few nodes (0.1 % pruned) but on many instances (57 of 298), and
+those prunings are what close the open instances (E1). Instances with the most
+certified nodes (full list in `e4/summary.md`): polak6 (98 % of 424 001 nodes
+certified, but never closes a node: timeout), genhs28 56 %, schwefel5(-abs) 50 %,
+polak3 44 % (2 493 pruned, closes in 85 s), hs113 42 %, abelbis 41 %, linear 32 %
+(12 419 pruned, still timeout), sambal 32 %, dipigri 31 %. robot: 50 certified but
+5 567 pruned (the shift prunes without certification).
