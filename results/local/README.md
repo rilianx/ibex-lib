@@ -416,3 +416,37 @@ certified, but never closes a node: timeout), genhs28 56 %, schwefel5(-abs) 50 %
 polak3 44 % (2 493 pruned, closes in 85 s), hs113 42 %, abelbis 41 %, linear 32 %
 (12 419 pruned, still timeout), sambal 32 %, dipigri 31 %. robot: 50 certified but
 5 567 pruned (the shift prunes without certification).
+
+## E5: SCIP (in progress)
+
+SCIP 10.0 through PySCIPOpt 6.3.0 (`pip install --target $HOME/pyscip pyscipopt`, same
+SCIP version as the cloud runs); matplotlib 3.11.2 in `$HOME/pympl`.
+
+### E5a: SCIP on the original domains
+
+```bash
+PYTHONPATH=$HOME/pyscip OUT=results/local/scip.jsonl JOBS=14 TLIM=1200 sh results/solvers/run.sh
+```
+
+Wall time 1 h 42 min (2026-11-12, 13:54-15:36), server idle before.
+
+| status | local (1200 s) | cloud (310 s) |
+|---|---|---|
+| complete (optimal 93 + gaplimit 129) | 222 | 221 |
+| timeout | 62 | 64 |
+| error | 9 | 8 |
+| infeasible | 4 | 4 |
+| unbounded | 1 | 1 |
+
+- Same statuses as the cloud except: **hs103 closes** (timeout at 310 s in the cloud),
+  and **ex8_4_6bis is `error`** (timeout in the cloud). The 8 other errors are the
+  same as in the cloud (brownal, cresc4, hs088-hs091, minlphi1, modele_opti: not
+  translated). ex8_4_6bis runs fine with a 30 s limit (timeout, loup 7.837); being
+  reproduced with 1200 s.
+- infeasible according to SCIP: ex5_3_3, ex7_3_6, launch__coconut, wall (same as the
+  cloud; IbexOpt closes wall with a finite optimum: see the cloud README on SCIP's
+  infeasible claims).
+- ex8_4inf-1 is `complete` with loup < -1e19 (SCIP's infinity; perfprof counts it as
+  not solved).
+- SCIP is also ~2.2x slower here than in the cloud (geometric mean on the 54 instances
+  both close in > 1 s), like IbexOpt (2.7x).
