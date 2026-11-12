@@ -346,3 +346,35 @@ Closed in the 75 set (time in s):
 On all 298: acert0 is slower than the shift (1.20 [1.05, 1.50]); acert1 is not
 distinguishable from acvx0 (0.91 [0.72, 1.09], 8 wins / 15 losses) and closes the
 same number of instances (237), not the same ones (portfl1 vs ex8_4_1).
+
+## E3: variants, 75 set (and all 298)
+
+```bash
+env OUT=results/local/runs-open.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="ascaled anobo" sh results/anytime/run.sh
+$C --set open --ref acvx0 acvx0 ascaled anobo
+$C --set all --ref acvx0 acvx0 ascaled anobo
+```
+
+Wall time 2 h 40 min (2026-11-12, 09:42-12:22), server idle before, no killed run.
+
+```
+instances with every arm: 75, common set: 10, closed by every arm: 14
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 14 | 10 (8) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 6.7 | 0.2 |
+| ascaled | 16 | 10 (10) | 1.04 [0.92, 1.24] | 2/1 | 1.11 | 0.92 | 6.7 | 0.8 |
+| anobo | 14 | 10 (8) | 0.94 [0.83, 1.03] | 2/2 | 0.96 | 0.99 | 6.3 | 3.4 |
+
+instances with every arm: 298, common set: 81, closed by every arm: 237
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 237 | 81 (79) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 4.9 | 0.3 |
+| ascaled | 239 | 81 (81) | 1.00 [0.96, 1.04] | 8/2 | 1.01 | 0.99 | 5.0 | 0.6 |
+| anobo | 237 | 81 (79) | 1.01 [0.98, 1.05] | 4/3 | 0.99 | 1.00 | 4.8 | 2.8 |
+```
+
+- ascaled closes the 14 of acvx0 plus **ex8_4_6 (983 s) and ex8_4_6ter (990 s)**, so
+  239 vs 237 on all 298, same time otherwise (1.00 [0.96, 1.04]). chenery-1 is slower
+  with it (258 s vs 120 s).
+- anobo: same instances as acvx0, time not distinguishable (1.01 [0.98, 1.05]); the
+  bound takes 2.8 % of the time instead of 0.3 %.
