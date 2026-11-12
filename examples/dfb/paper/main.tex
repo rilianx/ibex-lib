@@ -496,8 +496,8 @@ general-purpose solver does differently.}\label{alg:sc}
     \State \Return (optimal, $\lambda$)
       \Comment{$\star$ a solver refactorizes and verifies first}
   \EndIf
-  \State pivot $(r,q)$: update $x_B$, $\lambda$, $d$, and the LU factors (Forrest--Tomlin)
-  \State refactorize every 50 pivots; recompute $x_B$ every 32
+  \State pivot $(r,q)$: update $x_B$, $\lambda$, $d$ and the LU factors
+    \Comment{refactorized every 50 pivots}
 \EndFor
 \State \Return (iteration limit, $\lambda$) \Comment{$\lambda$ still certifies (Prop.~\ref{prop:valid})}
 \end{algorithmic}
