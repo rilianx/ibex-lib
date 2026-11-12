@@ -444,8 +444,9 @@ Wall time 1 h 42 min (2026-11-12, 13:54-15:36), server idle before.
   translated). ex8_4_6bis runs fine with a 30 s limit (timeout, loup 7.837); being
   reproduced with 1200 s.
 - infeasible according to SCIP: ex5_3_3, ex7_3_6, launch__coconut, wall (same as the
-  cloud; IbexOpt closes wall with a finite optimum: see the cloud README on SCIP's
-  infeasible claims).
+  cloud). IbexOpt closes wall with a feasible point (acvx0: loup -1.0000047, uplo
+  -1.0010057, 14 nodes), so SCIP's infeasibility claim on wall is wrong; the cloud
+  README only lists wall among the instances closed by IbexOpt and not by SCIP.
 - ex8_4inf-1 is `complete` with loup < -1e19 (SCIP's infinity; perfprof counts it as
   not solved).
 - SCIP is also ~2.2x slower here than in the cloud (geometric mean on the 54 instances
