@@ -395,6 +395,19 @@ no_lower_bound, 2 infeasible).
 235/237 instances closed by both: ex9_2_5 (10 -> 6 nodes) and robot (49994 -> 50172)
 differ. To check in the code (does the measurement touch any state used by the search?).
 
+*Resolved (reading src/, no change):* --cvx-stats is not the cause.
+`LoupFinderIpopt::cvx_measure` only calls `cvx_bound` and increments counters; the
+pruning hook (`cvx_hook`, with its backoff state) is separate and not touched. Both
+instances run the **correction search** (nested `Optimizer` around Ipopt's point,
+`correct_ipopt_sol`) with a **CPU timeout of 1 s** (`ipopt_corr_time`), so how many
+nodes it explores, and the loup it returns (last digits), depends on the timing, and
+the outer search follows. acvx0 alone, same binary, 6 repetitions on ex9_2_5: 4, 12,
+6, 6, 12, 6 nodes (`ipopt_corr_time` 0.9995 s in the JSON, total 1.08 s); with
+--cvx-stats: 4, 8, 4, 8, 4, 4. robot spends 2.0-3.0 s in corrections and its final loup
+differs in the 12th digit between arms. These are also the two non-deterministic
+instances of E0 (robot, launch) and of E5c vs the cloud (ex9_2_5, rk23): node counts are
+reproducible except where a correction search is cut by its CPU timeout.
+
 Counters summed over the instances (percent of `cvx_nodes`, the nodes where the bound
 is evaluated):
 
