@@ -22,8 +22,11 @@ rigorous enclosures of the global optimum of nonconvex continuous problems, but 
 lower bounds come from linear relaxations of the problem over each box and stay loose
 long after the incumbent is optimal. Meanwhile, the local NLP solver that these codes
 call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
-multipliers that are discarded. We show that this by-product is enough to compute a
-rigorous lower bound on the original nonconvex problem at every node of the search: we enclose the Hessian of the Lagrangian with the solver's multipliers by
+multipliers, which IbexOpt and most global solvers discard. Bounding the Lagrangian
+with fixed multipliers over a box is a known certificate that the box holds no better
+point; we show that, with the solver's multipliers, it yields a lower bound tight and
+cheap enough to be used at every node of the search on the original nonconvex
+problem: we enclose the Hessian of the Lagrangian with the solver's multipliers by
 interval arithmetic and certify that it is positive semidefinite on the box or, when
 that fails, shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
@@ -71,7 +74,8 @@ goes into closing the gap from below, and the linear relaxations of the problem 
 small boxes are the bottleneck. Second, each successful call to the local solver returns not only a
 point $\hat x$ but a full primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$, with
 multipliers $\hat\mu \ge 0$ for the inequalities and $\hat\lambda$ for the equalities.
-Interval solvers discard the multipliers. Yet weak Lagrangian duality holds for
+IbexOpt, like most global solvers, discards the multipliers. Yet weak Lagrangian
+duality holds for
 \emph{any} multipliers, not only optimal ones: for every feasible $x$ of the relaxed
 problem,
 \begin{equation}\label{eq:weak}
@@ -79,7 +83,13 @@ problem,
   \qquad L(x) := f(x) + \hat\mu^\top g(x) + \hat\lambda^\top h(x).
 \end{equation}
 A lower bound on $f$ over the feasible part of $[x]$ therefore follows from any lower
-bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left. When
+bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left. This
+observation is not new: \citet[Sect.~20]{Neumaier2004} notes that a multiplier vector
+for which a lower bound of $L$ over a box, by interval evaluation or a centered form,
+exceeds the best known value certifies that the box holds no global minimizer, and
+\citet{DomesNeumaier2016} build on it a filtering technique for quadratic problems.
+What has been missing is a bound tight enough to matter at every node and a cheap
+source of multipliers for general nonlinear problems. When
 $L$ is convex on $[x]$, its tangent plane at $\hat x$ is such a bound, and it is tight
 when $\hat x$ is a KKT point of the problem restricted to $[x]$. This is the theorem of
 \citet{Jansson2004convex} and \citet{MessineTrombettoni2019} for convex programs.
@@ -107,9 +117,11 @@ shrinks around a nondegenerate KKT point.
 \paragraph{Contributions.}
 \begin{enumerate}
 \item \textbf{A certified Lagrangian lower bound for the original nonconvex problem}
-  (main contribution). It reuses the multipliers of the local solver that already
-  performs upper bounding, so it needs no relaxation, no subgradient iterations and no
-  auxiliary optimization problem. Its only extra cost is one interval evaluation of
+  (main contribution). It turns the multiplier certificate of
+  \citet{Neumaier2004} into a node lower bound for general nonlinear problems. It
+  reuses the multipliers of the local solver that already performs upper bounding, so
+  it needs no relaxation, no subgradient iterations and no auxiliary optimization
+  problem or multiplier computation. Its only extra cost is one interval evaluation of
   the Hessian of the Lagrangian per call. It handles nonlinear equalities, through the
   $\varepsilon_h$-correction in~\eqref{eq:weak}, and boxes on which the Lagrangian is
   not convex, through the diagonal shift in~\eqref{eq:bound}; on boxes where convexity
@@ -255,6 +267,41 @@ node with the underestimators. We use the shifted Lagrangian only through its ta
 at the local solution~\eqref{eq:bound}, a separable expression bounded in closed form.
 The bound is weaker than the optimal value of the $\alpha$BB relaxation, but it costs
 one interval Hessian evaluation instead of a nonlinear solve.
+
+\subsection{Multiplier certificates in rigorous solvers}\label{sec:certif}
+
+\citet[Sect.~20]{Neumaier2004} lists simple certificates built from a multiplier
+vector $y$ for constraints $F(x) \in \mathbf F$ on a box $[x]$: the box is infeasible if
+$y^\top F([x]) \cap y^\top \mathbf F = \emptyset$, with $F([x])$ an interval evaluation
+or a first-order centered form, and, when a feasible value $f_{\text{best}}$ is known,
+the box cannot contain a global minimizer if
+$\min_{x \in [x]} \big(f(x) + y^\top F(x)\big) > f_{\text{best}} + \sup y^\top \mathbf F$,
+the left-hand side being bounded below by interval evaluation or a centered form. A
+worked example in the same survey (Sect.~10) uses the multiplier of a local solution to
+reduce the range of a variable until uniqueness of the minimizer follows. These are
+remarks in a survey, without an algorithm or experiments.
+
+\citet{DomesNeumaier2016} develop the idea into \emph{constraint aggregation}, a
+filtering technique of the COCONUT environment. Near an approximately feasible point
+found by local optimization, they form one redundant constraint, a combination of
+objective and constraints with approximate Lagrange multipliers, which they compute
+themselves from the point by a least-squares procedure, or with a measure of the
+constraint violation when the point is clearly infeasible. They then exploit it with
+linear relaxations, Gauss--Jordan elimination and a directed modified Cholesky
+factorization. The method targets quadratic problems (others through a quadratic
+reformulation), and is tested on 135 quadratic problems of the COCONUT test set on
+boxes around the optimizer, against the cluster effect.
+
+Our bound is this certificate made into a node lower bound for general
+twice-differentiable problems. Three things differ. The multipliers are those the local
+solver returns, so obtaining them costs nothing. The Lagrangian with these
+multipliers is bounded below by the tangent plane at the local solution, after a
+certificate of positive semidefiniteness of its interval Hessian or an $\alpha$BB shift
+of the whole Lagrangian; when the Lagrangian is convex on the box, this bound is exact
+at a KKT point (Proposition~\ref{prop:bound} with $d = 0$), whereas a first-order
+centered form loses a term of the order of the squared box width even then. And the
+bound is applied at every node of a complete branch and bound, with range reduction
+from the same separable expression, and evaluated on 298 general instances.
 
 \subsection{Lagrangian underestimates in branch and bound}
 
@@ -774,10 +821,12 @@ boxes of nonconvex problems the bound is weak and the backoff mostly skips it. I
 on few nodes (0.2\% are pruned by it), so its value lies in the instances it closes,
 not in a uniform speed-up.
 
-\emph{Future work.} Range reduction with the tangent of the Lagrangian of the
-constraints only, with multipliers from a phase-1 problem, would certify the absence of
-feasible points around near-solutions, which our quick test with residual multipliers
-did not achieve; better shifts (E-matrix rules, the exact minimum of the
+\emph{Future work.} The same tangent applied to the Lagrangian of the constraints
+only would give the infeasibility certificates of \citet[Sect.~20]{Neumaier2004} and
+the violation-based aggregation of \citet{DomesNeumaier2016} for general problems; a
+quick test with the constraint residuals at infeasible Ipopt points as multipliers
+pruned almost no box, so multipliers from a proper phase-1 problem are needed; better
+shifts (E-matrix rules, the exact minimum of the
 one-dimensional concave terms); calling the local solver where the bound is weak, to
 refresh the multipliers; branching on the variables with $d_i > 0$
 \citep{Adjiman1998b}; and a coupling with adaptive contractors such as ACID that does
