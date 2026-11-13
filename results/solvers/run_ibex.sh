@@ -7,6 +7,9 @@ cd "$(dirname "$0")/../.."
 BIN=${BIN:-build-fix/bin/ibexopt-ml}
 OUT=${OUT:-results/solvers/ibex_inf12.jsonl}
 TLIM=${TLIM:-310}; export TLIM
+# ARM/FLAGS: another configuration on the same domains (default: afull)
+ARM=${ARM:-afull12}
+FLAGS=${FLAGS:-"--ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --ipopt-guided-nodes --cvx-close --cvx-backoff=64 --cvx-test 2"}
 DIR=results/solvers/bch12
 mkdir -p $DIR
 for f in benchs/optim/all/*.bch; do
@@ -15,10 +18,9 @@ done
 touch $OUT
 cat results/node-selection/closed-instances.txt results/anytime/open-instances.txt |
 xargs -P ${JOBS:-3} -n1 sh -c '
-  i=$0; grep -q "\"instance\": \"$i\"" '"$OUT"' && exit 0
+  i=$0; grep -q "\"instance\": \"$i\", \"arm\": \"'"$ARM"'\"" '"$OUT"' && exit 0
   r=$(timeout $(($TLIM+200)) '"$BIN"' '"$DIR"'/$i --solve --bisector lsmear-lffix --relax both --loup ipoptxn \
-       --ipopt-diam=-1 --ipopt-expansion=1e-5 --ipopt-expansion-first=0.1 --ipopt-guided=0.05 --ipopt-guided-patience=20 --ipopt-guided-nodes \
-       --cvx-close --cvx-backoff=64 --cvx-test 2 --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
+       '"$FLAGS"' --random-seed 1 --timeout $TLIM 2>/dev/null | tail -1)
   [ -z "$r" ] && r="{\"status\": \"killed\"}"
-  echo "{\"instance\": \"$i\", \"arm\": \"afull12\", \"result\": $r}" >> '"$OUT"'
+  echo "{\"instance\": \"$i\", \"arm\": \"'"$ARM"'\", \"result\": $r}" >> '"$OUT"'
 '
