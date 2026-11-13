@@ -2758,7 +2758,25 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
          * omision se comportan como Ibex, que descarta el LP. */
         static const bool corte_cert = !getenv("DFBH_CORTE_CERT") || std::string(getenv("DFBH_CORTE_CERT")) != "0";
         const bool optimo = (st == DFBSimplex::OPTIMAL);
-        if (!optimo && !(corte_cert && st == DFBSimplex::ITER_LIMIT)) {
+        /* CONTRAER CON EL RAYO QUE NO CERTIFICA (`DFBH_RAYO_CONTRAE=1`,
+         * 2026-11-13). Un INFEASIBLE cuyo rayo no prueba el vacio —ni tras el
+         * reintento en frio— dejaba la cota sin contraer; pero cualquier lambda
+         * certifica (Prop. 3 del paper), asi que el rayo da una cota valida de
+         * z_k si 0 no esta en gamma_k. El punto primal no existe: no entra al
+         * hull ni al salteo. */
+        static const bool rayo_contrae = DFB_ENV("DFBH_RAYO_CONTRAE");
+        const bool rayo_fallido = (st == DFBSimplex::INFEASIBLE);
+        if (rayo_fallido) {
+            /* `DFBH_RAYO_CUENTA=1`: al salir, cuantos rayos fallidos hubo y en
+             * cuantos 0 queda fuera de gamma_k (los que pueden contraer). */
+            struct Cuenta { long rf = 0, gk = 0, lps = 0;
+                ~Cuenta() { if (getenv("DFBH_RAYO_CUENTA"))
+                    fprintf(stderr, "[rayo] fallidos %ld, con 0 fuera de gamma_k %ld, LPs %ld\n", rf, gk, lps); } };
+            static Cuenta cu;
+            ++cu.rf; if (!gamma[k].contains(0.0)) ++cu.gk; cu.lps = (long) n_lps;
+        }
+        if (!optimo && !(corte_cert && st == DFBSimplex::ITER_LIMIT)
+                    && !(rayo_contrae && rayo_fallido)) {
             ++abc_cnt[motor_caja][4];
             if (traza_cotas)
                 fprintf(stderr, "    paso=%-3d x%-3d %s  estado=%d piv=%-3d | sin aplicar (no OPTIMAL)\n",
