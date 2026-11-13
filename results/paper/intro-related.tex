@@ -17,25 +17,26 @@ in a rigorous interval branch and bound}
 \maketitle
 
 \begin{abstract}
-\textbf{[Draft abstract.]} Interval branch-and-bound solvers such as IbexOpt compute
-rigorous enclosures of the global optimum of nonconvex continuous problems, but their
-lower bounds come from linear relaxations of the problem over each box and stay loose
-long after the incumbent is optimal. Meanwhile, the local NLP solver that these codes
-call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
-multipliers, which IbexOpt and most global solvers discard. Bounding the Lagrangian
-with fixed multipliers over a box is a known certificate that the box holds no better
-point; we show that, with the solver's multipliers, it yields a lower bound tight and
-cheap enough to be used at every node of the search on the original nonconvex
-problem: we enclose the Hessian of the Lagrangian with the solver's multipliers by
-interval arithmetic and certify that it is positive semidefinite on the box or, when
-that fails, shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
-Lagrangian at the local solution, minimized in closed form over the box and corrected for
-the relaxation of equality constraints, yields a valid lower bound. In IbexOpt with Ipopt
-as local solver, on 298 instances of the COCONUT benchmark, the bound solves 11 more instances
-(240 against 229) and halves the solving time (0.50 of the baseline) on the instances
-that take more than a second, at a cost below 1\% of the running time. On the same
-domains, the rigorous solver with the bound then solves more instances than SCIP~10
-(245 against 224), although SCIP is faster on most of the instances both solve.
+Interval branch-and-bound solvers such as IbexOpt compute rigorous enclosures of the
+global optimum of nonconvex continuous problems, but their lower bounds, obtained from
+linear relaxations over each box, stay loose long after the incumbent is optimal. The
+local NLP solver that these codes call for upper bounding returns, at no extra cost, a
+KKT point together with Lagrange multipliers, which are usually discarded. It is known
+that a lower bound of the Lagrangian with fixed multipliers over a box certifies that
+the box holds no better point, and that convexity of such a Lagrangian can be verified
+with interval Hessians. We turn these facts into a lower bound that is cheap and tight
+enough to be computed at every node of the search, for general twice-differentiable
+problems. With the solver's multipliers, we enclose the Hessian of the Lagrangian on
+the box and certify that it is positive semidefinite or, when that fails, shift it
+diagonally as in $\alpha$BB; the tangent plane of the Lagrangian at the local solution,
+minus the shift penalty, is then minimized in closed form over the box and corrected
+for the relaxation of the equalities. The same separable expression also reduces the
+range of each variable. In IbexOpt with Ipopt, on 298 instances of the COCONUT
+benchmark, the bound solves 11 more instances (240 against 229) and halves the solving
+time on the instances that take more than a second, at a cost below 1\% of the running
+time; range reduction removes a further 5\%. With the same variable domains, the
+rigorous solver then solves more instances than SCIP~10 (245 against 224), although
+SCIP is faster on most of the instances both solve.
 \end{abstract}
 
 \section{Introduction}
@@ -83,73 +84,79 @@ problem,
   \qquad L(x) := f(x) + \hat\mu^\top g(x) + \hat\lambda^\top h(x).
 \end{equation}
 A lower bound on $f$ over the feasible part of $[x]$ therefore follows from any lower
-bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left. This
-observation is not new: \citet[Sect.~20]{Neumaier2004} notes that a multiplier vector
-for which a lower bound of $L$ over a box, by interval evaluation or a centered form,
-exceeds the best known value certifies that the box holds no global minimizer, and
-\citet{DomesNeumaier2016} build on it a filtering technique for quadratic problems.
-What has been missing is a bound tight enough to matter at every node and a cheap
-source of multipliers for general nonlinear problems. When
-$L$ is convex on $[x]$, its tangent plane at $\hat x$ is such a bound, and it is tight
-when $\hat x$ is a KKT point of the problem restricted to $[x]$. This is the theorem of
-\citet{Jansson2004convex} and \citet{MessineTrombettoni2019} for convex programs.
+bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left.
 
-Our point is that the convexity hypothesis is needed only for $L$ with the
-\emph{fixed} multipliers $(\hat\mu,\hat\lambda)$ and only \emph{on the current box}. It
-can therefore be checked numerically, node by node, in the original nonconvex problem.
-Let $[H]$ be an interval enclosure of $\nabla^2 L$ over $[x]$, and let $d \ge 0$ be a
-vector such that $H + \operatorname{diag}(d)$ is positive semidefinite for every
-$H \in [H]$. Following the scaled Gerschgorin rule of \citet{Adjiman1998a}, we take
-$d_i = \max\{0, \sum_{j \ne i} \lvert [H]_{ij} \rvert - h^L_{ii}\}$, where $h^L_{ii}$ is the lower end of $[H]_{ii}$.
-Then, for every $x \in [x]$,
+This observation is not new. \citet[Sect.~20]{Neumaier2004} notes that a multiplier
+vector for which a lower bound of $L$ over a box, by interval evaluation or a centered
+form, exceeds the best known value certifies that the box holds no global minimizer,
+and \citet{DomesNeumaier2016} build on it a filtering technique for quadratic problems.
+\citet{Neumaier1996} shows that the convexity of $L$ is needed only with the
+\emph{fixed} multipliers and only \emph{on the box}, and that it can be verified with
+an interval Hessian: if $L$ plus a suitable diagonal quadratic term is convex on a
+narrow box around a strong local minimizer, the tangent plane at $\hat x$ proves that
+$\hat x$ is globally optimal there. What has been missing is a bound that can be used
+at every node of a search, on boxes that are neither narrow nor centered at a local
+minimizer, with multipliers that cost nothing.
+
+We obtain it as follows. Let $[H]$ be an interval enclosure of $\nabla^2 L$ over $[x]$
+and let $d \ge 0$ be such that $H + \operatorname{diag}(d)$ is positive semidefinite
+for every $H \in [H]$: $d = 0$ if a positive-semidefiniteness test succeeds, otherwise
+the Gerschgorin shift of $\alpha$BB \citep{Adjiman1998a},
+$d_i = \max\{0, \sum_{j \ne i} \lvert [H]_{ij} \rvert - h^L_{ii}\}$, where $h^L_{ii}$
+is the lower end of $[H]_{ii}$, or its scaled variant. Then, for every $x \in [x]$,
 \begin{equation}\label{eq:bound}
   L(x) \ge L(\hat x) + \nabla L(\hat x)^\top (x - \hat x)
-          - \frac{1}{2} \sum_i d_i (x_i - \hat x_i)^2 .
+          - \frac{1}{2} \sum_i d_i (x_i - \hat x_i)^2 ,
 \end{equation}
-The right-hand side is separable, so it is bounded below over $[x]$ in closed form, in
-$O(n)$ operations once the gradient is known. Combined with \eqref{eq:weak} and
-evaluated in interval arithmetic, it yields a rigorous lower bound on~\eqref{eq:P}
-over $[x]$, which raises the node's lower bound or prunes the node. When the Hessian
-is certified positive semidefinite on the box ($d = 0$), the bound reduces to that of
-\citet{Jansson2004convex}. It then converges to the local optimum value as the box
-shrinks around a nondegenerate KKT point.
+where $\hat x$ is projected onto the box if it lies outside. Unlike the diagonal term
+of \citet{Neumaier1996}, which is compensated by the multipliers of the active bounds,
+the shift only restores convexity and its penalty is subtracted, so the bound holds on
+any box. The right-hand side is separable, so it is bounded below over $[x]$ in closed
+form, in $O(n)$ operations once the gradient is known. Combined with \eqref{eq:weak}
+and evaluated in interval arithmetic, it yields a rigorous lower bound on~\eqref{eq:P}
+over $[x]$, which raises the node's lower bound or prunes the node. With $d = 0$ it is
+the bound of \citet{Jansson2004convex} and \citet{MessineTrombettoni2019} for convex
+programs, exact at a KKT point; with or without shift, it converges to the value of the
+Lagrangian at the limit point as the box shrinks. The multipliers come from the local
+solver that already runs for upper bounding, so nothing is solved for the bound.
 
 \paragraph{Contributions.}
 \begin{enumerate}
-\item \textbf{A certified Lagrangian lower bound for the original nonconvex problem}
-  (main contribution). It turns the multiplier certificate of
-  \citet{Neumaier2004} into a node lower bound for general nonlinear problems. It
-  reuses the multipliers of the local solver that already performs upper bounding, so
-  it needs no relaxation, no subgradient iterations and no auxiliary optimization
-  problem or multiplier computation. Its only extra cost is one interval evaluation of
-  the Hessian of the Lagrangian per call. It handles nonlinear equalities, through the
+\item \textbf{A Lagrangian lower bound at every node} (main contribution). It turns the
+  multiplier certificates of \citet{Neumaier2004} and the convexity argument of
+  \citet{Neumaier1996} into a rigorous node lower bound for general nonlinear problems,
+  valid on any box. It reuses the multipliers of the local solver that already performs
+  upper bounding, so it needs no relaxation, no auxiliary optimization problem and no
+  computation of multipliers; its main cost is one interval evaluation of the Hessian
+  of the Lagrangian. It handles nonlinear equalities, through the
   $\varepsilon_h$-correction in~\eqref{eq:weak}, and boxes on which the Lagrangian is
-  not convex, through the diagonal shift in~\eqref{eq:bound}; on boxes where convexity
-  is certified it is the bound of \citet{Jansson2004convex}.
-\item \textbf{Making the bound cheap and tight}: a backoff that applies it only where it
-  pays off, and positive-semidefiniteness tests of increasing strength (interval
-  Gerschgorin, comparison matrix, midpoint--radius test with an interval Cholesky
-  factorization) that are tried first, the diagonal shift being used only when they
-  fail. The certificate closes convex problems at the root, where the shift alone is
-  too weak; the shift keeps the bound on nonconvex boxes. The bound costs less than 1\%
-  of the running time and does not change the time per node. The same separable bound
-  also reduces the range of each variable, rigorously and at $O(n)$ extra cost.
-\item \textbf{An experimental study} on 298 instances of the COCONUT benchmark \citep{Shcherbina2003}: an
-  ablation (IbexOpt without local solver, with the local solver for upper bounding
-  only, and with the Lagrangian bound) and a comparison with SCIP~10. With the
-  Lagrangian bound, the rigorous solver solves 240 instances in 1200~s, against 229
-  without it, and its solving time drops to 0.50 [0.35, 0.69] of the time without it
-  on the instances that take more than a second (36 instances faster, 2 slower). With
-  the same variable domains for both solvers, it solves 245 instances and SCIP~10 224;
-  SCIP is faster on 40 of the 66 instances both solve in more than a second.
+  not convex, through the diagonal shift in~\eqref{eq:bound}.
+\item \textbf{Certificate first, shift as fallback, and range reduction.}
+  Positive-semidefiniteness tests of increasing strength (interval Gerschgorin,
+  comparison matrix, midpoint--radius test with an interval Cholesky factorization) are
+  tried before the shift: the certificate closes convex problems at the root, where the
+  shift alone is too weak, and the shift keeps the bound on nonconvex boxes. A backoff
+  applies the bound only where it pays off. The same separable expression reduces the
+  range of each variable, rigorously and at $O(n)$ extra cost.
+\item \textbf{An experimental study} on 298 instances of the COCONUT benchmark
+  \citep{Shcherbina2003}: an ablation (IbexOpt without local solver, with the local
+  solver for upper bounding only, and with the Lagrangian bound), the variants of the
+  bound, where it acts in the search, and a comparison with SCIP~10. With the bound,
+  the rigorous solver solves 240 instances in 1200~s, against 229 without it, and its
+  solving time drops to 0.50 [0.35, 0.69] of the time without it on the instances that
+  take more than a second (36 instances faster, 2 slower); the bound costs less than
+  1\% of the running time, and range reduction lowers the time by a further 5\%
+  (16 faster, none slower). With the same variable domains for both solvers, it solves
+  245 instances and SCIP~10 224; SCIP is faster on 40 of the 66 instances both solve in
+  more than a second.
 \end{enumerate}
 
 The paper is organized as follows. Section~\ref{sec:related} reviews related work.
 Section~\ref{sec:prelim} recalls the interval branch and bound of IbexOpt and how it
-uses a local solver. Section~\ref{sec:bound} presents the certified Lagrangian bound,
-its rigorous evaluation, the convexity certificates and the diagonal shift, and its
-integration in the search. Section~\ref{sec:exp} reports the experiments and
-Section~\ref{sec:concl} concludes.
+uses a local solver. Section~\ref{sec:bound} presents the certified Lagrangian bound, its rigorous
+evaluation, the convexity certificates and the diagonal shift, its integration in the
+search and the range reduction it yields. Section~\ref{sec:exp} reports the experiments
+and Section~\ref{sec:concl} concludes.
 
 \section{Related work}\label{sec:related}
 
