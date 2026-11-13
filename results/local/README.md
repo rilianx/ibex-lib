@@ -617,3 +617,34 @@ all 298:
 - The 2 losses come from the scaled shift, not from the combination: chenery-1 120 ->
   254 s (6520 -> 28936 nodes; ascaled has the same 28936 nodes) and launch 3.6 -> 10.8 s
   (26 -> 210 nodes; ascaled/acert0 194, and launch is timing-sensitive, see E4).
+
+### E6b: why the scaled shift loses on chenery-1 (ACID tuning)
+
+chenery-1: acvx0 (`--cvx-test 2`) 6520 nodes / 120 s, ascaled and acomb (`--cvx-test 3`/`4`)
+28936 nodes / 254 s. The JSON shows the cause: **`acid_nbcidvar` 33 with acvx0, 0 with
+ascaled/acomb**. The plain shift never raises a node's lower bound there (`cvx_raised`
+0), the scaled shift raises 3721 and prunes 2669; ACID (adaptive 3BCID, retuned every
+1000 nodes on 50 nodes from the gain in box width each varCID brings) then concludes
+that 3BCID is not worth it and stops using it (29 tuning phases, final nbcidvar 0).
+With ACID fixed (`--acid-fixed 33`, no tuning) the scaled shift is better, as expected
+from a tighter bound:
+
+| chenery-1, TLIM 1200 | nodes | time (s) | cvx_raised / pruned | nbcidvar |
+|---|---|---|---|---|
+| --cvx-test 2, adaptive ACID | 6520 | 117.9 | 0 / 0 | 33 |
+| --cvx-test 3, adaptive ACID | 28936 | 249.6 | 3721 / 2669 | 0 |
+| --cvx-test 2, --acid-fixed 33 | 13582 | 223.1 | 0 / 0 | 33 (fixed) |
+| --cvx-test 3, --acid-fixed 33 | 8366 | 148.6 | 192 / 128 | 33 (fixed) |
+
+So the loss is an interaction with ACID's adaptive tuning, not a weaker bound. A
+plausible mechanism (not verified): the raised lower bound already narrows the
+objective variable, which ACID handles first, so the relative width gains ACID
+measures during tuning fall under its threshold. On the other 48 instances where
+acvx0 and ascaled differ (nodes or nbcidvar), nbcidvar changes little and the node
+differences are small; chenery-1 is the only collapse to 0.
+
+Bug found on the way (auxiliary option, not used by any arm): **`--acid-fixed 0`
+segfaults** (exit 139) on chenery-1. In `CtcAcid::contract`, with vhandled = 0
+`compute_smearorder` is skipped, so `smearorder` is empty and `putobjfirst()` erases
+`find(...) == end()`. In adaptive mode nbcidvar = 0 does not crash because
+`smearorder` keeps the order of an earlier call.
