@@ -66,6 +66,7 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     acert1) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 1" ;;  # E2: certify only (+ comparison matrix, interval Cholesky)
     ascaled) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 3" ;;  # E3: scaled Gerschgorin shift
     acomb) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 4" ;;  # certify (Cholesky) else scaled shift
+    acombr) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-reduce" ;;  # acomb + range reduction with the bound
     astatsc) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-stats" ;;  # E4 with acomb
     anobo) d=1e8;  x="--cvx-close --cvx-test 2" ;;  # E3: shift without backoff
     astats) d=1e8;  x="--cvx-close --cvx-backoff=64 --cvx-test 2 --cvx-stats" ;;  # E4: acvx0 + statistics

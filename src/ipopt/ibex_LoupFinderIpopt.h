@@ -177,7 +177,10 @@ namespace ibex {
       public:
         // lower bound of f over the feasible part of box if the Lagrangian is
         // certified convex there, -oo otherwise
-        double cvx_bound(const IntervalVector& box, bool* certified);
+        double cvx_bound(const IntervalVector& box, bool* certified, IntervalVector* red=NULL);
+        void cvx_reduce_box(const IntervalVector& box, IntervalVector& red, const IntervalVector& xh,
+                            const IntervalVector& grad, const std::vector<double>& dshift,
+                            const Interval& L0, int m, const std::vector<double>& lam);
         bool certify_psd(const IntervalMatrix& H);
         bool log_pending=false, log_forced=false; double log_loup_in=0, log_time=0, log_value=0, log_width=0, log_dist=0, log_node_lb=0; int log_status=0, log_depth=0;  // IBEX_IPOPT_LOG
         int log_inner=-1, log_corr_status=-1, log_corr_nodes=0; double log_goal=0, log_viol=0, log_corr_time=0, log_corr_loup=0;

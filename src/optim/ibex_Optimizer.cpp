@@ -29,6 +29,10 @@ int optimizer_node_depth = -1;
 // Lagrangian bound), applied after the upper bounding; NULL: none
 double (*optimizer_extra_lb)(const IntervalVector&) = NULL;
 long optimizer_extra_lb_raised = 0, optimizer_extra_lb_pruned = 0;
+// during the call to optimizer_extra_lb: the node's box (without the goal
+// variable), which the hook may contract (optimality-based range reduction);
+// it is written back into the cell at the end of the node. NULL otherwise.
+IntervalVector* optimizer_extra_box = NULL;
 
 /*
  * TODO: redundant with ExtendedSystem.
@@ -277,7 +281,10 @@ void Optimizer::contract_and_bound(Cell& c) {
 	}
 
 	if (optimizer_extra_lb!=NULL && !y.is_empty()) {
+		optimizer_extra_box = &tmp_box;
 		double elb = optimizer_extra_lb(tmp_box);
+		optimizer_extra_box = NULL;
+		if (tmp_box.is_empty()) { c.box.set_empty(); return; }
 		if (elb > y.lb()) {
 			optimizer_extra_lb_raised++;
 			y &= Interval(elb, POS_INFINITY);

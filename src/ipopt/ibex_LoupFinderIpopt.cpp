@@ -92,6 +92,11 @@ namespace ibex {
   double cvx_total_time=0;   // CPU time in the convexity bound (JSON)
   long cvx_raised=0, cvx_pruned=0;
   extern double (*optimizer_extra_lb)(const IntervalVector&);
+  extern IntervalVector* optimizer_extra_box;
+  // --cvx-reduce: optimality-based range reduction with the same separable
+  // bound (counters: variable bounds tightened, boxes emptied)
+  bool cvx_reduce=false;
+  long cvx_reduced=0, cvx_reduce_emptied=0;
   namespace { LoupFinderIpopt* cvx_finder=NULL;
     // backoff: after a node where the Lagrangian is not certified convex, the
     // next check is done 2x later (up to cvx_backoff_max nodes); a certified
@@ -102,7 +107,7 @@ namespace ibex {
       if (cvx_backoff_max > 1 && cvx_skip > 0) { cvx_skip--; return NEG_INFINITY; }
       bool cert = false;
       std::clock_t c0 = std::clock();
-      double lb = cvx_finder->cvx_bound(b, &cert);
+      double lb = cvx_finder->cvx_bound(b, &cert, cvx_reduce ? optimizer_extra_box : NULL);
       cvx_total_time += double(std::clock() - c0) / CLOCKS_PER_SEC;
       if (cvx_backoff_max > 1) {
         // a check pays off when the bound beats the node's own lower bound
@@ -598,7 +603,7 @@ namespace ibex {
       if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
     }
 
-    double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified) {
+    double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified, IntervalVector* red) {
       if (certified) *certified = false;
       if (!cvx_have || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return NEG_INFINITY;
       int n = sys.nb_var, m = sys.f_ctrs.image_dim();
@@ -726,7 +731,65 @@ namespace ibex {
           bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
       if (!std::isfinite(lb)) return NEG_INFINITY;
+      if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam);
       return lb;
+    }
+
+    // Optimality-based range reduction with the separable bound: for x in the
+    // box and feasible, f(x) >= S_i + t_i(x_i), with
+    //   t_i(v) = dL_i(xh) (v - xh_i) - d_i/2 (v - xh_i)^2   (concave in v)
+    // and S_i the bound without the i-th term (each other term at its minimum
+    // over the box). Values v with S_i + t_i(v) > ymax hold no better point.
+    // t_i concave: its minimum over [c, u] is min(t_i(c), t_i(u)), so [c, u] is
+    // removed when the interval lower ends of t_i at c and at u both exceed
+    // R_i = ymax - S_i (rounded up); c is found by bisection.
+    void LoupFinderIpopt::cvx_reduce_box(const IntervalVector& box, IntervalVector& red,
+                                         const IntervalVector& xh, const IntervalVector& grad,
+                                         const std::vector<double>& dshift, const Interval& L0,
+                                         int m, const std::vector<double>& lam) {
+      double ymax = optimizer->compute_ymax();
+      if (!(ymax < POS_INFINITY)) return;
+      int n = box.size();
+      std::vector<Interval> T(n);
+      Interval S = L0;   // L(xh) + sum_i lower ends of the terms - equality correction
+      for (int i=0; i<n; i++) {
+        T[i] = grad[i] * (box[i] - xh[i]);
+        if (dshift[i] > 0) T[i] -= Interval(dshift[i]) / 2.0 * Interval(sqr(box[i] - xh[i]).ub());
+        if (!(T[i].lb() > NEG_INFINITY)) return;
+        S += Interval(T[i].lb());
+      }
+      for (int k=0; k<m; k++)
+        if (lam[k]!=0 && sys.ctrs.size()==(size_t) m && sys.ctrs[k].op==EQ)
+          S -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
+      for (int i=0; i<n; i++) {
+        if (box[i].is_unbounded() || box[i].is_degenerated()) continue;
+        double R = (Interval(ymax) - (S - Interval(T[i].lb()))).ub();
+        if (!std::isfinite(R)) continue;
+        Interval di = Interval(dshift[i]) / 2.0;
+        auto P = [&](double v) {   // t_i(v) > R, rigorously
+          Interval t = grad[i] * (Interval(v) - xh[i]) - di * sqr(Interval(v) - xh[i]);
+          return t.lb() > R;
+        };
+        double a = box[i].lb(), b = box[i].ub();
+        bool pa = P(a), pb = P(b);
+        if (pa && pb) { red.set_empty(); cvx_reduce_emptied++; return; }
+        double na = a, nb = b;
+        if (pb) {           // remove [c, b]: smallest c found with P(c)
+          double lo = a, hi = b;
+          for (int it=0; it<40 && lo < hi; it++) { double mid = lo + (hi - lo) / 2; if (mid <= lo || mid >= hi) break; if (P(mid)) hi = mid; else lo = mid; }
+          nb = hi;
+        }
+        if (pa) {           // remove [a, c]
+          double lo = a, hi = b;
+          for (int it=0; it<40 && lo < hi; it++) { double mid = lo + (hi - lo) / 2; if (mid <= lo || mid >= hi) break; if (P(mid)) lo = mid; else hi = mid; }
+          na = lo;
+        }
+        if (na > a || nb < b) {
+          red[i] &= Interval(na, nb);
+          cvx_reduced++;
+          if (red[i].is_empty()) { red.set_empty(); cvx_reduce_emptied++; return; }
+        }
+      }
     }
 
     // the center of the box; an unbounded box has no finite center: there,
