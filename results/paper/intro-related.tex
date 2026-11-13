@@ -120,7 +120,8 @@ shrinks around a nondegenerate KKT point.
   factorization) that are tried first, the diagonal shift being used only when they
   fail. The certificate closes convex problems at the root, where the shift alone is
   too weak; the shift keeps the bound on nonconvex boxes. The bound costs less than 1\%
-  of the running time and does not change the time per node.
+  of the running time and does not change the time per node. The same separable bound
+  also reduces the range of each variable, rigorously and at $O(n)$ extra cost.
 \item \textbf{An experimental study} on 298 instances of the COCONUT benchmark \citep{Shcherbina2003}: an
   ablation (IbexOpt without local solver, with the local solver for upper bounding
   only, and with the Lagrangian bound) and a comparison with SCIP~10. With the
@@ -274,8 +275,8 @@ closed-form bound~\eqref{eq:bound}, covers general twice-differentiable function
 is rigorous.
 
 In BARON, the multipliers of the relaxation are used for optimality-based domain
-reduction \citep{RyooSahinidis1996}. Extending our bound to reduce variable ranges
-with the same tangent is a natural next step.
+reduction \citep{RyooSahinidis1996}. We apply the same idea with the tangent of
+the Lagrangian instead (Section~\ref{sec:red}).
 
 \subsection{Certifying convexity}
 
@@ -335,7 +336,8 @@ Section~\ref{sec:bound} plugs in.
 \item \textbf{New:} \emph{Lagrangian bound}: $\underline{y} \gets
   \max(\underline{y}, \beta)$ with $\beta$ the bound~\eqref{eq:bound} on
   the child's box from the stored pair (Algorithm~\ref{alg:bound}); if
-  $\underline{y} > \text{loup} - \text{prec}$, discard.
+  $\underline{y} > \text{loup} - \text{prec}$, discard. Optionally, the same bound
+  reduces the range of each variable (Section~\ref{sec:red}).
 \item Push the child; stop when the heap is empty or
   $\text{loup} - \min \underline{y} \le \text{prec}$.
 \end{enumerate}
@@ -438,6 +440,28 @@ scaled ones), so Proposition~\ref{prop:conv} applies to it as well.
 So, around a KKT point whose multipliers the local solver returned, the bound closes
 the gap as the boxes shrink, whatever the sign of the curvature of $L$ there.
 
+Figure~\ref{fig:example} illustrates the bound on a one-dimensional problem,
+$\min x^4 - 3x^2 + x$ subject to $-x - 1 \le 0$ on $[-2, 2]$. The local solution is
+$\hat x = -1$ with $f^* = -3$ and multiplier $\hat\mu = 3$, so
+$L(x) = x^4 - 3x^2 - 2x - 3$ and $L''(x) = 12x^2 - 6$. On a small box around $\hat x$
+the Lagrangian is convex and the bound equals $f^*$ (b); on a wide box it needs a
+shift and is valid but weak (c); and on a box that does not contain $\hat x$, with the
+same multipliers and $\hat x$ projected onto the box, it exceeds the incumbent value
+and prunes the box (d).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{example-bound.png}
+\caption{The bound on $\min x^4 - 3x^2 + x$ s.t.\ $-x - 1 \le 0$, $x \in [-2, 2]$, with
+the local solution $\hat x = -1$, $\hat\mu = 3$ and $\text{loup} = f^* = -3$. (a) $L$
+lies below $f$ on the feasible set and touches it at $\hat x$. (b) On
+$[-1.3, -0.8]$, $L'' \ge 1.7$: no shift, $\beta = f^*$. (c) On $[-1.2, 0.2]$,
+$\min L'' = -6$: shift $d = 6$, $\beta = -7.32$. (d) On $[-0.6, -0.4]$, which does not
+contain $\hat x$: $\bar x = -0.6$, $d = 4.08$, $\beta = -2.83 > \text{loup}$, the box is
+pruned. Script: \texttt{results/paper/example\_bound.py}.}
+\label{fig:example}
+\end{figure}
+
 \subsection{Rigorous evaluation}
 
 All quantities are evaluated with interval arithmetic at the point interval
@@ -523,6 +547,23 @@ Algorithm~\ref{alg:bound} summarizes one call.
 \State \Return $\beta$ \Comment{the caller sets $\underline{y} \gets \max(\underline{y}, \beta)$}
 \end{algorithmic}
 \end{algorithm}
+
+\subsection{Range reduction with the same bound}\label{sec:red}
+
+The bound of Proposition~\ref{prop:bound} is separable: for every feasible $x$ in the
+box, $f(x) \ge S_i + t_i(x_i)$, where
+$t_i(v) = \partial_i L(\bar x)(v - \bar x_i) - \frac12 d_i (v - \bar x_i)^2$ and $S_i$
+is the bound with the $i$-th term removed (every other term at its minimum over the
+box, and the $\varepsilon_h$-correction). Every value $v$ of $x_i$ with
+$S_i + t_i(v) > \text{loup} - \text{prec}$ can be removed: no point with $x_i = v$ is
+better than the incumbent. This is optimality-based range reduction
+\citep{RyooSahinidis1996} with the Lagrangian tangent instead of the dual of a
+relaxation. Since $t_i$ is concave, its minimum over a subinterval $[c, u]$ is
+$\min(t_i(c), t_i(u))$: the subinterval at the upper end is removed when the
+lower ends of the interval evaluations of $t_i$ at $c$ and at $u$ both exceed
+$\text{loup} - \text{prec} - S_i$ (rounded upward), and $c$ is found by bisection;
+likewise at the lower end. If both ends of a domain qualify, the node is pruned. The
+cost is $O(n)$ interval evaluations per bisection step, on top of the bound.
 
 \section{Experiments}\label{sec:exp}
 
@@ -613,7 +654,8 @@ Gerschgorin shift without backoff.
 \hline
 variant & solved /298 & time vs.\ default [95\% CI] & W/L & nodes \\
 \hline
-certify, else shift (default) & \textbf{240} & 1.00 & -- & 1.00 \\
+certify, else shift (default) & 240 & 1.00 & -- & 1.00 \\
++ range reduction (Section~\ref{sec:red}) & 240 & \textbf{0.97} [0.95, 0.99] & 11/0 & 0.98 \\
 certify only, Gerschgorin & 235 & 1.20 [1.08, 1.40] & 0/19 & 1.19 \\
 certify only, + comparison matrix, Cholesky & 237 & 1.06 [1.00, 1.14] & 1/14 & 1.02 \\
 Gerschgorin shift & 237 & 1.12 [1.01, 1.29] & 1/10 & 1.14 \\
@@ -634,6 +676,14 @@ boxes and loses ex8\_4\_1 and robot (twice slower). The shift is better there; t
 scaled rule also solves ex8\_4\_6 and ex8\_4\_6ter. The default gets both, and on
 dnieper does better than either (68 nodes against 150 and 434). The backoff divides
 the cost of the bound by about seven without losing nodes.
+
+Range reduction with the same bound (Section~\ref{sec:red}) never makes an instance
+slower by more than 5\%: on the 223 instances it reduces the time to 0.97 [0.95, 0.99]
+of the default, with 11 instances faster and none slower, and on all 298 to
+0.95 [0.90, 0.98] (16 faster, none slower), solving the same 240 instances. The largest
+gains are on ex8\_4\_1 (69~s to 10.5~s, 10\,100 to 1\,638 nodes), robot (86~s to 46~s)
+and dnieper (68 to 4 nodes). We keep it as an option: the other results of this
+section are reported for the default without it.
 
 The two instances where the default is slower than the baseline do not come from a
 weaker bound. On launch, the bound raises the lower bound of a single node and prunes none; the difference
@@ -724,8 +774,10 @@ boxes of nonconvex problems the bound is weak and the backoff mostly skips it. I
 on few nodes (0.2\% are pruned by it), so its value lies in the instances it closes,
 not in a uniform speed-up.
 
-\emph{Future work.} Optimality-based range reduction with the same tangent
-\citep{RyooSahinidis1996}; better shifts (E-matrix rules, the exact minimum of the
+\emph{Future work.} Range reduction with the tangent of the Lagrangian of the
+constraints only, with multipliers from a phase-1 problem, would certify the absence of
+feasible points around near-solutions, which our quick test with residual multipliers
+did not achieve; better shifts (E-matrix rules, the exact minimum of the
 one-dimensional concave terms); calling the local solver where the bound is weak, to
 refresh the multipliers; branching on the variables with $d_i > 0$
 \citep{Adjiman1998b}; and a coupling with adaptive contractors such as ACID that does
