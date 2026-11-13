@@ -314,7 +314,8 @@ introduced in~\cite{reyes2023preconditioning}, adds one detail: each slack is
 bounded by $\square(A_{i:}\iv{x})$ even when a side of $\iv{b}_i$ is infinite,
 so a multiplier of the ``wrong'' sign on a one-sided row gives a weaker but
 finite bound, and literally any $\lambda$ certifies. Two standard facts
-complete what the design uses. At an optimal basis of $\mathrm{LP}_k^{\min}$ with
+complete what the design uses. At an optimal basis of the bound problem
+$\mathrm{LP}_k^{\min}$ (see~\eqref{eq:lpk}) with
 $z_k$ basic, $\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value in
 exact arithmetic, by LP duality~\cite[Prop.~1]{reyes2023preconditioning}; in
 floating point the excess is at most $\sum_j\wid(\iv{\gamma}_j)\magn(\iv{z}_j)$
@@ -349,9 +350,9 @@ evaluation of $\iv{\gamma}$ and $\iv{C}_k$, not in the pivoting. Pivoting in
 interval arithmetic pays the width growth of interval Gaussian
 elimination~\cite{neumaier1990interval}, and solving each LP exactly or to high
 precision~\cite{applegate2007exact,gleixner2016iterative} buys an exactness
-that the bound does not need; an early version of our contractor that pivoted
-in interval arithmetic was 2.8 times slower, with the same contraction\todo{decir sobre qu\'e
-instancias se midi\'o}.
+that the bound does not need. On the root boxes of 153 instances, an early
+version of our contractor that pivoted in interval arithmetic took 2.8 times as
+long, with the same mean contraction (24.6\% against 24.0\%).
 
 \subsection{One pass over the bounds}\label{sec:pass}
 
@@ -362,7 +363,6 @@ the up to $2n$ bound problems
 \mathrm{LP}_k^{\sigma}:\quad \sigma\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
 \qquad k\le n,\ \sigma\in\{\min,\max\},
 \end{equation}
-and we write $\mathrm{LP}_k$ when the sense does not matter.
 Algorithm~\ref{alg:pass} gives the pass. The set $L$ holds the bounds still
 to solve (line~\ref{ap:init}). Each LP is warm-started from the final basis of
 the previous one, and the engine returns the multipliers of the basis where it
@@ -428,7 +428,7 @@ smaller LP to SC and to an external solver alike.
 \section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
 
 For each structural variable $x_k$ the pass of Section~\ref{sec:pass} needs
-the two bounds of $\mathrm{LP}_k$~\eqref{eq:lpk}. We write $[l_j,u_j]:=\iv{z}_j$.
+the bound problems $\mathrm{LP}_k^{\min}$ and $\mathrm{LP}_k^{\max}$~\eqref{eq:lpk}. We write $[l_j,u_j]:=\iv{z}_j$.
 A basis is a set of $m$ columns of $\Abar$ forming a nonsingular matrix $B$;
 $B_r$ is the variable basic in row $r$, $x_B$ the vector of values of the basic
 variables, $N$ the set of nonbasic variables and $\Abar_N$ their columns. With
@@ -478,7 +478,9 @@ line~\ref{as:keep}, the warm start, starts each LP from the final basis of
 the previous one, with its factors,
 and line~\ref{as:opt} returns the basis as it is. The certificate is computed
 by the caller, in lines~\ref{ap:empty}--\ref{ap:contract} of
-Algorithm~\ref{alg:pass} (Section~\ref{sec:certif}).
+Algorithm~\ref{alg:pass}, once per LP and over the rows with $\lambda_i\neq0$;
+it costs the same as the Neumaier--Shcherbina post-processing of the dual of an
+external solver (1.3--3.1\,$\mu$s per LP on three optimization problems).
 
 \begin{algorithm}[!tp]
 \caption{\textsc{Solve} in SC: one LP of the pass. Comments marked $\star$ point to the work a general-purpose solver does
@@ -546,7 +548,7 @@ differently.}\label{alg:sc}
 
 The first LP of a pass starts from the slack basis $B=-I_m$
 (line~\ref{as:slack} of Algorithm~\ref{alg:sc}), which is dual feasible for
-every $\mathrm{LP}_k$ (Proposition~\ref{prop:start}), and is solved by the
+every $\mathrm{LP}_k^{\sigma}$ (Proposition~\ref{prop:start}), and is solved by the
 dual method, with no phase~1: the costs of the slacks are zero, so $\lambda=0$
 and $d=c$ (line~\ref{as:lam}); every nonbasic variable starts at its lower
 bound, and for a maximization line~\ref{as:reloc} moves $z_k$ to its upper
@@ -571,7 +573,7 @@ is nondecreasing in $t$.
 Validity is Proposition~\ref{prop:valid}. With $z_k$ basic, $d=e_k-\Abar^T\lambda_t$
 has $d_k=0$, so $\gamma_k=1$, $\gamma_j=-d_j$ for $j\neq k$, and
 $\inff\iv{C}_k=\sum_{j\neq k}\min_{z_j\in\iv{z}_j}d_jz_j=\min_{z\in\iv{z}}d^Tz$,
-the Lagrangian dual function of $\mathrm{LP}_k$ at $\lambda_t$, which the
+the Lagrangian dual function of $\mathrm{LP}_k^{\min}$ at $\lambda_t$, which the
 iterates of the dual simplex method do not decrease.
 \end{proof}
 
@@ -579,12 +581,12 @@ Both warm starts reach an optimal basis and give the same bound; they differ
 in cost. A nonbasic variable that must move to its opposite bound costs the
 primal warm start an iteration; relocation moves it without one, but changes
 the values of the basic variables, which may then violate their bounds and
-cost the dual method its own iterations. On systems of equations every
-row is a narrow slab (its slack interval covers 13\% of the range of the row
-over the box, on average), and a median of 1.9 nonbasic variables per LP
-change side, against 0.3 on optimization problems, whose slack intervals cover
-48\% of the range\todo{decir d\'onde se midi\'o: banco de la
-Secci\'on~\ref{sec:bank}?}. SC therefore uses the primal warm start in the optimizer,
+cost the dual method its own iterations. On systems of equations the rows
+are narrow slabs: measured inside the search (one seed, 60\,s, on 165 systems
+and 140 optimization problems), the slack interval of a row covers on average
+13\% of the range of the row over the box, against 48\% on optimization
+problems, and a median of 1.9 nonbasic variables per LP change side, against
+0.5. SC therefore uses the primal warm start in the optimizer,
 where the dual one is 4\% slower, and the dual one on systems of equations,
 where both cost about the same; with \texttt{compo}, where neither wins on
 every system, it alternates the two on the first nodes and keeps the one with
@@ -618,8 +620,8 @@ infeasible and $\rho_r$ is a Farkas ray (line~\ref{as:ray}).
 the dual method~\cite{koberstein2005dual}: devex
 pricing~\cite{harris1973devex} for the leaving variable and the long-step (bound
 flipping) ratio test~\cite{maros2003generalized}. On average
-they did not pay (Section~\ref{sec:discussion}), and SC uses the textbook
-rules above: on the small LPs of a pass, the choice of pivots matters less
+they did not pay (Section~\ref{sec:discussion}), and SC keeps the rules just
+described, the largest violation and Harris' ratio test: on the small LPs of a pass, the choice of pivots matters less
 than the work that surrounds them.
 
 \paragraph{Primal steps, tolerances.} Primal steps
@@ -635,8 +637,7 @@ relative to the value tested, and $10^{-6}$ with \texttt{compo} on systems of
 equations, whose nearly parallel rows make the LPs degenerate. A tolerance is a
 matter of efficiency, not of rigor: too wide, it weakens the contraction; too
 tight, the warm-started simplex reports infeasibility on boxes that are not
-empty, the ray fails the residual test, and SC solves that LP again from the
-slack basis.
+empty, with rays that do not certify it.
 
 \paragraph{Factorization.} SC keeps a sparse LU factorization of $B$, computed by the factorization code
 of SoPlex and updated after each pivot by the Forrest--Tomlin
@@ -646,19 +647,6 @@ every 32, to limit drift.
 With one slack per row, the basis of SC has dimension $m$, the number of rows:
 SC works in what SoPlex calls the column representation.
 
-\subsection{Certification}\label{sec:certif}
-
-When an LP terminates, the certificate $\iv{\gamma}=\Abar^T\lambda$ is computed
-once in outward-rounded interval arithmetic, over the rows with
-$\lambda_i\neq 0$, and $\iv{C}_k$ and $\iv{R}$ follow in $O(n+m)$. When a dual
-iteration finds a violated basic variable and no entering variable in its row
-$r$, $\lambda=\rho_r$ is a Farkas ray, and the residual test turns it into a
-proof of emptiness. Certifying a bound costs the same as the
-Neumaier--Shcherbina post-processing of an external solver's dual
-(1.3--3.1\,$\mu$s per LP on three optimization problems); the difference
-between the approaches is not the cost of a certificate but how $\lambda$ is
-produced: by a call that treats each LP as a new problem, or by one simplex
-that serves the whole pass.
 
 % =====================================================================
 \section{Experimental evaluation}\label{sec:experiments}
@@ -728,24 +716,12 @@ HC4) with the LSmear bisector, on the 242 systems of the Ibex solver benchmark
 that some configuration solves within 3600\,s, 2 seeds, 60\,s per run; for
 optimization, IbexOpt on the 240 problems of the Ibex optimization benchmark
 that some configuration solves within 3600\,s, 4 seeds, 60\,s per run. Three
-of them, bearing, alkyl and alkylbis, are left out of the means of the solver
-(Section~\ref{sec:discussion}). All
-runs were made on two Intel Xeon E5-2620 v4 processors (2.1\,GHz, 16 cores)
-with 64\,GB of memory, under Linux 6.17, with at most 6\,GB per run, eight
-or fourteen runs at a time (the runs of R0 and R1 inside the search were made
-at eight; the ratio of R2 to R1 is the same against them as against runs of
-R2 made at eight); the code is compiled with GCC 13.3 (\texttt{-O3}) with the
-GAOL~4.2.0 interval library. CPU times are process times. The code, the
-banks of passes and the scripts are public (see the statement of code and
-data availability).
+of them, bearing, alkyl and alkylbis, are left out of the means: their narrow
+equalities make the upper bounding of IbexOpt, not the contractor, decide the
+search, whose tree changes by two orders of magnitude between seeds. All runs
+were made on an Intel Xeon E5-2620 v4 at 2.1\,GHz, with at most 6\,GB per run
+and several runs at a time; times are CPU times.
 
-\paragraph{Rigor.}
-SC is rigorous by Proposition~\ref{prop:valid}; we also checked it against the
-LP hull. On four systems, for each of the 2\,834 bounds where SC contracted more
-than the polytope-hull contractor of Ibex on the same box and polytope, we
-solved the bound LP over the input box with a fresh instance of SoPlex; SC
-attained this hull in 98\% of these bounds and went beyond it in 19, all within
-the $10^{-9}$ feasibility tolerance of the oracle.
 
 \subsection{Cost of a pass}\label{sec:bank}
 
@@ -754,11 +730,11 @@ passes: for 110 instances, 36 systems of equations (one per family) and 74
 optimization problems (one per family and size class, among those on which R0
 takes more than 1\,s), we recorded the input boxes of 1\,000 calls of the
 contractor spread along a search with SC, with the affine relaxation, and
-replayed every call with each rung from the same input box and relaxation. Because the affine
-relaxation of only six systems exceeds 30 rows, a second bank does the same
-with \texttt{compo}, the best relaxation on large systems, for 41 systems
-whose relaxation has more than 30 rows (31 to 687, median 63; one per family,
-R0 above 1\,s). The 74 optimization
+replayed every call with each rung from the same input box and relaxation.
+The affine relaxation exceeds 30 rows on only six of these systems, so a
+second bank studies large relaxations: it does the same with \texttt{compo},
+the best relaxation on large systems, for 41 systems whose relaxation has more
+than 30 rows (31 to 687, median 63; one per family, R0 above 1\,s). The 74 optimization
 problems do not count three that were left out: on pentagon and ex8\_2\_4,
 SoPlex as Ibex uses it aborted with an internal exception, and on concon the
 affine linearization failed for every rung. Two choices of the bank should be
@@ -809,35 +785,36 @@ problems takes 264\,$\mu$s with R0, 136 with the bare simplex and 88 with SC;
 on small systems, 199, 109 and 85\,$\mu$s (medians weigh the many fast
 instances, where SC gains most).
 
-The gain of SC lies in the cost of an LP, not in its pivots. The tuned SoPlex
-and the bare simplex need a median of 1.8 pivots per LP, SC 2.8, because
-SoPlex often ends an LP at a vertex that is already optimal for the next bound
-(Section~\ref{sec:discussion}); yet an LP of SC costs 11.6\,$\mu$s on
-optimization problems and 16.3 on small systems, against 16.2 and 21.6 for
-the bare simplex. What SC does not do is what makes the difference. We measured
-it against the tuned SoPlex (R2), whose calls perform all of that work:
-re-inserting into SC, at every LP, the work of a call of the tuned SoPlex,
-on separate vectors so that the contraction does not
-change, brings a pass of SC from 0.55--0.60 to 0.88--0.92 times that of R2
-(geometric means on 100 of the 104 instances; the emulation failed on four):
-refactorizing at every LP accounts for 49--56\% of the gap (in logarithm),
-verifying the solution for 22--23\%, and recomputing the vectors and copying
-the solution for 7--8\%. Against the bare simplex (R3) the picture changes, since R3 already skips
-the checks and copies of the \texttt{SoPlex} class. Its own refactorization
-before an optimum and precision check are not what separates it from SC:
-with two switches added to \texttt{SPxSolver} that skip them, the
-factorizations per LP drop from 0.79 to 0.10 on ex7\_2\_3, yet a pass of the
-bare simplex becomes only 7\% cheaper on the optimization problems and 4\%
-on the systems, with the same contraction, and SC remains 22\% and
-12\% cheaper (geometric means; it wins on 69 of the 74 problems and 22 of the
-36 systems). On bases of 5 to 16 rows a factorization is cheap. What remains
-is the cost of a call of \texttt{SPxSolver::solve} as such: it prepares every
-LP as a new problem, rebuilding its primal and dual vectors and its pricing
-and ratio-test vectors from the factorization (4--25\% of its time in profiles
-of four problems), and runs a per-pivot bookkeeping built for general LPs. SC
-is built for the $2n$ LPs of a pass: between two LPs it recomputes the multipliers and reduced costs for the new
-objective, and the basic values when the dual warm start relocates nonbasic
-variables, and keeps its factorization.
+\paragraph{Where the gain comes from.}
+SC does not pivot less: the tuned SoPlex and the bare simplex need a median of
+1.8 pivots per LP, SC 2.8, because SoPlex often ends an LP at a vertex that is
+already optimal for the next bound (Section~\ref{sec:discussion}). Each LP of
+SC is cheaper instead: 11.6\,$\mu$s on optimization problems and 16.3 on small
+systems, against 16.2 and 21.6 for the bare simplex. Two experiments locate the
+difference.
+
+Against the tuned SoPlex (R2), we re-inserted into SC, at every LP, the work
+that a call of R2 performs, on separate vectors so that the contraction does
+not change. A pass of SC then goes from 0.55--0.60 to 0.88--0.92 times that of
+R2 (geometric means over 100 of the 104 instances; the emulation failed on
+four): refactorizing at every LP accounts for 49--56\% of the gap (in
+logarithm), verifying the solution for 22--23\%, and recomputing the vectors
+and copying the solution for 7--8\%.
+
+Against the bare simplex (R3), which already skips the checks and copies of
+the \texttt{SoPlex} class, these are not what matters. We added to
+\texttt{SPxSolver} two switches that skip its refactorization before an
+optimum and its precision check: the factorizations per LP drop from 0.79 to
+0.10 on ex7\_2\_3, yet a pass of R3 becomes only 7\% cheaper on optimization
+problems and 4\% on systems, with the same contraction, and SC remains 22\%
+and 12\% cheaper (geometric means; it wins on 69 of the 74 problems and 22 of
+the 36 systems). On bases of 5 to 16 rows a factorization is cheap. What
+remains is the cost of a call of \texttt{SPxSolver::solve} as such: it
+prepares every LP as a new problem, rebuilding its primal and dual vectors and
+its pricing and ratio-test vectors from the factorization (4--25\% of its time
+in profiles of four problems), with a per-pivot bookkeeping built for general
+LPs. Between two LPs, SC only recomputes $\lambda$, $d$ and $x_B$
+(Algorithm~\ref{alg:sc}).
 
 \paragraph{Merging pays more with SC.}
 Ordered as a ladder, each step is measured on the engine of its rung, and
@@ -901,8 +878,9 @@ to 0.79 times that of the bare simplex).
 
 \emph{Stalling} remains on a few systems: on Katsurabis-14, 17 of the
 16\,562 LPs of SC, degenerate ones, pivot until the limit of 100 iterations,
-while the bare simplex reaches an optimum on all of its LPs; the primal steps
-of SC have no protection against stalling.
+while the bare simplex reaches an optimum on all of its LPs. The primal steps
+of SC, with Dantzig's rule, have no device against stalling, such as the
+bound perturbation that SoPlex applies on degenerate steps.
 
 \emph{The systems with band structure} (Bratu, BroydenTri, BroydenBanded,
 DiscreteBoundary) are the third case: there SC makes several times the pivots
@@ -1012,44 +990,28 @@ the threshold does not matter inside this range.
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
 
-\paragraph{Why SC wins.} SC does not contract with a better polytope: every
-rung solves the same relaxation and feeds the same certificate, and from R1 on
-they contract alike. Its advantage is the cost of an LP. The ladder separates
-two parts of the cost of a call of SoPlex as Ibex makes it: the interface and
-its options (R1 to R3), which a careful integration of SoPlex removes, and
-what the simplex of SoPlex itself does at every LP, which only a simplex
-dedicated to the pass can omit. SC pivots more than SoPlex, and each LP still costs it less.
-Against the calls of the \texttt{SoPlex} class, the emulation of
-Section~\ref{sec:bank} attributes most of the gap to the refactorization and
-the verification that SC omits. Against \texttt{SPxSolver} driven directly,
-removing those two from SoPlex recovers little: what SC saves is the
-preparation of each LP as a new problem, which a solver built for one LP
-repeats at every call. That SC needs no phase~1 when the objective or the box
-changes, and keeps one basis for the whole pass, is what lets it skip that
-preparation: the certificate makes any basis usable, so between two LPs only what the new
-objective changes has to be recomputed. On small relaxations, where an LP needs two or three
-pivots, that saves 20--25\% of a pass of the bare simplex.
+\paragraph{Why SC wins.} Every rung solves the same relaxation and feeds the
+same certificate, and from R1 on they contract alike: the gain is the cost of
+an LP. The ladder separates what a careful integration of SoPlex removes, the
+interface and its options (R1 to R3), from what only a simplex dedicated to the
+pass can omit, the preparation of each LP as a new problem. The certificate
+makes the omission possible: any basis certifies and can be made dual
+feasible, so between two LPs only what the new objective changes has to be
+recomputed.
 
-\paragraph{Where it loses.} The saving is a fixed cost per LP, so its weight
-falls as the pivots per LP grow, and beyond 30 rows they dominate. There the
-cost of a pivot decides, and SoPlex has an option that SC lacks: when the rows
-outnumber the variables, as with \texttt{compo}, it represents the basis by
-rows, with the dimension of the variables instead of that of the rows.
-Against SoPlex in the column representation SC is within 4\%
-(Section~\ref{sec:bank}); the rest comes from a few degenerate LPs on which
-its primal steps stall, and from systems with band structure on which it
-pivots more. The homogeneous form with one slack per row, which makes the
-certificate and the warm starts simple, is what ties SC to the column
-representation; a self-certifying simplex in the row representation would
-keep the certificate, which needs only the multipliers, and is the natural
-next step. Meanwhile the hybrid uses each engine where it is better; on
-systems of equations, whose best relaxation is \texttt{compo}, this is what
-makes the redesigned contractor pay. On small relaxations one difference
-remains unexplained: SoPlex ends 13--40\% of its LPs on optimization problems
-at a vertex that is already optimal for the next bound, and needs fewer
-pivots than SC (1.8 against 2.8 per LP); neither a tie-break toward the
-corners of the box inside the optimal face nor a short walk inside that face
-made SC end at such vertices.
+\paragraph{Where it loses.} Beyond 30 rows the pivots dominate the cost of
+an LP, and SoPlex makes them cheaper by representing the basis by rows when
+the rows outnumber the variables (Section~\ref{sec:bank}). The homogeneous
+form, with one slack per row, which makes the certificate and the warm starts
+simple, is what ties SC to the column representation; a self-certifying
+simplex in the row representation would keep the certificate, which needs only
+the multipliers, and is the natural next step. Meanwhile the hybrid uses each
+engine where it is better. On small relaxations one difference remains
+unexplained: SoPlex ends 13--40\% of its LPs on optimization problems at a
+vertex that is already optimal for the next bound, and needs fewer pivots than
+SC (1.8 against 2.8 per LP); neither a tie-break toward the corners of the box
+inside the optimal face nor a short walk inside that face made SC end at such
+vertices.
 
 \paragraph{What did not pay.} The refinements of the dual method left out of
 SC (Section~\ref{sec:iter}), devex pricing and the long-step ratio test, help
@@ -1074,23 +1036,13 @@ did not change the search tree; what changed it was what is computed: the
 stability filter of the ratio test, the Farkas ray of the infeasible row, the
 tolerance.
 
-\paragraph{Limits.} SC removes the external LP solver from the contractor, not
-from the optimizer: the upper-bounding of IbexOpt still solves its LPs with
-SoPlex. On problems with very narrow equalities the upper-bounding becomes the
-bottleneck: on bearing, whose eight equalities are relaxed to
-$|h|\le10^{-8}$, feasible points are found only in boxes of width $10^{-4}$ to
-$10^{-3}$, and the search tree changes by two orders of magnitude between
-seeds; this is why bearing, alkyl and alkylbis are left out of the means of
-the solver. Relaxations of
-several hundred rows are still expensive for every engine: the systems of 400
-to 1\,000 variables of the benchmark exceed the limits of 60\,s and 6\,GB with
-all of them. And the gain of SC on the whole system solver is small, because
-the pass is a small part of its nodes (5\% of the CPU in the median). One use of the certificate is left
-open: when the warm-started simplex declares an infeasibility that the ray
-does not certify, SC solves the LP again from the slack basis
-(Section~\ref{sec:iter}), but the multipliers of the basis where it stopped,
-moved along the ray as long as the bound improves, already give a certified
-bound without that second LP.
+\paragraph{Limits.} SC does not remove SoPlex entirely: it factorizes its
+basis, and updates the factors, with the LU code of SoPlex
+(Section~\ref{sec:iter}). Relaxations of several hundred rows are still
+expensive for every engine: the systems of 400 to 1\,000 variables of the
+benchmark exceed the limits of 60\,s and 6\,GB with all of them. And the gain
+of SC on the whole system solver is small, because the pass is a small part of
+its nodes (5\% of the CPU in the median).
 
 % =====================================================================
 \section{Conclusion}
@@ -1116,6 +1068,9 @@ against SoPlex in the column representation, the one of SC, a pass of SC is
 within 4\%. A hybrid that chooses the engine by the size of the relaxation
 keeps the best of both. A self-certifying simplex in the row representation
 is the natural next step.
+
+\section*{Funding}
+This work was supported by Fondecyt project 1260159.
 
 \section*{Code and data availability}
 The code and data used in the experiments are archived at Zenodo
