@@ -752,3 +752,26 @@ prolog, qp1, qp1-1, qp2 (portfl1 is no longer among them: acomb closes it at the
 root). Closed only by acomb12 (31), among them ex8_4_6, ex8_4_6ter, hs102, rk23 and the
 ex6_*/ex7_* families. **IbexOpt closes more instances; SCIP is faster on most of
 those both close (40 of 66, geometric mean 1.17x).**
+
+## E8: midpoint-radius fix (8bdf74f05) does not change the results
+
+The midpoint-radius PSD test (`certify_psd`, used by `--cvx-test 1` and `4`) bounded
+the distance of the members of [H] to the symmetrised center by the row sums of the
+radius matrix, which is not symmetric (H_ab and H_ba come from different expressions);
+it could in principle certify a matrix that is not PSD. Fixed in 8bdf74f05 (approved by
+the author): the error of every symmetric member is bounded entrywise by the magnitude
+of ([H]_ab & [H]_ba) - C_ab, C the symmetrised center, in interval arithmetic.
+
+Verification: acomb rerun with the fixed binary, same protocol, into separate files.
+
+```bash
+env OUT=results/local/verify-rho-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acomb" sh results/ipopt-diam/run.sh
+env OUT=results/local/verify-rho-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acomb" sh results/anytime/run.sh
+```
+
+2026-11-13, 15:28-16:58, server idle before (load 1.7). Statuses identical on the 298
+(240 complete, 47 timeout, 9 no_lower_bound, 2 infeasible); node counts identical on
+295/298. The 3 differences are the timing-sensitive instances of E4 (correction search
+cut by its 1 s CPU limit): ex9_2_5 4 -> 6, launch 210 -> 26, robot 49980 -> 50278. So
+the fix changed no certification on these instances, and the acomb, acert1, astatsc
+and acomb12 results reported above stand; no other arm is rerun.
