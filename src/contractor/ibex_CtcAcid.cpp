@@ -142,6 +142,8 @@ void CtcAcid::contract(IntervalVector& box, ContractContext& context) {
 // en optim, l'objectif est placé en 1er
 void CtcAcid::putobjfirst() {
 	vector <int>::iterator result = find(smearorder.begin(), smearorder.end(), nb_var-1);
+	// empty order (--acid-fixed 0: compute_smearorder never called): nothing to move
+	if (result == smearorder.end()) return;
 	smearorder.erase(result);
 	smearorder.insert(smearorder.begin(),nb_var-1);
 }
