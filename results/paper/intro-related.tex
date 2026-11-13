@@ -465,11 +465,15 @@ for every $i$ (diagonal dominance of every member).
 $M_{ij} = -\max |[H]_{ij}|$ is positive definite; then
 $x^\top H x \ge |x|^\top M |x| > 0$ for every symmetric
 $H \in [H]$ and $x \ne 0$.
-\item \emph{Midpoint--radius}, $O(n^3)$: with $H_c = (\mathrm{mid}[H] + \mathrm{mid}[H]^\top)/2$,
-$\Delta = \mathrm{rad}[H]$ and $\rho$ an upper bound of
-$\|(\Delta + \Delta^\top)/2\|_\infty$, $H_c - \rho I$ is positive definite. Every
-symmetric $H \in [H]$ satisfies $|H - H_c| \le (\Delta + \Delta^\top)/2$ entrywise,
-hence $\lambda_{\min}(H) \ge \lambda_{\min}(H_c) - \rho > 0$.
+\item \emph{Midpoint--radius}, $O(n^3)$: with $H_c = (\mathrm{mid}[H] + \mathrm{mid}[H]^\top)/2$
+and $\rho$ an upper bound of $\|E\|_\infty$, where
+$E_{ab} = \max \{ |h - (H_c)_{ab}| : h \in [H]_{ab} \cap [H]_{ba} \}$, $H_c - \rho I$ is
+positive definite. A symmetric $H \in [H]$ has $h_{ab} \in [H]_{ab} \cap [H]_{ba}$, so
+$|H - H_c| \le E$ entrywise and
+$\lambda_{\min}(H) \ge \lambda_{\min}(H_c) - \rho(E) \ge \lambda_{\min}(H_c) - \rho > 0$.
+The intersection matters: the enclosures of $h_{ab}$ and $h_{ba}$ come from different
+expressions and need not have the same radius, and $E_{ab} \le (\Delta_{ab} +
+\Delta_{ba})/2$ with $\Delta = \mathrm{rad}[H]$.
 \end{enumerate}
 Positive definiteness in (2) and (3) is proved by a Cholesky factorization carried
 out in interval arithmetic, which succeeds only if every pivot is provably positive.
