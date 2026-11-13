@@ -281,6 +281,18 @@ worked example in the same survey (Sect.~10) uses the multiplier of a local solu
 reduce the range of a variable until uniqueness of the minimizer follows. These are
 remarks in a survey, without an algorithm or experiments.
 
+Closer to our construction, \citet{Neumaier1996} proves that a Kuhn--Tucker point
+$\hat x$ with multiplier $\hat z$ is a global minimizer in a box if the generalized
+augmented Lagrangian $f(x) - \varphi(F(x)) + \frac12 \|D(x - \hat x)\|_2^2$, with
+$\varphi'(0) = \hat z^\top$, is convex in the box. The key inequality of the proof is
+the tangent bound of our Proposition~\ref{prop:bound}. There, however, the diagonal
+matrix $D$ is chosen from the multipliers of the bound constraints, so that the
+quadratic term is compensated at the active bounds and the bound is at least
+$f(\hat x)$: the result certifies global optimality in a narrow box around a strong
+local minimizer. Convexity is to be checked with an interval enclosure of the Hessian
+(a midpoint-inverse test, his Theorem~3.1), and the result is proposed as a stopping
+criterion for branch and bound, ``algorithmic aspects'' being left aside.
+
 \citet{DomesNeumaier2016} develop the idea into \emph{constraint aggregation}, a
 filtering technique of the COCONUT environment. Near an approximately feasible point
 found by local optimization, they form one redundant constraint, a combination of
@@ -293,7 +305,10 @@ reformulation), and is tested on 135 quadratic problems of the COCONUT test set 
 boxes around the optimizer, against the cluster effect.
 
 Our bound is this certificate made into a node lower bound for general
-twice-differentiable problems. Three things differ. The multipliers are those the local
+twice-differentiable problems. With respect to \citet{Neumaier1996}, the diagonal
+shift only restores convexity and its penalty is subtracted, so the bound holds on any
+box, including boxes that do not contain $\hat x$ and multipliers that are not those of
+the box. With respect to all three works, three things differ. The multipliers are those the local
 solver returns, so obtaining them costs nothing. The Lagrangian with these
 multipliers is bounded below by the tangent plane at the local solution, after a
 certificate of positive semidefiniteness of its interval Hessian or an $\alpha$BB shift
@@ -449,7 +464,10 @@ the right-hand side of the proposition without the last term. Weak duality with
 relaxed equalities (Section~\ref{sec:weak}) adds $-\varepsilon_h\|\lambda\|_1$. $\square$
 
 With $d = 0$ this is the bound of \citet{Jansson2004convex} and
-\citet{MessineTrombettoni2019} for convex programs, here applied box by box. Bounding
+\citet{MessineTrombettoni2019} for convex programs, here applied box by box. With a
+diagonal term chosen from the multipliers of the bound constraints instead, the
+inequality in the proof is the one \citet[Thm.~1.2]{Neumaier1996} uses to prove the
+global optimality of a Kuhn--Tucker point in a narrow box. Bounding
 the linear and the quadratic terms separately is slightly loose: each one-dimensional
 term $\partial_i L(\hat x) t - \frac12 d_i t^2$ is concave in $t = x_i - \hat x_i$, so
 its exact minimum over $[x_i]$ is attained at an endpoint and could be used instead.
@@ -548,6 +566,8 @@ expressions and need not have the same radius, and $E_{ab} \le (\Delta_{ab} +
 \end{enumerate}
 Positive definiteness in (2) and (3) is proved by a Cholesky factorization carried
 out in interval arithmetic, which succeeds only if every pivot is provably positive.
+\citet[Thm.~3.1]{Neumaier1996} gives another test of the same family, with the
+inverse of the midpoint matrix as preconditioner.
 If no test succeeds, no bound.
 \item \emph{shift}: $d_i = \max\{0, \sum_{j\ne i} |[H]_{ij}| - h^L_{ii}\}$,
 the Gerschgorin rule of \citet[Thm.~3.13 with $d = \mathbf 1$]{Adjiman1998a}; the
