@@ -312,7 +312,7 @@ introduced in~\cite{reyes2023preconditioning}, adds one detail: each slack is
 bounded by $\square(A_{i:}\iv{x})$ even when a side of $\iv{b}_i$ is infinite,
 so a multiplier of the ``wrong'' sign on a one-sided row gives a weaker but
 finite bound, and literally any $\lambda$ certifies. Two standard facts
-complete what the design uses. At an optimal basis of $\mathrm{LP}_k$ with
+complete what the design uses. At an optimal basis of $\mathrm{LP}_k^{\min}$ with
 $z_k$ basic, $\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value in
 exact arithmetic, by LP duality~\cite[Prop.~1]{reyes2023preconditioning}; in
 floating point the excess is at most $\sum_j\wid(\iv{\gamma}_j)\magn(\iv{z}_j)$
@@ -357,22 +357,30 @@ At each node the relaxation is computed, written in the
 form~\eqref{eq:homog}, and loaded once. The contractor then makes one pass over
 the up to $2n$ bound problems
 \begin{equation}\label{eq:lpk}
-\mathrm{LP}_k:\quad \min\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
+\mathrm{LP}_k^{\sigma}:\quad \sigma\; z_k \quad\text{s.t.}\quad \Abar z = 0,\; z\in\iv{z},
+\qquad k\le n,\ \sigma\in\{\min,\max\},
 \end{equation}
-and their maximizations, obtained with $-z_k$. Algorithm~\ref{alg:pass}
-gives the pass. The set $L$ holds the bounds still to solve
+and we write $\mathrm{LP}_k$ when the sense does not matter. Algorithm~\ref{alg:pass}
+gives the pass. The engine, \textsc{Solve}, returns a status $\mathit{st}$
+(optimal, infeasible or iteration limit), multipliers $\lambda$, which are a
+Farkas ray when $\mathit{st}$ is infeasible, and, at an optimum, the primal
+point $z'$ of the final basis. The set $L$ holds the bounds still to solve
 (line~\ref{ap:init}), and each LP is warm-started from the final basis of the
 previous one (line~\ref{ap:solve}). When an LP ends, its bound is certified
 once, from the multipliers of the final basis, and the box is contracted
 before the next LP starts (line~\ref{ap:contract}), so that every later LP
 works on the smaller box. Two rules decide which LPs are solved and in which
-order. A bound is \emph{skipped} when a primal point obtained earlier in the
-pass already attains it, since its LP would return that value
-(line~\ref{ap:skip}); this rule comes from the polytope-hull contractor of
-Ibex~\cite{baharev2009distillation}. Among the remaining bounds, we solve
-first, as the contractor of Ibex does, the one nearest to the last primal
-point (line~\ref{ap:near}), whose optimum lies closest to the vertex where the
-previous LP ended, so that the next LP needs fewer pivots.
+order, and both use $\hat z$, the primal point of the last LP solved to
+optimality (line~\ref{ap:point}); the point where an LP stops at its
+iteration limit is not feasible and is not used. A bound is \emph{skipped}
+when $\hat z$ already attains it, since its LP would return that value
+(line~\ref{ap:skip}); as the test is repeated after every LP, a bound attained
+by any optimal point of the pass is skipped. This rule comes from the
+polytope-hull contractor of Ibex~\cite{baharev2009distillation}. Among the
+remaining bounds, we solve first, as the contractor of Ibex does, the one
+nearest to $\hat z$ (line~\ref{ap:near}), whose optimum lies closest to the
+vertex where the previous LP ended, so that the next LP needs fewer pivots.
+The first LP, which has no $\hat z$ yet, minimizes $z_1$.
 
 If the residual $\iv{R}(\lambda,\iv{z})$ of an LP excludes zero, the node is
 empty and the pass stops (line~\ref{ap:empty}). No other outcome stops it. An
@@ -381,7 +389,10 @@ multipliers of the basis where it stopped, which certify a weaker but valid
 bound (Proposition~\ref{prop:valid}), and line~\ref{ap:contract} uses them as
 it uses an optimal basis. An LP that reports an infeasibility whose ray fails
 the residual test is solved once more from a cold start
-(line~\ref{ap:retry}); if it fails again, its bound stays uncontracted. The polytope-hull contractor of Ibex~2.8.9 instead
+(line~\ref{ap:retry}): a warm-started simplex can declare infeasible a box
+that is not empty (Section~\ref{sec:iter}), and from the slack basis the same
+LP usually reaches an optimum or a ray that certifies. If it fails again, its
+bound stays uncontracted. The polytope-hull contractor of Ibex~2.8.9 instead
 abandons the pass in both cases; we corrected it, the correction has been
 submitted to the Ibex distribution, and every configuration of
 Section~\ref{sec:experiments} uses it, including the one that stands for
@@ -389,22 +400,24 @@ Ibex. Ibex limits SoPlex to 100 iterations per LP, and every engine of
 Section~\ref{sec:experiments}, SC included, uses that limit.
 
 \begin{algorithm}[t]
-\caption{One pass over the bounds of a node. \textsc{Solve} is the LP engine:
+\caption{One pass over the bounds of a node. \textsc{Solve} is the LP engine,
 SC (Algorithm~\ref{alg:sc}) or an external solver, warm-started from the
-previous LP and limited to 100 iterations.}\label{alg:pass}
+previous LP and limited to 100 iterations; it returns a status, multipliers
+(a Farkas ray if infeasible) and, at an optimum, a primal point.}\label{alg:pass}
 \begin{algorithmic}[1]
 \Require relaxation $\Abar z=0$ with twin rows merged, box $\iv{z}$
 \Ensure contracted box $\iv{z}$, or $\emptyset$
-\State $L\gets\{(k,\sigma): k\le n,\ \sigma\in\{\min,\max\}\}$
+\State $L\gets\{(k,\sigma): k\le n,\ \sigma\in\{\min,\max\}\}$;\ \ $\hat z\gets$ none
   \Comment{bounds still to solve}\label{ap:init}
 \While{$L\neq\emptyset$}
-  \State remove from $L$ every bound attained by a primal point found earlier in the pass\label{ap:skip}
+  \State remove from $L$ every bound attained by $\hat z$\label{ap:skip}
   \If{$L=\emptyset$} \textbf{break} \EndIf
-  \State $(k,\sigma)\gets$ the bound of $L$ nearest to the last primal point; remove it from $L$\label{ap:near}
-  \State $(\mathit{st},\lambda)\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$\label{ap:solve}
+  \State $(k,\sigma)\gets(1,\min)$ if $\hat z$ is none, else the bound of $L$ nearest to $\hat z$;
+    remove it from $L$\label{ap:near}
+  \State $(\mathit{st},\lambda,z')\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$\label{ap:solve}
   \If{$\mathit{st}=\text{infeasible}$ \textbf{and} $0\in\iv{R}(\lambda,\iv{z})$}
      \Comment{the ray does not certify}
-    \State $(\mathit{st},\lambda)\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$ from a cold start\label{ap:retry}
+    \State $(\mathit{st},\lambda,z')\gets\textsc{Solve}(\mathrm{LP}_k^{\sigma},\iv{z})$ from a cold start\label{ap:retry}
   \EndIf
   \If{$0\notin\iv{R}(\lambda,\iv{z})$} \Return $\emptyset$
      \Comment{Proposition~\ref{prop:valid}}\label{ap:empty}
@@ -413,6 +426,7 @@ previous LP and limited to 100 iterations.}\label{alg:pass}
      \Comment{optimal, or stopped at the limit}
     \State $\iv{z}_k\gets\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$\label{ap:contract}
   \EndIf
+  \If{$\mathit{st}=\text{optimal}$} $\hat z\gets z'$\label{ap:point} \EndIf
 \EndWhile
 \State \Return $\iv{z}$
 \end{algorithmic}
@@ -503,7 +517,7 @@ general-purpose solver does differently.}\label{alg:sc}
     \State $r\gets$ the basic variable with the largest violation;
       $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$
     \State $q\gets$ ratio test on $d_j/\alpha_{rj}$ with Harris' rule
-    \If{no $q$ exists} \Return (infeasible, $\rho_r$)
+    \If{no $q$ exists} \Return (infeasible, $\rho_r$, --)
       \Comment{Farkas ray}\label{as:ray}
     \EndIf
   \ElsIf{some nonbasic $d_j$ has the wrong sign} \Comment{primal step}\label{as:primal}
@@ -511,13 +525,13 @@ general-purpose solver does differently.}\label{alg:sc}
       $\alpha_q\gets B^{-1}\Abar_{:q}$
     \State $r\gets$ ratio test on $x_B$ over the stable pivots of $\alpha_q$\label{as:primalr}
   \Else
-    \State \Return (optimal, $\lambda$)
+    \State \Return (optimal, $\lambda$, $z$)
       \Comment{$\star$ a solver refactorizes and verifies first}\label{as:opt}
   \EndIf
   \State pivot $(r,q)$: update $x_B$, $\lambda$, $d$ and the LU factors
     \Comment{refactorized every 50 pivots}\label{as:pivot}
 \EndFor
-\State \Return (iteration limit, $\lambda$) \Comment{$\lambda$ still certifies (Prop.~\ref{prop:valid})}\label{as:limit}
+\State \Return (iteration limit, $\lambda$, --) \Comment{$\lambda$ still certifies (Prop.~\ref{prop:valid})}\label{as:limit}
 \end{algorithmic}
 \end{algorithm}
 
@@ -538,7 +552,7 @@ LP solver does. Under the dual method the
 certificate is available at every iteration, and it never gets worse:
 
 \begin{proposition}[Monotone certified bound]\label{prop:mono}
-Run the dual simplex method on $\mathrm{LP}_k$ from a dual-feasible basis. At
+Run the dual simplex method on $\mathrm{LP}_k^{\min}$ from a dual-feasible basis. At
 every iteration $t$ in which $z_k$ is basic, $\inff\iv{C}_k(\lambda_t,\iv{z})$
 is a valid lower bound on $z_k$ over $P(\iv{x})$ and, in exact arithmetic, it
 is nondecreasing in $t$.
