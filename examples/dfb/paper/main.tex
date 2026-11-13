@@ -405,7 +405,8 @@ SC (Algorithm~\ref{alg:sc}) or an external solver.}\label{alg:pass}
   \If{$0\notin\iv{R}(\lambda,\iv{z})$} \Return $\emptyset$
      \Comment{Proposition~\ref{prop:valid}}\label{ap:empty}
   \EndIf
-  \State $\iv{z}_k\gets\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$\label{ap:contract}
+  \State $\iv{z}_k\gets\iv{z}_k\cap\iv{C}_k(\lambda,\iv{z})$
+    \Comment{Neumaier--Shcherbina bound~\cite{neumaier2004safe}}\label{ap:contract}
 \EndWhile
 \State \Return $\iv{z}$
 \end{algorithmic}
