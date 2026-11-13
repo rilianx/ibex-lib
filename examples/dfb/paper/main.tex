@@ -15,7 +15,8 @@
 \usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
 
 % Notas de trabajo: se apagan cambiando \todo por un comando vacio.
-\newcommand{\todo}[1]{{\color{red!70!black}\textbf{[TODO:} #1\textbf{]}}}
+% (sin color: un TODO en color partido entre paginas tine los flotantes)
+\newcommand{\todo}[1]{\textbf{[TODO:} \emph{#1}\textbf{]}}
 
 % Notacion
 \newcommand{\iv}[1]{\mathbf{#1}}          % intervalo o caja
@@ -459,7 +460,7 @@ gain comes mostly from not preparing each LP as a new problem, more than from
 the omitted checks.
 
 Algorithm~\ref{alg:sc} shows one call of SC, the \textsc{Solve} of
-Algorithm~\ref{alg:pass}. Lines~\ref{as:slack}--\ref{as:reloc} prepare the LP
+Algorithm~\ref{alg:pass}. Lines~\ref{as:slack}--\ref{as:xb} prepare the LP
 from the state left by the previous one (Section~\ref{sec:warm}). The loop of
 lines~\ref{as:loop}--\ref{as:limit} combines both methods: it takes a dual step
 while some basic variable violates its bounds, a primal step while some reduced
@@ -469,7 +470,8 @@ limit (line~\ref{as:limit}); Section~\ref{sec:iter} describes the steps. After a
 the basis is dual feasible and only dual steps occur; after a primal one it is
 primal feasible and only primal steps occur. The two lines marked $\star$ are
 where the design described above departs from a general-purpose solver:
-line~\ref{as:keep} keeps the basis and its factors from one LP to the next,
+line~\ref{as:keep}, the warm start, starts each LP from the final basis of
+the previous one, with its factors,
 and line~\ref{as:opt} returns the basis as it is. The certificate is computed
 by the caller, in lines~\ref{ap:empty}--\ref{ap:contract} of
 Algorithm~\ref{alg:pass} (Section~\ref{sec:certif}).
@@ -482,34 +484,43 @@ general-purpose solver does differently.}\label{alg:sc}
 \begin{algorithmic}[1]
 \Require bound $(k,\sigma)$, so $c=\pm e_k$; box $\iv{z}$, contracted since the previous call
 \If{first LP of the node}
-  \State $B\gets -I_m$ \Comment{dual feasible for every $\mathrm{LP}_k$ (Prop.~\ref{prop:start})}\label{as:slack}
+  \State $B\gets -I_m$, factorized
+    \Comment{dual feasible for every $\mathrm{LP}_k$ (Prop.~\ref{prop:start})}\label{as:slack}
 \Else
-  \State keep $B$ and its LU factors
-    \Comment{$\star$ a solver loads and starts a new problem}\label{as:keep}
-  \State recompute $\lambda$ and $d$ for $c$ with the current factors\label{as:lam}
-  \If{dual warm start}
-    \State relocate each nonbasic $z_j$ to the bound given by the sign of $d_j$;
-      recompute $x_B$\label{as:reloc}
-  \EndIf
+  \State $B\gets$ final basis of the previous LP, with its LU factors and $x_B$
+    \Comment{$\star$ a solver starts anew}\label{as:keep}
+\EndIf
+\State $\lambda\gets B^{-T}c_B$;\ \ $d\gets c-\Abar^T\lambda$
+  \Comment{multipliers and reduced costs for $c$}\label{as:lam}
+\If{first LP \textbf{or} dual warm start}
+  \State place each nonbasic $z_j$ at its lower bound if $d_j\ge 0$, at its upper
+    bound otherwise\label{as:reloc}
+  \State $x_B\gets B^{-1}(-\Abar_N z_N)$
+    \Comment{values of the basic variables}\label{as:xb}
 \EndIf
 \For{$t=1,\dots,100$}\label{as:loop}
   \If{some basic variable violates its bounds} \Comment{dual step}\label{as:dual}
     \State $r\gets$ the basic variable with the largest violation;
       $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$
     \State $q\gets$ ratio test on $d_j/\alpha_{rj}$ with Harris' rule
-    \If{no $q$ exists} \Return $\rho_r$
+    \If{no $q$ exists} \Return $\lambda\gets\rho_r$
       \Comment{Farkas ray}\label{as:ray}
     \EndIf
+    \State $\alpha_q\gets B^{-1}\Abar_{:q}$
   \ElsIf{some nonbasic $d_j$ has the wrong sign} \Comment{primal step}\label{as:primal}
     \State $q\gets$ the nonbasic variable with the largest such $|d_j|$;
       $\alpha_q\gets B^{-1}\Abar_{:q}$
-    \State $r\gets$ ratio test on $x_B$ over the stable pivots of $\alpha_q$\label{as:primalr}
+    \State $r\gets$ ratio test on $x_B$ over the stable pivots of $\alpha_q$;
+      $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$\label{as:primalr}
   \Else
     \State \Return $\lambda$
       \Comment{optimal; $\star$ a solver refactorizes and verifies first}\label{as:opt}
   \EndIf
-  \State pivot $(r,q)$: update $x_B$, $\lambda$, $d$ and the LU factors
-    \Comment{refactorized every 50 pivots}\label{as:pivot}
+  \State $x_B\gets x_B-\theta_p\alpha_q$;\ \ $\lambda\gets\lambda+\theta_d\rho_r$;\ \
+    $d\gets d-\theta_d\alpha_r$ \Comment{step lengths of the ratio test}\label{as:upd}
+  \State exchange $r$ and $q$ in $B$; update its LU factors
+    \Comment{Forrest--Tomlin}
+  \If{50 pivots since the last factorization} refactorize $B$\label{as:pivot} \EndIf
 \EndFor
 \State \Return $\lambda$ \Comment{iteration limit; $\lambda$ still certifies}\label{as:limit}
 \end{algorithmic}
@@ -520,7 +531,9 @@ general-purpose solver does differently.}\label{alg:sc}
 The first LP of a pass starts from the slack basis $B=-I_m$
 (line~\ref{as:slack} of Algorithm~\ref{alg:sc}), which is dual feasible for
 every $\mathrm{LP}_k$ (Proposition~\ref{prop:start}), and is solved by the
-dual method, with no phase~1. Between two consecutive LPs the objective
+dual method, with no phase~1: the costs of the slacks are zero, so $\lambda=0$
+and $d=c$ (line~\ref{as:lam}), and line~\ref{as:reloc} puts $z_k$ at its lower
+bound for a minimization and at its upper bound for a maximization. Between two consecutive LPs the objective
 changes and the contracted bound changes the box. SC keeps the basis and its
 factors (line~\ref{as:keep}) and recomputes $\lambda$ and $d$ for the new
 objective (line~\ref{as:lam}); two warm starts are then possible. The
@@ -568,8 +581,9 @@ $\alpha_q = B^{-1}\Abar_{:q}$ of the entering variable (FTRAN), the pivot row
 $\alpha_r^T = \rho_r^T\Abar$ with $B^T\rho_r=e_r$ (BTRAN), and updates
 $x_B \leftarrow x_B - \theta_p\alpha_q$,
 $\lambda \leftarrow \lambda + \theta_d\rho_r$ and
-$d \leftarrow d - \theta_d\alpha_r$, so that $\lambda$, which the
-certificate needs, is always at hand.
+$d \leftarrow d - \theta_d\alpha_r$ (line~\ref{as:upd} of
+Algorithm~\ref{alg:sc}), so that $\lambda$, which the certificate needs, is
+always at hand.
 
 \paragraph{Dual steps.} In a dual iteration
 (lines~\ref{as:dual}--\ref{as:ray} of Algorithm~\ref{alg:sc}) the basis is
