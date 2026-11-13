@@ -427,8 +427,11 @@ smaller LP to SC and to an external solver alike.
 \section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
 
 For each structural variable $x_k$ the pass of Section~\ref{sec:pass} needs
-the two bounds of $\mathrm{LP}_k$~\eqref{eq:lpk}. A basis is a set of $m$ columns
-of $\Abar$ forming a nonsingular matrix $B$; with cost vector $c=\pm e_k$, the
+the two bounds of $\mathrm{LP}_k$~\eqref{eq:lpk}. We write $[l_j,u_j]:=\iv{z}_j$.
+A basis is a set of $m$ columns of $\Abar$ forming a nonsingular matrix $B$;
+$B_r$ is the variable basic in row $r$, $x_B$ the vector of values of the basic
+variables, $N$ the set of nonbasic variables and $\Abar_N$ their columns. With
+cost vector $c=\pm e_k$, the
 multipliers are $\lambda^T = c_B^T B^{-1}$ and the reduced costs
 $d = c - \Abar^T\lambda$. For the bounded-variable simplex, a basis with each
 nonbasic variable at one of its bounds is \emph{dual feasible} if $d_j\ge 0$ for
@@ -476,50 +479,61 @@ and line~\ref{as:opt} returns the basis as it is. The certificate is computed
 by the caller, in lines~\ref{ap:empty}--\ref{ap:contract} of
 Algorithm~\ref{alg:pass} (Section~\ref{sec:certif}).
 
-\begin{algorithm}[t]
+\begin{algorithm}[!tp]
 \caption{\textsc{Solve} in SC: one LP of the pass. The relaxation is loaded
-once per node; the basis, its LU factors, $x_B$, $\lambda$ and $d$ persist
-from one call to the next. Comments marked $\star$ point to the work a
-general-purpose solver does differently.}\label{alg:sc}
+once per node; the basis and its LU factors persist from one call to the next.
+Comments marked $\star$ point to the work a general-purpose solver does
+differently.}\label{alg:sc}
 \begin{algorithmic}[1]
-\Require bound $(k,\sigma)$, so $c=\pm e_k$; box $\iv{z}$, contracted since the previous call
+\Require bound $(k,\sigma)$, with $c=e_k$ to minimize and $c=-e_k$ to maximize;
+  box $\iv{z}$, contracted since the previous call; warm start, primal or dual
+  (Section~\ref{sec:warm})
 \If{first LP of the node}
-  \State $B\gets -I_m$, factorized
-    \Comment{dual feasible for every $\mathrm{LP}_k$ (Prop.~\ref{prop:start})}\label{as:slack}
+  \State $B\gets -I_m$, factorized; each nonbasic $z_j$ at its lower bound
+    \Comment{Prop.~\ref{prop:start}}\label{as:slack}
 \Else
-  \State $B\gets$ final basis of the previous LP, with its LU factors and $x_B$
+  \State $B\gets$ final basis of the previous LP, with its LU factors
     \Comment{$\star$ a solver starts anew}\label{as:keep}
 \EndIf
 \State $\lambda\gets B^{-T}c_B$;\ \ $d\gets c-\Abar^T\lambda$
   \Comment{multipliers and reduced costs for $c$}\label{as:lam}
 \If{first LP \textbf{or} dual warm start}
-  \State place each nonbasic $z_j$ at its lower bound if $d_j\ge 0$, at its upper
-    bound otherwise\label{as:reloc}
-  \State $x_B\gets B^{-1}(-\Abar_N z_N)$
-    \Comment{values of the basic variables}\label{as:xb}
+  \State move each nonbasic $z_j$ whose $d_j$ has the wrong sign to its other bound\label{as:reloc}
 \EndIf
+\State $x_B\gets -B^{-1}\Abar_N z_N$
+  \Comment{values of the basic variables}\label{as:xb}
 \For{$t=1,\dots,100$}\label{as:loop}
   \If{some basic variable violates its bounds} \Comment{dual step}\label{as:dual}
     \State $r\gets$ the basic variable with the largest violation;
-      $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$
+      $\delta\gets x_{B_r}$ minus the bound it violates
+    \State $\rho_r\gets B^{-T}e_r$;\ \ $\alpha_r^T\gets\rho_r^T\Abar$
     \State $q\gets$ ratio test on $d_j/\alpha_{rj}$ with Harris' rule
     \If{no $q$ exists} \Return $\lambda\gets\rho_r$
       \Comment{Farkas ray}\label{as:ray}
     \EndIf
-    \State $\alpha_q\gets B^{-1}\Abar_{:q}$
+    \State $\alpha_q\gets B^{-1}\Abar_{:q}$;\ \ $\theta_p\gets\delta/\alpha_{rq}$\label{as:dualend}
   \ElsIf{some nonbasic $d_j$ has the wrong sign} \Comment{primal step}\label{as:primal}
     \State $q\gets$ the nonbasic variable with the largest such $|d_j|$;
       $\alpha_q\gets B^{-1}\Abar_{:q}$
-    \State $r\gets$ ratio test on $x_B$ over the stable pivots of $\alpha_q$;
-      $\rho_r\gets B^{-T}e_r$; $\alpha_r^T\gets\rho_r^T\Abar$\label{as:primalr}
+    \State $\theta_p\gets$ the largest step of $z_q$, of the sign of $-d_q$, that keeps
+      $x_B$ within bounds
+    \State $r\gets$ the basic variable that reaches its bound at $\theta_p$
+      \Comment{stable entries of $\alpha_q$ only}
+    \If{$z_q$ reaches its other bound first}
+      \State $x_B\gets x_B-(u_q-l_q)\,\mathrm{sign}(-d_q)\,\alpha_q$; move $z_q$ to that bound
+      \State \textbf{go to} the next iteration \Comment{bound flip, no pivot}
+    \EndIf
+    \State $\rho_r\gets B^{-T}e_r$;\ \ $\alpha_r^T\gets\rho_r^T\Abar$\label{as:primalr}
   \Else
     \State \Return $\lambda$
       \Comment{optimal; $\star$ a solver refactorizes and verifies first}\label{as:opt}
   \EndIf
+  \State $\theta_d\gets d_q/\alpha_{rq}$
   \State $x_B\gets x_B-\theta_p\alpha_q$;\ \ $\lambda\gets\lambda+\theta_d\rho_r$;\ \
-    $d\gets d-\theta_d\alpha_r$ \Comment{step lengths of the ratio test}\label{as:upd}
-  \State exchange $r$ and $q$ in $B$; update its LU factors
-    \Comment{Forrest--Tomlin}
+    $d\gets d-\theta_d\alpha_r$\label{as:upd}
+  \State $B_r\gets q$;\ \ $x_{B_r}\gets z_q+\theta_p$
+    \Comment{the leaving variable stays at its bound}
+  \State update the LU factors of $B$ \Comment{Forrest--Tomlin}
   \If{50 pivots since the last factorization} refactorize $B$\label{as:pivot} \EndIf
 \EndFor
 \State \Return $\lambda$ \Comment{iteration limit; $\lambda$ still certifies}\label{as:limit}
@@ -532,8 +546,9 @@ The first LP of a pass starts from the slack basis $B=-I_m$
 (line~\ref{as:slack} of Algorithm~\ref{alg:sc}), which is dual feasible for
 every $\mathrm{LP}_k$ (Proposition~\ref{prop:start}), and is solved by the
 dual method, with no phase~1: the costs of the slacks are zero, so $\lambda=0$
-and $d=c$ (line~\ref{as:lam}), and line~\ref{as:reloc} puts $z_k$ at its lower
-bound for a minimization and at its upper bound for a maximization. Between two consecutive LPs the objective
+and $d=c$ (line~\ref{as:lam}); every nonbasic variable starts at its lower
+bound, and for a maximization line~\ref{as:reloc} moves $z_k$ to its upper
+bound. Between two consecutive LPs the objective
 changes and the contracted bound changes the box. SC keeps the basis and its
 factors (line~\ref{as:keep}) and recomputes $\lambda$ and $d$ for the new
 objective (line~\ref{as:lam}); two warm starts are then possible. The
@@ -560,8 +575,9 @@ iterates of the dual simplex method do not decrease.
 
 Both warm starts reach an optimal basis and give the same bound; they differ
 in cost. A nonbasic variable that must move to its opposite bound costs the
-primal warm start an iteration, while relocation moves it for free but forces
-the basic values to be recomputed once per LP. On systems of equations every
+primal warm start an iteration; relocation moves it without one, but changes
+the values of the basic variables, which may then violate their bounds and
+cost the dual method its own iterations. On systems of equations every
 row is a narrow slab (its slack interval covers 13\% of the range of the row
 over the box, on average), and a median of 1.9 nonbasic variables per LP
 change side, against 0.3 on optimization problems, whose slack intervals cover
@@ -586,7 +602,7 @@ Algorithm~\ref{alg:sc}), so that $\lambda$, which the certificate needs, is
 always at hand.
 
 \paragraph{Dual steps.} In a dual iteration
-(lines~\ref{as:dual}--\ref{as:ray} of Algorithm~\ref{alg:sc}) the basis is
+(lines~\ref{as:dual}--\ref{as:dualend} of Algorithm~\ref{alg:sc}) the basis is
 dual feasible and some basic variable violates its bounds. The leaving variable is the basic
 variable with the largest violation. The entering variable comes from the
 ratio test over the pivot row: among the nonbasic $z_j$ whose reduced cost
@@ -610,7 +626,9 @@ variable with the largest reduced cost of the wrong sign (Dantzig's rule;
 with \texttt{compo}, whose primal warm starts are longer, devex weights);
 pivots below a stability threshold are filtered out before choosing the
 leaving variable, since without this filter a rejected pivot was
-indistinguishable from optimality. The feasibility tolerances are $10^{-9}$,
+indistinguishable from optimality. If the entering variable reaches its other
+bound before any basic variable reaches one, it moves there without a pivot (a
+bound flip). The feasibility tolerances are $10^{-9}$,
 relative to the value tested, and $10^{-6}$ with \texttt{compo} on systems of
 equations, whose nearly parallel rows make the LPs degenerate. A tolerance is a
 matter of efficiency, not of rigor: too wide, it weakens the contraction; too
