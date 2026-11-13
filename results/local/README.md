@@ -635,6 +635,8 @@ from a tighter bound:
 | --cvx-test 3, adaptive ACID | 28936 | 249.6 | 3721 / 2669 | 0 |
 | --cvx-test 2, --acid-fixed 33 | 13582 | 223.1 | 0 / 0 | 33 (fixed) |
 | --cvx-test 3, --acid-fixed 33 | 8366 | 148.6 | 192 / 128 | 33 (fixed) |
+| --cvx-test 2, --acid-fixed 0 (after the fix below) | 285786 (timeout) | 1200 | 0 / 0 | 0 (fixed) |
+| --cvx-test 3, --acid-fixed 0 (after the fix below) | 372782 (timeout) | 1200 | ? / 1147 | 0 (fixed) |
 
 So the loss is an interaction with ACID's adaptive tuning, not a weaker bound. A
 plausible mechanism (not verified): the raised lower bound already narrows the
@@ -648,3 +650,8 @@ segfaults** (exit 139) on chenery-1. In `CtcAcid::contract`, with vhandled = 0
 `compute_smearorder` is skipped, so `smearorder` is empty and `putobjfirst()` erases
 `find(...) == end()`. In adaptive mode nbcidvar = 0 does not crash because
 `smearorder` keeps the order of an earlier call.
+**Fixed** in 17fd4fa27 (approved by the author): `putobjfirst()` returns when the
+objective is not in the order. No change in the arms' searches (dnieper 150, hs056 338,
+ex8_4_4 388 nodes with acvx0's flags, as before). Without 3BCID at all, chenery-1 does
+not close in 1200 s with either shift (rows above): 3BCID is what closes it, which is
+why ACID dropping it in ascaled/acomb costs 4.4x the nodes.
