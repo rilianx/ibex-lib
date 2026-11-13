@@ -48,7 +48,9 @@ environment variables `S` and `M`.
 
 The paper uses the limit of 100 iterations per LP in every engine. The runs
 with that limit are in `work/S100` (unpack `datos_l100.tgz` into `work/`); run
-the scripts with `S=work/S100`. `l100.sh` ran them, 14 at a time. Rungs that
+the scripts with `S=work/S100`. `l100.sh` ran them, 14 at a time. `r7.sh` later added the hybrid (R5) on optimization
+problems and on systems with the affine relaxation, 8 at a time (jobs in
+`S100/r7_jobs.txt`), so that Table 2 has the hybrid in every class. Rungs that
 did not change come from `work/S`: the recorded banks (symbolic links), and R0 and
 R1 inside the search (copied into `escf_c`, `escfa_c`), which already used the limit of Ibex. `work/S` holds the
 earlier runs, where the tuned SoPlex, the bare simplex and SC used the limit
@@ -111,7 +113,7 @@ commit that adds `work/S100`).
 | Median pass times and contraction in Section 5.1 | `python3 bescf_extra_c.py` |
 | Effect of the order of R0 | `python3 r0c_tab.py` |
 | Table 2, solver | `python3 esc_fam_c.py` |
-| Hybrid inside the search | `python3 hyb_tab.py` (needs `escf` with R0: point `S` to a folder where `escf` links to `escf_c`) |
+| Hybrid inside the search (offline threshold runs) | `python3 hyb_tab.py` (needs `escf` with R0: point `S` to a folder where `escf` links to `escf_c`) |
 | Offline threshold and SC over R3 by rows | `python3 umbral.py` (same remark) |
 | Figure 1, emulated work, weight of the pass | `OUT=examples/dfb/paper python3 fig_peso_emu.py` |
 | Side experiments of Section 5.1 (representation, patched SoPlex, tolerance) | `grandes_2026-11-11/an6.py` (runs: `job6.sh`, `run6/`, base in `run4/`) |
