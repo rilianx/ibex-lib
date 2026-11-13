@@ -775,3 +775,31 @@ env OUT=results/local/verify-rho-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=1
 cut by its 1 s CPU limit): ex9_2_5 4 -> 6, launch 210 -> 26, robot 49980 -> 50278. So
 the fix changed no certification on these instances, and the acomb, acert1, astatsc
 and acomb12 results reported above stand; no other arm is rerun.
+
+## E9: `acombr` = acomb + `--cvx-reduce` (range reduction with the bound)
+
+`--cvx-reduce` (commit f2b6d88d9, approved by the author): the separable bound
+f(x) >= S_i + t_i(x_i), t_i concave, removes from each variable the values v with
+S_i + t_i(v) > ymax (loup - precision); a cut [c, u] is accepted only if the interval
+lower ends of t_i at c and u both exceed ymax - S_i (concavity: the minimum over
+[c, u] is at an end), c found by bisection. Without the flag nothing changes (nodes
+identical to acomb on 8 instances checked).
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombr" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombr" sh results/anytime/run.sh
+```
+
+2026-11-13, 17:14-18:43, server idle before. No killed run. Statuses identical to
+acomb (240 complete, 47 timeout, 9 no_lower_bound, 2 infeasible).
+
+| set | arm | closed | n (closes) | time vs acomb [IC95] | W/L | nodes |
+|---|---|---|---|---|---|---|
+| 223 | acombr | 223 | 75 (75) | 0.97 [0.95, 0.99] | 11/0 | 0.98 |
+| 75 | acombr | 17 | 10 (10) | 0.78 [0.54, 0.97] | 5/0 | 0.87 |
+| 298 | acombr | 240 | 76 (76) | 0.94 [0.89, 0.98] | 16/0 | 0.97 |
+
+Largest gains: ex8_4_1 69.1 -> 10.5 s (10100 -> 1638 nodes), robot 85.8 -> 45.8 s
+(49980 -> 33818), ex8_4_4 5.1 -> 4.1 s; dnieper 68 -> 4 nodes (< 2 s). No instance
+slower by more than 5%. With `--cvx-reduce` a node emptied by the reduction is counted
+in `cvx_reduce_emptied`, not in `cvx_pruned`.
