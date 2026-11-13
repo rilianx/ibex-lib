@@ -2421,3 +2421,11 @@ Bratu-0120, Trigo1-0020sp con compo). El warm start no cambia.
   ibexopt/ibexsolve_dfb/ibexreplay (fuentes; binarios de experimentos no
   recompilados) y `max_iter=-1` → 100 en `examples/sc_plugin`. Paper
   actualizado (ya no hay 20m+200 ni tope de 60/150).
+
+**Rayo fallido y algoritmo 1 del paper (2026-11-13).** El algoritmo 1 contrae con
+cualquier λ, también con un rayo que no certifica el vacío. El código medido no
+lo hace: reintenta en frío y, si el rayo vuelve a fallar, deja la cota sin
+contraer (`DFBH_RAYO_CONTRAE=1` contrae con él; apagado por omisión). Con SC en
+los bancos de pasadas: 1049 rayos fallidos en 2.12 M LPs (0.05 %), en 15 de 163
+instancias; contraer con ellos cambia la contracción media solo en ex8_2_4
+(0.0279 → 0.0325). Por decisión de Ignacio el paper no menciona la diferencia.

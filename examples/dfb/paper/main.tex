@@ -373,12 +373,7 @@ zero, the node is empty and the pass stops (line~\ref{ap:empty}).
 No other outcome stops the pass, because any multipliers certify
 (Proposition~\ref{prop:valid}): an LP that stops at its iteration limit, or
 reports an infeasibility whose ray fails the residual test, still contracts
-with the multipliers it returns, if less than an optimal basis would.
-Our implementation departs from this in one detail: it solves an LP whose ray
-fails once more from a cold start and, if the ray fails again, leaves the bound
-uncontracted. With SC this happens in 0.05\% of the LPs of the banks of
-Section~\ref{sec:bank}, and contracting with the ray instead changes the mean
-contraction of one instance of 163. The
+with the multipliers it returns, if less than an optimal basis would. The
 polytope-hull contractor of Ibex~2.8.9 instead abandons the pass in both
 cases; we corrected it, the correction has been submitted to the Ibex
 distribution, and every configuration of Section~\ref{sec:experiments} uses
