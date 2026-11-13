@@ -2,6 +2,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath,amssymb}
 \usepackage[numbers,sort&compress]{natbib}
+\usepackage{graphicx}
 \usepackage{hyperref}
 
 \title{Certified Lagrangian lower bounds from local-solver multipliers
@@ -20,14 +21,15 @@ long after the incumbent is optimal. Meanwhile, the local NLP solver that these 
 call for upper bounding returns, at no extra cost, a KKT point together with Lagrange
 multipliers that are discarded. We show that this by-product is enough to compute a
 rigorous lower bound on the original nonconvex problem at every node of the search: we enclose the Hessian of the Lagrangian with the solver's multipliers by
-interval arithmetic and either certify that it is positive semidefinite on the box, or
-shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
+interval arithmetic and certify that it is positive semidefinite on the box or, when
+that fails, shift it diagonally in the spirit of $\alpha$BB. In both cases the tangent plane of the
 Lagrangian at the local solution, minimized in closed form over the box and corrected for
 the relaxation of equality constraints, yields a valid lower bound. In IbexOpt with Ipopt
-as local solver, on 298 instances of the COCONUT benchmark, the bound solves 8 more instances and
-reduces the solving time to 0.57 of the baseline on the instances that take more than a
-second, at a cost below 1\% of the running time, and makes the rigorous solver close more instances
-than SCIP~10 on this benchmark.
+as local solver, on 298 instances of the COCONUT benchmark, the bound solves 11 more instances
+(240 against 229) and halves the solving time (0.50 of the baseline) on the instances
+that take more than a second, at a cost below 1\% of the running time. On the same
+domains, the rigorous solver with the bound then solves more instances than SCIP~10
+(245 against 224), although SCIP is faster on most of the instances both solve.
 \end{abstract}
 
 \section{Introduction}
@@ -109,18 +111,21 @@ shrinks around a nondegenerate KKT point.
   $\varepsilon_h$-correction in~\eqref{eq:weak}, and boxes on which the Lagrangian is
   not convex, through the diagonal shift in~\eqref{eq:bound}; on boxes where convexity
   is certified it is the bound of \citet{Jansson2004convex}.
-\item \textbf{Making the bound cheap}: a backoff that applies it only where it pays
-  off, and positive-semidefiniteness tests of increasing strength (interval Gerschgorin,
-  comparison matrix, midpoint--radius test with an interval Cholesky factorization).
-  The bound costs less than 1\% of the running time and does not change the time per
-  node.
+\item \textbf{Making the bound cheap and tight}: a backoff that applies it only where it
+  pays off, and positive-semidefiniteness tests of increasing strength (interval
+  Gerschgorin, comparison matrix, midpoint--radius test with an interval Cholesky
+  factorization) that are tried first, the diagonal shift being used only when they
+  fail. The certificate closes convex problems at the root, where the shift alone is
+  too weak; the shift keeps the bound on nonconvex boxes. The bound costs less than 1\%
+  of the running time and does not change the time per node.
 \item \textbf{An experimental study} on 298 instances of the COCONUT benchmark \citep{Shcherbina2003}: an
   ablation (IbexOpt without local solver, with the local solver for upper bounding
   only, and with the Lagrangian bound) and a comparison with SCIP~10. With the
-  Lagrangian bound, the rigorous solver solves 237 instances in 1200~s, against 229
-  without it, and its solving time drops to 0.57 [0.41, 0.75] of the time without it
-  on the instances that take more than a second, with no instance slower.
-  \textbf{[TODO: SCIP numbers from E5.]}
+  Lagrangian bound, the rigorous solver solves 240 instances in 1200~s, against 229
+  without it, and its solving time drops to 0.50 [0.35, 0.69] of the time without it
+  on the instances that take more than a second (36 instances faster, 2 slower). With
+  the same variable domains for both solvers, it solves 245 instances and SCIP~10 224;
+  SCIP is faster on 40 of the 66 instances both solve in more than a second.
 \end{enumerate}
 
 The paper is organized as follows. Section~\ref{sec:related} reviews related work.
@@ -377,16 +382,22 @@ values give no bound ($-\infty$).
 
 $[H]$ is an interval enclosure of $\nabla^2 L$ over $[x]$, obtained by automatic
 differentiation of the gradient enclosures of $f$ and of each $g_k$, $h_k$ weighted by
-the fixed multipliers. Two modes:
+the fixed multipliers. Three modes:
 \begin{itemize}
 \item \emph{certify}: prove $[H] \succeq 0$ (every symmetric $H \in [H]$), with tests of
 increasing cost: interval Gerschgorin; the comparison matrix; the midpoint--radius
 condition checked by an interval Cholesky factorization of $H_c - \rho I$.
 \textbf{[TODO: precise statements, cost $O(n^2)$ / $O(n^3)$, reference to
 \citet{Hladik2018}.]} If none succeeds, no bound.
-\item \emph{shift} (default): $d_i = \max\{0, \sum_{j\ne i} |[H]_{ij}| - h^L_{ii}\}$,
+\item \emph{shift}: $d_i = \max\{0, \sum_{j\ne i} |[H]_{ij}| - h^L_{ii}\}$,
 the Gerschgorin rule of \citet[Thm.~3.13 with $d = \mathbf 1$]{Adjiman1998a}; the
-scaled variant (weights $w_i = \max |[x_i] - \hat x_i|$) is also available.
+scaled variant (weights $w_i = \max |[x_i] - \hat x_i|$) is also available, and
+we keep, of the two shifts, the one with the smaller penalty
+$\sum_i d_i w_i^2/2$.
+\item \emph{certify, else shift} (default): the certificate first; if it succeeds,
+$d = 0$; otherwise the smaller of the two shifts. On a convex quadratic whose Hessian
+is positive semidefinite but not diagonally dominant, Gerschgorin shifts it anyway and
+the bound loses the curvature the certificate keeps.
 \end{itemize}
 
 \subsection{Integration in the search}
@@ -414,11 +425,14 @@ arithmetic, SoPlex for the LP relaxations and Ipopt 3.11.9 (MUMPS) as local solv
 Relative precision $10^{-3}$, absolute $10^{-7}$, $\varepsilon_h = 10^{-8}$, time limit
 1200~s, one thread per run. All budgets that could depend on the machine (backoff,
 calls to the local solver) are counted in nodes or calls, so the search is
-deterministic: two runs of the same configuration explore the same nodes.
+deterministic: two runs of the same configuration explore the same nodes, except on
+the few instances where the search around a local solution for a certified feasible
+point stops at its CPU limit (1~s), whose last digits then depend on timing (four of the
+298 instances in our runs: launch, robot, ex9\_2\_5, rk23).
 
 \emph{Machine.} Two Intel Xeon E5-2620 v4 (16 cores, no hyperthreading), 62~GB,
-Ubuntu 24.04; 14 runs in parallel, the same for every configuration.
-\textbf{[TODO: final machine and run date if rerun.]}
+Ubuntu 24.04, gcc 13.3; 14 runs in parallel, the same for every configuration, on an
+otherwise idle machine (November 2026).
 
 \emph{Measures.} Number of instances solved. Times are compared with the geometric
 mean of the per-instance ratio, on the instances that some compared configuration
@@ -433,79 +447,132 @@ solves.
 Table~\ref{tab:ablation} compares IbexOpt without local solver (\texttt{default}
 upper bounding: probing and inner regions only), IbexOpt with Ipopt for upper
 bounding (the default configuration, our baseline) and the same with the Lagrangian
-bound of Section~\ref{sec:bound} (Gerschgorin shift, backoff up to 64 nodes).
+bound of Section~\ref{sec:bound}, with the Gerschgorin shift only and with the default
+mode (certify, else shift), both with backoff up to 64 nodes.
 
 \begin{table}[h]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccccc}
 \hline
 configuration & solved /298 & time vs.\ baseline [95\% CI] & W/L & nodes & time/node & bound \% \\
 \hline
-no local solver & 223 & 1.62 [1.33, 2.04] & 15/59 & 2.94 & 0.85 & -- \\
+no local solver & 224 & 1.59 [1.32, 1.98] & 15/60 & 2.93 & 0.85 & -- \\
 Ipopt upper bounding (baseline) & 229 & 1.00 & -- & 1.00 & 1.00 & -- \\
-+ Lagrangian bound & \textbf{237} & \textbf{0.57} [0.41, 0.75] & 26/0 & 0.80 & 1.01 & 0.2 \\
++ Lagrangian bound, shift only & 237 & 0.58 [0.41, 0.76] & 27/0 & 0.80 & 1.00 & 0.2 \\
++ Lagrangian bound, certify else shift & \textbf{240} & \textbf{0.50} [0.35, 0.69] & 36/2 & 0.70 & 1.00 & 0.3 \\
 \hline
-\end{tabular}
-\caption{Ablation on the 298 instances (1200~s). Time ratios on the 105 instances that some
-configuration solves and that take more than 1~s; nodes and time per node on the 223
+\end{tabular}}
+\caption{Ablation on the 298 instances (1200~s). Time ratios on the 109 instances that some
+configuration solves and that take more than 1~s; nodes and time per node on the
 instances solved by all.}
 \label{tab:ablation}
 \end{table}
 
-On the 223 instances solved by all configurations, the bound alone reduces the time to
-0.85 [0.73, 0.95] of the baseline, with 18 faster instances and none slower, and the
-nodes to 0.80; its own cost is 0.3\% of the running time and the time per node does
-not change. Most of the gain on the full set comes from the eight instances that only
-the bound solves within the time limit (abel, abelbis, abelbis-1, abelter-1, catena,
-fccu in less than 20~s, ex8\_4\_1 in 69~s, polak3 in 85~s).
+On the 223 instances solved by all configurations, the bound reduces the time to
+0.78 [0.65, 0.91] of the baseline, with 24 faster instances and one slower, and the
+nodes to 0.70; its own cost is 0.4\% of the running time and the time per node does
+not change. Most of the gain on the full set comes from the eleven instances that only
+the bound solves within the time limit: portfl1 at the root, abel, abelbis, abelbis-1,
+abelter-1, catena and fccu in less than 20~s, ex8\_4\_1 in 69~s, polak3 in 83~s,
+ex8\_4\_6 and ex8\_4\_6ter in about 1000~s. No instance solved by the baseline is lost.
+The two slower instances are discussed below.
 \textbf{[TODO: one sentence on why these instances: Lagrangian convex on the boxes
 around the optimum though the problem is not.]}
 
 \subsection{Variants of the bound}
 
-Table~\ref{tab:variants} compares, against the default bound (Gerschgorin shift), a
-bound applied only on boxes where convexity is certified (Gerschgorin test; or
-Gerschgorin, comparison matrix and interval Cholesky), the scaled Gerschgorin shift,
-and the default without backoff, on the 223 instances.
+Table~\ref{tab:variants} compares, against the default bound (certify, else shift),
+the bound applied only on boxes where convexity is certified (Gerschgorin test; or
+Gerschgorin, comparison matrix and interval Cholesky), the Gerschgorin shift alone,
+the shift that keeps the better of the plain and scaled Gerschgorin rules, and the
+Gerschgorin shift without backoff.
 
 \begin{table}[h]
 \centering
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \hline
-variant & time vs.\ default [95\% CI] & W/L & nodes & bound \% \\
+variant & solved /298 & time vs.\ default [95\% CI] & W/L & nodes \\
 \hline
-certify only, Gerschgorin & 1.08 [1.03, 1.13] & 0/15 & 1.04 & 0.0 \\
-certify only, + comparison matrix, Cholesky & 0.95 [0.83, 1.06] & 5/14 & 0.90 & 0.0 \\
-scaled Gerschgorin shift & 0.99 [0.95, 1.04] & 6/1 & 1.00 & 0.3 \\
-no backoff & 1.02 [1.00, 1.05] & 3/1 & 1.00 & 2.3 \\
+certify, else shift (default) & \textbf{240} & 1.00 & -- & 1.00 \\
+certify only, Gerschgorin & 235 & 1.20 [1.08, 1.40] & 0/19 & 1.19 \\
+certify only, + comparison matrix, Cholesky & 237 & 1.06 [1.00, 1.14] & 1/14 & 1.02 \\
+Gerschgorin shift & 237 & 1.12 [1.01, 1.29] & 1/10 & 1.14 \\
+better of plain and scaled shift & 239 & 1.11 [1.01, 1.27] & 0/6 & 1.14 \\
+Gerschgorin shift, no backoff & 237 & 1.14 [1.03, 1.31] & 1/9 & 1.14 \\
 \hline
-\end{tabular}
-\caption{Variants of the bound, 223 instances (71 that take more than 1~s).}
+\end{tabular}}
+\caption{Variants of the bound. Time ratios, W/L and nodes on the 223 instances solved
+by all (71 that take more than 1~s).}
 \label{tab:variants}
 \end{table}
 
-The shift matters: certifying convexity with Gerschgorin alone is 8\% slower. The
-stronger certificate (comparison matrix, interval Cholesky) is not distinguishable
-from the shift in time, but uses fewer nodes because it certifies four convex problems
-at the root (dualc1, dualc1\_\_coconut, dualc5, meanvar: solved with 0 nodes instead of
-522 to 23\,186), where the shifted bound is too weak; the shift is better elsewhere
-(ex6\_2\_6, ex6\_2\_8, dnieper). This suggests combining them: certify with the
-stronger test and fall back to the shift. \textbf{[TODO: run the combination.]} The
-scaled shift gives the same results; the backoff divides the cost of the bound by
-about seven without losing nodes.
+The two ingredients are complementary. The certificate alone (comparison matrix,
+interval Cholesky) solves four convex problems at the root (dualc1,
+dualc1\_\_coconut, dualc5, meanvar: 0 nodes instead of 522 to 23\,186 with the shift)
+and portfl1, where the shifted bound is too weak, but gives no bound on nonconvex
+boxes and loses ex8\_4\_1 and robot (twice slower). The shift is better there; the
+scaled rule also solves ex8\_4\_6 and ex8\_4\_6ter. The default gets both, and on
+dnieper does better than either (68 nodes against 150 and 434). The backoff divides
+the cost of the bound by about seven without losing nodes.
+
+The two instances where the default is slower than the baseline do not come from a
+weaker bound. On launch, the bound raises the lower bound of a single node and prunes none; the difference
+comes from the timed search for a feasible point (Section~\ref{sec:exp}, setup). On
+chenery-1 (254~s against 119~s), the scaled shift raises the lower bound of 3\,721 nodes
+and prunes 2\,669, and ACID, which tunes the number of variables handled by 3BCID from
+the contraction it observes, then stops using 3BCID altogether, while the plain shift
+never acts on this instance and ACID keeps 33 variables. With ACID fixed to 33
+variables, the scaled shift needs 8\,366 nodes against 13\,582 for the plain one.
 
 \subsection{Where the bound helps}
 
-\textbf{[TODO: E4, \texttt{--cvx-stats}: fraction of nodes where the Lagrangian is
-certified convex or the shifted bound raises the node bound, by depth.]}
+With \texttt{--cvx-stats} the solver counts, at every node, whether the bound can be
+computed (a primal--dual pair is stored), whether the Hessian is certified positive
+semidefinite, and whether the bound raises or prunes the node. Over the 59.5 million
+nodes of the 298 runs, a bound is available at 12\% of the nodes, the Hessian is
+certified at 0.7\% (in 24 instances), the bound raises the node's lower bound at 1.2\%
+and prunes 0.2\% of the nodes, in 76 instances. On the 223 solved instances it prunes
+0.6\% of the nodes (47 instances). The bound thus acts on few nodes, but on the right
+ones: the root of the convex problems above, and the boxes around the optimum where
+the linear relaxation stalls. Certification alone is not enough: on polak6 the Hessian
+is certified at 96\% of the nodes, yet the tangent bound with the stored multipliers,
+computed at another node, never exceeds the incumbent value, and the instance is not
+solved.
 
 \subsection{Comparison with SCIP}
 
-\textbf{[TODO: E5 on the same machine.]} Preliminary results (other machine, 310~s):
-with the same domains for both solvers (missing bounds set to $\pm 10^{12}$), IbexOpt
-with the bound solves 240 of the 291 instances SCIP~10 can read, SCIP 223; time ratio
-0.59 [0.28, 1.23] on 98 instances. SCIP reports two unbounded problems as solved with
-values far from the optimum of their bounded versions.
+We ran SCIP~10.0 (through PySCIPOpt 6.3) on the same machine, with the same time
+limit, the same relative and absolute gaps, one thread and otherwise default settings,
+on the 298 instances translated from Minibex; seven cannot be translated (eight on the
+original domains). SCIP treats an unbounded variable as unbounded,
+while IbexOpt needs a bounded box; for a fair comparison both solvers get the same
+domains, missing bounds being replaced by $\pm 10^{12}$. With these domains, IbexOpt
+with the bound solves 245 instances and SCIP 224 (on the original domains, 240 and 221).
+Figure~\ref{fig:perfprof} shows the performance profile on the 110 instances that one
+of the two solves and that take more than 1~s for one of them.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{../local/perfprof12_comb.png}
+\caption{Performance profile, SCIP~10 against IbexOpt with the Lagrangian bound, same
+domains (missing bounds $\pm 10^{12}$), 1200~s; 110 instances solved by one of the two
+and taking more than 1~s for one.}
+\label{fig:perfprof}
+\end{figure}
+
+IbexOpt solves 97 of the 110 instances and SCIP 79; 31 are solved only by IbexOpt
+(among them the ex6\_2 and ex7\_2 families, ex8\_4\_6, ex8\_4\_6ter, hs102 and rk23) and
+13 only by SCIP (3pk, 3pk-borne, chenery, ex8\_4\_3, linear, minlphi, optmass,
+orthregb, pollut, prolog, qp1, qp1-1, qp2). SCIP is faster on most instances both
+solve: on 40 of the 66, against 26, by 1.17 in geometric mean. The bound narrows this
+gap (1.40 with the shift-only bound on the original domains, 1.50 without bound) and
+removes portfl1 from the instances only SCIP solves. Two SCIP runs end with an internal
+LP error after about 950~s (ex8\_4\_6bis on the original domains, rk23 with
+$\pm 10^{12}$ bounds), counted as unsolved; SCIP declares wall infeasible, while
+IbexOpt certifies a feasible point; on the original domains it reports ex8\_4inf-1 as
+solved with value $-10^{20}$, its infinity.
 
 \subsection{Robustness}
 
@@ -513,15 +580,14 @@ Three instances (hs089--hs091) and the configuration without local solver on rob
 the search hang beyond the time limit. The causes were outside the bound: symbolic
 differentiation of very large constraints for Ipopt, a period search of the inner
 projection of trigonometric functions, and node contractions checked against the time
-limit only between nodes. They are fixed in all the configurations above
-\textbf{[TODO: rerun the affected runs with the fixed binary]}.
+limit only between nodes. They are fixed in all the configurations above, and every
+run reported here ended within the time limit.
 
 \section{Conclusion}\label{sec:concl}
 
 \textbf{[TODO.]} Summary; limits (needs a usable local solution; the shift degrades on
 wide boxes; multipliers from another node); future work: optimality-based range
-reduction with the same tangent \citep{RyooSahinidis1996}, better shifts (scaled,
-E-matrix), branching on the variables with $d_i > 0$ \citep{Adjiman1998b}.
+reduction with the same tangent \citep{RyooSahinidis1996}, better shifts (E-matrix), branching on the variables with $d_i > 0$ \citep{Adjiman1998b}.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
