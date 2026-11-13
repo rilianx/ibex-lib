@@ -97,13 +97,39 @@ namespace ibex {
   // bound (counters: variable bounds tightened, boxes emptied)
   bool cvx_reduce=false;
   long cvx_reduced=0, cvx_reduce_emptied=0;
+  // --cvx-feas: infeasibility certificate from the constraints only. When an
+  // Ipopt run ends at a point x~ that violates the constraints, the residuals
+  // c(x~) are stored as multipliers (they are the KKT multipliers of
+  // min 1/2 ||viol(x)||^2 at a local minimizer). For any feasible x,
+  // Lc(x) = lam^T c(x) <= eps_h ||lam_eq||_1, so a box on which the same
+  // tangent bound of Lc minus that term is > 0 holds no feasible point.
+  bool cvx_feas=false;
+  long cvx_feas_pairs=0, cvx_feas_pruned=0, cvx_feas_reduced=0;
   namespace { LoupFinderIpopt* cvx_finder=NULL;
     // backoff: after a node where the Lagrangian is not certified convex, the
     // next check is done 2x later (up to cvx_backoff_max nodes); a certified
     // node resets it. Bounds the Hessian cost where nothing is convex.
     long cvx_interval=1, cvx_skip=0;
+    long feas_interval=1, feas_skip=0;
     double cvx_hook(const IntervalVector& b) {
       if (!cvx_finder) return NEG_INFINITY;
+      if (cvx_feas && optimizer_extra_box && cvx_finder->feas_have) {
+        if (cvx_backoff_max > 1 && feas_skip > 0) feas_skip--;
+        else {
+          std::clock_t c0 = std::clock();
+          long red0 = cvx_reduced;
+          double fb = cvx_finder->cvx_bound(b, NULL, cvx_reduce ? optimizer_extra_box : NULL, true);
+          cvx_total_time += double(std::clock() - c0) / CLOCKS_PER_SEC;
+          cvx_feas_reduced += cvx_reduced - red0; cvx_reduced = red0;
+          bool useful = fb > 0 || optimizer_extra_box->is_empty();
+          if (fb > 0) optimizer_extra_box->set_empty();
+          if (optimizer_extra_box->is_empty()) { cvx_feas_pruned++; return NEG_INFINITY; }
+          if (cvx_backoff_max > 1) {
+            feas_interval = useful ? 1 : std::min(2*feas_interval, cvx_backoff_max);
+            feas_skip = feas_interval - 1;
+          }
+        }
+      }
       if (cvx_backoff_max > 1 && cvx_skip > 0) { cvx_skip--; return NEG_INFINITY; }
       bool cert = false;
       std::clock_t c0 = std::clock();
@@ -354,6 +380,23 @@ namespace ibex {
 	                && std::isfinite(optimalValue);
 	  for (int i=0; usable && i<solution.size(); i++) usable = std::isfinite(solution[i]);
 	  if ((cvx_stats || cvx_close_on) && usable && (int) cvx_x_tmp.size()==sys.nb_var) { cvx_x = cvx_x_tmp; cvx_lambda = cvx_lambda_tmp; cvx_have = true; }
+	  if (cvx_feas && (int) status > -10 && std::isfinite(optimalValue) && solution.size()==sys.nb_var
+	      && sys.nb_ctr > 0 && sys.ctrs.size()==(size_t) sys.f_ctrs.image_dim()) {
+	    bool fin = true; for (int i=0; i<solution.size(); i++) fin = fin && std::isfinite(solution[i]);
+	    if (fin) {
+	      IntervalVector c = sys.f_ctrs.eval_vector(IntervalVector(solution));
+	      int mm = c.size(); bool viol = false; std::vector<double> r(mm);
+	      for (int k=0; k<mm; k++) {
+	        r[k] = c[k].mid();
+	        CmpOp op = sys.ctrs[k].op;
+	        if ((op==LEQ || op==LT) && c[k].lb() > 0) viol = true;
+	        else if ((op==GEQ || op==GT) && c[k].ub() < 0) viol = true;
+	        else if (op==EQ && std::fabs(r[k]) > 10*NormalizedSystem::default_eps_h) viol = true;
+	        if (!std::isfinite(r[k])) fin = false;
+	      }
+	      if (viol && fin) { feas_x.resize(solution.size()); for (int i=0; i<solution.size(); i++) feas_x[i] = solution[i]; feas_lambda = r; feas_have = true; cvx_feas_pairs++; }
+	    }
+	  }
 	  if( usable && optimalValue< loup){
 	    
 	    for (int i=0; i< box.size(); i++) {
@@ -603,11 +646,15 @@ namespace ibex {
       if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
     }
 
-    double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified, IntervalVector* red) {
+    double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified, IntervalVector* red, bool feas) {
       if (certified) *certified = false;
-      if (!cvx_have || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return NEG_INFINITY;
+      // feas: Lagrangian of the constraints only (no objective), residual multipliers
+      const std::vector<double>& cvx_x = feas ? this->feas_x : this->cvx_x;
+      const std::vector<double>& cvx_lambda = feas ? this->feas_lambda : this->cvx_lambda;
+      if (!(feas ? feas_have : cvx_have) || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return NEG_INFINITY;
       int n = sys.nb_var, m = sys.f_ctrs.image_dim();
       if ((int) cvx_lambda.size() != m) return NEG_INFINITY;
+      if (feas && sys.ctrs.size()!=(size_t) m) return NEG_INFINITY;   // signs needed per component
       if (certified) cvx_with_dual++;
       // multipliers with the sign weak duality needs: f<=0 -> >=0, f>=0 -> <=0
       std::vector<double> lam(m, 0.0);
@@ -621,7 +668,7 @@ namespace ibex {
       }
       // interval Hessian of the Lagrangian on the box
       IntervalMatrix H(n,n);
-      df->jacobian(box, H);
+      if (feas) H = IntervalMatrix(n,n,Interval(0)); else df->jacobian(box, H);
       for (int k=0; k<m; k++) {
         if (lam[k]==0) continue;
         IntervalMatrix Hk(n,n);
@@ -706,8 +753,8 @@ namespace ibex {
         if (!std::isfinite(v)) return NEG_INFINITY;
         xh[i] = Interval(v);
       }
-      Interval L = sys.goal->eval(xh);
-      IntervalVector grad = df->eval_vector(xh);
+      Interval L = feas ? Interval(0) : sys.goal->eval(xh);
+      IntervalVector grad = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(xh);
       if (m>0) {
         IntervalVector gx = sys.f_ctrs.eval_vector(xh);
         for (int k=0; k<m; k++) {
@@ -731,7 +778,7 @@ namespace ibex {
           bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
       if (!std::isfinite(lb)) return NEG_INFINITY;
-      if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam);
+      if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam, feas ? 0.0 : optimizer->compute_ymax());
       return lb;
     }
 
@@ -746,8 +793,7 @@ namespace ibex {
     void LoupFinderIpopt::cvx_reduce_box(const IntervalVector& box, IntervalVector& red,
                                          const IntervalVector& xh, const IntervalVector& grad,
                                          const std::vector<double>& dshift, const Interval& L0,
-                                         int m, const std::vector<double>& lam) {
-      double ymax = optimizer->compute_ymax();
+                                         int m, const std::vector<double>& lam, double ymax) {
       if (!(ymax < POS_INFINITY)) return;
       int n = box.size();
       std::vector<Interval> T(n);

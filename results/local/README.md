@@ -803,3 +803,36 @@ Largest gains: ex8_4_1 69.1 -> 10.5 s (10100 -> 1638 nodes), robot 85.8 -> 45.8 
 (49980 -> 33818), ex8_4_4 5.1 -> 4.1 s; dnieper 68 -> 4 nodes (< 2 s). No instance
 slower by more than 5%. With `--cvx-reduce` a node emptied by the reduction is counted
 in `cvx_reduce_emptied`, not in `cvx_pruned`.
+
+## E10 (prototype, negative): `--cvx-feas`, infeasibility certificate from the constraints
+
+Prototype (approved by the author), flag off by default. When an Ipopt run ends at a
+point x~ that violates the constraints, the residuals c(x~) are stored as multipliers
+(at a local minimizer of 1/2 ||viol||^2 they are its KKT multipliers). For feasible x,
+Lc(x) = lam^T c(x) <= eps_h ||lam_eq||_1, so a box where the same tangent bound of Lc
+(certify else shift, objective term removed) minus that term is > 0 is emptied; with
+`--cvx-reduce` the same range reduction is applied with threshold 0 instead of ymax.
+Own backoff (same rule as the bound). Works without a loup, where the bound and
+`--cvx-reduce` do nothing.
+
+Test: acombr + `--cvx-feas` on the 10 instances where acomb never finds a feasible
+point (discs, ex5_3_3, hs089, hs091, hs107, minlphi, minlphi1, orthregb, rk23, ship)
+and two with a late first loup (fccu, hs090), TLIM 1200, 12 runs in parallel, server
+otherwise idle (2026-11-13 18:45-19:05). Data: `results/local/feas/acombrf-12.jsonl`.
+
+| instance | acombr status / nodes | + --cvx-feas status / nodes | residual pairs stored | boxes emptied | bounds reduced |
+|---|---|---|---|---|---|
+| ex5_3_3 | timeout / 27614 | timeout / 26828 | 151 | 0 | 0 |
+| discs | timeout / 31138 | timeout / 28728 | 130 | 0 | 0 |
+| hs107 | timeout / 77156 | timeout / 83662 | 32 | 8 | 793 |
+| hs090 | timeout / 5482 | timeout / 5770 | 42 | 0 | 0 |
+| ship | no_lower_bound / 2948 | no_lower_bound / 2948 | 31 | 0 | 1 |
+| hs089 | timeout / 11476 | timeout / 11208 | 3 | 0 | 0 |
+| orthregb | timeout / 188190 | timeout / 194568 | 1 | 0 | 0 |
+| fccu, minlphi, minlphi1, rk23, hs091 | unchanged | unchanged | 0 | 0 | 0 |
+
+No status changes: the certificate almost never fires (8 boxes on hs107). On
+minlphi/minlphi1/rk23/hs091/fccu Ipopt never ends at an infeasible point (or the
+system has vector constraints, where the prototype gives up: signs are needed per
+component). Where residuals are stored (ex5_3_3, discs) no box is emptied. Not pursued
+in the paper.
