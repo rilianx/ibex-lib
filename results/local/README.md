@@ -556,3 +556,64 @@ on 43 (times floored at 1 s).
 
 ![original domains](perfprof.png)
 ![±1e12 domains](perfprof12.png)
+
+## E6 (extra, approved by the author): `acomb` = certify, else scaled shift
+
+New option `--cvx-test 4` (commit 6e8c37def, `cvx_bound` in
+`src/ipopt/ibex_LoupFinderIpopt.cpp`): first try to certify the interval Hessian of
+the Lagrangian PSD as `--cvx-test 1` (Gershgorin, comparison matrix, midpoint-radius
+Cholesky); if certified, the plain tangent bound (no shift); otherwise the shift of
+`--cvx-test 3` (best of plain and scaled Gershgorin). Arm `acomb` added to both run.sh.
+
+Motivation (oracle on the existing runs, 82 instances, non-closed = 2400 s):
+min(acvx0, acert1)/acvx0 = 0.83, min(acert1, ascaled)/acvx0 = 0.79. Certification wins
+on the convex QPs (dualc1, dualc5, portfl1, meanvar: H PSD but not diagonally dominant,
+so Gershgorin shifts it anyway and loosens the bound); the shift wins where nothing is
+convex (robot, ex8_4_1, ex6_2_6, dnieper).
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acomb" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acomb" sh results/anytime/run.sh
+python3 results/paper/compare.py --tlim 1200 --closed-file results/local/runs-closed.jsonl --open-file results/local/runs-open.jsonl --set closed|open|all --ref acvx0 ascaled acert1 acomb
+```
+
+Wall time: 223 set 8.5 min, 75 set 1 h 20 min (2026-11-12, 19:39-21:08), server idle
+before (load 0.95). No killed run. Statuses (298): 240 complete, 47 timeout, 9
+no_lower_bound, 2 infeasible.
+
+223 set:
+
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 223 | 71 (71) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 3.3 | 0.3 |
+| ascaled | 223 | 71 (71) | 0.99 [0.95, 1.04] | 6/1 | 1.00 | 1.00 | 3.4 | 0.3 |
+| acert1 | 223 | 71 (71) | 0.95 [0.83, 1.06] | 5/14 | 0.90 | 0.99 | 3.1 | 0.0 |
+| acomb | 223 | 71 (71) | 0.90 [0.77, 0.99] | 10/1 | 0.88 | 1.00 | 3.4 | 0.4 |
+
+75 set:
+
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 14 | 11 (8) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 6.9 | 0.1 |
+| ascaled | 16 | 11 (10) | 1.04 [0.93, 1.21] | 2/1 | 1.12 | 0.90 | 6.8 | 0.7 |
+| acert1 | 14 | 11 (8) | 0.66 [0.14, 2.06] | 3/1 | 0.98 | 0.98 | 6.7 | 0.1 |
+| acomb | 17 | 11 (11) | 0.54 [0.14, 1.14] | 4/1 | 1.10 | 0.90 | 6.9 | 0.7 |
+
+all 298:
+
+| arm | closed | n (closes) | time vs acvx0 [IC95] | W/L | nodes | t/node | ipopt% | bound% |
+|---|---|---|---|---|---|---|---|---|
+| acvx0 | 237 | 82 (79) | 1.00 [1.00, 1.00] | 0/0 | 1.00 | 1.00 | 5.0 | 0.2 |
+| ascaled | 239 | 82 (81) | 1.00 [0.96, 1.04] | 8/2 | 1.01 | 0.99 | 5.1 | 0.5 |
+| acert1 | 237 | 82 (79) | 0.91 [0.71, 1.08] | 8/15 | 0.90 | 0.99 | 4.8 | 0.1 |
+| acomb | 240 | 82 (82) | 0.84 [0.66, 0.98] | 14/2 | 0.89 | 0.99 | 5.1 | 0.5 |
+
+- acomb closes **240** (the union of the others): portfl1 at the root (as acert1),
+  ex8_4_6 (1013 s) and ex8_4_6ter (1015 s) (as ascaled), ex8_4_1 (69 s, which acert1
+  loses). It is the only arm whose IC95 vs acvx0 is below 1 on the 298.
+- Big wins (both close, > 1 s): dualc5 47.6 -> 0.0 s, dualc1 8.1 -> 0.1 s,
+  dualc1__coconut 2.2 -> 0.0 s (closed at the root, as acert1), dnieper 4.8 -> 1.7 s
+  (150 -> 68 nodes, better than both acvx0 and acert1).
+- The 2 losses come from the scaled shift, not from the combination: chenery-1 120 ->
+  254 s (6520 -> 28936 nodes; ascaled has the same 28936 nodes) and launch 3.6 -> 10.8 s
+  (26 -> 210 nodes; ascaled/acert0 194, and launch is timing-sensitive, see E4).
