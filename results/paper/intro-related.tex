@@ -3,6 +3,9 @@
 \usepackage{amsmath,amssymb}
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\newtheorem{proposition}{Proposition}
 \usepackage{hyperref}
 
 \title{Certified Lagrangian lower bounds from local-solver multipliers
@@ -315,7 +318,32 @@ solver whose optimum is made safe as in \citet{NeumaierShcherbina2004};
 (ii)~raises $\underline{y}$ accordingly;
 (iii)~runs the upper-bounding heuristics;
 (iv)~stores the node in a best-first heap (\texttt{lsmear} branching).
-\textbf{[TODO: one figure with the node loop and where the new bound plugs in.]}
+Figure~\ref{fig:loop} shows this loop and where the bound of
+Section~\ref{sec:bound} plugs in.
+
+\begin{figure}[h]
+\centering
+\fbox{\begin{minipage}{0.9\textwidth}
+\begin{enumerate}
+\item Pop the node $[x]\times[y]$ with the lowest $\underline{y}$ from the heap;
+  bisect it (\texttt{lsmear}) into two children. For each child:
+\item \emph{Contract}: $[y] \gets [y] \cap (-\infty, \text{loup} - \text{prec}]$;
+  HC4, ACID and the safe LP relaxation contract $[x] \times [y]$. If empty, discard.
+\item \emph{Upper bound}: probing, inner regions and, on schedule, Ipopt on the
+  child's box; a point certified feasible may lower the loup.
+  \textbf{New:} Ipopt's primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ is stored.
+\item \textbf{New:} \emph{Lagrangian bound}: $\underline{y} \gets
+  \max(\underline{y}, \beta)$ with $\beta$ the bound~\eqref{eq:bound} on
+  the child's box from the stored pair (Algorithm~\ref{alg:bound}); if
+  $\underline{y} > \text{loup} - \text{prec}$, discard.
+\item Push the child; stop when the heap is empty or
+  $\text{loup} - \min \underline{y} \le \text{prec}$.
+\end{enumerate}
+\end{minipage}}
+\caption{One iteration of IbexOpt's best-first search; the steps marked \textbf{New}
+are added by this work. prec is the absolute or relative precision.}
+\label{fig:loop}
+\end{figure}
 
 \subsection{Upper bounding with a local solver}\label{sec:ub}
 
@@ -331,7 +359,7 @@ primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ that Ipopt returns.
 
 \section{A certified Lagrangian lower bound}\label{sec:bound}
 
-\subsection{Weak duality with relaxed equalities}
+\subsection{Weak duality with relaxed equalities}\label{sec:weak}
 
 Write the constraints as $g(x) \le 0$ and $h(x) = 0$ (each $\ge$ constraint negated).
 For any $\mu \ge 0$ and $\lambda$, and any $x$ that the search treats as feasible
@@ -346,27 +374,69 @@ any assumption on their quality.
 
 \subsection{Tangent bound on a box}
 
-\textbf{Proposition 1.} Let $[x]$ be a box, $\hat x \in [x]$, and $d \in \mathbb{R}^n_+$
-such that $\nabla^2 L(\xi) + \operatorname{diag}(d) \succeq 0$ for all $\xi \in [x]$.
+\begin{proposition}\label{prop:bound}
+Let $[x]$ be a box, $\hat x \in [x]$, $\mu \ge 0$, $\lambda$ any multipliers, and
+$d \in \mathbb{R}^n_+$ such that $\nabla^2 L(\xi) + \operatorname{diag}(d) \succeq 0$
+for all $\xi \in [x]$, with $L = L_{\mu,\lambda}$.
 Then for all $x \in [x]$ feasible for the relaxed problem,
 \[
   f(x) \ge L(\hat x) + \sum_i \min_{x_i \in [x_i]} \partial_i L(\hat x)(x_i - \hat x_i)
   - \frac12 \sum_i d_i \max_{x_i \in [x_i]} (x_i - \hat x_i)^2
   - \varepsilon_h \|\lambda\|_1 .
 \]
-\emph{Proof sketch.} $\phi(x) = L(x) + \frac12 \sum_i d_i (x_i - \hat x_i)^2$ is convex on
-$[x]$ and has gradient $\nabla L(\hat x)$ at $\hat x$; the tangent inequality of $\phi$
-and the bounds on each term give the result. \textbf{[TODO: full proof; remark that
-with $d = 0$ it is the bound of \citet{Jansson2004convex} and
-\citet{MessineTrombettoni2019}, and that the separable penalty could use the exact
-minimum of each one-dimensional concave term over its interval.]}
+\end{proposition}
+\emph{Proof.} Let $\phi(x) = L(x) + \frac12 \sum_i d_i (x_i - \hat x_i)^2$. Its Hessian
+$\nabla^2 L(x) + \operatorname{diag}(d)$ is positive semidefinite at every point of the
+convex set $[x]$, so $\phi$ is convex on $[x]$, and
+$\nabla\phi(\hat x) = \nabla L(\hat x)$, $\phi(\hat x) = L(\hat x)$. The tangent
+inequality of a differentiable convex function gives, for every $x \in [x]$,
+\[
+  L(x) + \tfrac12 \textstyle\sum_i d_i (x_i - \hat x_i)^2 = \phi(x) \ge
+  L(\hat x) + \nabla L(\hat x)^\top (x - \hat x).
+\]
+Each term $\partial_i L(\hat x)(x_i - \hat x_i)$ is at least its minimum over $[x_i]$,
+and each $(x_i - \hat x_i)^2$ at most its maximum over $[x_i]$, so $L(x)$ is at least
+the right-hand side of the proposition without the last term. Weak duality with
+relaxed equalities (Section~\ref{sec:weak}) adds $-\varepsilon_h\|\lambda\|_1$. $\square$
+
+With $d = 0$ this is the bound of \citet{Jansson2004convex} and
+\citet{MessineTrombettoni2019} for convex programs, here applied box by box. Bounding
+the linear and the quadratic terms separately is slightly loose: each one-dimensional
+term $\partial_i L(\hat x) t - \frac12 d_i t^2$ is concave in $t = x_i - \hat x_i$, so
+its exact minimum over $[x_i]$ is attained at an endpoint and could be used instead.
 
 \textbf{Exactness.} If $d = 0$, $\hat x$ is a KKT point of the problem restricted to
 $[x]$ with multipliers $(\hat\mu, \hat\lambda)$ and computations are exact, the bound
 equals $f(\hat x)$ up to $\varepsilon_h\|\lambda\|_1$ \citep[Thm.~2]{Jansson2004convex}.
 With $d \neq 0$ the penalty is $O(\|d\|\,\mathrm{wid}([x])^2)$ and vanishes as the box
-shrinks. \textbf{[TODO: state as a proposition on convergence along a nested sequence of
-boxes.]}
+shrinks:
+
+\begin{proposition}\label{prop:conv}
+Fix $(\mu, \lambda)$. Let $[x]^0 \supseteq [x]^1 \supseteq \cdots$ be nested boxes with
+$\mathrm{wid}([x]^k) \to 0$, hence converging to a point $x^*$, let
+$\hat x^k \in [x]^k$, and let $d^k$ be computed by the Gerschgorin rule from an
+inclusion-monotonic enclosure of $\nabla^2 L$ over $[x]^k$. Then the bound
+$\beta^k$ of Proposition~\ref{prop:bound} converges to
+$L(x^*) - \varepsilon_h \|\lambda\|_1$. If moreover $x^*$ is feasible and
+$\mu^\top g(x^*) = 0$, $\lambda^\top h(x^*) = 0$ (complementarity), then
+$\beta^k \to f(x^*) - \varepsilon_h \|\lambda\|_1$.
+\end{proposition}
+\emph{Proof.} By inclusion monotonicity, $[H]^k \subseteq [H]^0$, so
+$0 \le d^k \le d^0$. With $w_k = \mathrm{wid}([x]^k)$, the linear term is at least
+$-\|\nabla L(\hat x^k)\|_1 w_k$ and the penalty at most $\frac12 \|d^0\|_1 w_k^2$; since
+$\nabla L$ is continuous, hence bounded on $[x]^0$, both tend to $0$, and
+$L(\hat x^k) \to L(x^*)$ by continuity. The second statement is
+$L(x^*) = f(x^*) + \mu^\top g(x^*) + \lambda^\top h(x^*)$. With interval evaluation the
+same holds as long as the inclusion functions of $L$ and $\nabla L$ are convergent
+(their width tends to $0$ with the width of the argument), which holds for the natural
+extensions of the expressions we use. $\square$
+
+The default mode keeps, at each node, a penalty no larger than that of the plain
+Gerschgorin shift (none if the Hessian is certified, else the smaller of the plain and
+scaled ones), so Proposition~\ref{prop:conv} applies to it as well.
+
+So, around a KKT point whose multipliers the local solver returned, the bound closes
+the gap as the boxes shrink, whatever the sign of the curvature of $L$ there.
 
 \subsection{Rigorous evaluation}
 
@@ -384,11 +454,26 @@ $[H]$ is an interval enclosure of $\nabla^2 L$ over $[x]$, obtained by automatic
 differentiation of the gradient enclosures of $f$ and of each $g_k$, $h_k$ weighted by
 the fixed multipliers. Three modes:
 \begin{itemize}
-\item \emph{certify}: prove $[H] \succeq 0$ (every symmetric $H \in [H]$), with tests of
-increasing cost: interval Gerschgorin; the comparison matrix; the midpoint--radius
-condition checked by an interval Cholesky factorization of $H_c - \rho I$.
-\textbf{[TODO: precise statements, cost $O(n^2)$ / $O(n^3)$, reference to
-\citet{Hladik2018}.]} If none succeeds, no bound.
+\item \emph{certify}: prove $H \succeq 0$ for every $H \in [H]$, with sufficient
+tests of increasing cost (see \citet{Hladik2018} for this family of conditions). Rows
+and columns of $[H]$ that are identically zero (variables in which $L$ is linear) are
+removed first.
+\begin{enumerate}
+\item \emph{Gerschgorin}, $O(n^2)$: $h^L_{ii} \ge \sum_{j \ne i} \max_{h \in [H]_{ij}} |h|$
+for every $i$ (diagonal dominance of every member).
+\item \emph{Comparison matrix}, $O(n^3)$: $M$ with $M_{ii} = h^L_{ii}$ and
+$M_{ij} = -\max |[H]_{ij}|$ is positive definite; then
+$x^\top H x \ge |x|^\top M |x| > 0$ for every symmetric
+$H \in [H]$ and $x \ne 0$.
+\item \emph{Midpoint--radius}, $O(n^3)$: with $H_c = (\mathrm{mid}[H] + \mathrm{mid}[H]^\top)/2$,
+$\Delta = \mathrm{rad}[H]$ and $\rho$ an upper bound of
+$\|(\Delta + \Delta^\top)/2\|_\infty$, $H_c - \rho I$ is positive definite. Every
+symmetric $H \in [H]$ satisfies $|H - H_c| \le (\Delta + \Delta^\top)/2$ entrywise,
+hence $\lambda_{\min}(H) \ge \lambda_{\min}(H_c) - \rho > 0$.
+\end{enumerate}
+Positive definiteness in (2) and (3) is proved by a Cholesky factorization carried
+out in interval arithmetic, which succeeds only if every pivot is provably positive.
+If no test succeeds, no bound.
 \item \emph{shift}: $d_i = \max\{0, \sum_{j\ne i} |[H]_{ij}| - h^L_{ii}\}$,
 the Gerschgorin rule of \citet[Thm.~3.13 with $d = \mathbf 1$]{Adjiman1998a}; the
 scaled variant (weights $w_i = \max |[x_i] - \hat x_i|$) is also available, and
@@ -402,14 +487,38 @@ the bound loses the curvature the certificate keeps.
 
 \subsection{Integration in the search}
 
-The bound is computed in the contraction step of every node, after the other
-contractors, with the last stored primal--dual pair (computed at another node, so
-nothing is solved at the current one). If it exceeds $\underline{y}$, it raises it; if
-it exceeds the loup, the node is pruned. \textbf{Backoff:} when the bound does not
-improve the node's lower bound, the next attempt is postponed by twice the previous
-gap (up to 64 nodes); a useful attempt resets the gap. This bounds the cost on
-problems where the Lagrangian bound never helps.
-\textbf{[TODO: pseudocode.]}
+The bound is computed at every node after contraction and upper bounding
+(Figure~\ref{fig:loop}), with the last stored primal--dual pair: the one of this node's
+Ipopt call if Ipopt ran here, otherwise one computed at an earlier node, so nothing is
+solved for the bound itself. If it exceeds $\underline{y}$, it raises it; if it exceeds
+the loup, the node is pruned. \textbf{Backoff:} when an attempt is not useful (no
+certificate and no improvement of the node's lower bound), the next attempt is
+postponed by twice the previous gap (up to 64 nodes); a useful attempt resets the gap
+to one. This bounds the cost on problems where the Lagrangian bound never helps.
+Algorithm~\ref{alg:bound} summarizes one call.
+
+\begin{algorithm}[h]
+\caption{Lagrangian bound at a node (default mode, certify else shift)}
+\label{alg:bound}
+\begin{algorithmic}[1]
+\Require node box $[x]$, node lower bound $\underline{y}$; stored pair
+  $(\hat x, \hat\mu, \hat\lambda)$; backoff state $(\textit{gap}, \textit{skip})$
+\If{$\textit{skip} > 0$} $\textit{skip} \gets \textit{skip} - 1$; \Return $-\infty$ \EndIf
+\If{no stored pair, or $[x]$ unbounded} \Return $-\infty$ \EndIf
+\State project the multipliers onto their signs ($\mu \gets \max(\hat\mu, 0)$, \dots)
+\State $[H] \gets$ interval Hessian of $L_{\mu,\lambda}$ over $[x]$
+\If{$[H]$ certified positive semidefinite (tests 1--3)} $d \gets 0$
+\Else\ $d \gets$ plain or scaled Gerschgorin shift, the one with the smaller penalty
+\EndIf
+\State $\bar x \gets$ projection of $\hat x$ onto $[x]$
+\State $\beta \gets$ lower end of the interval evaluation of the right-hand side of
+  Proposition~\ref{prop:bound} at $\bar x$
+\If{certified or $\beta > \underline{y}$} $\textit{gap} \gets 1$
+\Else\ $\textit{gap} \gets \min(2\,\textit{gap}, 64)$ \EndIf
+\State $\textit{skip} \gets \textit{gap} - 1$
+\State \Return $\beta$ \Comment{the caller sets $\underline{y} \gets \max(\underline{y}, \beta)$}
+\end{algorithmic}
+\end{algorithm}
 
 \section{Experiments}\label{sec:exp}
 
@@ -476,9 +585,14 @@ not change. Most of the gain on the full set comes from the eleven instances tha
 the bound solves within the time limit: portfl1 at the root, abel, abelbis, abelbis-1,
 abelter-1, catena and fccu in less than 20~s, ex8\_4\_1 in 69~s, polak3 in 83~s,
 ex8\_4\_6 and ex8\_4\_6ter in about 1000~s. No instance solved by the baseline is lost.
-The two slower instances are discussed below.
-\textbf{[TODO: one sentence on why these instances: Lagrangian convex on the boxes
-around the optimum though the problem is not.]}
+The two slower instances are discussed below. Five of these instances (portfl1,
+abel, abelbis-1, abelter-1, catena) are closed at the root: the bound from the first
+Ipopt call already meets the incumbent, while the baseline still has gaps of up to
+$10^6$ after more than $10^5$ nodes. On polak3 and abelbis the Hessian of the Lagrangian
+is certified convex on about 40\% of the nodes, although the problems are not convex.
+On ex8\_4\_1, ex8\_4\_6 and ex8\_4\_6ter it is never certified, but the shifted bound
+raises the lower bound of most nodes (9\,333 of 10\,100 on ex8\_4\_1), on the small boxes
+around the optimum where the shift penalty is small.
 
 \subsection{Variants of the bound}
 
@@ -585,9 +699,33 @@ run reported here ended within the time limit.
 
 \section{Conclusion}\label{sec:concl}
 
-\textbf{[TODO.]} Summary; limits (needs a usable local solution; the shift degrades on
-wide boxes; multipliers from another node); future work: optimality-based range
-reduction with the same tangent \citep{RyooSahinidis1996}, better shifts (E-matrix), branching on the variables with $d_i > 0$ \citep{Adjiman1998b}.
+The multipliers that the local solver returns with each upper-bounding call are
+enough to build a rigorous lower bound on the original nonconvex problem, node by
+node: weak duality with relaxed equalities, an interval Hessian of the Lagrangian that
+is certified positive semidefinite or shifted diagonally, and the tangent plane at the
+local solution minimized in closed form over the box. The bound needs no relaxation
+and no extra optimization problem, costs less than 1\% of the running time, and in
+IbexOpt with Ipopt solves 11 more of 298 COCONUT instances and halves the solving time
+on those that take more than a second. Certifying first and shifting only when the
+certificate fails gets the best of both: the certificate closes convex problems at the
+root, the shift keeps the bound on nonconvex boxes. With the bound, the rigorous
+solver solves more instances than SCIP~10 on the same domains, although SCIP remains
+faster on most instances both solve.
+
+\emph{Limits.} The bound needs a usable primal--dual pair: there is no bound before
+Ipopt succeeds once, nor on unbounded boxes. The multipliers are those of the last
+Ipopt call, possibly at a distant node, and they are good only near the local solution
+they come from. The shift penalty grows with the square of the box width, so on wide
+boxes of nonconvex problems the bound is weak and the backoff mostly skips it. It acts
+on few nodes (0.2\% are pruned by it), so its value lies in the instances it closes,
+not in a uniform speed-up.
+
+\emph{Future work.} Optimality-based range reduction with the same tangent
+\citep{RyooSahinidis1996}; better shifts (E-matrix rules, the exact minimum of the
+one-dimensional concave terms); calling the local solver where the bound is weak, to
+refresh the multipliers; branching on the variables with $d_i > 0$
+\citep{Adjiman1998b}; and a coupling with adaptive contractors such as ACID that does
+not let a stronger bound switch off a useful contractor.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
