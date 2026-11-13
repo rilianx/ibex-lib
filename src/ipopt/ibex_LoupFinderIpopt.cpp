@@ -565,19 +565,26 @@ namespace ibex {
       for (int a=0; a<n; a++) for (int b=0; b<n; b++)
         M[a][b] = (a==b) ? Interval(H[a][a].lb()) : -Interval(std::max(std::fabs(H[a][b].lb()), std::fabs(H[a][b].ub())));
       if (interval_cholesky_pd(M)) return true;
-      // 2) midpoint-radius: lambda_min(A) >= lambda_min(Hc) - ||Hr||_inf
-      Interval rho(0);
+      // 2) midpoint-radius: lambda_min(A) >= lambda_min(C) - ||E||_inf for every
+      // symmetric A in [H], with C the symmetrised center and |A - C| <= E
+      // entrywise. A symmetric A has a_ab in [H]_ab & [H]_ba, so E_ab is the
+      // magnitude of ([H]_ab & [H]_ba) - C_ab (at most (rad_ab + rad_ba)/2): the
+      // radius matrix is not symmetric (H_ab and H_ba come from different
+      // expressions), and its row sums alone would not bound the error.
+      IntervalMatrix C(n,n);
+      for (int a=0; a<n; a++) for (int b=0; b<n; b++)
+        C[a][b] = (Interval(H[a][b].mid()) + Interval(H[b][a].mid())) / 2.0;
+      double rho = 0;
       for (int a=0; a<n; a++) {
         Interval ra(0);
-        for (int b=0; b<n; b++) ra += Interval(H[a][b].rad());
-        rho = Interval(std::max(rho.ub(), ra.ub()));
+        for (int b=0; b<n; b++) {
+          Interval hab = H[a][b] & H[b][a];
+          if (hab.is_empty()) return false;   // no symmetric member: nothing to certify
+          ra += Interval((hab - C[a][b]).mag());
+        }
+        rho = std::max(rho, ra.ub());
       }
-      IntervalMatrix C(n,n);
-      for (int a=0; a<n; a++) for (int b=0; b<n; b++) {
-        // symmetrised center
-        C[a][b] = (Interval(H[a][b].mid()) + Interval(H[b][a].mid())) / 2.0;
-        if (a==b) C[a][b] -= rho;
-      }
+      for (int a=0; a<n; a++) C[a][a] -= Interval(rho);
       return interval_cholesky_pd(C);
     }
 
