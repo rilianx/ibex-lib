@@ -6,12 +6,15 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'results/local/perfprof12.png'
-def load(f):
+import os
+ARM = os.environ.get('ARM', 'afull12')   # IbexOpt arm in ibex_inf12.jsonl
+def load(f, arm=None):
     D = {}
     for l in open(f):
-        d = json.loads(l); D[d['instance']] = d['result']
+        d = json.loads(l)
+        if arm is None or d['arm'] == arm: D[d['instance']] = d['result']
     return D
-S = load('results/local/scip_inf12.jsonl'); A = load('results/local/ibex_inf12.jsonl')
+S = load('results/local/scip_inf12.jsonl'); A = load('results/local/ibex_inf12.jsonl', ARM)
 FAIL = set(sys.argv[2:])
 ok = lambda r: r.get('status') == 'complete'
 I = [i for i in A if i in S and (S[i].get('status') != 'error' or i in FAIL) and A[i].get('status') != 'killed'

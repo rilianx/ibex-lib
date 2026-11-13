@@ -26,7 +26,7 @@ def solved(r, scip=False):
     return True
 
 PAIRS = [('anoip', 'IbexOpt, no Ipopt'), ('abase', 'IbexOpt + Ipopt'),
-         ('acvx0', 'IbexOpt + Ipopt + Lagrangian bound')]
+         (__import__('os').environ.get('ARM', 'acvx0'), 'IbexOpt + Ipopt + Lagrangian bound')]
 BLUE, ORANGE, INK, MUTED, GRID = '#2a78d6', '#eb6834', '#1f1f1e', '#6b6a64', '#e6e5e0'
 TAUMAX = 1024
 fig, axes = plt.subplots(1, len(PAIRS), figsize=(4.2 * len(PAIRS), 3.6), sharey=True)

@@ -655,3 +655,100 @@ objective is not in the order. No change in the arms' searches (dnieper 150, hs0
 ex8_4_4 388 nodes with acvx0's flags, as before). Without 3BCID at all, chenery-1 does
 not close in 1200 s with either shift (rows above): 3BCID is what closes it, which is
 why ACID dropping it in ascaled/acomb costs 4.4x the nodes.
+
+## E7: acomb (`--cvx-test 4`) as the main configuration
+
+Decision of the author (2026-11-13): acomb replaces acvx0 as the configuration of the
+paper. E1-E3 need no rerun (acomb and the other arms ran on the 298); E4 and E5 rerun
+with acomb's flags. Scripts: arm `astatsc` (acomb + `--cvx-stats`) in both run.sh;
+`results/solvers/run_ibex.sh` takes `ARM`/`FLAGS` (default afull12 unchanged), commit
+b90b6180a.
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astatsc" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astatsc" sh results/anytime/run.sh
+BIN=build-fix/bin/ibexopt-ml OUT=results/local/ibex_inf12.jsonl ARM=acomb12 FLAGS="--ipopt-diam=1e8 --cvx-close --cvx-backoff=64 --cvx-test 4" JOBS=14 TLIM=1200 sh results/solvers/run_ibex.sh
+```
+
+2026-11-13, 09:27-12:21 (astatsc 223: 9 min, 75: 1 h 21 min; acomb12: 1 h 25 min),
+server idle before (load 0.4). Binary build-fix at 17fd4fa27 (the ACID fix does not
+change these searches). No killed run.
+
+### E1 with acomb (ref abase)
+
+| set | arm | closed | n (closes) | time vs abase [IC95] | W/L | nodes |
+|---|---|---|---|---|---|---|
+| 223 | anoip | 220 | 94 (91) | 1.67 [1.36, 2.17] | 14/57 | 2.98 |
+| 223 | acvx0 | 223 | 94 (94) | 0.85 [0.72, 0.95] | 19/0 | 0.80 |
+| 223 | acomb | 223 | 94 (94) | 0.78 [0.65, 0.91] | 24/1 | 0.70 |
+| 75 | abase / anoip | 6 / 4 | 15 | 1.00 / 1.18 [0.99, 1.63] | 1/3 | 1.10 |
+| 75 | acvx0 | 14 | 15 (12) | 0.05 [0.01, 0.23] | 8/0 | 1.00 |
+| 75 | acomb | 17 | 15 (15) | 0.03 [0.01, 0.16] | 12/1 | 0.95 |
+| 298 | anoip | 224 | 109 (93) | 1.59 [1.32, 1.98] | 15/60 | 2.93 |
+| 298 | acvx0 | 237 | 109 (106) | 0.58 [0.41, 0.76] | 27/0 | 0.80 |
+| 298 | acomb | 240 | 109 (109) | 0.50 [0.35, 0.69] | 36/2 | 0.70 |
+
+(abase closes 229 of the 298.)
+
+### E2-E3 with acomb as reference
+
+| arm | 223: time vs acomb [IC95] | W/L | nodes | 298: closed | time vs acomb [IC95] | W/L |
+|---|---|---|---|---|---|---|
+| acvx0 (Gershgorin shift) | 1.12 [1.01, 1.29] | 1/10 | 1.14 | 237 | 1.19 [1.01, 1.51] | 2/14 |
+| acert0 (certify, Gershgorin) | 1.20 [1.08, 1.40] | 0/19 | 1.19 | 235 | 1.43 [1.13, 1.92] | 2/25 |
+| acert1 (certify, + Cholesky) | 1.06 [1.00, 1.14] | 1/14 | 1.02 | 237 | 1.08 [1.00, 1.20] | 3/17 |
+| ascaled (scaled shift) | 1.11 [1.01, 1.27] | 0/6 | 1.14 | 239 | 1.19 [1.02, 1.50] | 0/8 |
+| anobo (acvx0 without backoff) | 1.14 [1.03, 1.31] | 1/9 | 1.14 | 237 | 1.20 [1.03, 1.53] | 4/13 |
+
+acomb closes 240 of the 298. 223 set: 71 instances > 1 s; 298: 83.
+
+### E4 with acomb (astatsc)
+
+`python3 results/local/e4/summarize_comb.py` -> `results/local/e4/summary_comb.md`.
+Statuses identical to acomb; nodes identical on 238/240 closed by both (launch
+210 -> 26, robot 49980 -> 51610: correction-search timing, see E4).
+
+| counter, all 298 (59.5 M nodes) | acomb (astatsc) | acvx0 (astats) |
+|---|---|---|
+| Lagrangian available (`cvx_with_dual`) | 12.35 % | 11.99 % |
+| certified convex, no shift (`cvx_certified`) | 0.71 %, 24 inst. | 0.77 %, 20 inst. |
+| bound raises the node's lower bound (`cvx_raised`) | 1.19 % | 0.44 % |
+| bound prunes the node (`cvx_pruned`) | 0.20 %, 76 inst. | 0.09 %, 57 inst. |
+
+On the 223 set alone: raised 1.40 %, pruned 0.60 % (47 instances). The bound acts
+on few nodes, but these are what closes the convex QPs at the root and ex8_4_6/ter.
+
+### E5 with acomb
+
+Profiles: `results/local/perfprof_comb.png` (original domains, third panel acomb),
+`results/local/perfprof12_comb.png` (±1e12 domains, acomb12):
+
+```bash
+PYTHONPATH=$HOME/pympl ARM=acomb python3 results/local/perfprof_local.py results/local/perfprof_comb.png ex8_4_6bis.bch
+PYTHONPATH=$HOME/pympl ARM=acomb12 python3 results/local/perfprof12_local.py results/local/perfprof12_comb.png ex8_4_6bis.bch rk23.bch
+```
+
+(`perfprof12_local.py` now filters `ibex_inf12.jsonl` by `ARM`, default afull12: the
+file has two arms; `perfprof_local.py` takes `ARM` for the third panel, default acvx0.
+Rechecked: afull12 gives the same n = 114 as before.)
+
+acomb12 statuses (298): 245 complete, 46 timeout, 5 no_lower_bound, 2 infeasible. vs
+acomb on the original domains (240) it adds ex8_4inf-1, hs089, rk23, test_infinity3,
+test_infinity4 and loses none.
+
+| profile (closed by one, > 1 s for one) | n | SCIP closes | IbexOpt closes | both | faster on both: IbexOpt / SCIP | geo time IbexOpt/SCIP on both |
+|---|---|---|---|---|---|---|
+| original, anoip | 125 | 101 | 102 | 78 | 26 / 52 | 1.92 |
+| original, abase | 121 | 94 | 100 | 73 | 27 / 46 | 1.50 |
+| original, acvx0 | 117 | 88 | 102 | 73 | 27 / 46 | 1.40 |
+| original, acomb | 114 | 83 | 100 | 69 | 27 / 42 | 1.29 |
+| ±1e12, afull12 | 114 | 83 | 100 | 69 | 26 / 43 | 1.30 |
+| ±1e12, acomb12 | 110 | 79 | 97 | 66 | 26 / 40 | 1.17 |
+
+Totals over the 298: original domains SCIP 221 (ex8_4inf-1 with loup < -1e19 not
+counted), acomb 240; ±1e12 domains SCIP 224, acomb12 245. Closed only by SCIP (±1e12,
+13): 3pk, 3pk-borne, chenery, ex8_4_3, linear, minlphi, optmass, orthregb, pollut,
+prolog, qp1, qp1-1, qp2 (portfl1 is no longer among them: acomb closes it at the
+root). Closed only by acomb12 (31), among them ex8_4_6, ex8_4_6ter, hs102, rk23 and the
+ex6_*/ex7_* families. **IbexOpt closes more instances; SCIP is faster on most of
+those both close (40 of 66, geometric mean 1.17x).**
