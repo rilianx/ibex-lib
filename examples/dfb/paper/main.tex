@@ -395,8 +395,9 @@ ended, so that it needs fewer pivots.
 \caption{One pass over the bounds of a node. \textsc{Solve} is the LP engine,
 SC (Algorithm~\ref{alg:sc}) or an external solver.}\label{alg:pass}
 \begin{algorithmic}[1]
-\Require relaxation $\Abar z=0$ with twin rows merged, box $\iv{z}$
-\Ensure contracted box $\iv{z}$, or $\emptyset$
+\Require relaxation $\Abar z=0$ of the node~\eqref{eq:homog}, twin rows merged;
+  box $\iv{z}=\iv{x}\times\iv{s}$
+\Ensure the box $\iv{z}$ contracted, or $\emptyset$ if the node has no solution
 \State $L\gets\{(k,\sigma): k\le n,\ \sigma\in\{\min,\max\}\}$\label{ap:init}
 \While{$L\neq\emptyset$}
   \State $(k,\sigma)\gets$ next bound of $L$; remove it from $L$
@@ -480,19 +481,20 @@ by the caller, in lines~\ref{ap:empty}--\ref{ap:contract} of
 Algorithm~\ref{alg:pass} (Section~\ref{sec:certif}).
 
 \begin{algorithm}[!tp]
-\caption{\textsc{Solve} in SC: one LP of the pass. The relaxation is loaded
-once per node; the basis and its LU factors persist from one call to the next.
-Comments marked $\star$ point to the work a general-purpose solver does
+\caption{\textsc{Solve} in SC: one LP of the pass. Comments marked $\star$ point to the work a general-purpose solver does
 differently.}\label{alg:sc}
 \begin{algorithmic}[1]
-\Require bound $(k,\sigma)$, with $c=e_k$ to minimize and $c=-e_k$ to maximize;
-  box $\iv{z}$, contracted since the previous call; warm start, primal or dual
-  (Section~\ref{sec:warm})
+\Require relaxation $\Abar z=0$, loaded once per node; bound $(k,\sigma)$, with
+  cost $c=e_k$ to minimize and $c=-e_k$ to maximize; current box $\iv{z}$; warm
+  start, primal or dual (Section~\ref{sec:warm}); except in the first LP of the
+  node, the final basis $B$ of the previous LP and its LU factors
+\Ensure multipliers $\lambda\in\R^m$: those of an optimal basis, a Farkas ray,
+  or those of the basis reached at the iteration limit
 \If{first LP of the node}
   \State $B\gets -I_m$, factorized; each nonbasic $z_j$ at its lower bound
     \Comment{Prop.~\ref{prop:start}}\label{as:slack}
 \Else
-  \State $B\gets$ final basis of the previous LP, with its LU factors
+  \State keep $B$ and its LU factors from the previous LP
     \Comment{$\star$ a solver starts anew}\label{as:keep}
 \EndIf
 \State $\lambda\gets B^{-T}c_B$;\ \ $d\gets c-\Abar^T\lambda$
