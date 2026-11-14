@@ -34,7 +34,7 @@ for the relaxation of the equalities. The same separable expression also reduces
 range of each variable. In IbexOpt with Ipopt, on 298 instances of the COCONUT
 benchmark, the bound solves 11 more instances (240 against 229) and halves the solving
 time on the instances that take more than a second, at a cost below 1\% of the running
-time; range reduction removes a further 5\%. With the same variable domains, the
+time; range reduction removes a further 7\%. With the same variable domains, the
 rigorous solver then solves more instances than SCIP~10 (245 against 224), although
 SCIP is faster on most of the instances both solve.
 \end{abstract}
@@ -145,8 +145,8 @@ solver that already runs for upper bounding, so nothing is solved for the bound.
   the rigorous solver solves 240 instances in 1200~s, against 229 without it, and its
   solving time drops to 0.50 [0.35, 0.69] of the time without it on the instances that
   take more than a second (36 instances faster, 2 slower); the bound costs less than
-  1\% of the running time, and range reduction lowers the time by a further 5\%
-  (16 faster, none slower). With the same variable domains for both solvers, it solves
+  1\% of the running time, and range reduction lowers the time by a further 7\%
+  (17 faster, none slower). With the same variable domains for both solvers, it solves
   245 instances and SCIP~10 224; SCIP is faster on 40 of the 66 instances both solve in
   more than a second.
 \end{enumerate}
@@ -733,7 +733,7 @@ Gerschgorin shift without backoff.
 variant & solved /298 & time vs.\ default [95\% CI] & W/L & nodes \\
 \hline
 certify, else shift (default) & 240 & 1.00 & -- & 1.00 \\
-+ range reduction (Section~\ref{sec:red}) & 240 & \textbf{0.97} [0.95, 0.99] & 11/0 & 0.98 \\
++ range reduction (Section~\ref{sec:red}) & 240 & \textbf{0.96} [0.92, 0.98] & 12/0 & 0.97 \\
 certify only, Gerschgorin & 235 & 1.20 [1.08, 1.40] & 0/19 & 1.19 \\
 certify only, + comparison matrix, Cholesky & 237 & 1.06 [1.00, 1.14] & 1/14 & 1.02 \\
 Gerschgorin shift & 237 & 1.12 [1.01, 1.29] & 1/10 & 1.14 \\
@@ -756,12 +756,18 @@ dnieper does better than either (68 nodes against 150 and 434). The backoff divi
 the cost of the bound by about seven without losing nodes.
 
 Range reduction with the same bound (Section~\ref{sec:red}) never makes an instance
-slower by more than 5\%: on the 223 instances it reduces the time to 0.97 [0.95, 0.99]
-of the default, with 11 instances faster and none slower, and on all 298 to
-0.95 [0.90, 0.98] (16 faster, none slower), solving the same 240 instances. The largest
-gains are on ex8\_4\_1 (69~s to 10.5~s, 10\,100 to 1\,638 nodes), robot (86~s to 46~s)
-and dnieper (68 to 4 nodes). We keep it as an option: the other results of this
-section are reported for the default without it.
+slower by more than 5\%: on the 223 instances it reduces the time to 0.96 [0.92, 0.98]
+of the default, with 12 instances faster and none slower, and on all 298 to
+0.93 [0.88, 0.98] (17 faster, none slower), solving the same 240 instances. The largest
+gains are on ex8\_4\_1 (69~s to 10.5~s, 10\,100 to 1\,638 nodes), robot (86~s to 45~s),
+ex8\_4\_6 and ex8\_4\_6ter (about 1\,015~s to 860~s) and dnieper (68 to 4 nodes).
+Bounding each concave term by its exact minimum over the box, at an end, rather than
+its linear and quadratic parts separately, and additionally using the interval
+gradient of $L$ on the box as a floor on the slope of each term (past the point where
+the slope of the parabola would leave that range, the term continues as a line), gives
+0.92 [0.86, 0.97] (20 faster, none slower) on the 298: no significant change overall,
+but chenery-1 drops from 225~s to 79~s. We keep range reduction as an option: the
+other results of this section are reported for the default without it.
 
 The two instances where the default is slower than the baseline do not come from a
 weaker bound. On launch, the bound raises the lower bound of a single node and prunes none; the difference
