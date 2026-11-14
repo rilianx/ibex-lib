@@ -282,6 +282,7 @@ namespace ibex {
       double newloup=false;
       IntervalVector loup_point0=loup_point;
       if (cvx_close_on && cvx_finder==NULL) { cvx_finder = this; optimizer_extra_lb = &cvx_hook; }
+      if (!comp_ops_done && getenv("IBEX_CVX_CTRCHECK")) comp_ops();
       if (recursive_call && cvx_stats) cvx_measure(box, loup);
       if (recursive_call){
 	ipopt_calls++;  // at first call, ipopt_calls=0
@@ -389,14 +390,14 @@ namespace ibex {
 	  for (int i=0; usable && i<solution.size(); i++) usable = std::isfinite(solution[i]);
 	  if ((cvx_stats || cvx_close_on) && usable && (int) cvx_x_tmp.size()==sys.nb_var) { cvx_x = cvx_x_tmp; cvx_lambda = cvx_lambda_tmp; cvx_have = true; }
 	  if (cvx_feas && (int) status > -10 && std::isfinite(optimalValue) && solution.size()==sys.nb_var
-	      && sys.nb_ctr > 0 && sys.ctrs.size()==(size_t) sys.f_ctrs.image_dim()) {
+	      && sys.nb_ctr > 0 && (int) comp_ops().size()==sys.f_ctrs.image_dim()) {
 	    bool fin = true; for (int i=0; i<solution.size(); i++) fin = fin && std::isfinite(solution[i]);
 	    if (fin) {
 	      IntervalVector c = sys.f_ctrs.eval_vector(IntervalVector(solution));
 	      int mm = c.size(); bool viol = false; std::vector<double> r(mm);
 	      for (int k=0; k<mm; k++) {
 	        r[k] = c[k].mid();
-	        CmpOp op = sys.ctrs[k].op;
+	        CmpOp op = comp_ops()[k];
 	        if ((op==LEQ || op==LT) && c[k].lb() > 0) viol = true;
 	        else if ((op==GEQ || op==GT) && c[k].ub() < 0) viol = true;
 	        else if (op==EQ && std::fabs(r[k]) > 10*NormalizedSystem::default_eps_h) viol = true;
@@ -654,6 +655,27 @@ namespace ibex {
       if (loup < POS_INFINITY && lb > optimizer->compute_ymax()) cvx_close++;
     }
 
+    // comparison operator of each component of sys.f_ctrs: f_ctrs concatenates
+    // the constraints in order, a vector constraint contributing image_dim()
+    // components with the same operator. Empty if the sizes do not match (then
+    // no Lagrangian bound: the sign of a multiplier depends on its operator).
+    const std::vector<CmpOp>& LoupFinderIpopt::comp_ops() {
+      if (!comp_ops_done) {
+        comp_ops_done = true;
+        int m = sys.f_ctrs.image_dim();
+        for (int c=0; c<sys.ctrs.size(); c++) {
+          int dim = sys.ctrs[c].f.image_dim();
+          for (int j=0; j<dim; j++) comp_ops_v.push_back(sys.ctrs[c].op);
+        }
+        if ((int) comp_ops_v.size() != m) comp_ops_v.clear();
+        if (getenv("IBEX_CVX_CTRCHECK"))
+          std::cerr << "CTRCHECK ctrs=" << sys.ctrs.size() << " components=" << m
+                    << " vector_ctrs=" << ((int) sys.ctrs.size() != m ? "yes" : "no")
+                    << " ops_ok=" << (comp_ops_v.empty() && m>0 ? "no" : "yes") << std::endl;
+      }
+      return comp_ops_v;
+    }
+
     double LoupFinderIpopt::cvx_bound(const IntervalVector& box, bool* certified, IntervalVector* red, bool feas) {
       if (certified) *certified = false;
       // feas: Lagrangian of the constraints only (no objective), residual multipliers
@@ -662,12 +684,13 @@ namespace ibex {
       if (!(feas ? feas_have : cvx_have) || df==NULL || (sys.nb_ctr>0 && dg==NULL)) return NEG_INFINITY;
       int n = sys.nb_var, m = sys.f_ctrs.image_dim();
       if ((int) cvx_lambda.size() != m) return NEG_INFINITY;
-      if (feas && sys.ctrs.size()!=(size_t) m) return NEG_INFINITY;   // signs needed per component
+      const std::vector<CmpOp>& ops = comp_ops();
+      if (m > 0 && (int) ops.size() != m) return NEG_INFINITY;   // signs needed per component
       if (certified) cvx_with_dual++;
       // multipliers with the sign weak duality needs: f<=0 -> >=0, f>=0 -> <=0
       std::vector<double> lam(m, 0.0);
       for (int k=0; k<m; k++) {
-        CmpOp op = sys.ctrs.size()==m ? sys.ctrs[k].op : EQ;
+        CmpOp op = ops[k];
         double l = cvx_lambda[k];
         if (op==LEQ || op==LT) l = std::max(0.0, l);
         else if (op==GEQ || op==GT) l = std::min(0.0, l);
@@ -800,7 +823,7 @@ namespace ibex {
       // equalities are relaxed to |h| <= eps_h in the search: lambda*h can be
       // as large as |lambda|*eps_h on a point the search calls feasible
       for (int k=0; k<m; k++)
-        if (lam[k]!=0 && sys.ctrs.size()==m && sys.ctrs[k].op==EQ)
+        if (lam[k]!=0 && ops[k]==EQ)
           bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
       if (!std::isfinite(lb)) return NEG_INFINITY;
@@ -900,7 +923,7 @@ namespace ibex {
         S += Interval(T[i].lb());
       }
       for (int k=0; k<m; k++)
-        if (lam[k]!=0 && sys.ctrs.size()==(size_t) m && sys.ctrs[k].op==EQ)
+        if (lam[k]!=0 && comp_ops()[k]==EQ)
           S -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       for (int i=0; i<n; i++) {
         if (box[i].is_unbounded() || box[i].is_degenerated()) continue;

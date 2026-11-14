@@ -887,3 +887,22 @@ Chromes and ~412 GB of Chrome profiles in /tmp/.org.chromium.Chromium.*. Stopped
 cleaned with the user's approval (407 GB freed). While the disk was full, a rewrite of
 runs-open.jsonl emptied it; it was restored from git (469b422f2) and the acombr* runs on
 the 75 set were redone.
+
+## E12: constraint operators per component (validity check)
+
+The bound needs the operator (<=, >=, =) of each component of `sys.f_ctrs` to project
+the sign of its multiplier and to apply the eps_h correction to equalities. The code
+read `sys.ctrs[k].op`, valid only if every constraint is scalar; with a vector
+constraint (e.g. `A*x <= b`) it treated every component as an equality, which allows a
+multiplier of the wrong sign on an inequality (invalid bound) and skipped the eps_h
+correction. Fixed (commit below): the operators are expanded per component from the
+constraints in order (`LoupFinderIpopt::comp_ops`); if the sizes still do not match, no
+bound. `IBEX_CVX_CTRCHECK=1` prints the check.
+
+All 298 instances checked (`results/local/ctrcheck/ctrcheck.txt`): **no instance has a
+vector constraint**. 287 are scalar-only; 6 are unconstrained (aircraftb, 3pk,
+3pk-borne, brownal, hs110, least: Ibex gives them a dummy f_ctrs of dimension 1 and
+Ipopt no multipliers, so the bound was and stays off there); hs088/hs090/hs091 checked
+with a longer run (scalar); ex7_3_6 and launch__coconut are proved infeasible before
+the first node (no bound evaluated). So no reported result is affected; node counts
+unchanged (dnieper 68, ex6_2_6 13482, dualc5 0, polak3 9384 with acomb's flags).
