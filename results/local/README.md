@@ -836,3 +836,54 @@ minlphi/minlphi1/rk23/hs091/fccu Ipopt never ends at an infeasible point (or the
 system has vector constraints, where the prototype gives up: signs are needed per
 component). Where residuals are stored (ex5_3_3, discs) no box is emptied. Not pursued
 in the paper.
+
+## E9 (rerun) and E11: range reduction after the optimizer fix, and `--cvx-floor`
+
+Bug found on robot (acombr2 aborted with `new_uplo>loup`): when the range reduction
+emptied a node, `contract_and_bound` returned before recording that the loup had
+improved in that node, so the queue was not pruned (commit 469b422f2 fixes it). The
+bound itself was valid: `IBEX_CVX_CHECK=1` checks L(x) >= L(xh) + sum of terms at 20
+points of every box and found no violation. Only the arms with `--cvx-reduce` were
+affected (acombr*, acombrf); their old lines are in `results/local/old/`.
+
+`--cvx-floor` (commit d9e791d45, from the two-plane note of I. Araya, Lemma 1, carried
+over to an interior anchor): 1 = exact minimum of each concave term t_i over [x_i] (at
+an end) instead of separate bounds on its linear and quadratic parts; 2 = as 1, with the
+floor of the interval gradient of L on the box (past the point where the parabola's
+slope leaves [inf dL_i, sup dL_i], the term continues as the tangent line).
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombr acombr1 acombr2" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombr acombr1 acombr2" sh results/anytime/run.sh
+```
+
+2026-11-14 (223 set with the fixed binary; 75 set 11:23-15:09 after the disk was freed,
+see below). No killed run; statuses identical to acomb for all three (240 complete, 47
+timeout, 9 no_lower_bound, 2 infeasible).
+
+| set | arm | time vs acomb [IC95] | W/L | nodes |
+|---|---|---|---|---|
+| 223 (71 > 1 s) | acombr | 0.96 [0.92, 0.98] | 12/0 | 0.97 |
+| 223 | acombr1 | 0.96 [0.92, 0.98] | 14/0 | 0.97 |
+| 223 | acombr2 | 0.96 [0.92, 0.98] | 15/0 | 0.97 |
+| 75 (10) | acombr | 0.78 [0.54, 0.97] | 5/0 | 0.87 |
+| 75 | acombr1 | 0.73 [0.50, 0.94] | 5/0 | 0.82 |
+| 75 | acombr2 | 0.70 [0.46, 0.95] | 5/0 | 0.78 |
+| 298 (83) | acombr | 0.93 [0.88, 0.98] | 17/0 | 0.97 |
+| 298 | acombr1 | 0.93 [0.87, 0.97] | 19/0 | 0.97 |
+| 298 | acombr2 | 0.92 [0.86, 0.97] | 20/0 | 0.97 |
+
+Between the floor levels the differences are not significant (acombr2 vs acombr on the
+298: 0.98 [0.95, 1.03], 10/1), but single instances change a lot: chenery-1 225 s ->
+139 s (floor 1) -> 79 s (floor 2), 24062 -> 9870 -> 3560 nodes (the floor recovers most
+of what ACID loses there, E6b); robot 44.5 -> 32.6 -> 33.6 s; launch 3.6 -> 10.7 s
+(timing-sensitive). acombr corrected vs before the fix: same statuses, times within a
+few percent (ex8_4_1 10.5 s, ex8_4_6 859 s vs 876 s).
+
+Disk incident (2026-11-14): the disk filled twice (0 MB for users) during these runs.
+Cause: a Selenium script of the user (`programacionDocencia.py`, in screen `programacion`
+for 25 days) started a Chrome per iteration without closing it: 55 chromedrivers, 48
+Chromes and ~412 GB of Chrome profiles in /tmp/.org.chromium.Chromium.*. Stopped and
+cleaned with the user's approval (407 GB freed). While the disk was full, a rewrite of
+runs-open.jsonl emptied it; it was restored from git (469b422f2) and the acombr* runs on
+the 75 set were redone.
