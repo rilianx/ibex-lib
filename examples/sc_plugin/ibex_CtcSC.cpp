@@ -163,7 +163,15 @@ int CtcSC::linearize(const IntervalVector& box, ContractContext& context) {
 					if (std::fabs(b[j] - c*a[j]) > TWIN_TOL * std::max(std::fabs(b[j]), std::fabs(c*a[j]))) prop = false;
 				}
 				if (prop) {
-					const Interval inter = sides[q] & (sides[i] / c);
+					/* b = c*a + d with d = b - c*a (enclosed): b.x in S_i gives
+					 * a.x in (S_i - d.x)/c over the box. The residual d.x is not
+					 * negligible when the box is large. */
+					Interval res(0.0);
+					for (size_t u = 0; u < supp[i].size(); ++u) {
+						const int j = supp[i][u];
+						res += (Interval(b[j]) - Interval(c) * a[j]) * box[j];
+					}
+					const Interval inter = sides[q] & ((sides[i] - res) / Interval(c));
 					if (!inter.is_empty()) { sides[q] = inter; alive[i] = 0; }
 				}
 			}
@@ -269,7 +277,7 @@ void CtcSC::pass(IntervalVector& box) {
 			}
 			Interval s0(0.0);
 			for (int c = 0; c < na; ++c) s0 += g0[c] * z[c];
-			if (s0.contains(0.0)) {
+			if (s0.is_empty() || s0.contains(0.0)) {
 				n_pivots += sx.iterations();
 				st = sx.solve(k, side == 1, z, tope, false);
 			}
@@ -287,6 +295,9 @@ void CtcSC::pass(IntervalVector& box) {
 		}
 		Interval sum(0.0);
 		for (int c = 0; c < na; ++c) sum += gamma[c] * z[c];
+		/* An empty sum comes from non-finite multipliers (NaN): it is not a
+		 * certificate. Only a nonempty sum without 0 proves emptiness. */
+		if (sum.is_empty()) continue;
 		if (!sum.contains(0.0)) { box.set_empty(); return; }   // emptiness proved
 
 		const bool optimal = (st == SCSimplex::OPTIMAL);
