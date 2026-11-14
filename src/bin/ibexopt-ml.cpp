@@ -34,7 +34,7 @@
 using namespace std;
 
 #ifdef __IBEX_WITH_IPOPT__
-namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern long ipopt_adaptive; extern int ipopt_maxiter_feasible; extern int ipopt_corr_policy; extern bool expr_sqr_rewrite; extern double ipopt_corr_time; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern bool cvx_reduce; extern long cvx_reduced, cvx_reduce_emptied; extern bool cvx_feas; extern int cvx_floor; extern long cvx_feas_pairs, cvx_feas_pruned, cvx_feas_reduced; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern bool ipopt_guided_nodes; extern double ipopt_total_time, ipopt_corr_total_time, cvx_total_time; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
+namespace ibex { extern double ipopt_diam; extern bool ipopt_defer; extern double ipopt_expansion; extern double ipopt_expansion_first; extern double ipopt_start_max; extern double ipopt_max_time; extern double ipopt_call_limit; extern long ipopt_adaptive; extern int ipopt_maxiter_feasible; extern int ipopt_corr_policy; extern bool expr_sqr_rewrite; extern double ipopt_corr_time; extern int ipopt_multistart; extern bool cvx_stats; extern bool cvx_close_on; extern bool cvx_reduce; extern long cvx_reduced, cvx_reduce_emptied; extern bool cvx_feas; extern int cvx_floor; extern double cvx_aug; extern long cvx_feas_pairs, cvx_feas_pruned, cvx_feas_reduced; extern long cvx_backoff_max; extern int cvx_psd_test; extern long cvx_center_indef; extern long optimizer_extra_lb_raised, optimizer_extra_lb_pruned; extern long cvx_nodes, cvx_with_dual, cvx_certified, cvx_close, cvx_better_lb; extern double ipopt_guided; extern bool ipopt_guided_nodes; extern double ipopt_total_time, ipopt_corr_total_time, cvx_total_time; extern int ipopt_guided_patience; extern bool ipopt_guided_local; extern int ipopt_guided_calls; extern int ipopt_guided_improved; extern double ipopt_guided_time; extern int ipopt_ms_improved; extern int ipopt_ms_seed; }   // ibex_LoupFinderIpopt.cpp: Ipopt only on boxes this narrow
 #endif
 using namespace ibex;
 
@@ -328,6 +328,7 @@ int main(int argc, char** argv) {
 	args::ValueFlag<int> ipopt_guided_patience_arg(parser, "int", "With --ipopt-guided: after this many guided runs in a row without improving the loup, stop them until the loup improves. Default: 0 (never stop).", {"ipopt-guided-patience"});
 	args::Flag ipopt_guided_nodes_arg(parser, "ipopt-guided-nodes", "With --ipopt-guided: budget in loup-finder calls (guided runs <= fraction x nodes) instead of CPU time, so the search is deterministic.", {"ipopt-guided-nodes"});
 	args::Flag ipopt_guided_local_arg(parser, "ipopt-guided-local", "With --ipopt-guided: Ipopt bounded by the node's box instead of the root box.", {"ipopt-guided-local"});
+	args::ValueFlag<double> cvx_aug_arg(parser, "rho", "Augmented Lagrangian in the bound: add rho/2 h_k^2 for each equality (valid up to rho/2 eps_h^2 each). 0: off (default).", {"cvx-aug"});
 	args::ValueFlag<int> cvx_floor_arg(parser, "int", "Terms of the Lagrangian bound: 0 separate linear/quadratic bounds (default), 1 exact minimum of each concave term, 2 as 1 with the floor of the interval gradient of L on the box.", {"cvx-floor"});
 	args::Flag cvx_feas_arg(parser, "cvx-feas", "With --cvx-close: infeasibility certificate from the Lagrangian of the constraints only, with the residuals at the last infeasible Ipopt point as multipliers (counters cvx_feas_* in the JSON).", {"cvx-feas"});
 	args::Flag cvx_reduce_arg(parser, "cvx-reduce", "With --cvx-close: optimality-based range reduction of each variable with the same separable Lagrangian bound (counters cvx_reduced, cvx_reduce_emptied in the JSON).", {"cvx-reduce"});
@@ -464,6 +465,7 @@ int main(int argc, char** argv) {
 		if (cvx_reduce_arg) ibex::cvx_reduce = true;
 		if (cvx_feas_arg) ibex::cvx_feas = true;
 		if (cvx_floor_arg) ibex::cvx_floor = cvx_floor_arg.Get();
+		if (cvx_aug_arg) ibex::cvx_aug = cvx_aug_arg.Get();
 		if (cvx_close_arg) ibex::cvx_close_on = true;
 		if (cvx_test_arg) ibex::cvx_psd_test = cvx_test_arg.Get();
 		if (cvx_backoff_arg) ibex::cvx_backoff_max = cvx_backoff_arg.Get();

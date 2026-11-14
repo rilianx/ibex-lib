@@ -906,3 +906,28 @@ Ipopt no multipliers, so the bound was and stays off there); hs088/hs090/hs091 c
 with a longer run (scalar); ex7_3_6 and launch__coconut are proved infeasible before
 the first node (no bound evaluated). So no reported result is affected; node counts
 unchanged (dnieper 68, ex6_2_6 13482, dualc5 0, polak3 9384 with acomb's flags).
+
+## E13 (negative): augmented Lagrangian for the equalities (`--cvx-aug=rho`)
+
+Option (off by default): L_A = L + sum_{k eq} rho/2 h_k^2, valid with the extra
+correction - sum rho/2 eps_h^2 (|h_k| <= eps_h on the points the search calls
+feasible); Hessian + rho (dh dh^T + [h] d2h), value + rho/2 h(xh)^2, gradient
++ rho h(xh) dh(xh), interval-gradient floor updated. Idea: positive curvature across
+each equality (Neumaier 1996), where L is typically not convex.
+
+Test: acomb + `--cvx-aug` 1 and 100 on 5 instances with equalities, `IBEX_CVX_CHECK=1`
+(no violation), TLIM 1200. Data: `results/local/aug/aug-5.jsonl`.
+
+| instance | acomb | rho = 1 | rho = 100 |
+|---|---|---|---|
+| ex8_4_1 | 69.1 s (bound raises 9333 nodes) | timeout (raises 0) | timeout (raises 0) |
+| robot | 85.8 s | 165.9 s | 164.4 s |
+| dnieper | 68 nodes, 1.7 s | 384, 9.9 s | 434, 9.9 s |
+| ex6_2_6 | 13.8 s | 13.8 s | 23.2 s |
+| chenery-1 | 253.7 s | 120.0 s (bound never acts: ACID keeps 3BCID, E6b) | 121.7 s |
+
+Why: rho dh dh^T is PSD but rank one and dense; Gershgorin (and the scaled rule) add
+sum_j |g_i g_j| to each row radius and only g_i^2 to the diagonal, so the shift grows
+instead of shrinking; and rho [h] d2h uses the range of h over the whole box, which is
+not small away from h = 0. Neumaier's argument needs narrow boxes around the optimum
+and a convexity test that sees the rank-one structure. Not pursued.

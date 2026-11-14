@@ -112,6 +112,13 @@ namespace ibex {
   // (worst-case slope profile; proof: clamp x to where the floors start, use the
   // quadratic bound there, then walk coordinate by coordinate inside the box).
   int cvx_floor=0;
+  // --cvx-aug=rho: augmented Lagrangian for the equalities,
+  //   L_A(x) = L(x) + sum_{k eq} rho/2 h_k(x)^2,
+  // with L_A <= L + sum rho/2 eps_h^2 on the points the search calls feasible
+  // (|h_k| <= eps_h), so f >= L_A - eps_h ||lam_eq||_1 - sum rho/2 eps_h^2. The term
+  // adds rho (dh dh^T + h d2h) to the Hessian: positive curvature across each
+  // equality, where L is typically not convex. 0: off.
+  double cvx_aug=0;
   long cvx_feas_pairs=0, cvx_feas_pruned=0, cvx_feas_reduced=0;
   namespace { LoupFinderIpopt* cvx_finder=NULL;
     // backoff: after a node where the Lagrangian is not certified convex, the
@@ -706,6 +713,20 @@ namespace ibex {
         dg[k]->jacobian(box, Hk);
         H += Interval(lam[k]) * Hk;
       }
+      IntervalVector cbox(m > 0 ? m : 1);
+      bool aug = !feas && cvx_aug > 0 && m > 0;
+      if (aug) {
+        cbox = sys.f_ctrs.eval_vector(box);
+        Interval rho(cvx_aug);
+        for (int k=0; k<m; k++) {
+          if (ops[k]!=EQ) continue;
+          IntervalVector gk = dg[k]->eval_vector(box);
+          IntervalMatrix Hk(n,n);
+          dg[k]->jacobian(box, Hk);
+          for (int i=0; i<n; i++) for (int j=0; j<n; j++)
+            H[i][j] += rho * ((i==j ? sqr(gk[i]) : gk[i]*gk[j]) + cbox[k] * Hk[i][j]);
+        }
+      }
       // --cvx-test 2: alphaBB-like. Instead of requiring H PSD, take a diagonal
       // shift d (Gershgorin: d_i = max(0, sum_j!=i |h_ij| - h_ii)) making H+D
       // PSD; L(y) + sum d_i/2 (y_i-x^_i)^2 is then convex and the tangent
@@ -793,6 +814,14 @@ namespace ibex {
           L += Interval(lam[k]) * gx[k];
           grad += Interval(lam[k]) * dg[k]->eval_vector(xh);
         }
+        if (aug) {
+          Interval rho(cvx_aug), eps(NormalizedSystem::default_eps_h);
+          for (int k=0; k<m; k++) {
+            if (ops[k]!=EQ) continue;
+            L += rho / 2.0 * sqr(gx[k]) - rho / 2.0 * sqr(eps);
+            grad += rho * gx[k] * dg[k]->eval_vector(xh);
+          }
+        }
       }
       Interval bound = L;
       IntervalVector gbox(n);
@@ -801,6 +830,7 @@ namespace ibex {
         // interval gradient of L over the box
         gbox = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(box);
         for (int k=0; k<m; k++) if (lam[k]!=0) gbox += Interval(lam[k]) * dg[k]->eval_vector(box);
+        if (aug) for (int k=0; k<m; k++) if (ops[k]==EQ) gbox += Interval(cvx_aug) * cbox[k] * dg[k]->eval_vector(box);
         floor_ok = !gbox.is_empty() && !gbox.is_unbounded();
       }
       const IntervalVector* gb = floor_ok ? &gbox : NULL;
@@ -838,7 +868,8 @@ namespace ibex {
             x[i] = Interval(s==0 ? box[i].lb() : s==1 ? box[i].ub() : U(chk_rng));
           }
           Interval Lx = sys.goal->eval(x);
-          if (m>0) { IntervalVector cx = sys.f_ctrs.eval_vector(x); for (int k=0; k<m; k++) if (lam[k]!=0) Lx += Interval(lam[k]) * cx[k]; }
+          if (m>0) { IntervalVector cx = sys.f_ctrs.eval_vector(x); for (int k=0; k<m; k++) if (lam[k]!=0) Lx += Interval(lam[k]) * cx[k];
+            if (aug) for (int k=0; k<m; k++) if (ops[k]==EQ) Lx += Interval(cvx_aug) / 2.0 * (sqr(cx[k]) - sqr(Interval(NormalizedSystem::default_eps_h))); }
           double rhs = L.lb();
           for (int i=0; i<n; i++) {
             if (cvx_floor > 0) rhs += cvx_term_lb(i, x[i].lb(), xh, grad, dshift[i], gb);
