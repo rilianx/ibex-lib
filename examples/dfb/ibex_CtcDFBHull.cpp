@@ -79,6 +79,12 @@ bool warm_medir() { static const bool v = getenv("DFBH_WARM") && std::string(get
 long& adapt_nodos(bool dual) { static long n[2] = {0, 0}; return n[dual ? 1 : 0]; }
 }
 
+namespace {
+/* gamma.z sin 0 prueba que la caja no tiene soluciones de la relajacion.  Una
+ * suma VACIA viene de multiplicadores no finitos (NaN) y no prueba nada. */
+inline bool certifica_vacio(const ibex::Interval& s) { return !s.is_empty() && !s.contains(0.0); }
+}
+
 namespace ibex {
 
 long CtcDFBHull::n_lps = 0;
@@ -718,7 +724,14 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
                     if (std::fabs(b[j] - c*a[j]) > filas_tol * std::max(std::fabs(b[j]), std::fabs(c*a[j]))) prop = false;
                 }
                 if (prop) {
-                    const Interval inter = lados[q] & (lados[i] / c);
+                    /* b = c*a + d, d = b - c*a encerrado: b.x en S_i da a.x en
+                     * (S_i - d.x)/c sobre la caja (d.x no es despreciable si la caja es grande). */
+                    Interval res(0.0);
+                    for (size_t u = 0; u < sop[i].size(); ++u) {
+                        const int j = sop[i][u];
+                        res += (Interval(b[j]) - Interval(c) * a[j]) * box[j];
+                    }
+                    const Interval inter = lados[q] & ((lados[i] - res) / Interval(c));
                     if (!inter.is_empty()) { lados[q] = inter; viva[i] = 0; ++n_filas_paralelas; }
                 } else if (filas_quita && std::fabs(dot) / (norma[q]*norma[i]) > 1.0 - filas_cos) {
                     if (apriete[i] < apriete[q]) { viva[q] = 0; g[t] = i; } else viva[i] = 0;
@@ -1960,7 +1973,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 }
                 Interval s0(0.0);
                 for (int c = 0; c < na; ++c) s0 += g0[c] * z[c];
-                certifica = !s0.contains(0.0);
+                certifica = certifica_vacio(s0);
             }
             if (!certifica) {
                 st = motor_caja ? resolver_caja(k, lado == 1, z, true)
@@ -2278,7 +2291,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
             Interval f1(0.0), f2(0.0);
             for (int c = 0; c < na; ++c) { f1 += gamma[c] * z[c]; f2 += g2[c] * z[c]; }
-            const bool v1 = !f1.contains(0.0), v2 = !f2.contains(0.0);
+            const bool v1 = certifica_vacio(f1), v2 = certifica_vacio(f2);
             if (v1) ++vac_lu;
             if (v2) ++vac_tab;
             if (!v1 && !v2) {
@@ -2446,7 +2459,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             const Interval nb_dfb = cota_desde_gamma(gamma, z, k);
             Interval far(0.0);
             for (int c = 0; c < na; ++c) far += gamma[c] * z[c];
-            const int vac_dfb = far.contains(0.0) ? 0 : 1;
+            const int vac_dfb = certifica_vacio(far) ? 1 : 0;
 
             LPSolver lp(nb_var, LPSolver::Mode::Certified, 1e-9, 10.0, 100000);
             for (int j = 0; j < m; ++j) {
@@ -2512,7 +2525,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 }
                 Interval sm(0.0);
                 for (int c = 0; c < na; ++c) sm += gg[c] * z[c];
-                if (!sm.contains(0.0)) { primero = (int)t; break; }
+                if (certifica_vacio(sm)) { primero = (int)t; break; }
             }
             static long n_lp_v = 0, n_lp_vac = 0, acc_prim = 0, acc_tot = 0;
             static long n_nodo_v = 0, acc_pos = 0, acc_2n = 0;
@@ -2570,8 +2583,8 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 static const long rdbg = getenv("DFBH_RAYODBG") ? atol(getenv("DFBH_RAYODBG")) : 0;
                 if (rdbg > 0 && st == DFBSimplex::INFEASIBLE && !motor_caja) {
                     static long nf = 0, nok = 0;
-                    if (suma.contains(0.0)) ++nf; else ++nok;
-                    if (suma.contains(0.0) && ((nf - 1) % rdbg) == 0) {
+                    if (!certifica_vacio(suma)) ++nf; else ++nok;
+                    if (!certifica_vacio(suma) && ((nf - 1) % rdbg) == 0) {
                         std::vector<std::pair<double,int> > t;
                         double wtot = 0.0;
                         for (int c = 0; c < na; ++c) { const Interval tc = gamma[c] * z[c]; const double w = tc.diam(); wtot += w; if (w > 0) t.push_back(std::make_pair(w, c)); }
@@ -2611,7 +2624,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                 int nz = 0;
                 for (int j = 0; j < m; ++j) if (lm[j] != 0.0) ++nz;
                 static long nok = 0, nfa = 0, zok = 0, zfa = 0;
-                if (suma.contains(0.0)) { ++nfa; zfa += nz; } else { ++nok; zok += nz; }
+                if (!certifica_vacio(suma)) { ++nfa; zfa += nz; } else { ++nok; zok += nz; }
                 if ((nok+nfa) % 500 == 0)
                     fprintf(stderr, "[lambda] m=%d | CERTIFICAN %ld con nnz=%.2f | "
                             "FALLAN %ld con nnz=%.2f\n", m,
@@ -2639,7 +2652,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
              * valido para CUALQUIER lambda, y cuando el rayo del simplex no
              * sobrevive siempre hay otra fila de B^-1 que si. */
             if (DFB_ENV("DFBH_OTRORAYO") && st == DFBSimplex::INFEASIBLE
-                && suma.contains(0.0)) {
+                && !certifica_vacio(suma)) {
                 std::vector<double> lam2;
                 IntervalVector g2(na);
                 int probadas = 0, exito = -1;
@@ -2655,7 +2668,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
                     }
                     Interval s2(0.0);
                     for (int cc = 0; cc < na; ++cc) s2 += g2[cc] * z[cc];
-                    if (!s2.contains(0.0)) exito = r;
+                    if (certifica_vacio(s2)) exito = r;
                 }
                 if (DFB_ENV("DFBH_OTRORAYO")) {
                     static long n = 0, rec = 0, acc = 0;
@@ -2670,7 +2683,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
 
             if (DFB_ENV("DFBH_MARGEN") && st == DFBSimplex::INFEASIBLE
-                && suma.contains(0.0)) {
+                && !certifica_vacio(suma)) {
                 const double lo = suma.lb(), hi = suma.ub();
                 const double anc = hi - lo;
                 if (anc > 0.0 && anc < 1e300) {
@@ -2698,7 +2711,7 @@ void CtcDFBHull::una_pasada(IntervalVector& box) {
             }
             if ((int)st >= 0 && (int)st < 8) ++est_previos[(int)st];
             static const bool sin_vacio = (getenv("DFBH_NOVACIO") != NULL);
-            if (!suma.contains(0.0) && !sin_vacio) {
+            if (certifica_vacio(suma) && !sin_vacio) {
                 if (testigo_en(z, nb_var)) {
                     const std::vector<double>& t = testigo();
                     Interval gz(0.0);
@@ -3365,7 +3378,7 @@ bool CtcDFBHull::gamma_prueba_vacio(const IntervalVector& box) const {
         if (!gs_ok[q]) continue;
         Interval suma(0.0);
         for (int c = 0; c < na; ++c) suma += gs[q][c] * zs[c];
-        if (!suma.contains(0.0)) { ++n_gvacio; GRep::anota(cub,true); t_gtest += ahora_s()-tg0; return true; }
+        if (certifica_vacio(suma)) { ++n_gvacio; GRep::anota(cub,true); t_gtest += ahora_s()-tg0; return true; }
     }
     GRep::anota(cub,false);
     t_gtest += ahora_s()-tg0;
