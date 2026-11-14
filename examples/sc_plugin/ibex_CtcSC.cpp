@@ -66,7 +66,7 @@ CtcSC::CtcSC(Linearizer& lr, WarmStart ws, double tol, int max_iter) :
 		Ctc(lr.nb_var()), lr(lr), nb_var(lr.nb_var()), ws(ws), max_iter(max_iter),
 		mylinearsolver(lr.nb_var(), LPSolver::Mode::NotCertified),
 		sx(tol, tol), A(1,1), Af(1,1), z(1), gamma(1),
-		n_adapt(0), current(-1), n_passes(0), n_lps(0), n_pivots(0) {
+		n_adapt(0), current(-1), n_passes(0), n_lps(0), n_pivots(0), n_nan(0) {
 	ema[0] = ema[1] = -1.0;
 	switch (ws) {
 	case DUAL:     sx.set_strategy(true, false, false); break;
@@ -297,7 +297,7 @@ void CtcSC::pass(IntervalVector& box) {
 		for (int c = 0; c < na; ++c) sum += gamma[c] * z[c];
 		/* An empty sum comes from non-finite multipliers (NaN): it is not a
 		 * certificate. Only a nonempty sum without 0 proves emptiness. */
-		if (sum.is_empty()) continue;
+		if (sum.is_empty()) { ++n_nan; continue; }
 		if (!sum.contains(0.0)) { box.set_empty(); return; }   // emptiness proved
 
 		const bool optimal = (st == SCSimplex::OPTIMAL);

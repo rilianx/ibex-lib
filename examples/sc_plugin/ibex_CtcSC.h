@@ -91,6 +91,8 @@ public:
 	long nb_lps() const { return n_lps; }
 	/** \brief Number of simplex pivots. */
 	long nb_pivots() const { return n_pivots; }
+	/** LPs whose multipliers were not finite (NaN): their certificate was discarded. */
+	long nb_nan_certificates() const { return n_nan; }
 
 protected:
 	/** Linearize and build Abar, [z]. Returns m, 0 or -1 (empty). */
@@ -122,7 +124,7 @@ protected:
 	long n_adapt;
 	int current;                 // strategy of the current pass (0 dual, 1 primal)
 
-	long n_passes, n_lps, n_pivots;
+	long n_passes, n_lps, n_pivots, n_nan;
 };
 
 } // namespace ibex

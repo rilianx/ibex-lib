@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 	Solver::Status st = s.solve(sys.box);
 	const CovSolverData& d = s.get_data();
 	s.report();
-	cerr << "[sc] passes=" << sc->nb_passes() << " LPs=" << sc->nb_lps() << " pivots=" << sc->nb_pivots() << endl;
+	cerr << "[sc] passes=" << sc->nb_passes() << " LPs=" << sc->nb_lps() << " pivots=" << sc->nb_pivots() << " nan=" << sc->nb_nan_certificates() << endl;
 	if (sols) cout << d << endl;
 	cout << s.get_nb_cells() << " " << s.get_time() << " " << (int) st << " "
 	     << d.nb_solution() << " " << d.nb_boundary() << " " << d.nb_unknown() << " " << d.nb_pending() << endl;
