@@ -6,7 +6,7 @@
 //     HC4, ACID, interval Newton (square systems), FixPoint(CtcSC ; HC4),
 //     LSmear on the equations, depth-first search.
 //
-// Usage: sc_solve file.bch [--lin=art|xt|compo] [-e eps] [-t timeout] [--seed=s] [--bfs] [--sols] [--no-bisect-defined]
+// Usage: sc_solve file.bch [--lin=art|xt|compo] [-e eps] [-t timeout] [--seed=s] [--bfs] [--sols]
 // --lin=art (default): affine relaxation; dual warm start, tolerance 1e-9.
 // --lin=compo: affine + XTaylor rows; ADAPTIVE warm start, tolerance 1e-6.
 // Last line: cells time status solutions boundary unknown pending
@@ -15,7 +15,6 @@
 #include "ibex.h"
 #include "ibex_CtcSC.h"
 #include "ibex_LinearizerAffine2.h"
-#include "ibex_DefinedVars.h"
 #include <cstdlib>
 
 using namespace std;
@@ -23,7 +22,7 @@ using namespace ibex;
 
 int main(int argc, char** argv) {
 	if (argc < 2) { cerr << "usage: sc_solve file.bch [--lin=art|xt|compo] [-e eps] [-t s] [--seed=s] [--bfs] [--sols]" << endl; return 1; }
-	string lin = "art"; bool sols = false, bfs = false, nodef = false; double eps = 1e-3, timeout = -1, seed = 1.0;
+	string lin = "art"; bool sols = false, bfs = false; double eps = 1e-3, timeout = -1, seed = 1.0;
 	for (int i = 2; i < argc; ++i) {
 		string a = argv[i];
 		if (a == "-e" && i+1 < argc) eps = atof(argv[++i]);
@@ -33,7 +32,6 @@ int main(int argc, char** argv) {
 		else if (a == "--lr=sc" || a == "--lr=dfbhull") { }
 		else if (a == "--bfs") bfs = true;
 		else if (a == "--sols") sols = true;
-		else if (a == "--no-bisect-defined") nodef = true;
 		else { cerr << "unknown argument: " << a << endl; return 1; }
 	}
 	if (lin != "xt" && lin != "art" && lin != "compo") { cerr << "--lin must be art, xt or compo" << endl; return 1; }
@@ -75,21 +73,11 @@ int main(int argc, char** argv) {
 	Bsc* bsc = new LSmear(eqs ? *eqs : sys, eps);
 #else
 	/* Ibex releases and develop have no LSmear for a plain System. */
-	/* --no-bisect-defined: las variables definidas por una igualdad v = g(x)
-	 * (ibex_DefinedVars.h; p.ej. las auxiliares de un preprocesamiento CSE)
-	 * tienen precision +oo: nunca se bisectan ni impiden parar. */
-	Vector prec(sys.nb_var, eps);
-	if (nodef) {
-		const std::vector<bool> def = defined_variables(sys);
-		int nd = 0;
-		for (int i = 0; i < sys.nb_var; i++) if (def[i]) { prec[i] = POS_INFINITY; nd++; }
-		cerr << "[sc] variables definidas (no se bisectan): " << nd << " de " << sys.nb_var << endl;
-	}
-	Bsc* bsc = new SmearSumRelative(eqs ? *eqs : sys, prec);
+	Bsc* bsc = new SmearSumRelative(eqs ? *eqs : sys, eps);
 #endif
 	CellBuffer* buf = bfs ? (CellBuffer*) new CellList() : (CellBuffer*) new CellStack();
 
-	Solver s(sys, ctc, *bsc, *buf, prec, Vector(sys.nb_var, POS_INFINITY));
+	Solver s(sys, ctc, *bsc, *buf, Vector(sys.nb_var, eps), Vector(sys.nb_var, POS_INFINITY));
 	if (timeout > 0) s.time_limit = timeout;
 	Solver::Status st = s.solve(sys.box);
 	const CovSolverData& d = s.get_data();
