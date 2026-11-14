@@ -32,10 +32,17 @@ de `1/_w0²`.
 vacíe la caja y hacen rigurosa la fusión de filas. Con eso se recuperan las 6
 soluciones (2293 celdas, 22 s, `--lin=art`).
 
-**Lo que falta es el origen de los NaN en `SCSimplex`.** Posibles causas: un
-overflow en `x_B`, en el ratio test o en la actualización de λ, con cotas de
-±8e307. `CtcSC::nb_nan_certificates()` cuenta los LPs cuyo certificado se
-descartó por NaN, y `sc_solve` lo imprime en la línea `[sc] ... nan=`.
+**Origen de los NaN (2026-11-14).** Una sola fila de la relajación afín: la
+linealización de `_y2 = _w0^(-1)`, con pendiente `1/(lb·ub) ≈ 1.54e306` junto al
+coeficiente 1 de `_y2` y al −1 de la holgura. En el LP 2 entra `_w0`, su columna
+en la base trae una entrada de 1.54e306, la actualización incremental
+`xB[i] -= alpha_piv[i]*delta` se desborda (x_B = +inf), esa fila sale en el paso
+siguiente y su BTRAN sobre factores de ~1e306 da inf − inf = NaN en ρ. Con la
+fila pivote en NaN el ratio test no encuentra entrante y el simplex declara
+infactible con λ = ρ: el «rayo» NaN. La fila no se puede pivotear en doble
+precisión, así que `CtcSC` (y `CtcDFBHull`) descartan las filas con un
+coeficiente mayor que 1e100 (`nb_dropped_rows()`, `drop=` en `sc_solve`).
+Descartar una fila solo agranda el poliedro. Ahora `nan=0`.
 
 ## Reproducir
 
@@ -46,12 +53,13 @@ g++ -O3 -frounding-math -std=c++14 -I. -Iaffine casos/nan_lambda/sc_una.cpp \
     $(pkg-config --cflags --libs ibex)
 cd casos/nan_lambda
 ../../sc_una preprocesado_nsc.mbx caja_art.txt art sc
-#   art sc: no vacia (1 variables contraidas), LPs=19, certificados con NaN=2
+#   art sc: no vacia (10 variables contraidas), LPs=25, certificados con NaN=0
+#   (antes del filtro: 1 variable contraida, LPs=19, NaN=2)
 ../../sc_una preprocesado_nsc.mbx caja_xt.txt xt sc
-#   xt sc: no vacia (1 variables contraidas), LPs=28, certificados con NaN=0
+#   xt sc: no vacia (0 variables contraidas), LPs=27, certificados con NaN=0
 ../../sc_solve preprocesado_nsc.mbx -t 60
-#   [sc] passes=5360 LPs=172257 pivots=1583381 nan=3
-#   2293 22.2 0 6 0 0 0
+#   [sc] passes=5361 LPs=173330 pivots=1566729 nan=0 drop=681
+#   2293 <tiempo> 0 6 0 0 0   (antes: nan=3; mismo arbol)
 ```
 
 Antes de `b11a701`, las dos primeras líneas decían `VACIA`. `ph`

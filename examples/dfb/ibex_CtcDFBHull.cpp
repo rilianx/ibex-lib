@@ -239,6 +239,7 @@ long CtcDFBHull::n_goal_lp = 0;
 long CtcDFBHull::n_sens_extra = 0;
 long CtcDFBHull::n_filas_fusionadas = 0;
 long CtcDFBHull::n_filas_paralelas = 0;
+long CtcDFBHull::n_filas_enormes = 0;
 long CtcDFBHull::n_filas_quitadas = 0;
 long CtcDFBHull::n_inf_falso = 0;
 long CtcDFBHull::n_bounds = 0;
@@ -518,6 +519,8 @@ CtcDFBHull::~CtcDFBHull() {
     if (n_m_tot)
         fprintf(stderr, "[dfb] filas de la relajacion: %.2f por linealizacion (%ld llamadas)\n",
                 (double)n_m_tot/n_m_llam, n_m_llam);
+        if (n_filas_enormes)
+            fprintf(stderr, "[dfb] filas descartadas por un coeficiente > 1e100: %ld\n", n_filas_enormes);
         if (n_filas_paralelas || n_filas_quitadas)
             fprintf(stderr, "[dfb] filas paralelas: fundidas=%ld quitadas=%ld (%.2f y %.2f por linealizacion)\n", n_filas_paralelas, n_filas_quitadas, (double)n_filas_paralelas/n_m_llam, (double)n_filas_quitadas/n_m_llam);
     if (DFB_ENV("DFBH_AFALLOC")) {
@@ -743,6 +746,24 @@ int CtcDFBHull::linearize_fresca(const IntervalVector& box, ContractContext& con
         int k = 0;
         for (int i = 0; i < m; ++i)
             if (viva[i]) { fuente[k] = fuente[i]; lados[k] = lados[i]; ++k; }
+        m = k;
+    }
+    /* FILAS CON UN COEFICIENTE ENORME (2026-11-14). Cada fila de Abar lleva el
+     * -1 de su holgura; con un coeficiente mayor que 1e100 al lado (la
+     * pendiente 1/(lb*ub) de 1/w con lb cerca de 1e-308) no se puede pivotear
+     * en doble precision: B^-1 y x_B se desbordan y el simplex devuelve
+     * multiplicadores NaN. Se descarta la fila: el poliedro solo crece. Los
+     * coeficientes diminutos no hacen dano. Mismo filtro que CtcSC. */
+    {
+        int k = 0;
+        for (int i = 0; i < m; ++i) {
+            const Vector& r = rows0[nb_var+fuente[i]];
+            double amax = 0.0;
+            for (int j = 0; j < nb_var; ++j) { const double v = std::fabs(r[j]); if (!(v <= amax)) amax = v; }
+            static const bool filtra_enormes = !(getenv("DFBH_FILAS_ENORMES") && std::string(getenv("DFBH_FILAS_ENORMES")) == "0");
+            if (filtra_enormes && !(amax <= 1e100)) { ++n_filas_enormes; continue; }
+            fuente[k] = fuente[i]; lados[k] = lados[i]; ++k;
+        }
         m = k;
     }
     /* con `DFBH_HIBRIDO` el motor se decide despues de linealizar: se recarga siempre */

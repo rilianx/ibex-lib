@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 	int ch = 0;
 	if (!b.is_empty()) for (int i = 0; i < n; i++) if (!(b[i] == b0[i])) ch++;
 	printf("%s %s: %s (%d variables contraidas)", argv[3], argv[4], b.is_empty() ? "VACIA" : "no vacia", ch);
-	if (sc) printf(", LPs=%ld, certificados con NaN=%ld", sc->nb_lps(), sc->nb_nan_certificates());
+	if (sc) printf(", LPs=%ld, certificados con NaN=%ld, filas descartadas=%ld", sc->nb_lps(), sc->nb_nan_certificates(), sc->nb_dropped_rows());
 	printf("\n");
 	return 0;
 }

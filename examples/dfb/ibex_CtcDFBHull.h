@@ -173,6 +173,7 @@ public:
     static long n_sens_extra;    //!< LPs extra resueltos para las sensibilidades
     static long n_filas_fusionadas; //!< filas gemelas fusionadas en `linearize_fresca` (`DFBH_FUSIONA`)
     static long n_filas_paralelas;  //!< filas proporcionales fundidas (`DFBH_FILAS_PARALELAS=paralelas|quita`)
+    static long n_filas_enormes;    //!< filas descartadas por un coeficiente mayor que 1e100
     static long n_filas_quitadas;   //!< filas casi paralelas quitadas (`DFBH_FILAS_PARALELAS=quita`)
     static long n_inf_falso;     //!< filas donde +-1e100 de SoPlex habria cortado (`DFBH_INFSTATS=1`)
 

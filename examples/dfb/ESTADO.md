@@ -2442,3 +2442,23 @@ variantes de cada instancia corrieron seguidas, así que el cociente vale:
 8.1/4.0.2 = 1.45 opt, 1.49 sistemas, 1.47 compo (16); sin escalado 1.27–1.33;
 4.0.2 más rápida en las 135, misma contracción. Nota al pie de R2 al día;
 datos en `results/escalera_2026-11-06/soplex8/`.
+
+**Origen de los multiplicadores NaN y efecto de los arreglos de Ignacio
+(2026-11-14).** Caso `examples/sc_plugin/casos/nan_lambda`. La fila de la
+linealización afín de `y = 1/w` con `w ∈ [1.2e-308, 52.8]` tiene pendiente
+1.54e306 junto al 1 de `y` y al −1 de la holgura: al entrar `w`, la
+actualización incremental de x_B se desborda (+inf), esa fila sale y su BTRAN
+sobre factores de ~1e306 da NaN; sin entrante válido el simplex devuelve
+λ = ρ NaN como rayo. Arreglo: `CtcSC` y `CtcDFBHull` descartan las filas con un
+coeficiente > 1e100 (`DFBH_FILAS_ENORMES=0` lo apaga en `CtcDFBHull`); una
+primera versión por rango max/min descartaba filas normales de Caprasse con
+`compo` por coeficientes subnormales. `nan=0`, mismas 6 soluciones; Bellido,
+Eco9, Caprasse, Redeco8, Geneig, Katsura-12 con `art` y `compo`: `drop=0`.
+Banco `compo` (41) y 8 del afín repetidos con los dos arreglos de Ignacio + el
+filtro, contra `work/S100`: afín idéntico salvo ex8_2_4 (fuera de la Tabla 1),
+donde la fusión no rigurosa vaciaba en falso 26 cajas en SC y SoPlex (26
+fusiones); en el solver ex8_2_4 da el mismo óptimo y ~2900 celdas en todos los
+peldaños, R0 incluido (que no fusiona). `compo`: cambian 14 de 41, contracción
+media SC 15.55 → 15.54 %, SoPlex 15.88 → 15.89 %; Synthesis y synthesis: SC
+vaciaba 1–2 cajas más que SoPlex (NaN), ahora igual. Tablas del paper: sin
+cambios a su precisión; no se rehicieron los tiempos.

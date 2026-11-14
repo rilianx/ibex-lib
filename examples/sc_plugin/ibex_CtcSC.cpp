@@ -18,6 +18,7 @@ namespace {
 
 const double PREC        = 1e-8;   // a bound closer than that to the last primal point is skipped
 const double TWIN_TOL    = 1e-9;   // relative tolerance of proportional rows
+const double COEF_MAX    = 1e100;  // rows with a larger coefficient are dropped
 const long   ADAPT_EXPLORE = 5;    // ADAPTIVE: calls per strategy before choosing
 const long   ADAPT_RETRY   = 25;   // ADAPTIVE: the other strategy is tried every 25 calls
 
@@ -66,7 +67,7 @@ CtcSC::CtcSC(Linearizer& lr, WarmStart ws, double tol, int max_iter) :
 		Ctc(lr.nb_var()), lr(lr), nb_var(lr.nb_var()), ws(ws), max_iter(max_iter),
 		mylinearsolver(lr.nb_var(), LPSolver::Mode::NotCertified),
 		sx(tol, tol), A(1,1), Af(1,1), z(1), gamma(1),
-		n_adapt(0), current(-1), n_passes(0), n_lps(0), n_pivots(0), n_nan(0) {
+		n_adapt(0), current(-1), n_passes(0), n_lps(0), n_pivots(0), n_nan(0), n_dropped(0) {
 	ema[0] = ema[1] = -1.0;
 	switch (ws) {
 	case DUAL:     sx.set_strategy(true, false, false); break;
@@ -183,7 +184,27 @@ int CtcSC::linearize(const IntervalVector& box, ContractContext& context) {
 		m = k;
 	}
 
-	// 3. Abar = [A | -I] and [z] = [box ; slack intervals]
+	/* 3. Each row of Abar has the coefficient -1 of its slack. A row with a
+	 * coefficient above COEF_MAX next to it (e.g. the slope 1/(lb*ub) of 1/w,
+	 * with lb near 1e-308) cannot be pivoted in double precision: B^-1 and x_B
+	 * overflow and the simplex returns NaN multipliers. Such a row is dropped,
+	 * which only enlarges the polytope. Tiny coefficients are harmless. */
+	{
+		int k = 0;
+		for (int i = 0; i < m; ++i) {
+			const Vector& r = rows0[nb_var+src[i]];
+			double amax = 0.0;
+			for (int j = 0; j < nb_var; ++j) {
+				const double v = std::fabs(r[j]);
+				if (!(v <= amax)) amax = v;   // also catches NaN
+			}
+			if (!(amax <= COEF_MAX)) { ++n_dropped; continue; }
+			src[k] = src[i]; sides[k] = sides[i]; ++k;
+		}
+		m = k;
+	}
+
+	// 4. Abar = [A | -I] and [z] = [box ; slack intervals]
 	A.resize(m, nb_var + m);
 	A.clear();
 	z.resize(nb_var + m);

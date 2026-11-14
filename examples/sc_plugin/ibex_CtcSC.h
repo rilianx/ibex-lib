@@ -93,6 +93,9 @@ public:
 	long nb_pivots() const { return n_pivots; }
 	/** LPs whose multipliers were not finite (NaN): their certificate was discarded. */
 	long nb_nan_certificates() const { return n_nan; }
+	/** Number of relaxation rows dropped because a coefficient exceeds
+	 * 1e100 (they cannot be pivoted in double precision). */
+	long nb_dropped_rows() const { return n_dropped; }
 
 protected:
 	/** Linearize and build Abar, [z]. Returns m, 0 or -1 (empty). */
@@ -124,7 +127,7 @@ protected:
 	long n_adapt;
 	int current;                 // strategy of the current pass (0 dual, 1 primal)
 
-	long n_passes, n_lps, n_pivots, n_nan;
+	long n_passes, n_lps, n_pivots, n_nan, n_dropped;
 };
 
 } // namespace ibex
