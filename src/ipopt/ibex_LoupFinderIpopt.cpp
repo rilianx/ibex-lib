@@ -104,6 +104,14 @@ namespace ibex {
   // Lc(x) = lam^T c(x) <= eps_h ||lam_eq||_1, so a box on which the same
   // tangent bound of Lc minus that term is > 0 holds no feasible point.
   bool cvx_feas=false;
+  // --cvx-floor: 0 = separate bounds on the linear and quadratic parts of each
+  // term (default); 1 = exact minimum of each concave term t_i over [x_i] (at an
+  // end); 2 = as 1, with the floor of the interval gradient of L on the box:
+  // the slope of t_i cannot leave [inf dL_i, sup dL_i], so past the point where
+  // the parabola's slope reaches that range the term continues as a line
+  // (worst-case slope profile; proof: clamp x to where the floors start, use the
+  // quadratic bound there, then walk coordinate by coordinate inside the box).
+  int cvx_floor=0;
   long cvx_feas_pairs=0, cvx_feas_pruned=0, cvx_feas_reduced=0;
   namespace { LoupFinderIpopt* cvx_finder=NULL;
     // backoff: after a node where the Lagrangian is not certified convex, the
@@ -764,8 +772,26 @@ namespace ibex {
         }
       }
       Interval bound = L;
+      IntervalVector gbox(n);
+      bool floor_ok = false;
+      if (cvx_floor >= 2) {
+        // interval gradient of L over the box
+        gbox = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(box);
+        for (int k=0; k<m; k++) if (lam[k]!=0) gbox += Interval(lam[k]) * dg[k]->eval_vector(box);
+        floor_ok = !gbox.is_empty() && !gbox.is_unbounded();
+      }
+      const IntervalVector* gb = floor_ok ? &gbox : NULL;
+      if (cvx_floor > 0) {
+        for (int i=0; i<n; i++) {
+          if (box[i].is_unbounded()) return NEG_INFINITY;
+          double mi = std::min(cvx_term_lb(i, box[i].lb(), xh, grad, dshift[i], gb),
+                               cvx_term_lb(i, box[i].ub(), xh, grad, dshift[i], gb));
+          if (!(mi > NEG_INFINITY)) return NEG_INFINITY;
+          bound += Interval(mi);
+        }
+      } else
       for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
-      if (shifted)
+      if (shifted && cvx_floor == 0)
         for (int i=0; i<n; i++) if (dshift[i] > 0) {
           if (box[i].is_unbounded()) return NEG_INFINITY;
           Interval w = sqr(box[i] - xh[i]);
@@ -778,8 +804,42 @@ namespace ibex {
           bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
       if (!std::isfinite(lb)) return NEG_INFINITY;
-      if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam, feas ? 0.0 : optimizer->compute_ymax());
+      if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam, feas ? 0.0 : optimizer->compute_ymax(), gb);
       return lb;
+    }
+
+    // Rigorous lower bound of the i-th term at x_i = v, t = v - xh_i:
+    //   p(t) = dL_i(xh) t - d/2 t^2 (the shifted tangent), and, with the box
+    //   floors gl = inf dL_i, gu = sup dL_i (gb != NULL), past the points where
+    //   p' leaves [gl, gu]:  t >  (g - gl)/d : gl t + (g - gl)^2 / (2d)
+    //                         t < -(gu - g)/d : gu t + (gu - g)^2 / (2d)
+    // (the line tangent to p where its slope reaches the floor; above p, so it
+    // is used only when t is surely past that point for every g in grad_i).
+    double LoupFinderIpopt::cvx_term_lb(int i, double v, const IntervalVector& xh, const IntervalVector& grad,
+                                        double d, const IntervalVector* gb) {
+      Interval t = Interval(v) - xh[i];
+      Interval g = grad[i];
+      Interval p = g * t - Interval(d) / 2.0 * sqr(t);
+      double r = p.lb();
+      if (gb && d > 0) {
+        Interval D = Interval(d);
+        if (t.lb() > 0) {
+          double gl = (*gb)[i].lb();
+          double tau = ((Interval(g.ub()) - Interval(gl)) / D).ub();
+          if (t.lb() > tau) {
+            Interval q = Interval(gl) * t + sqr(g - Interval(gl)) / (2.0 * D);
+            r = std::max(r, q.lb());
+          }
+        } else if (t.ub() < 0) {
+          double gu = (*gb)[i].ub();
+          double tau = ((Interval(gu) - Interval(g.lb())) / D).ub();
+          if (-t.ub() > tau) {
+            Interval q = Interval(gu) * t + sqr(Interval(gu) - g) / (2.0 * D);
+            r = std::max(r, q.lb());
+          }
+        }
+      }
+      return r;
     }
 
     // Optimality-based range reduction with the separable bound: for x in the
@@ -793,14 +853,21 @@ namespace ibex {
     void LoupFinderIpopt::cvx_reduce_box(const IntervalVector& box, IntervalVector& red,
                                          const IntervalVector& xh, const IntervalVector& grad,
                                          const std::vector<double>& dshift, const Interval& L0,
-                                         int m, const std::vector<double>& lam, double ymax) {
+                                         int m, const std::vector<double>& lam, double ymax,
+                                         const IntervalVector* gb) {
       if (!(ymax < POS_INFINITY)) return;
       int n = box.size();
       std::vector<Interval> T(n);
       Interval S = L0;   // L(xh) + sum_i lower ends of the terms - equality correction
       for (int i=0; i<n; i++) {
-        T[i] = grad[i] * (box[i] - xh[i]);
-        if (dshift[i] > 0) T[i] -= Interval(dshift[i]) / 2.0 * Interval(sqr(box[i] - xh[i]).ub());
+        if (cvx_floor > 0) {
+          if (box[i].is_unbounded()) return;
+          T[i] = Interval(std::min(cvx_term_lb(i, box[i].lb(), xh, grad, dshift[i], gb),
+                                   cvx_term_lb(i, box[i].ub(), xh, grad, dshift[i], gb)));
+        } else {
+          T[i] = grad[i] * (box[i] - xh[i]);
+          if (dshift[i] > 0) T[i] -= Interval(dshift[i]) / 2.0 * Interval(sqr(box[i] - xh[i]).ub());
+        }
         if (!(T[i].lb() > NEG_INFINITY)) return;
         S += Interval(T[i].lb());
       }
@@ -813,6 +880,7 @@ namespace ibex {
         if (!std::isfinite(R)) continue;
         Interval di = Interval(dshift[i]) / 2.0;
         auto P = [&](double v) {   // t_i(v) > R, rigorously
+          if (cvx_floor > 0) return cvx_term_lb(i, v, xh, grad, dshift[i], gb) > R;
           Interval t = grad[i] * (Interval(v) - xh[i]) - di * sqr(Interval(v) - xh[i]);
           return t.lb() > R;
         };

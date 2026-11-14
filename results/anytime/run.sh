@@ -41,6 +41,8 @@ xargs -P ${JOBS:-8} -n2 sh -c '
     ascaled) x="--cvx-close --cvx-backoff=64 --cvx-test 3" ;;  # E3: scaled Gerschgorin shift
     acomb) x="--cvx-close --cvx-backoff=64 --cvx-test 4" ;;  # certify (Cholesky) else scaled shift
     acombr) x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-reduce" ;;  # acomb + range reduction with the bound
+    acombr1) x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-reduce --cvx-floor 1" ;;  # acombr + exact minimum of each term
+    acombr2) x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-reduce --cvx-floor 2" ;;  # acombr1 + interval-gradient floor
     astatsc) x="--cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-stats" ;;  # E4 with acomb
     anobo) x="--cvx-close --cvx-test 2" ;;  # E3: shift without backoff
     astats) x="--cvx-close --cvx-backoff=64 --cvx-test 2 --cvx-stats" ;;  # E4: acvx0 + statistics
