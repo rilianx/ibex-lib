@@ -10,7 +10,7 @@
 
 \title{Certified Lagrangian lower bounds from local-solver multipliers
 in a rigorous interval branch and bound}
-\author{Draft --- outline}
+\author{Ignacio Araya}
 \date{November 2026}
 
 \begin{document}
@@ -372,8 +372,12 @@ likely to succeed.
 
 \subsection{Interval branch and bound}
 
-\textbf{[Draft.]} Intervals, boxes and outward rounding; an inclusion function $[f]$
-of $f$ satisfies $f([x]) \subseteq [f]([x])$ for every box. IbexOpt keeps the
+An interval $[a] = [\underline a, \overline a]$ is a closed set of reals and a box
+$[x] = [x_1] \times \dots \times [x_n]$ a vector of intervals. Interval arithmetic
+evaluates an expression with interval operands and outward rounding, so that the
+result encloses every value the expression takes on the box: an inclusion function
+$[f]$ of $f$ satisfies $f([x]) \subseteq [f]([x])$ for every box
+\citep{HansenWalster2004,Neumaier2004}. IbexOpt keeps the
 objective as an extra variable $y$ with the constraint $y = f(x)$, so that every node
 is a box $[x] \times [y]$ and its lower bound is $\underline{y}$. Equalities are
 relaxed to $|h_j(x)| \le \varepsilon_h$ ($\varepsilon_h = 10^{-8}$ by default) and
