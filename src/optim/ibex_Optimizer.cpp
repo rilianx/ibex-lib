@@ -273,6 +273,8 @@ void Optimizer::contract_and_bound(Cell& c) {
 	optimizer_node_lb = y.lb();          // for loup finders that log their calls
 	optimizer_node_depth = (int) c.depth;
 	bool loup_ch=update_loup(tmp_box, c.prop);
+	// recorded now: the extra lower bound below may empty the node and return
+	loup_changed |= loup_ch;
 
 	// update of the upper bound of y in case of a new loup found
 	if (loup_ch) {
@@ -294,8 +296,6 @@ void Optimizer::contract_and_bound(Cell& c) {
 	}
 
 	//TODO: should we propagate constraints again?
-
-	loup_changed |= loup_ch;
 
 	if (y.is_empty()) { // fix issue #44
 		c.box.set_empty();

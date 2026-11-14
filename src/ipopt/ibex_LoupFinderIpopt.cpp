@@ -804,6 +804,34 @@ namespace ibex {
           bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
       double lb = bound.lb();
       if (!std::isfinite(lb)) return NEG_INFINITY;
+      // IBEX_CVX_CHECK: debug check of the separable inequality
+      //   L(x) >= L(xh) + sum_i term_i(x_i)   at random points of the box
+      if (getenv("IBEX_CVX_CHECK") && !feas) {
+        static std::mt19937 chk_rng(12345);
+        for (int s=0; s<20; s++) {
+          IntervalVector x(n);
+          for (int i=0; i<n; i++) {
+            std::uniform_real_distribution<double> U(box[i].lb(), box[i].ub());
+            x[i] = Interval(s==0 ? box[i].lb() : s==1 ? box[i].ub() : U(chk_rng));
+          }
+          Interval Lx = sys.goal->eval(x);
+          if (m>0) { IntervalVector cx = sys.f_ctrs.eval_vector(x); for (int k=0; k<m; k++) if (lam[k]!=0) Lx += Interval(lam[k]) * cx[k]; }
+          double rhs = L.lb();
+          for (int i=0; i<n; i++) {
+            if (cvx_floor > 0) rhs += cvx_term_lb(i, x[i].lb(), xh, grad, dshift[i], gb);
+            else rhs += (grad[i] * (x[i] - xh[i]) - Interval(dshift[i]) / 2.0 * sqr(x[i] - xh[i])).lb();
+          }
+          if (rhs > Lx.ub() + 1e-9 * (1 + std::fabs(Lx.ub()))) {
+            std::cerr << "CVXCHECK violation: L(x)=" << Lx << " rhs=" << rhs << " floor=" << cvx_floor
+                      << " shifted=" << shifted << "\n box=" << box << "\n xh=" << xh << "\n x=" << x
+                      << "\n grad=" << grad << "\n d=";
+            for (int i=0; i<n; i++) std::cerr << dshift[i] << " ";
+            if (gb) std::cerr << "\n gbox=" << *gb;
+            std::cerr << std::endl;
+            break;
+          }
+        }
+      }
       if (red && optimizer && !red->is_empty()) cvx_reduce_box(box, *red, xh, grad, dshift, L, m, lam, feas ? 0.0 : optimizer->compute_ymax(), gb);
       return lb;
     }
