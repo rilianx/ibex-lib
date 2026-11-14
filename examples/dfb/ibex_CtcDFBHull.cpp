@@ -3439,8 +3439,11 @@ DFBSimplex::Status CtcDFBHull::resolver_caja7(int k, bool maximizar, const Inter
             for (int i = 0; i < nb_var; ++i) a[(size_t)j * nb_var + i] = R[nb_var + j][i];
         }
         soplex::SoPlex& lp = *mylinearsolver.mysoplex;
+        /* el tope de la caja directa (`DFBH_CAJA_TOPE=N`) si esta puesto, si no el de Ibex */
+        const int tope7 = getenv("DFBH_CAJA_TOPE") && atoi(getenv("DFBH_CAJA_TOPE")) > 0
+                        ? atoi(getenv("DFBH_CAJA_TOPE")) : lp.intParam(soplex::SoPlex::ITERLIMIT);
         caja7->cargar(nb_var, m, &lb[0], &ub[0], &lhs[0], &rhs[0], &a[0],
-                      lp.realParam(soplex::SoPlex::FEASTOL), lp.intParam(soplex::SoPlex::ITERLIMIT));
+                      lp.realParam(soplex::SoPlex::FEASTOL), tope7);
         caja_cotas = IntervalVector(nb_var);
         for (int i = 0; i < nb_var; ++i) caja_cotas[i] = z[i];
         caja7_ep = n_m_llam;
@@ -3453,6 +3456,8 @@ DFBSimplex::Status CtcDFBHull::resolver_caja7(int k, bool maximizar, const Inter
     const int r = caja7->resolver(k, maximizar, frio, &lam_caja[0], &x_caja[0], &it_caja);
     if (r == 0) return DFBSimplex::OPTIMAL;
     if (r == 1) return DFBSimplex::INFEASIBLE;
+    /* tope: como la caja directa con DFBH_CORTE_CERT, los multiplicadores certifican */
+    if (r == 4 && getenv("DFBH_CORTE_CERT") && std::string(getenv("DFBH_CORTE_CERT")) != "0") return DFBSimplex::ITER_LIMIT;
     if (r == 2) caja_inf_sin_rayo = true;
     lam_caja.assign(m, 0.0);
     return DFBSimplex::SINGULAR;

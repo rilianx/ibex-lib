@@ -1,0 +1,6 @@
+[abcaja] DFB  : LPs=21652 | optimo certificado=16962  optimo sin certificado=4626  vacio probado=61  no optimo=3 | saltadas=15913
+[abcaja] caja : LPs=21370 | optimo certificado=17710  optimo sin certificado=3599  vacio probado=61  no optimo=0 | saltadas=16195
+[abcaja] nodos=647 | contraccion media DFB=0.23683 caja=0.23683 | nodos vaciados DFB=61 caja=61 | gana DFB=16 caja=46
+[abcaja] costo DFB  : pasada 0.636 s  pivotes=86310  us/LP=29.37  piv/LP=3.99  us/piv=7.368
+[abcaja] costo caja : pasada 1.170 s  pivotes=76566  us/LP=54.72  piv/LP=3.59  us/piv=15.271
+[replay] cajas=647 vacias=61 contraccion_media=0.23683 cpu_contractor=2.1485 s us_por_llamada=3320.7 LPs=43022 pivotes=162876

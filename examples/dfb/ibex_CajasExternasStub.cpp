@@ -19,11 +19,13 @@ namespace {
 }
 
 namespace ibex {
+#ifndef CAJA7_ENLAZADA   /* -DCAJA7_ENLAZADA: la caja de SoPlex 7/8 se enlaza aparte */
 Caja7::Caja7() : sx(nullptr) { no_disponible("SoPlex 7"); }
 Caja7::~Caja7() {}
 void Caja7::cargar(int, int, const double*, const double*, const double*, const double*, const double*, double, int) {}
 void Caja7::cota(int, double, double) {}
 int Caja7::resolver(int, bool, bool, double*, double*, int*) { return -1; }
+#endif
 
 CajaHighs::CajaHighs() : h(nullptr), n_(0), m_(0) { no_disponible("HiGHS"); }
 CajaHighs::~CajaHighs() {}

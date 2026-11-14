@@ -2429,3 +2429,16 @@ contraer (`DFBH_RAYO_CONTRAE=1` contrae con él; apagado por omisión). Con SC e
 los bancos de pasadas: 1049 rayos fallidos en 2.12 M LPs (0.05 %), en 15 de 163
 instancias; contraer con ellos cambia la contracción media solo en ex8_2_4
 (0.0279 → 0.0325). Por decisión de Ignacio el paper no menciona la diferencia.
+
+**SoPlex 8.1.0 en el banco de pasadas (2026-11-14).** Compilado con
+`-Dsoplex=soplex8` (sin GMP/Boost/PaPILO), enlazado por `ibex_Caja7.cpp`
+(binario `ibexreplay_s8`). Arreglos al adaptador: devuelve los multiplicadores
+en el tope de iteraciones (como la caja directa con `DFBH_CORTE_CERT`), toma
+`DFBH_CAJA_TOPE` y apaga `STATTIMER` (SoPlex >= 5 cronometra sus estadísticas;
+con él encendido 8.1 era ×2.9 más lenta en ex7_2_3, apagado ×1.5; la cifra
+vieja de 7.1.6, ×1.2–1.9, se midió con él encendido). Banco interrumpido a las
+135 instancias porque corrían otros experimentos (ibexopt-ml); las tres
+variantes de cada instancia corrieron seguidas, así que el cociente vale:
+8.1/4.0.2 = 1.45 opt, 1.49 sistemas, 1.47 compo (16); sin escalado 1.27–1.33;
+4.0.2 más rápida en las 135, misma contracción. Nota al pie de R2 al día;
+datos en `results/escalera_2026-11-06/soplex8/`.

@@ -13,10 +13,10 @@
 #
 # Usage:
 #   ./build_paper.sh                 core build: every rung R0-R5 of the paper
-#   ./build_paper.sh --externals     also links SoPlex 7.1.6, HiGHS 1.15.1 and
+#   ./build_paper.sh --externals     also links SoPlex 8.1.0, HiGHS 1.15.1 and
 #                                    Gurobi 12.0.3, used only for the side
 #                                    comparisons of Section 5 (not in the ladder)
-#     with SX7SRC=<SoPlex 7.1.6 sources>  SX7=<its build dir, configured with
+#     with SX7SRC=<SoPlex 8.1.0 sources>  SX7=<its build dir, configured with
 #                                        cmake -DCMAKE_CXX_FLAGS=-Dsoplex=soplex7>
 #          HIGHSSRC=<HiGHS 1.15.1 sources> HIGHS=<its build dir>
 #          GUROBI=<gurobi1203/linux64>

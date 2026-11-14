@@ -1,0 +1,1 @@
+ibexreplay_s8: /tmp/claude-1001/-home-iaraya/2bd51c7a-9daf-4c06-b6ef-b89011baa9b5/scratchpad/sx8/src/src/soplex/spxquality.hpp:55: void soplex8::SPxSolverBase<R>::qualConstraintViolation(R&, R&) const [with R = double]: Assertion `this->lhs(row) <= this->rhs(row) + 1e-9' failed.

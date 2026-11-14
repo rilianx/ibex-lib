@@ -673,8 +673,10 @@ presolving each new relaxation costs more than it saves on LPs of a few
 pivots, $10^{-9}$ makes SoPlex report spurious infeasibility on relaxations
 with nearly equal rows, and $10^{-6}$ weakens its dual on optimization
 problems. Turning off scaling, or forcing the row or column representation or
-the primal algorithm, did not help, and SoPlex~7.1.6 was 1.2--1.9 times slower
-than 4.0.2 on a sample of eight problems.}
+the primal algorithm, did not help. SoPlex~8.1.0, the latest release, costs
+1.45--1.49 times as much per pass as 4.0.2, and 1.27--1.33 times without
+scaling, its best setting, with the same contraction (135 instances of the
+banks of Section~\ref{sec:bank}).}
 \item[R3] \emph{the bare simplex}: the simplex of SoPlex driven directly through
 its \texttt{SPxSolver} class, the LP kept loaded, only the objective and the
 column bounds changed between LPs, without the checks, copies and

@@ -23,7 +23,7 @@ This produces four binaries in `examples/dfb`:
 - `ibexreplay_esc` and `ibexreplay_cmp`: the replay of a bank of passes.
 
 The core build covers every rung, R0 to R5. Three other engines appear only in
-side remarks of Section 5: SoPlex 7.1.6, HiGHS 1.15.1 and Gurobi 12.0.3. To
+side remarks of Section 5: SoPlex 8.1.0, HiGHS 1.15.1 and Gurobi 12.0.3. To
 link them, use `build_paper.sh --externals`; the header of the script gives
 the details. Without them, selecting one of those engines stops with a
 message.
@@ -80,6 +80,17 @@ inside the search).
 The folders `banco/`, `banco_compo/`, `r0_cercana/`, `hibrido/`, `emulado/`,
 `peso/`, `katsurabis_scbase/` and `solver_escf_escfa.tgz` hold the same results
 unpacked or by topic.
+
+### SoPlex 8.1.0 (footnote of R2)
+
+`soplex8/job.sh` replays the banks with the tuned SoPlex 4.0.2 (`s4`) and with
+SoPlex 8.1.0 through `ibex_Caja7.cpp`, with and without scaling (`s8`, `s8n`),
+presolving off in all three; the binary `ibexreplay_s8` links SoPlex 8.1.0
+built with `-Dsoplex=soplex8 -DBOOST=OFF -DGMP=OFF -DMPFR=OFF -DPAPILO=OFF
+-DZLIB=OFF`. The run was stopped after 135 instances because other
+experiments were loading the machine; the three variants of an instance ran
+one after the other in the same job, so their ratio is comparable, but their
+absolute times are not. The outputs are in `soplex8/out`.
 
 ## 3. Rungs of the ladder
 

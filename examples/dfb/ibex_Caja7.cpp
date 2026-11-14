@@ -15,6 +15,9 @@ void Caja7::cargar(int n, int m, const double* lb, const double* ub, const doubl
     s.setIntParam(SoPlex::OBJSENSE, SoPlex::OBJSENSE_MINIMIZE);
     s.setIntParam(SoPlex::SOLVEMODE, SoPlex::SOLVEMODE_REAL);
     s.setIntParam(SoPlex::TIMER, SoPlex::TIMER_OFF);
+    /* SoPlex >= 5 mide sus estadisticas con un cronometro de CPU (STATTIMER, omision 1)
+     * que en LPs de pocos pivotes pesa; 4.0.2 no lo tiene. CAJA7_STATTIMER=1 lo deja. */
+    if (!(getenv("CAJA7_STATTIMER") && atoi(getenv("CAJA7_STATTIMER")) == 1)) s.setIntParam(SoPlex::STATTIMER, 0);
     s.setIntParam(SoPlex::ITERLIMIT, iterlimit);
     s.setRealParam(SoPlex::FEASTOL, tol);
     s.setRealParam(SoPlex::OPTTOL, tol);
@@ -51,6 +54,9 @@ int Caja7::resolver(int k, bool maximizar, bool frio, double* lam, double* x, in
     } else if (st == SPxSolver::INFEASIBLE) {
         if (s.getDualFarkasReal(lam, m)) res = 1;
         else res = 2;
+    } else if (st == SPxSolver::ABORT_ITER) {
+        /* tope de iteraciones: los multiplicadores de la base donde paro certifican igual */
+        if (s.getDualReal(lam, m)) res = 4;
     }
     s.changeObjReal(k, 0.0);
     return res;
