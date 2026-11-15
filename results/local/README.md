@@ -931,3 +931,39 @@ sum_j |g_i g_j| to each row radius and only g_i^2 to the diagonal, so the shift 
 instead of shrinking; and rho [h] d2h uses the range of h over the whole box, which is
 not small away from h = 0. Neumaier's argument needs narrow boxes around the optimum
 and a convexity test that sees the rank-one structure. Not pursued.
+
+## E14: range reduction (acombr) as the paper's default: E4 and E5 rerun
+
+Decision of the author (2026-11-14): acombr (acomb + `--cvx-reduce`) is the default of
+the paper; acomb stays as an ablation row. E1-E3 need no rerun (acombr ran on the 298).
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astatsr" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="astatsr" sh results/anytime/run.sh
+BIN=build-fix/bin/ibexopt-ml OUT=results/local/ibex_inf12.jsonl ARM=acombr12 FLAGS="--ipopt-diam=1e8 --cvx-close --cvx-backoff=64 --cvx-test 4 --cvx-reduce" JOBS=14 TLIM=1200 sh results/solvers/run_ibex.sh
+```
+
+2026-11-14 18:50-21:42, server idle before. No killed run.
+
+E1 (ref abase): acombr on the 223 set 0.75 [0.62, 0.87], 24/0, nodes 0.68; on the 298,
+240 solved, 0.48 [0.33, 0.66], 36/1, nodes 0.69 (acomb: 0.50 [0.35, 0.69], 36/2).
+
+E4 (astatsr = acombr + `--cvx-stats`, `results/local/e4/summarize_red.py` ->
+`summary_red.md`): statuses identical to acombr, nodes identical on 237/240 (ex9_2_5,
+launch, robot: timing). All 298 (58.5 M nodes): bound available 11.3%, certified 0.27%
+(25 instances), raised 0.78%, pruned by the bound 0.02% + emptied by range reduction
+0.11% = 0.13% eliminated (79 instances), 403287 domain reductions. 223 set: raised
+0.58%, eliminated 0.40% (49 instances). polak6 certified on 78% of its nodes, never
+closes.
+
+E5: acombr12 statuses (298): 244 complete, 47 timeout, 5 no_lower_bound, 2 infeasible
+(acomb12: 245; hs089 closes in 1107 s with acomb12, times out with acombr12). Profiles
+`results/local/perfprof_red.png`, `perfprof12_red.png` (`ARM=acombr`/`acombr12`).
+
+| profile | n | SCIP closes | IbexOpt closes | both | faster on both: IbexOpt / SCIP | geo IbexOpt/SCIP |
+|---|---|---|---|---|---|---|
+| original, acombr | 114 | 83 | 100 | 69 | 30 / 39 | 1.20 |
+| ±1e12, acombr12 | 110 | 79 | 97 | 66 | 29 / 37 | 1.07 |
+
+Paper updated accordingly (abstract, contributions, ablation row "+ range reduction
+(default)", Sect. 5.3-5.5, Figure perfprof12_red).

@@ -32,11 +32,11 @@ diagonally as in $\alpha$BB; the tangent plane of the Lagrangian at the local so
 minus the shift penalty, is then minimized in closed form over the box and corrected
 for the relaxation of the equalities. The same separable expression also reduces the
 range of each variable. In IbexOpt with Ipopt, on 298 instances of the COCONUT
-benchmark, the bound solves 11 more instances (240 against 229) and halves the solving
-time on the instances that take more than a second, at a cost below 1\% of the running
-time; range reduction removes a further 7\%. With the same variable domains, the
-rigorous solver then solves more instances than SCIP~10 (245 against 224), although
-SCIP is faster on most of the instances both solve.
+benchmark, the bound with range reduction solves 11 more instances (240 against 229)
+and halves the solving time on the instances that take more than a second, at a cost
+below 1\% of the running time. With the same variable domains, the rigorous solver
+then solves more instances than SCIP~10 (244 against 224), although SCIP is faster on
+most of the instances both solve.
 \end{abstract}
 
 \section{Introduction}
@@ -141,14 +141,14 @@ solver that already runs for upper bounding, so nothing is solved for the bound.
 \item \textbf{An experimental study} on 298 instances of the COCONUT benchmark
   \citep{Shcherbina2003}: an ablation (IbexOpt without local solver, with the local
   solver for upper bounding only, and with the Lagrangian bound), the variants of the
-  bound, where it acts in the search, and a comparison with SCIP~10. With the bound,
-  the rigorous solver solves 240 instances in 1200~s, against 229 without it, and its
-  solving time drops to 0.50 [0.35, 0.69] of the time without it on the instances that
-  take more than a second (36 instances faster, 2 slower); the bound costs less than
-  1\% of the running time, and range reduction lowers the time by a further 7\%
-  (17 faster, none slower). With the same variable domains for both solvers, it solves
-  245 instances and SCIP~10 224; SCIP is faster on 40 of the 66 instances both solve in
-  more than a second.
+  bound, where it acts in the search, and a comparison with SCIP~10. With the bound and
+  range reduction, the rigorous solver solves 240 instances in 1200~s, against 229
+  without them, and its solving time drops to 0.48 [0.33, 0.66] of the time without them
+  on the instances that take more than a second (36 instances faster, one slower); the
+  bound costs less than 1\% of the running time, and range reduction accounts for 7\% of
+  the gain (17 instances faster, none slower). With the same variable domains for both
+  solvers, it solves 244 instances and SCIP~10 224; SCIP is faster on 37 of the 66
+  instances both solve in more than a second.
 \end{enumerate}
 
 The paper is organized as follows. Section~\ref{sec:related} reviews related work.
@@ -679,8 +679,10 @@ solves.
 Table~\ref{tab:ablation} compares IbexOpt without local solver (\texttt{default}
 upper bounding: probing and inner regions only), IbexOpt with Ipopt for upper
 bounding (the default configuration, our baseline) and the same with the Lagrangian
-bound of Section~\ref{sec:bound}, with the Gerschgorin shift only and with the default
-mode (certify, else shift), both with backoff up to 64 nodes.
+bound of Section~\ref{sec:bound}: with the Gerschgorin shift only, with the
+certificate first and the shift as fallback, and with range reduction added
+(Section~\ref{sec:red}), the configuration we use by default in the rest of this
+section; all with backoff up to 64 nodes.
 
 \begin{table}[h]
 \centering
@@ -692,7 +694,8 @@ configuration & solved /298 & time vs.\ baseline [95\% CI] & W/L & nodes & time/
 no local solver & 224 & 1.59 [1.32, 1.98] & 15/60 & 2.93 & 0.85 & -- \\
 Ipopt upper bounding (baseline) & 229 & 1.00 & -- & 1.00 & 1.00 & -- \\
 + Lagrangian bound, shift only & 237 & 0.58 [0.41, 0.76] & 27/0 & 0.80 & 1.00 & 0.2 \\
-+ Lagrangian bound, certify else shift & \textbf{240} & \textbf{0.50} [0.35, 0.69] & 36/2 & 0.70 & 1.00 & 0.3 \\
++ Lagrangian bound, certify else shift & 240 & 0.50 [0.35, 0.69] & 36/2 & 0.70 & 1.00 & 0.3 \\
++ range reduction (default) & \textbf{240} & \textbf{0.48} [0.33, 0.66] & 36/1 & 0.69 & 1.00 & 0.2 \\
 \hline
 \end{tabular}}
 \caption{Ablation on the 298 instances (1200~s). Time ratios on the 109 instances that some
@@ -701,14 +704,15 @@ instances solved by all.}
 \label{tab:ablation}
 \end{table}
 
-On the 223 instances solved by all configurations, the bound reduces the time to
-0.78 [0.65, 0.91] of the baseline, with 24 faster instances and one slower, and the
-nodes to 0.70; its own cost is 0.4\% of the running time and the time per node does
-not change. Most of the gain on the full set comes from the eleven instances that only
+On the 223 instances solved by all configurations, the default reduces the time to
+0.75 [0.62, 0.87] of the baseline, with 24 faster instances and none slower, and the
+nodes to 0.68 (0.78 [0.65, 0.91] and one slower without range reduction); the cost of
+the bound is 0.3\% of the running time and the time per node does not change. Most of the gain on the full set comes from the eleven instances that only
 the bound solves within the time limit: portfl1 at the root, abel, abelbis, abelbis-1,
 abelter-1, catena and fccu in less than 20~s, ex8\_4\_1 in 69~s, polak3 in 83~s,
-ex8\_4\_6 and ex8\_4\_6ter in about 1000~s. No instance solved by the baseline is lost.
-The two slower instances are discussed below. Five of these instances (portfl1,
+ex8\_4\_6 and ex8\_4\_6ter in about 1000~s (69~s, 74~s and 860~s with range
+reduction). No instance solved by the baseline is lost. The slower instances are
+discussed below. Five of these instances (portfl1,
 abel, abelbis-1, abelter-1, catena) are closed at the root: the bound from the first
 Ipopt call already meets the incumbent, while the baseline still has gaps of up to
 $10^6$ after more than $10^5$ nodes. On polak3 and abelbis the Hessian of the Lagrangian
@@ -719,7 +723,8 @@ around the optimum where the shift penalty is small.
 
 \subsection{Variants of the bound}
 
-Table~\ref{tab:variants} compares, against the default bound (certify, else shift),
+Table~\ref{tab:variants} compares, against the bound with certificate first and shift
+as fallback (without range reduction),
 the bound applied only on boxes where convexity is certified (Gerschgorin test; or
 Gerschgorin, comparison matrix and interval Cholesky), the Gerschgorin shift alone,
 the shift that keeps the better of the plain and scaled Gerschgorin rules, and the
@@ -730,10 +735,10 @@ Gerschgorin shift without backoff.
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \hline
-variant & solved /298 & time vs.\ default [95\% CI] & W/L & nodes \\
+variant & solved /298 & time vs.\ certify-else-shift [95\% CI] & W/L & nodes \\
 \hline
-certify, else shift (default) & 240 & 1.00 & -- & 1.00 \\
-+ range reduction (Section~\ref{sec:red}) & 240 & \textbf{0.96} [0.92, 0.98] & 12/0 & 0.97 \\
+certify, else shift & 240 & 1.00 & -- & 1.00 \\
++ range reduction (default) & 240 & \textbf{0.96} [0.92, 0.98] & 12/0 & 0.97 \\
 certify only, Gerschgorin & 235 & 1.20 [1.08, 1.40] & 0/19 & 1.19 \\
 certify only, + comparison matrix, Cholesky & 237 & 1.06 [1.00, 1.14] & 1/14 & 1.02 \\
 Gerschgorin shift & 237 & 1.12 [1.01, 1.29] & 1/10 & 1.14 \\
@@ -757,7 +762,7 @@ the cost of the bound by about seven without losing nodes.
 
 Range reduction with the same bound (Section~\ref{sec:red}) never makes an instance
 slower by more than 5\%: on the 223 instances it reduces the time to 0.96 [0.92, 0.98]
-of the default, with 12 instances faster and none slower, and on all 298 to
+of the bound without it, with 12 instances faster and none slower, and on all 298 to
 0.93 [0.88, 0.98] (17 faster, none slower), solving the same 240 instances. The largest
 gains are on ex8\_4\_1 (69~s to 10.5~s, 10\,100 to 1\,638 nodes), robot (86~s to 45~s),
 ex8\_4\_6 and ex8\_4\_6ter (about 1\,015~s to 860~s) and dnieper (68 to 4 nodes).
@@ -766,11 +771,12 @@ its linear and quadratic parts separately, and additionally using the interval
 gradient of $L$ on the box as a floor on the slope of each term (past the point where
 the slope of the parabola would leave that range, the term continues as a line), gives
 0.92 [0.86, 0.97] (20 faster, none slower) on the 298: no significant change overall,
-but chenery-1 drops from 225~s to 79~s. We keep range reduction as an option: the
-other results of this section are reported for the default without it.
+but chenery-1 drops from 225~s to 79~s. Range reduction is part of the default
+configuration used in the ablation and in Sections~5.4 and~5.5; the exact minimum and
+the floor are not.
 
-The two instances where the default is slower than the baseline do not come from a
-weaker bound. On launch, the bound raises the lower bound of a single node and prunes none; the difference
+The two instances where the bound without range reduction is slower than the baseline
+(only launch remains with it) do not come from a weaker bound. On launch, the bound raises the lower bound of a single node and prunes none; the difference
 comes from the timed search for a feasible point (Section~\ref{sec:exp}, setup). On
 chenery-1 (254~s against 119~s), the scaled shift raises the lower bound of 3\,721 nodes
 and prunes 2\,669, and ACID, which tunes the number of variables handled by 3BCID from
@@ -782,14 +788,16 @@ variables, the scaled shift needs 8\,366 nodes against 13\,582 for the plain one
 
 With \texttt{--cvx-stats} the solver counts, at every node, whether the bound can be
 computed (a primal--dual pair is stored), whether the Hessian is certified positive
-semidefinite, and whether the bound raises or prunes the node. Over the 59.5 million
-nodes of the 298 runs, a bound is available at 12\% of the nodes, the Hessian is
-certified at 0.7\% (in 24 instances), the bound raises the node's lower bound at 1.2\%
-and prunes 0.2\% of the nodes, in 76 instances. On the 223 solved instances it prunes
-0.6\% of the nodes (47 instances). The bound thus acts on few nodes, but on the right
+semidefinite, and whether the bound raises the node's lower bound, prunes it, or
+empties it by range reduction. Over the 58.5 million nodes of the 298 runs of the
+default, a bound is available at 11\% of the nodes, the Hessian is certified at 0.3\%
+(in 25 instances), the bound raises the node's lower bound at 0.8\% and eliminates
+0.13\% of the nodes (0.02\% pruned by the bound, 0.11\% emptied by range reduction), in
+79 instances; range reduction shrinks a variable's domain 403\,000 times. On the 223
+solved instances it eliminates 0.4\% of the nodes (49 instances). The bound thus acts on few nodes, but on the right
 ones: the root of the convex problems above, and the boxes around the optimum where
 the linear relaxation stalls. Certification alone is not enough: on polak6 the Hessian
-is certified at 96\% of the nodes, yet the tangent bound with the stored multipliers,
+is certified at 78\% of the nodes, yet the tangent bound with the stored multipliers,
 computed at another node, never exceeds the incumbent value, and the instance is not
 solved.
 
@@ -801,13 +809,13 @@ on the 298 instances translated from Minibex; seven cannot be translated (eight 
 original domains). SCIP treats an unbounded variable as unbounded,
 while IbexOpt needs a bounded box; for a fair comparison both solvers get the same
 domains, missing bounds being replaced by $\pm 10^{12}$. With these domains, IbexOpt
-with the bound solves 245 instances and SCIP 224 (on the original domains, 240 and 221).
+with the bound solves 244 instances and SCIP 224 (on the original domains, 240 and 221).
 Figure~\ref{fig:perfprof} shows the performance profile on the 110 instances that one
 of the two solves and that take more than 1~s for one of them.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.7\textwidth]{../local/perfprof12_comb.png}
+\includegraphics[width=0.7\textwidth]{../local/perfprof12_red.png}
 \caption{Performance profile, SCIP~10 against IbexOpt with the Lagrangian bound, same
 domains (missing bounds $\pm 10^{12}$), 1200~s; 110 instances solved by one of the two
 and taking more than 1~s for one.}
@@ -818,9 +826,11 @@ IbexOpt solves 97 of the 110 instances and SCIP 79; 31 are solved only by IbexOp
 (among them the ex6\_2 and ex7\_2 families, ex8\_4\_6, ex8\_4\_6ter, hs102 and rk23) and
 13 only by SCIP (3pk, 3pk-borne, chenery, ex8\_4\_3, linear, minlphi, optmass,
 orthregb, pollut, prolog, qp1, qp1-1, qp2). SCIP is faster on most instances both
-solve: on 40 of the 66, against 26, by 1.17 in geometric mean. The bound narrows this
-gap (1.40 with the shift-only bound on the original domains, 1.50 without bound) and
-removes portfl1 from the instances only SCIP solves. Two SCIP runs end with an internal
+solve: on 37 of the 66, against 29, by 1.07 in geometric mean. The bound narrows this
+gap (on the original domains: 1.20 with the default, 1.40 with the shift-only bound,
+1.50 without bound) and removes portfl1 from the instances only SCIP solves. Without
+range reduction IbexOpt also solves hs089 (in 1\,107~s), which the default does not
+solve within the limit. Two SCIP runs end with an internal
 LP error after about 950~s (ex8\_4\_6bis on the original domains, rk23 with
 $\pm 10^{12}$ bounds), counted as unsolved; SCIP declares wall infeasible, while
 IbexOpt certifies a feasible point; on the original domains it reports ex8\_4inf-1 as
