@@ -119,6 +119,10 @@ namespace ibex {
   // adds rho (dh dh^T + h d2h) to the Hessian: positive curvature across each
   // equality, where L is typically not convex. 0: off.
   double cvx_aug=0;
+  // --cvx-signed: signed Gershgorin costs on the faces of the box (see cvx_bound)
+  bool cvx_signed=false;
+  // --cvx-anchor: also try the box center and the midpoint as tangent points
+  bool cvx_anchor=false;
   long cvx_feas_pairs=0, cvx_feas_pruned=0, cvx_feas_reduced=0;
   namespace { LoupFinderIpopt* cvx_finder=NULL;
     // backoff: after a node where the Lagrangian is not certified convex, the
@@ -727,62 +731,21 @@ namespace ibex {
             H[i][j] += rho * ((i==j ? sqr(gk[i]) : gk[i]*gk[j]) + cbox[k] * Hk[i][j]);
         }
       }
-      // --cvx-test 2: alphaBB-like. Instead of requiring H PSD, take a diagonal
-      // shift d (Gershgorin: d_i = max(0, sum_j!=i |h_ij| - h_ii)) making H+D
-      // PSD; L(y) + sum d_i/2 (y_i-x^_i)^2 is then convex and the tangent
-      // bound holds after subtracting sum d_i/2 max_{y in B} (y_i-x^_i)^2.
-      std::vector<double> dshift(n, 0.0);
-      bool shifted = false;
-      if (cvx_psd_test == 2) {
-        for (int i=0; i<n; i++) for (int j=0; j<n; j++)
-          if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
-        for (int i=0; i<n; i++) {
-          Interval r(0);
-          for (int j=0; j<n; j++) if (j!=i) r += abs(H[i][j]);
-          Interval di = r - Interval(H[i][i].lb());
-          dshift[i] = std::max(0.0, di.ub());
-          if (dshift[i] > 0) shifted = true;
-        }
-      }
-      // --cvx-test 3: also the scaled Gershgorin shift of alphaBB (Adjiman et
-      // al. 1998), scaling by w_i = max_{y in B} |y_i - x^_i|: S(H+D)S PSD by
-      // Gershgorin with S = diag(w) if d_i >= sum_j!=i |h_ij| w_j/w_i - h_ii.
-      // Of the two shifts, keep the one with the smaller penalty
-      // sum d_i/2 w_i^2 (both are valid).
-      // --cvx-test 4: first try to certify H PSD (Gershgorin, comparison matrix,
-      // midpoint-radius Cholesky, as --cvx-test 1); if certified, no shift (the
-      // plain tangent bound); otherwise the shift of --cvx-test 3.
-      if (cvx_psd_test == 3 || (cvx_psd_test == 4 && !certify_psd(H))) {
-        for (int i=0; i<n; i++) for (int j=0; j<n; j++)
-          if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
-        std::vector<double> w(n), dplain(n, 0.0), dscaled(n, 0.0);
-        bool finite = true;
-        for (int i=0; i<n; i++) {
-          if (box[i].is_unbounded()) { finite = false; break; }
-          double v = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
-          w[i] = (Interval(std::max(v - box[i].lb(), box[i].ub() - v))).ub();
-        }
-        Interval pen_plain(0), pen_scaled(0);
-        for (int i=0; i<n; i++) {
-          Interval r(0), rs(0);
-          for (int j=0; j<n; j++) if (j!=i) {
-            r += abs(H[i][j]);
-            if (finite && w[i] > 0) rs += abs(H[i][j]) * Interval(w[j]) / Interval(w[i]);
-          }
-          dplain[i] = std::max(0.0, (r - Interval(H[i][i].lb())).ub());
-          dscaled[i] = (finite && w[i] > 0) ? std::max(0.0, (rs - Interval(H[i][i].lb())).ub()) : dplain[i];
-          if (finite) {
-            pen_plain += Interval(dplain[i]) * sqr(Interval(w[i]));
-            pen_scaled += Interval(dscaled[i]) * sqr(Interval(w[i]));
-          }
-        }
-        bool use_scaled = finite && pen_scaled.ub() < pen_plain.ub();
-        for (int i=0; i<n; i++) {
-          dshift[i] = use_scaled ? dscaled[i] : dplain[i];
-          if (dshift[i] > 0) shifted = true;
-        }
-      }
-      if (cvx_psd_test < 2 && !certify_psd(H)) {
+      // Shift d >= 0 such that the tangent bound holds (see Proposition 1):
+      //  --cvx-test 2: Gershgorin, d_i = max(0, sum_j!=i |h_ij| - h_ii);
+      //  --cvx-test 3: also the scaled Gershgorin rule of alphaBB (Adjiman et al.
+      //    1998) with weights w_i = max_{y in B} |y_i - a_i|, keeping the one with
+      //    the smaller penalty sum d_i/2 w_i^2;
+      //  --cvx-test 4: first try to certify H PSD (as --cvx-test 1): no shift;
+      //    otherwise the shift of --cvx-test 3.
+      //  --cvx-signed: where the anchor a lies on a face of the box, u_i = y_i - a_i
+      //    has a known sign on the whole box, and a pair (i,j) with both signs
+      //    known only costs the part of h_ij that makes h_ij u_i u_j negative
+      //    (two-plane note, signed costs); valid through Taylor's remainder
+      //    L(y) = L(a) + dL(a) u + 1/2 u^T H(xi) u, u in that orthant.
+      bool cert_ok = false;
+      if (cvx_psd_test < 2) {
+        if (!certify_psd(H)) {
         if (certified) {
           // is even the center indefinite? (float Cholesky of mid(H) + tiny shift)
           int nn = H.nb_rows(); std::vector<double> A(nn*nn), Lc(nn*nn, 0.0); bool pd = true;
@@ -796,67 +759,141 @@ namespace ibex {
           if (!pd) cvx_center_indef++;
         }
         return NEG_INFINITY;
-      }
-      if (certified && !shifted) *certified = true;
-      // tangent plane of the Lagrangian at the projection of Ipopt's point
-      IntervalVector xh(n);
-      for (int i=0; i<n; i++) {
-        double v = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
-        if (!std::isfinite(v)) return NEG_INFINITY;
-        xh[i] = Interval(v);
-      }
-      Interval L = feas ? Interval(0) : sys.goal->eval(xh);
-      IntervalVector grad = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(xh);
-      if (m>0) {
-        IntervalVector gx = sys.f_ctrs.eval_vector(xh);
-        for (int k=0; k<m; k++) {
-          if (lam[k]==0) continue;
-          L += Interval(lam[k]) * gx[k];
-          grad += Interval(lam[k]) * dg[k]->eval_vector(xh);
         }
-        if (aug) {
-          Interval rho(cvx_aug), eps(NormalizedSystem::default_eps_h);
-          for (int k=0; k<m; k++) {
-            if (ops[k]!=EQ) continue;
-            L += rho / 2.0 * sqr(gx[k]) - rho / 2.0 * sqr(eps);
-            grad += rho * gx[k] * dg[k]->eval_vector(xh);
+        cert_ok = true;
+      } else {
+        for (int i=0; i<n; i++) for (int j=0; j<n; j++)
+          if (H[i][j].is_empty() || H[i][j].is_unbounded()) return NEG_INFINITY;
+        if (cvx_psd_test == 4) cert_ok = certify_psd(H);
+      }
+      auto make_shift = [&](const std::vector<double>& an, std::vector<double>& d) -> bool {
+        d.assign(n, 0.0);
+        if (cert_ok) return false;
+        std::vector<int> sg(n, 0);
+        if (cvx_signed)
+          for (int i=0; i<n; i++) {
+            if (box[i].is_degenerated()) continue;
+            if (an[i] <= box[i].lb()) sg[i] = 1; else if (an[i] >= box[i].ub()) sg[i] = -1;
+          }
+        bool signed_any = false;
+        for (int i=0; i<n; i++) if (sg[i]) signed_any = true;
+        // cost of entry (i,j): |h_ij|, or its harmful part when both signs are known
+        auto cost = [&](int i, int j) -> Interval {
+          if (sg[i] && sg[j]) {
+            double c = (sg[i]*sg[j] > 0) ? std::max(0.0, -H[i][j].lb()) : std::max(0.0, H[i][j].ub());
+            return Interval(c);
+          }
+          return abs(H[i][j]);
+        };
+        std::vector<double> w(n);
+        bool finite = true;
+        for (int i=0; i<n; i++) {
+          if (box[i].is_unbounded()) { finite = false; break; }
+          w[i] = (Interval(std::max(an[i] - box[i].lb(), box[i].ub() - an[i]))).ub();
+        }
+        std::vector<double> dplain(n, 0.0), dscaled(n, 0.0);
+        Interval pen_plain(0), pen_scaled(0);
+        bool want_scaled = (cvx_psd_test == 3 || cvx_psd_test == 4);
+        for (int i=0; i<n; i++) {
+          Interval r(0), rs(0);
+          for (int j=0; j<n; j++) if (j!=i) {
+            // signed: symmetric split of each pair (c_ij + c_ji)/2 (AM-GM on u_i u_j);
+            // unsigned: row Gershgorin as before
+            Interval c = signed_any ? (cost(i,j) + cost(j,i)) / 2.0 : abs(H[i][j]);
+            r += c;
+            if (want_scaled && finite && w[i] > 0) rs += c * Interval(w[j]) / Interval(w[i]);
+          }
+          dplain[i] = std::max(0.0, (r - Interval(H[i][i].lb())).ub());
+          dscaled[i] = (want_scaled && finite && w[i] > 0) ? std::max(0.0, (rs - Interval(H[i][i].lb())).ub()) : dplain[i];
+          if (finite) {
+            pen_plain += Interval(dplain[i]) * sqr(Interval(w[i]));
+            pen_scaled += Interval(dscaled[i]) * sqr(Interval(w[i]));
           }
         }
-      }
-      Interval bound = L;
+        bool use_scaled = want_scaled && finite && pen_scaled.ub() < pen_plain.ub();
+        bool sh = false;
+        for (int i=0; i<n; i++) { d[i] = use_scaled ? dscaled[i] : dplain[i]; if (d[i] > 0) sh = true; }
+        return sh;
+      };
+      // interval gradient of L over the box (floor), independent of the anchor
       IntervalVector gbox(n);
       bool floor_ok = false;
       if (cvx_floor >= 2) {
-        // interval gradient of L over the box
         gbox = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(box);
         for (int k=0; k<m; k++) if (lam[k]!=0) gbox += Interval(lam[k]) * dg[k]->eval_vector(box);
         if (aug) for (int k=0; k<m; k++) if (ops[k]==EQ) gbox += Interval(cvx_aug) * cbox[k] * dg[k]->eval_vector(box);
         floor_ok = !gbox.is_empty() && !gbox.is_unbounded();
       }
       const IntervalVector* gb = floor_ok ? &gbox : NULL;
-      if (cvx_floor > 0) {
-        for (int i=0; i<n; i++) {
-          if (box[i].is_unbounded()) return NEG_INFINITY;
-          double mi = std::min(cvx_term_lb(i, box[i].lb(), xh, grad, dshift[i], gb),
-                               cvx_term_lb(i, box[i].ub(), xh, grad, dshift[i], gb));
-          if (!(mi > NEG_INFINITY)) return NEG_INFINITY;
-          bound += Interval(mi);
+      // tangent bound at an anchor of the box
+      auto eval_at = [&](const std::vector<double>& an, IntervalVector& xh, Interval& L, IntervalVector& grad,
+                         std::vector<double>& dshift, bool& shifted) -> double {
+        shifted = make_shift(an, dshift);
+        for (int i=0; i<n; i++) { if (!std::isfinite(an[i])) return NEG_INFINITY; xh[i] = Interval(an[i]); }
+        L = feas ? Interval(0) : sys.goal->eval(xh);
+        grad = feas ? IntervalVector(n, Interval(0)) : df->eval_vector(xh);
+        if (m>0) {
+          IntervalVector gx = sys.f_ctrs.eval_vector(xh);
+          for (int k=0; k<m; k++) {
+            if (lam[k]==0) continue;
+            L += Interval(lam[k]) * gx[k];
+            grad += Interval(lam[k]) * dg[k]->eval_vector(xh);
+          }
+          if (aug) {
+            Interval rho(cvx_aug), eps(NormalizedSystem::default_eps_h);
+            for (int k=0; k<m; k++) {
+              if (ops[k]!=EQ) continue;
+              L += rho / 2.0 * sqr(gx[k]) - rho / 2.0 * sqr(eps);
+              grad += rho * gx[k] * dg[k]->eval_vector(xh);
+            }
+          }
         }
-      } else
-      for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
-      if (shifted && cvx_floor == 0)
-        for (int i=0; i<n; i++) if (dshift[i] > 0) {
-          if (box[i].is_unbounded()) return NEG_INFINITY;
-          Interval w = sqr(box[i] - xh[i]);
-          bound -= Interval(dshift[i]) / 2.0 * Interval(w.ub());
-        }
-      // equalities are relaxed to |h| <= eps_h in the search: lambda*h can be
-      // as large as |lambda|*eps_h on a point the search calls feasible
-      for (int k=0; k<m; k++)
-        if (lam[k]!=0 && ops[k]==EQ)
-          bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
-      double lb = bound.lb();
-      if (!std::isfinite(lb)) return NEG_INFINITY;
+        Interval bound = L;
+        if (cvx_floor > 0) {
+          for (int i=0; i<n; i++) {
+            if (box[i].is_unbounded()) return NEG_INFINITY;
+            double mi = std::min(cvx_term_lb(i, box[i].lb(), xh, grad, dshift[i], gb),
+                                 cvx_term_lb(i, box[i].ub(), xh, grad, dshift[i], gb));
+            if (!(mi > NEG_INFINITY)) return NEG_INFINITY;
+            bound += Interval(mi);
+          }
+        } else
+        for (int i=0; i<n; i++) bound += grad[i] * (box[i] - xh[i]);
+        if (shifted && cvx_floor == 0)
+          for (int i=0; i<n; i++) if (dshift[i] > 0) {
+            if (box[i].is_unbounded()) return NEG_INFINITY;
+            Interval w = sqr(box[i] - xh[i]);
+            bound -= Interval(dshift[i]) / 2.0 * Interval(w.ub());
+          }
+        // equalities are relaxed to |h| <= eps_h in the search: lambda*h can be
+        // as large as |lambda|*eps_h on a point the search calls feasible
+        for (int k=0; k<m; k++)
+          if (lam[k]!=0 && ops[k]==EQ)
+            bound -= Interval(std::fabs(lam[k])) * Interval(NormalizedSystem::default_eps_h);
+        double r = bound.lb();
+        return std::isfinite(r) ? r : NEG_INFINITY;
+      };
+      // anchors: the projection of Ipopt's point; with --cvx-anchor also the
+      // center of the box and the midpoint between the two (best bound kept)
+      std::vector<std::vector<double>> anchors(1, std::vector<double>(n));
+      for (int i=0; i<n; i++) anchors[0][i] = std::max(box[i].lb(), std::min(box[i].ub(), cvx_x[i]));
+      if (cvx_anchor && !box.is_unbounded()) {
+        std::vector<double> c(n), mid(n);
+        for (int i=0; i<n; i++) { c[i] = box[i].mid(); mid[i] = box[i].lb() <= (anchors[0][i] + c[i]) / 2 && (anchors[0][i] + c[i]) / 2 <= box[i].ub() ? (anchors[0][i] + c[i]) / 2 : c[i]; }
+        anchors.push_back(c); anchors.push_back(mid);
+      }
+      IntervalVector xh(n), grad(n);
+      Interval L;
+      std::vector<double> dshift(n, 0.0);
+      bool shifted = false;
+      double lb = NEG_INFINITY;
+      for (size_t c=0; c<anchors.size(); c++) {
+        IntervalVector xh_c(n), grad_c(n); Interval L_c; std::vector<double> d_c; bool sh_c = false;
+        double lb_c = eval_at(anchors[c], xh_c, L_c, grad_c, d_c, sh_c);
+        if (c == 0 || lb_c > lb) { lb = lb_c; xh = xh_c; L = L_c; grad = grad_c; dshift = d_c; shifted = sh_c; }
+      }
+      if (!(lb > NEG_INFINITY)) return NEG_INFINITY;
+      if (certified && !shifted) *certified = true;
       // IBEX_CVX_CHECK: debug check of the separable inequality
       //   L(x) >= L(xh) + sum_i term_i(x_i)   at random points of the box
       if (getenv("IBEX_CVX_CHECK") && !feas) {
