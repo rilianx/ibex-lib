@@ -771,7 +771,12 @@ its linear and quadratic parts separately, and additionally using the interval
 gradient of $L$ on the box as a floor on the slope of each term (past the point where
 the slope of the parabola would leave that range, the term continues as a line), gives
 0.92 [0.86, 0.97] (20 faster, none slower) on the 298: no significant change overall,
-but chenery-1 drops from 225~s to 79~s. Range reduction is part of the default
+but chenery-1 drops from 225~s to 79~s. Proposition~\ref{prop:bound} holds for any
+tangent point in the box; computing the bound at three of them (the projection of the
+local solution, the center of the box and the midpoint between the two) and keeping the
+best gives 0.96 [0.93, 0.99] of the time of the default (14 faster, 2 slower), with the
+largest gains on the ex6\_2 family (ex6\_2\_13: 487~s to 275~s), for a cost of the bound
+of 0.9\% of the running time. Range reduction is part of the default
 configuration used in the ablation and in Sections~5.4 and~5.5; the exact minimum and
 the floor are not.
 

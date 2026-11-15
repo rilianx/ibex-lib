@@ -967,3 +967,36 @@ E5: acombr12 statuses (298): 244 complete, 47 timeout, 5 no_lower_bound, 2 infea
 
 Paper updated accordingly (abstract, contributions, ablation row "+ range reduction
 (default)", Sect. 5.3-5.5, Figure perfprof12_red).
+
+## E15: tangent point (`--cvx-anchor`) and signed Gershgorin costs (`--cvx-signed`)
+
+Options of the bound, off by default (commit 1372ae0d5; `cvx_bound` restructured, no
+change without them: nodes identical to acombr on 6 instances):
+- `--cvx-anchor`: the bound is computed at three tangent points (projection of Ipopt's
+  point, box center, midpoint of the two) and the best is kept; the interval Hessian is
+  computed once per box.
+- `--cvx-signed`: where the tangent point lies on a face of the box, u_i = y_i - a_i has
+  a known sign; a pair with both signs known only costs the part of h_ij that makes
+  h_ij u_i u_j negative (symmetric split (c_ij + c_ji)/2); valid through Taylor's
+  remainder in that orthant (two-plane note, signed costs).
+Both checked with `IBEX_CVX_CHECK=1` on 6 instances: no violation, same loup.
+
+```bash
+env OUT=results/local/runs-closed.jsonl BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombrs acombra" sh results/ipopt-diam/run.sh
+env OUT=results/local/runs-open.jsonl  BIN=build-fix/bin/ibexopt-ml JOBS=14 TLIM=1200 ARMS="acombrs acombra" sh results/anytime/run.sh
+```
+
+2026-11-14 23:09 - 2026-11-15 01:55, server idle before. No killed run; statuses
+identical to acombr (240 complete).
+
+| set | arm | time vs acombr [IC95] | W/L | nodes | bound % |
+|---|---|---|---|---|---|
+| 223 | acombrs | 0.99 [0.99, 1.00] | 4/0 | 1.00 | 0.3 |
+| 223 | acombra | 0.96 [0.92, 1.00] | 12/1 | 0.99 | 0.9 |
+| 298 | acombrs | 0.99 [0.98, 1.00] | 5/1 | 1.00 | 0.4 |
+| 298 | acombra | 0.96 [0.93, 0.99] | 14/2 | 0.99 | 0.9 |
+
+acombra (more than 10% change): ex6_2_13 487 -> 275 s, ex6_2_6 11.7 -> 7.8, ex6_2_8 7.5 ->
+4.6, ex6_2_11 6.5 -> 5.0, ex6_2_9 8.0 -> 6.7, ex8_4_4bis 46.0 -> 24.6, ex8_4_5bis 59.5 ->
+52.8, hs117 39.4 -> 27.0, chenery-1 225 -> 163; slower: mistake 518 -> 584, launch 3.6 ->
+7.6 (timing-sensitive). acombrs: chenery-1 225 -> 148, mistake 518 -> 649, else < 10%.
