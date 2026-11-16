@@ -417,12 +417,21 @@ SC (Algorithm~\ref{alg:sc}) or an external solver.}\label{alg:pass}
 \subsection{Merging twin rows}\label{sec:merge}
 
 Rows of the relaxation that are proportional, within a relative tolerance of
-$10^{-9}$, are merged into one row whose slack interval is the intersection of
-their scaled intervals; the polytope does not change. The affine linearizer
-writes each equation as two one-sided rows with the same normal, so merging
-halves $m$ on square systems, and \texttt{compo} writes some rows twice, with opposite signs, far
-apart in the matrix. Merging is done once per node, before any LP, and gives a
-smaller LP to SC and to an external solver alike.
+$10^{-9}$, are merged. If $b=c\,a+r$, the residual $r$ being nonzero only
+within that tolerance, the constraint $b^Tx\in\iv{b}_i$ implies
+$a^Tx\in(\iv{b}_i-\square(r^T\iv{x}))/c$, and the merged row keeps the
+intersection of this interval with that of $a$; the polytope does not
+shrink, and it does not change when the rows are exactly proportional. The
+affine linearizer writes each equation as two one-sided rows with the same
+normal, so merging halves $m$ on square systems, and \texttt{compo} writes
+some rows twice, with opposite signs, far apart in the matrix. Merging is done
+once per node, before any LP, and gives a smaller LP to SC and to an external
+solver alike. At the same point, a row with a coefficient above $10^{100}$ is
+dropped: next to the coefficient $-1$ of its slack it cannot be pivoted in
+double precision, and dropping it only enlarges the polytope. Such rows arise
+from the linearization of $1/w$ on boxes where $w$ approaches zero; on
+ex8\_2\_4, the one problem of our banks where we observed them, dropping them
+does not change the contraction.
 
 % =====================================================================
 \section{A simplex for the \texorpdfstring{$2n$}{2n} bound problems}\label{sec:simplex}
