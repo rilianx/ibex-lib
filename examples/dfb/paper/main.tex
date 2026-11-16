@@ -691,7 +691,7 @@ its \texttt{SPxSolver} class, the LP kept loaded, only the objective and the
 column bounds changed between LPs, without the checks, copies and
 unscaling of the \texttt{SoPlex} class; \texttt{SPxSolver} itself still
 refactorizes before declaring an optimum and checks the precision of its
-solution. It is the cheapest way to use SoPlex. As in R2, the rule of SoPlex chooses the representation of the
+solution. It is the cheapest way we found to use SoPlex. As in R2, the rule of SoPlex chooses the representation of the
 basis: by columns (dimension $m$), or by rows (dimension $n$) when the
 relaxation has more than 1.2 rows per variable;
 \item[R4] \emph{SC} (Section~\ref{sec:simplex});%
@@ -1001,16 +1001,20 @@ the threshold does not matter inside this range.
 % =====================================================================
 \section{Discussion}\label{sec:discussion}
 
-\paragraph{Why SC wins.} Every rung solves the same relaxation and feeds the
+\paragraph{Why SC is cheaper.} Every rung solves the same relaxation and feeds the
 same certificate, and from R1 on they contract alike: the gain is the cost of
 an LP. The ladder separates what a careful integration of SoPlex removes, the
 interface and its options (R1 to R3), from what only a simplex dedicated to the
 pass can omit, the preparation of each LP as a new problem. The certificate
 makes the omission possible: any basis certifies and can be made dual
 feasible, so between two LPs only what the new objective changes has to be
-recomputed.
+recomputed. This is not a weakness of SoPlex: a general-purpose solver cannot
+assume that its LPs come in families that share a basis, nor that any basis
+yields a valid bound. Nor does SC replace SoPlex: it keeps its LU
+factorization and leaves out the general machinery around it that a pass does
+not need.
 
-\paragraph{Where it loses.} Beyond 30 rows the pivots dominate the cost of
+\paragraph{Where the bare simplex is cheaper.} Beyond 30 rows the pivots dominate the cost of
 an LP, and SoPlex makes them cheaper by representing the basis by rows when
 the rows outnumber the variables (Section~\ref{sec:bank}). The homogeneous
 form, with one slack per row, which makes the certificate and the warm starts
