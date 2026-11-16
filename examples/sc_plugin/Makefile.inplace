@@ -6,7 +6,7 @@
 CXX = g++
 CXXFLAGS = -O3 -msse3 -frounding-math -std=gnu++11 -MMD -MP -DSC_LSMEAR_SYSTEM
 
-IBEX = ../..
+IBEX ?= ../..
 AFF  = affine
 
 INCLUDES = \

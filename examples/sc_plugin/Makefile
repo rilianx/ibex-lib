@@ -10,16 +10,25 @@
 # drivers: Ibex develop does not ship it.
 
 PKG_CONFIG ?= pkg-config
-IBEX_CFLAGS := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --cflags ibex)
-IBEX_LIBS   := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --libs ibex)
+IBEX_CFLAGS := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --cflags ibex 2>/dev/null)
+IBEX_LIBS   := $(shell PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PKG_CONFIG) --libs ibex 2>/dev/null)
 ifeq ($(IBEX_LIBS),)
+ifneq ($(MAKECMDGOALS),clean)
 $(error ibex.pc not found: set PKG_CONFIG_PATH to the folder of ibex.pc)
+endif
 endif
 
 CXX      ?= g++
 CXXFLAGS ?= -O3 -frounding-math
 CXXFLAGS += -std=c++14 -MMD -MP
 CPPFLAGS += -I. -Iaffine $(IBEX_CFLAGS)
+# Ibex 2.8 declares SmearSumRelative(System&, const Vector&, LargestFirst&),
+# used by LSmear, without defining it: sc_opt then provides the definition.
+IBEX_INCDIRS := $(patsubst -I%,%,$(filter -I%,$(IBEX_CFLAGS)))
+SMEAR_LF := $(if $(IBEX_INCDIRS),$(shell grep -ls 'SmearSumRelative::SmearSumRelative(System& sys, const Vector& prec, LargestFirst& lf)' $(addsuffix /ibex_SmearFunction.h,$(IBEX_INCDIRS)) </dev/null),none)
+ifeq ($(SMEAR_LF),)
+CPPFLAGS += -DSC_DEFINE_SMEAR_LF
+endif
 # Ibex installs its libraries in <prefix>/lib (and gaol/soplex in lib/ibex/3rd):
 comma := ,
 RPATH := $(patsubst -L%,-Wl$(comma)-rpath$(comma)%,$(filter -L%,$(IBEX_LIBS)))

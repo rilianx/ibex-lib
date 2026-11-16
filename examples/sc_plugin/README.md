@@ -1,6 +1,6 @@
 # CtcSC: self-certifying simplex contractor for Ibex
 
-`CtcSC` is a polytope-hull contractor with the role and the interface of
+`CtcSC` is a polytope-hull contractor for [Ibex](https://github.com/ibex-team/ibex-lib) with the role and the interface of
 `ibex::CtcPolytopeHull`. You give it a `Linearizer`. On each call it
 linearizes the system over the box and contracts every variable to its bounds
 over the relaxation.
@@ -34,7 +34,11 @@ What a pass does:
 
 This is the configuration called *SC base* in the paper
 *Certificate-driven polytope-hull contraction for interval branch and bound*
-(I. Araya). The research code it was extracted from is `examples/dfb`.
+(I. Araya, E. Pérez, V. Reyes). The research code it was extracted from, and
+everything needed to reproduce the experiments of the paper, are in the
+branch [`dfb-sc-paper`](https://github.com/rilianx/ibex-lib/tree/dfb-sc-paper)
+of `rilianx/ibex-lib` (`examples/dfb`, `results/escalera_2026-11-06`), archived
+at Zenodo.
 
 ## Files
 
@@ -45,7 +49,8 @@ This is the configuration called *SC base* in the paper
 | `ibex_SCBasis.{h,cpp}` | sparse LU of the basis (SoPlex `SLUFactor`, hidden behind a pimpl) |
 | `sc_solve.cpp`, `sc_opt.cpp` | drivers: a system solver and an optimizer (not part of the contractor) |
 | `Makefile` | builds the drivers against an installed Ibex (`pkg-config ibex`) |
-| `Makefile.inplace` | the same against the in-place Ibex of the repository of the paper |
+| `Makefile.inplace` | the same against an Ibex source tree built in place (`IBEX=<path>`) |
+| `casos/` | regression cases (multipliers that were not finite) |
 | `affine/`, `parse_args.h` | third-party code used only by the drivers |
 
 The contractor uses only the Ibex core and the SoPlex headers. It has no
@@ -84,26 +89,46 @@ CtcFixPoint fp(*new CtcCompo(sc, hc4), 0.2);
 
 `add_property` forwards to the linearizer, like `CtcPolytopeHull` does.
 
-## Building
+## Installation
 
-`CtcSC` is a plugin: it is not part of Ibex, and it builds against an
-installed Ibex, release 2.8 or develop. Ibex must use SoPlex as its LP
-library, because `SCBasis` uses the LU factorization of SoPlex:
+`CtcSC` is a plugin: it is not part of Ibex and builds against an installed
+Ibex (tested with release 2.8.9 and with the Ibex of the paper). Ibex must use
+SoPlex as its LP library, because `SCBasis` uses the LU factorization of
+SoPlex; the SoPlex 4.0.2 shipped with Ibex is enough.
+
+**1. Ibex, with SoPlex (once).**
 
 ```
-# Ibex (once)
+git clone https://github.com/ibex-team/ibex-lib.git
+cd ibex-lib && git checkout ibex-2.8.9
+mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DINTERVAL_LIB=gaol -DLP_LIB=soplex \
-      -DCMAKE_INSTALL_PREFIX=$HOME/ibex ..
-make && make install
-
-# this folder
-make PKG_CONFIG_PATH=$HOME/ibex/share/pkgconfig
-./sc_solve <ibex>/benchs/solver/polynom/Bellido.bch --lin=art -t 60 --seed=1
-./sc_opt <ibex>/benchs/optim/blowup/meanvar.bch --filtering=acidhc4 --lin=art --seed=1 -t 60
+      -DCMAKE_INSTALL_PREFIX=$HOME/ibex -DCMAKE_CXX_FLAGS="-include cstdint" ..
+make -j4 && make install
 ```
 
-`make -f Makefile.inplace` builds instead against the in-place Ibex of the
-repository of the paper.
+`-DCMAKE_CXX_FLAGS="-include cstdint"` is needed with GCC 13 or later, which
+no longer include `<cstdint>` implicitly (Ibex 2.8.9 relies on it). With the
+`develop` branch of Ibex, check that `$HOME/ibex/share/pkgconfig/ibex.pc` says
+`-lsoplex`, not `-llibsoplex`.
+
+**2. This plugin.**
+
+```
+git clone https://github.com/rilianx/ibex-sc.git
+cd ibex-sc
+make PKG_CONFIG_PATH=$HOME/ibex/share/pkgconfig
+./sc_solve ../ibex-lib/benchs/solver/polynom/Bellido.bch --lin=art -t 60
+./sc_opt ../ibex-lib/benchs/optim/medium/ex2_1_9.bch --filtering=acidhc4 --lin=art -t 60
+```
+
+The last line of the output gives the number of cells, the time and the
+solutions (`sc_solve`) or the enclosure of the optimum (`sc_opt`). With Ibex
+2.8.9, `Bellido` gives 8 solutions and `ex2_1_9` the optimum −0.375.
+
+`make -f Makefile.inplace IBEX=<path>` builds instead against an Ibex source
+tree built in place, such as that of the repository of the paper (see below);
+there `sc_solve` bisects with LSmear, as in the paper.
 
 To use `CtcSC` in your own program, compile the three files
 `ibex_CtcSC.cpp`, `ibex_SCSimplex.cpp` and `ibex_SCBasis.cpp` with it, with the
@@ -140,8 +165,8 @@ Built against Ibex develop (commit 0a0f9796d), `sc_opt` gives the same tree as
 the in-place build (ex2_1_9: same cells, passes, LPs and pivots); `sc_solve`
 differs only by the bisector (see above).
 
-The comparison is with the `examples/dfb` binaries in their SC base
-configuration (rung R3 of `results/escalera_2026-11-06/escf.sh`), with
+The comparison is with the binaries of `examples/dfb` in the repository of the paper, in their SC base
+configuration (rung R3 of `results/escalera_2026-11-06/escf.sh` there), with
 60 s runs and seeds 1 and 2.
 
 | sample | identical trees | CPU time, plugin / research (quotient of sums) |
@@ -160,3 +185,17 @@ bound, as the paper describes. On the sample above, this changes the tree in
 2 of the 24 systems (BroydenTri-0100: 13 cells instead of 11; Geneig-icse:
 419/397 instead of 285/393). A build that reproduces the quirk gives the same
 trees in all 48 runs. The optimizer is not affected.
+
+## License
+
+LGPL-3.0, as Ibex (see `LICENSE`). The bundled `affine/` code is by Jordan
+Ninin (ENSTA Bretagne, LGPL) and `parse_args.h` comes from Ibex (MIT). `CtcSC`
+links the LU factorization of SoPlex through Ibex; SoPlex is distributed by ZIB
+under its own license (the 4.0.2 shipped with Ibex under the ZIB Academic
+License).
+
+## Citation
+
+If you use `CtcSC`, please cite: I. Araya, E. Pérez, V. Reyes,
+*Certificate-driven polytope-hull contraction for interval branch and bound*
+(submitted).

@@ -1,69 +1,55 @@
-# Caso: SCSimplex devuelve multiplicadores NaN
+# Case: non-finite multipliers in SCSimplex
 
-Origen: `ibex_cse` (preprocesamiento CSE/NSC a Minibex). `original.mbx` es una
-instancia `func` del generador de ScriptDAG (n = 8, P = 12, semilla 3, dominios
-`[-2, 2]`), con 6 soluciones. `preprocesado_nsc.mbx` es la reescritura
-equivalente, con auxiliares para las sumas n-arias y las subexpresiones
-compartidas, más las filas redundantes del conditioner de Gauss–Jordan.
-`soluciones_completas.txt` tiene las 6 soluciones con todas sus variables (las
-originales y las auxiliares), en el orden de declaración del archivo.
+`original.mbx` is a `func` instance of the ScriptDAG generator (n = 8, P = 12,
+seed 3, domains `[-2, 2]`) with 6 solutions. `preprocesado_nsc.mbx` is an
+equivalent rewriting produced by a CSE/NSC preprocessor: auxiliary variables
+for the n-ary sums and the shared subexpressions, plus the redundant rows of a
+Gauss–Jordan conditioner. `soluciones_completas.txt` has the 6 solutions with
+all their variables (original and auxiliary), in the order of declaration.
 
-## Qué pasaba
+## What happened
 
-Antes de `b11a701`, `sc_solve preprocesado_nsc.mbx` (`--lin=art`) terminaba
-INFEASIBLE en 31 celdas, y `--lin=xt` en 1053. `CtcSC` vaciaba cajas que
-contienen las soluciones:
+`sc_solve preprocesado_nsc.mbx` used to end INFEASIBLE (31 cells with
+`--lin=art`, 1053 with `--lin=xt`): `CtcSC` emptied boxes that contain the
+solutions. `caja_art.txt` and `caja_xt.txt` are those boxes, just before the
+wrong contraction, in hexadecimal (`%a`), one variable per line. In both,
+`_y2 = _w0^(-1)` with `_w0 ∈ [1.2e-308, 52.8]` (affine) or `[1e-153, 52.8]`
+(XTaylor).
 
-- `caja_art.txt` (relajación afín): **`SCSimplex` devuelve λ con NaN**.
-  `Interval(NaN)` es vacío, `γ·z` queda vacío, y `!sum.contains(0.0)` lo tomaba
-  como prueba de vacío.
-- `caja_xt.txt` (XTaylor): no hay NaN. El vacío venía de la fusión de filas
-  proporcionales (tolerancia 1e-9) sin encerrar el residuo `(b − c·a)·x`.
+Three defects, all fixed:
 
-Las dos cajas están en hexadecimal (`%a`), una variable por línea: son la caja
-justo antes de la contracción que eliminaba las soluciones. En ambas,
-`_y2 = _w0^(-1)` con `_w0 ∈ [1.2e-308, 52.8]` (afín) o `[1e-153, 52.8]` (XTaylor).
-Por eso `_y2` llega a 8e307 o 1e153, y la relajación tiene coeficientes del orden
-de `1/_w0²`.
+- **Empty sum taken as a certificate.** `Interval(NaN)` is empty, so a NaN
+  multiplier made `γ·z` empty, and `!sum.contains(0.0)` read it as a proof of
+  emptiness. An empty sum no longer certifies anything.
+- **Non-rigorous merging of nearly proportional rows** (`caja_xt.txt`). Rows
+  with `b = c·a` within a relative tolerance of 1e-9 were merged as if exactly
+  proportional; the residual `(b − c·a)·x` is now enclosed over the box.
+- **The origin of the NaN** (`caja_art.txt`). The affine linearization of
+  `_y2 = _w0^(-1)` has the slope `1/(lb·ub) ≈ 1.54e306`, next to the
+  coefficient 1 of `_y2` and the −1 of the slack. When `_w0` enters the basis,
+  the update `xB[i] -= alpha[i]*delta` overflows to +inf; that row leaves at the
+  next step, and its BTRAN on LU factors of ~1e306 gives inf − inf = NaN. With
+  a NaN pivot row the ratio test finds no entering variable, and the simplex
+  declares infeasibility with the NaN row as Farkas ray. Such a row cannot be
+  pivoted in double precision: `CtcSC` now drops every row with a coefficient
+  above 1e100 (`nb_dropped_rows()`, `drop=` in `sc_solve`), which only
+  enlarges the polytope.
 
-## Estado
-
-`b11a701` (CtcSC) y `b9d6787` (CtcDFBHull) impiden que un certificado con NaN
-vacíe la caja y hacen rigurosa la fusión de filas. Con eso se recuperan las 6
-soluciones (2293 celdas, 22 s, `--lin=art`).
-
-**Origen de los NaN (2026-11-14).** Una sola fila de la relajación afín: la
-linealización de `_y2 = _w0^(-1)`, con pendiente `1/(lb·ub) ≈ 1.54e306` junto al
-coeficiente 1 de `_y2` y al −1 de la holgura. En el LP 2 entra `_w0`, su columna
-en la base trae una entrada de 1.54e306, la actualización incremental
-`xB[i] -= alpha_piv[i]*delta` se desborda (x_B = +inf), esa fila sale en el paso
-siguiente y su BTRAN sobre factores de ~1e306 da inf − inf = NaN en ρ. Con la
-fila pivote en NaN el ratio test no encuentra entrante y el simplex declara
-infactible con λ = ρ: el «rayo» NaN. La fila no se puede pivotear en doble
-precisión, así que `CtcSC` (y `CtcDFBHull`) descartan las filas con un
-coeficiente mayor que 1e100 (`nb_dropped_rows()`, `drop=` en `sc_solve`).
-Descartar una fila solo agranda el poliedro. Ahora `nan=0`.
-
-## Reproducir
+## Reproduce
 
 ```
-cd examples/sc_plugin && make PKG_CONFIG_PATH=<prefix>/share/pkgconfig
+make PKG_CONFIG_PATH=<prefix>/share/pkgconfig
 g++ -O3 -frounding-math -std=c++14 -I. -Iaffine casos/nan_lambda/sc_una.cpp \
     ibex_CtcSC.o ibex_SCSimplex.o ibex_SCBasis.o affine/*.o -o sc_una \
     $(pkg-config --cflags --libs ibex)
 cd casos/nan_lambda
 ../../sc_una preprocesado_nsc.mbx caja_art.txt art sc
-#   art sc: no vacia (10 variables contraidas), LPs=25, certificados con NaN=0
-#   (antes del filtro: 1 variable contraida, LPs=19, NaN=2)
+#   art sc: not empty (10 variables contracted), LPs=25, NaN certificates=0, dropped rows=1
 ../../sc_una preprocesado_nsc.mbx caja_xt.txt xt sc
-#   xt sc: no vacia (0 variables contraidas), LPs=27, certificados con NaN=0
+#   xt sc: not empty (0 variables contracted), LPs=27, NaN certificates=0, dropped rows=1
 ../../sc_solve preprocesado_nsc.mbx -t 60
 #   [sc] passes=5361 LPs=173330 pivots=1566729 nan=0 drop=681
-#   2293 <tiempo> 0 6 0 0 0   (antes: nan=3; mismo arbol)
+#   2293 <time> 0 6 0 0 0
 ```
 
-Antes de `b11a701`, las dos primeras líneas decían `VACIA`. `ph`
-(`CtcPolytopeHull`) en lugar de `sc` no vacía ninguna de las dos cajas.
-
-Con el Ibex de `develop` el `ibex.pc` pide `-llibsoplex`: hay que cambiarlo a
-`-lsoplex`.
+With `ph` (`CtcPolytopeHull`) instead of `sc`, neither box is emptied.

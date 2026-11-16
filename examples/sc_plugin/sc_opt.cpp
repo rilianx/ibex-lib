@@ -22,10 +22,30 @@
 
 #include <sstream>
 
+#ifdef SC_DEFINE_SMEAR_LF
+/* Missing in Ibex 2.8 (declared in ibex_SmearFunction.h, used by LSmear). */
+namespace ibex {
+SmearSumRelative::SmearSumRelative(System& sys, const Vector& prec, LargestFirst& lf) : SmearFunction(sys, prec, lf) { }
+}
+#endif
+
 using namespace std;
 using namespace ibex;
 
 namespace {
+
+/* OptimizerConfig::set_eps_x takes a double in Ibex 2.8 and a Vector in
+ * develop: call whichever exists. */
+template<class C> auto set_eps_x_any(C& c, int n, double eps, int)
+	-> decltype(c.set_eps_x(Vector(n, eps)), void()) { c.set_eps_x(Vector(n, eps)); }
+template<class C> void set_eps_x_any(C& c, int, double eps, long) { c.set_eps_x(eps); }
+/* get_eps_x returns a double in Ibex 2.8 and a Vector in develop: as a Vector
+ * of size n. */
+template<class C> auto eps_x_vec(const C& c, int n, int) -> decltype(c.get_eps_x().size(), Vector(1)) {
+	const Vector& e = c.get_eps_x();
+	return e.size() == 1 ? Vector(n, e[0]) : Vector(e);
+}
+template<class C> Vector eps_x_vec(const C& c, int n, long) { return Vector(n, c.get_eps_x()); }
 
 class SCOptimizerConfig : public OptimizerConfig, protected Memory {
 public:
@@ -38,7 +58,7 @@ public:
 		double eqeps = 1e-8;
 		ext_sys = &rec(new ExtendedSystem(*sys, eqeps));
 		norm_sys = &rec(new NormalizedSystem(*sys, eqeps));
-		set_eps_x(Vector(sys->nb_var, prec));
+		set_eps_x_any(*this, sys->nb_var, prec, 0);
 		set_rel_eps_f(goalprec);
 		set_abs_eps_f(goalprec);
 		set_timeout(timelimit);
@@ -95,13 +115,16 @@ protected:
 	}
 
 	virtual Bsc& get_bsc() {
-		const Vector& eps_x = get_eps_x();
+		/* precision of each variable of the extended system: that of the
+		 * original variable, the goal variable aside (set below) */
+		const Vector eps_x = eps_x_vec(*this, sys->nb_var, 0);
+		const int g = ext_sys->goal_var();
 		Vector prec(ext_sys->nb_var);
-		if (eps_x.size() == 1)
-			ext_sys->write_ext_vec(Vector(ext_sys->nb_var, eps_x[0]), prec);
-		else
-			ext_sys->write_ext_vec(eps_x, prec);
-		prec[ext_sys->goal_var()] = OptimizerConfig::default_eps_x;
+		for (int i = 0; i < ext_sys->nb_var; ++i)
+			if (i != g) prec[i] = eps_x[i < g ? i : i - 1];
+		/* the goal variable has no precision (default_eps_x = 0); Ibex 2.8 requires
+		 * a positive one, so the smallest positive double stands for it */
+		prec[ext_sys->goal_var()] = OptimizerConfig::default_eps_x > 0 ? OptimizerConfig::default_eps_x : 1e-300;
 		OptimLargestFirst& lf = rec(new OptimLargestFirst(ext_sys->goal_var(), true, prec, 0.5));
 		if (bisection == "lsmearmg")
 			return rec(new LSmear(*ext_sys, prec, lf));
