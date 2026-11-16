@@ -146,8 +146,7 @@ solver that already runs for upper bounding, so nothing is solved for the bound.
   on the instances that take more than a second (36 instances faster, one slower); the
   bound costs less than 1\% of the running time, and range reduction accounts for 7\% of
   the gain (17 instances faster, none slower). With the same variable domains for both
-  solvers, it solves 244 instances and SCIP~10 224; SCIP is faster on 37 of the 66
-  instances both solve in more than a second.
+  solvers, it solves 244 instances and SCIP~10 224.
 \end{enumerate}
 
 The paper is organized as follows. Section~\ref{sec:related} reviews related work.
@@ -731,27 +730,27 @@ around the optimum where the shift penalty is small.
 
 \subsection{Variants of the bound}
 
-Table~\ref{tab:variants} compares, against the bound with certificate first and shift
-as fallback (without range reduction),
-the bound applied only on boxes where convexity is certified (Gerschgorin test; or
-Gerschgorin, comparison matrix and interval Cholesky), the Gerschgorin shift alone,
-the shift that keeps the better of the plain and scaled Gerschgorin rules, and the
-Gerschgorin shift without backoff.
+Table~\ref{tab:variants} compares the default (certificate first, shift as fallback,
+range reduction) with the same bound without range reduction and with variants of the
+bound, all without range reduction: the bound applied only on boxes where convexity is
+certified (Gerschgorin test; or Gerschgorin, comparison matrix and interval Cholesky),
+the Gerschgorin shift alone, the shift that keeps the better of the plain and scaled
+Gerschgorin rules, and the Gerschgorin shift without backoff.
 
 \begin{table}[h]
 \centering
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lcccc}
 \hline
-variant & solved /298 & time vs.\ certify-else-shift [95\% CI] & W/L & nodes \\
+variant & solved /298 & time vs.\ default [95\% CI] & W/L & nodes \\
 \hline
-certify, else shift & 240 & 1.00 & -- & 1.00 \\
-+ range reduction (default) & 240 & \textbf{0.96} [0.92, 0.98] & 12/0 & 0.97 \\
-certify only, Gerschgorin & 235 & 1.20 [1.08, 1.40] & 0/19 & 1.19 \\
-certify only, + comparison matrix, Cholesky & 237 & 1.06 [1.00, 1.14] & 1/14 & 1.02 \\
-Gerschgorin shift & 237 & 1.12 [1.01, 1.29] & 1/10 & 1.14 \\
-better of plain and scaled shift & 239 & 1.11 [1.01, 1.27] & 0/6 & 1.14 \\
-Gerschgorin shift, no backoff & 237 & 1.14 [1.03, 1.31] & 1/9 & 1.14 \\
+certify, else shift, range reduction (default) & \textbf{240} & 1.00 & -- & 1.00 \\
+certify, else shift, no range reduction & 240 & 1.04 [1.02, 1.09] & 0/12 & 1.04 \\
+certify only, Gerschgorin & 235 & 1.26 [1.12, 1.47] & 0/20 & 1.23 \\
+certify only, + comparison matrix, Cholesky & 237 & 1.11 [1.05, 1.21] & 0/17 & 1.06 \\
+Gerschgorin shift & 237 & 1.17 [1.06, 1.34] & 0/17 & 1.18 \\
+better of plain and scaled shift & 239 & 1.16 [1.05, 1.33] & 0/17 & 1.18 \\
+Gerschgorin shift, no backoff & 237 & 1.19 [1.07, 1.38] & 0/18 & 1.18 \\
 \hline
 \end{tabular}}
 \caption{Variants of the bound. Time ratios, W/L and nodes on the 223 instances solved
