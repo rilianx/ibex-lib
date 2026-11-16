@@ -1,4 +1,4 @@
-# Reproducing *Certificate-driven polytope-hull contraction for interval branch and bound*
+# Reproducing *A self-certifying simplex for polytope-hull contraction in interval branch and bound*
 
 I. Araya, E. Pérez, V. Reyes.
 

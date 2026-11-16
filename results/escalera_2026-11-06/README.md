@@ -1,7 +1,7 @@
 # Reproducing the experiments of the SC paper
 
 This folder holds the raw results of every experiment in
-*Certificate-driven polytope-hull contraction for interval branch and bound*
+*A self-certifying simplex for polytope-hull contraction in interval branch and bound*
 (`examples/dfb/paper/main.tex`), the scripts that ran them, and the scripts
 that turn them into the tables. The code is in `examples/dfb` of the same
 commit.

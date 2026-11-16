@@ -33,7 +33,7 @@ What a pass does:
 - the pass stops as soon as the relaxation is proved empty.
 
 This is the configuration called *SC base* in the paper
-*Certificate-driven polytope-hull contraction for interval branch and bound*
+*A self-certifying simplex for polytope-hull contraction in interval branch and bound*
 (I. Araya, E. Pérez, V. Reyes). The research code it was extracted from, and
 everything needed to reproduce the experiments of the paper, are in the
 branch [`dfb-sc-paper`](https://github.com/rilianx/ibex-lib/tree/dfb-sc-paper)
@@ -197,5 +197,5 @@ License).
 ## Citation
 
 If you use `CtcSC`, please cite: I. Araya, E. Pérez, V. Reyes,
-*Certificate-driven polytope-hull contraction for interval branch and bound*
+*A self-certifying simplex for polytope-hull contraction in interval branch and bound*
 (submitted).
