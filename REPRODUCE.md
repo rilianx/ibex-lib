@@ -2,6 +2,8 @@
 
 I. Araya, E. Pérez, V. Reyes.
 
+DOI: <https://doi.org/10.5281/zenodo.24284785>
+
 This archive is a snapshot of the branch `dfb-sc-paper` of
 <https://github.com/rilianx/ibex-lib>, a fork of Ibex 2.8.9. It contains
 everything needed to rebuild the code of the paper and to recompute its tables

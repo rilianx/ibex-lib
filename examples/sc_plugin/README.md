@@ -38,7 +38,7 @@ This is the configuration called *SC base* in the paper
 everything needed to reproduce the experiments of the paper, are in the
 branch [`dfb-sc-paper`](https://github.com/rilianx/ibex-lib/tree/dfb-sc-paper)
 of `rilianx/ibex-lib` (`examples/dfb`, `results/escalera_2026-11-06`), archived
-at Zenodo.
+at Zenodo: <https://doi.org/10.5281/zenodo.24284785>.
 
 ## Files
 
