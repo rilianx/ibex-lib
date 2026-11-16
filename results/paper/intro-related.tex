@@ -4,7 +4,7 @@
 \usepackage[numbers,sort&compress]{natbib}
 \usepackage{graphicx}
 \usepackage{algorithm}
-\usepackage{algpseudocode}
+\usepackage[noend]{algpseudocode}
 \newtheorem{proposition}{Proposition}
 \usepackage{hyperref}
 
@@ -17,26 +17,23 @@ in a rigorous interval branch and bound}
 \maketitle
 
 \begin{abstract}
-Interval branch-and-bound solvers such as IbexOpt compute rigorous enclosures of the
-global optimum of nonconvex continuous problems, but their lower bounds, obtained from
-linear relaxations over each box, stay loose long after the incumbent is optimal. The
-local NLP solver that these codes call for upper bounding returns, at no extra cost, a
-KKT point together with Lagrange multipliers, which are usually discarded. It is known
-that a lower bound of the Lagrangian with fixed multipliers over a box certifies that
-the box holds no better point, and that convexity of such a Lagrangian can be verified
-with interval Hessians. We turn these facts into a lower bound that is cheap and tight
-enough to be computed at every node of the search, for general twice-differentiable
-problems. With the solver's multipliers, we enclose the Hessian of the Lagrangian on
-the box and certify that it is positive semidefinite or, when that fails, shift it
-diagonally as in $\alpha$BB; the tangent plane of the Lagrangian at the local solution,
-minus the shift penalty, is then minimized in closed form over the box and corrected
-for the relaxation of the equalities. The same separable expression also reduces the
-range of each variable. In IbexOpt with Ipopt, on 298 instances of the COCONUT
-benchmark, the bound with range reduction solves 11 more instances (240 against 229)
-and halves the solving time on the instances that take more than a second, at a cost
-below 1\% of the running time. With the same variable domains, the rigorous solver
-then solves more instances than SCIP~10 (244 against 224), although SCIP is faster on
-most of the instances both solve.
+Rigorous interval branch-and-bound solvers enclose the global optimum of nonconvex
+continuous problems, but their lower bounds, obtained from linear relaxations over each
+box, often stay loose long after the incumbent is optimal. The local solver that these
+codes call to find feasible points returns, at no extra cost, Lagrange multipliers,
+which are usually discarded. It is known that a lower bound of the Lagrangian with
+fixed multipliers over a box certifies that the box holds no better point. We turn this
+observation into a lower bound that is cheap and tight enough to be computed at every
+node of the search, for general twice-differentiable problems. With the multipliers of
+the local solver, we bound the curvature of the Lagrangian on the box with interval
+arithmetic; when the Lagrangian cannot be proved convex there, a diagonal quadratic term
+restores convexity and its cost is subtracted from the bound. The tangent plane of the
+Lagrangian at the local solution then gives a rigorous lower bound on the box in closed
+form. In the interval solver IbexOpt with Ipopt as local solver, on 298 instances of the
+COCONUT benchmark, the bound solves 11 more instances (240 against 229) and halves the
+solving time on the instances that take more than a second, at a cost below 1\% of the
+running time. With the same variable domains, the solver then solves more instances than
+SCIP~10 (244 against 224), although SCIP is faster on most of the instances both solve.
 \end{abstract}
 
 \section{Introduction}
@@ -61,13 +58,13 @@ solver (i)~contracts the box with constraint propagation and with linear relaxat
 (ii)~computes a lower bound of $f$ over the feasible part of the box, typically as the
 optimal value of a linear relaxation made safe with the technique of
 \citet{NeumaierShcherbina2004} and \citet{Jansson2004lp}, and (iii)~searches for a
-feasible point that may improve the incumbent value (the \emph{loup}). In IbexOpt,
-step~(iii) combines cheap heuristics (probing and the inner regions of
-\citet{Araya2014}) with calls to a local NLP solver, the interior-point solver Ipopt
-\citep{WachterBiegler2006}, whose approximate local optimum is then certified as
-feasible by a small box built around it. Calling a local solver for upper bounding is
-standard practice in global optimization; nothing in what follows is specific to Ipopt
-beyond the fact that it returns Lagrange multipliers.
+feasible point that may improve the incumbent value (the \emph{loup}). Step~(iii)
+usually combines cheap heuristics with calls to a local NLP solver, such as the
+interior-point solver Ipopt \citep{WachterBiegler2006}, whose approximate local optimum
+must then be certified feasible, for instance in a small box built around it
+\citep{Kearfott2014}. Calling a local solver for upper bounding is standard practice in
+global optimization; nothing in what follows depends on the local solver beyond the fact
+that it returns Lagrange multipliers.
 
 Two observations motivate this work. First, on a large benchmark the incumbent is usually
 optimal, or very close to it, long before the search ends. Most of the remaining effort
@@ -75,14 +72,16 @@ goes into closing the gap from below, and the linear relaxations of the problem 
 small boxes are the bottleneck. Second, each successful call to the local solver returns not only a
 point $\hat x$ but a full primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$, with
 multipliers $\hat\mu \ge 0$ for the inequalities and $\hat\lambda$ for the equalities.
-IbexOpt, like most global solvers, discards the multipliers. Yet weak Lagrangian
-duality holds for
+Most global solvers discard the multipliers. Yet weak Lagrangian duality holds for
 \emph{any} multipliers, not only optimal ones: for every feasible $x$ of the relaxed
 problem,
 \begin{equation}\label{eq:weak}
   f(x) \;\ge\; L(x) - \varepsilon_h \textstyle\sum_j |\hat\lambda_j|,
-  \qquad L(x) := f(x) + \hat\mu^\top g(x) + \hat\lambda^\top h(x).
+  \qquad L(x) := f(x) + \hat\mu^\top g(x) + \hat\lambda^\top h(x),
 \end{equation}
+where $\varepsilon_h$ is the tolerance to which the solver relaxes the equalities
+($|h(x)| \le \varepsilon_h$ for every point it calls feasible): on such a point
+$\hat\mu^\top g(x) \le 0$ and $|\hat\lambda^\top h(x)| \le \varepsilon_h \sum_j |\hat\lambda_j|$.
 A lower bound on $f$ over the feasible part of $[x]$ therefore follows from any lower
 bound of the Lagrangian $L$ over the \emph{whole} box, with no constraints left.
 
@@ -103,7 +102,7 @@ and let $d \ge 0$ be such that $H + \operatorname{diag}(d)$ is positive semidefi
 for every $H \in [H]$: $d = 0$ if a positive-semidefiniteness test succeeds, otherwise
 the Gerschgorin shift of $\alpha$BB \citep{Adjiman1998a},
 $d_i = \max\{0, \sum_{j \ne i} \lvert [H]_{ij} \rvert - h^L_{ii}\}$, where $h^L_{ii}$
-is the lower end of $[H]_{ii}$, or its scaled variant. Then, for every $x \in [x]$,
+is the lower end of $[H]_{ii}$. Then, for every $x \in [x]$,
 \begin{equation}\label{eq:bound}
   L(x) \ge L(\hat x) + \nabla L(\hat x)^\top (x - \hat x)
           - \frac{1}{2} \sum_i d_i (x_i - \hat x_i)^2 ,
@@ -377,21 +376,20 @@ $[x] = [x_1] \times \dots \times [x_n]$ a vector of intervals. Interval arithmet
 evaluates an expression with interval operands and outward rounding, so that the
 result encloses every value the expression takes on the box: an inclusion function
 $[f]$ of $f$ satisfies $f([x]) \subseteq [f]([x])$ for every box
-\citep{HansenWalster2004,Neumaier2004}. IbexOpt keeps the
-objective as an extra variable $y$ with the constraint $y = f(x)$, so that every node
-is a box $[x] \times [y]$ and its lower bound is $\underline{y}$. Equalities are
-relaxed to $|h_j(x)| \le \varepsilon_h$ ($\varepsilon_h = 10^{-8}$ by default) and
-a range constraint $h_j(x) \in [a_j, b_j]$ (thick constant) is kept as such. The search
-stops when $(\text{loup} - \text{uplo})$ is below a relative ($10^{-3}$) or absolute
-($10^{-7}$) precision.
+\citep{HansenWalster2004,Neumaier2004}. Interval branch-and-bound solvers commonly keep
+the objective as an extra variable $y$ with the constraint $y = f(x)$, so that every
+node is a box $[x] \times [y]$ and its lower bound is $\underline{y}$. Equalities are
+relaxed to $|h_j(x)| \le \varepsilon_h$ for a small tolerance $\varepsilon_h$. The
+search stops when the gap between the incumbent value (loup) and the smallest lower
+bound of the open nodes (uplo) is below a relative or absolute precision.
 
-At each node, IbexOpt
-(i)~contracts the box with constraint propagation (HC4, ACID) and with a linear
-relaxation (XTaylor and affine arithmetic, \texttt{--relax both}) solved by an LP
-solver whose optimum is made safe as in \citet{NeumaierShcherbina2004};
+At each node, the solver
+(i)~contracts the box with constraint propagation and with a linear relaxation solved
+by an LP solver whose optimum is made safe as in \citet{NeumaierShcherbina2004};
 (ii)~raises $\underline{y}$ accordingly;
 (iii)~runs the upper-bounding heuristics;
-(iv)~stores the node in a best-first heap (\texttt{lsmear} branching).
+(iv)~bisects the box and stores the children in a heap ordered by their lower bound
+(best-first).
 Figure~\ref{fig:loop} shows this loop and where the bound of
 Section~\ref{sec:bound} plugs in.
 
@@ -400,12 +398,14 @@ Section~\ref{sec:bound} plugs in.
 \fbox{\begin{minipage}{0.9\textwidth}
 \begin{enumerate}
 \item Pop the node $[x]\times[y]$ with the lowest $\underline{y}$ from the heap;
-  bisect it (\texttt{lsmear}) into two children. For each child:
+  bisect it into two children. For each child:
 \item \emph{Contract}: $[y] \gets [y] \cap (-\infty, \text{loup} - \text{prec}]$;
-  HC4, ACID and the safe LP relaxation contract $[x] \times [y]$. If empty, discard.
-\item \emph{Upper bound}: probing, inner regions and, on schedule, Ipopt on the
+  constraint propagation and the safe LP relaxation contract $[x] \times [y]$. If
+  empty, discard.
+\item \emph{Upper bound}: cheap heuristics and, on some nodes, the local solver on the
   child's box; a point certified feasible may lower the loup.
-  \textbf{New:} Ipopt's primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ is stored.
+  \textbf{New:} the local solver's primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$
+  is stored.
 \item \textbf{New:} \emph{Lagrangian bound}: $\underline{y} \gets
   \max(\underline{y}, \beta)$ with $\beta$ the bound~\eqref{eq:bound} on
   the child's box from the stored pair (Algorithm~\ref{alg:bound}); if
@@ -415,22 +415,22 @@ Section~\ref{sec:bound} plugs in.
   $\text{loup} - \min \underline{y} \le \text{prec}$.
 \end{enumerate}
 \end{minipage}}
-\caption{One iteration of IbexOpt's best-first search; the steps marked \textbf{New}
+\caption{One iteration of a best-first interval branch and bound; the steps marked \textbf{New}
 are added by this work. prec is the absolute or relative precision.}
 \label{fig:loop}
 \end{figure}
 
 \subsection{Upper bounding with a local solver}\label{sec:ub}
 
-The loup finder combines probing, inner-region heuristics on the linear relaxation
-\citep{Araya2014} and a local NLP solver (Ipopt) called every $k$ loup-finder calls
-(and when another heuristic improves the incumbent, from its point). Ipopt solves the
-problem restricted to the current box from its midpoint and returns
-$(\hat x, \hat\mu, \hat\lambda)$. Because $\hat x$ satisfies the constraints only up to
-Ipopt's tolerances, a short nested search in a small box around $\hat x$ looks for a
-point that interval arithmetic proves feasible; only a certified point updates the
-loup. We keep this scheme unchanged; what we add is to store the last usable
-primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ that Ipopt returns.
+On some nodes, the upper-bounding step calls a local NLP solver on the problem
+restricted to the node's box, which returns an approximate local solution $\hat x$ with
+multipliers $(\hat\mu, \hat\lambda)$. Because $\hat x$ satisfies the constraints only up
+to the solver's tolerances, a feasible point must then be certified nearby, for
+instance by an existence proof or a short search in a small box around $\hat x$; only a
+certified point updates the loup. We keep the upper bounding unchanged; what we add is
+to store the last usable primal--dual pair $(\hat x, \hat\mu, \hat\lambda)$ that the local
+solver returns. The upper bounding of our implementation is described in
+Section~\ref{sec:exp}.
 
 \section{A certified Lagrangian lower bound}\label{sec:bound}
 
@@ -443,7 +443,7 @@ For any $\mu \ge 0$ and $\lambda$, and any $x$ that the search treats as feasibl
   f(x) \;\ge\; L_{\mu,\lambda}(x) - \varepsilon_h \|\lambda\|_1,
   \qquad L_{\mu,\lambda} = f + \mu^\top g + \lambda^\top h .
 \]
-Ipopt's multipliers are projected onto the right signs (a multiplier of an
+The local solver's multipliers are projected onto the right signs (a multiplier of an
 inequality with the wrong sign is set to $0$), which keeps the inequality valid without
 any assumption on their quality.
 
@@ -595,7 +595,8 @@ the bound loses the curvature the certificate keeps.
 
 The bound is computed at every node after contraction and upper bounding
 (Figure~\ref{fig:loop}), with the last stored primal--dual pair: the one of this node's
-Ipopt call if Ipopt ran here, otherwise one computed at an earlier node, so nothing is
+local-solver call if the local solver ran here, otherwise one computed at an earlier
+node, so nothing is
 solved for the bound itself. If it exceeds $\underline{y}$, it raises it; if it exceeds
 the loup, the node is pruned. \textbf{Backoff:} when an attempt is not useful (no
 certificate and no improvement of the node's lower bound), the next attempt is
@@ -653,7 +654,14 @@ the Minibex translation distributed with Ibex: 223 that IbexOpt (with Ipopt) sol
 
 \emph{Solver and settings.} IbexOpt from Ibex 2.8 with our changes, Gaol for interval
 arithmetic, SoPlex for the LP relaxations and Ipopt 3.11.9 (MUMPS) as local solver;
-\texttt{lsmear} branching, XTaylor and affine relaxations, ACID, best-first search.
+\texttt{lsmear} branching, XTaylor and affine relaxations, HC4 and ACID contractors,
+best-first search. The upper bounding with Ipopt is a research variant of IbexOpt, not
+part of the distributed solver: besides probing and the inner-region heuristics of
+\citet{Araya2014}, it calls Ipopt every $k$ calls of the upper-bounding step (and from
+the point found by another heuristic when it improves the incumbent), on the problem
+restricted to the node's box from its midpoint; a short nested search in a small box
+around Ipopt's point then looks for a point that interval arithmetic proves
+feasible.
 Relative precision $10^{-3}$, absolute $10^{-7}$, $\varepsilon_h = 10^{-8}$, time limit
 1200~s, one thread per run. All budgets that could depend on the machine (backoff,
 calls to the local solver) are counted in nodes or calls, so the search is
@@ -808,7 +816,13 @@ solved.
 
 \subsection{Comparison with SCIP}
 
-We ran SCIP~10.0 (through PySCIPOpt 6.3) on the same machine, with the same time
+We compare with SCIP \citep{VigerskeGleixner2018} because it is a state-of-the-art
+spatial branch-and-bound solver for nonconvex problems whose source code is open (Apache
+2.0 licence since version~8), so the runs can be reproduced on the same machine with
+the same limits; commercial solvers such as BARON or Gurobi require a licence. SCIP is
+not rigorous: its bounds are computed in floating point with tolerances, so the
+comparison measures the cost of rigor as much as the effect of our bound. We ran
+SCIP~10.0 (through PySCIPOpt 6.3) on the same machine, with the same time
 limit, the same relative and absolute gaps, one thread and otherwise default settings,
 on the 298 instances translated from Minibex; seven cannot be translated (eight on the
 original domains). SCIP treats an unbounded variable as unbounded,
