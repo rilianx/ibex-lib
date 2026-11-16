@@ -190,9 +190,10 @@ wrote the relaxation in the homogeneous form used here and showed that the
 dual solutions of the bound LPs give the optimal preconditioner for an
 interval Gauss--Seidel projection, and Gleixner et
 al.~\cite{gleixner2017three} reuse the equivalent inequalities in sub-boxes.
-In all of them certification is a post-processing step, whose cost leads to
-applying it to a few promising variables~\cite{domes2012rigorous} or only
-periodically~\cite{reyes2023preconditioning}. Minimizing and maximizing
+In all of them certification is a post-processing step after an external
+LP solver, and the cost of the bound LPs leads to solving them only for a few
+promising variables~\cite{domes2012rigorous}, or only periodically, with a
+cheaper projection in between~\cite{reyes2023preconditioning}. Minimizing and maximizing
 each variable over a relaxation is also the optimization-based bound
 tightening of global optimization solvers, where rigor is not
 required~\cite{ryoo1996branch,belotti2009branching,gleixner2017three}.
@@ -277,7 +278,7 @@ and $\iv{C}_k(\lambda,\iv{z}):=\R$ when $0\in\iv{\gamma}_k$;
 and the \emph{residual} is $\iv{R}(\lambda,\iv{z}) := \sum_{j}\iv{\gamma}_j\,\iv{z}_j$.
 \end{definition}
 
-The idea is a single line. Every point $z$ of the polytope satisfies
+The idea is simple. Every point $z$ of the polytope satisfies
 $\Abar z=0$, hence $\gamma^T z=\lambda^T\Abar z=0$ for any $\lambda$, that is,
 $\gamma_k z_k=-\sum_{j\neq k}\gamma_j z_j$. Bounding the right-hand side over
 the box in interval arithmetic, and dividing by $\gamma_k$, encloses $z_k$; and
@@ -315,14 +316,30 @@ introduced in~\cite{reyes2023preconditioning}, adds one detail: each slack is
 bounded by $\square(A_{i:}\iv{x})$ even when a side of $\iv{b}_i$ is infinite,
 so a multiplier of the ``wrong'' sign on a one-sided row gives a weaker but
 finite bound, and literally any $\lambda$ certifies. Two standard facts
-complete what the design uses. At an optimal basis of the bound problem
-$\mathrm{LP}_k^{\min}$ (see~\eqref{eq:lpk}) with
-$z_k$ basic, $\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value in
-exact arithmetic, by LP duality~\cite[Prop.~1]{reyes2023preconditioning}; in
-floating point the excess is at most $\sum_j\wid(\iv{\gamma}_j)\magn(\iv{z}_j)$
-plus the effect of the inaccuracy of $\lambda$, as for the
-Neumaier--Shcherbina bound. And every basis can be made dual feasible for
-free~\cite{koberstein2005dual}:
+complete what the design uses. The multipliers of an optimal basis give the
+best bound the relaxation allows, that is, the optimal contraction of that
+bound~\cite[Prop.~1]{reyes2023preconditioning}:
+
+\begin{proposition}[Optimal multipliers]\label{prop:opt}
+Let $\lambda^*$ be the multipliers of an optimal basis of the bound problem
+$\mathrm{LP}_k^{\min}$~\eqref{eq:lpk} in which $z_k$ is basic. In exact
+arithmetic, $\inff\iv{C}_k(\lambda^*,\iv{z})$ equals the optimal value of
+$\mathrm{LP}_k^{\min}$.
+\end{proposition}
+\begin{proof}
+With $z_k$ basic, $d=e_k-\Abar^T\lambda^*$ has $d_k=0$, so $\gamma_k=1$,
+$\gamma_j=-d_j$ for $j\neq k$, and
+$\inff\iv{C}_k=\sum_{j\neq k}\min_{z_j\in\iv{z}_j}d_jz_j=\min_{z\in\iv{z}}d^Tz$.
+For $z\in P(\iv{x})$, $d^Tz=z_k$, so this minimum is at most the optimal value.
+At an optimal basis each nonbasic $z_j$ sits at the bound that minimizes
+$d_jz_j$, and $d_j=0$ for the basic ones, so the minimum is attained at the
+optimal vertex $z^*$, where $d^Tz^*=z^*_k$.
+\end{proof}
+
+In floating point the excess is at most
+$\sum_j\wid(\iv{\gamma}_j)\magn(\iv{z}_j)$ plus the effect of the inaccuracy
+of $\lambda$, as for the Neumaier--Shcherbina bound. And every basis can be
+made dual feasible for free~\cite{koberstein2005dual}:
 
 \begin{proposition}[Dual-feasible start]\label{prop:start}
 The slack basis $B=-I_m$ is dual feasible for the bound problem of every
@@ -340,7 +357,8 @@ enforces the sign conditions whenever the required bound is finite.
 \end{proof}
 
 When the objective changes from one bound to the next, or the box contracts,
-relocation thus restores dual feasibility without a phase~1, which is what
+relocation thus restores dual feasibility without a phase~1 (a preliminary
+search for a feasible basis), which is what
 lets one basis serve the $2n$ problems; the case of a box change is the warm
 start of Yamamura and coworkers~\cite{yamamura2001dual,yamamura2006dual}.
 Section~\ref{sec:simplex} explains how the simplex produces $\lambda$.
@@ -476,13 +494,14 @@ the omitted checks.
 Algorithm~\ref{alg:sc} shows one call of SC, the \textsc{Solve} of
 Algorithm~\ref{alg:pass}. Lines~\ref{as:slack}--\ref{as:xb} prepare the LP
 from the state left by the previous one (Section~\ref{sec:warm}). The loop of
-lines~\ref{as:loop}--\ref{as:limit} combines both methods: it takes a dual step
-while some basic variable violates its bounds, a primal step while some reduced
-cost has the wrong sign, and stops at an optimal basis
+lines~\ref{as:loop}--\ref{as:limit} runs the dual simplex method in the first
+LP and after a dual warm start, when the basis is dual feasible, and the
+primal simplex method after a primal warm start, when the previous optimal
+basis is still primal feasible.\footnote{If the previous LP stopped at its
+iteration limit, its basis may not be primal feasible; the implementation then
+also takes dual steps before the primal ones.} It stops at an optimal basis
 (line~\ref{as:opt}), at a Farkas ray (line~\ref{as:ray}) or at the iteration
-limit (line~\ref{as:limit}); Section~\ref{sec:iter} describes the steps. After a dual warm start
-the basis is dual feasible and only dual steps occur; after a primal one it is
-primal feasible and only primal steps occur. The two lines marked $\star$ are
+limit (line~\ref{as:limit}); Section~\ref{sec:iter} describes the steps. The two lines marked $\star$ are
 where the design described above departs from a general-purpose solver:
 line~\ref{as:keep}, the warm start, starts each LP from the final basis of
 the previous one, with its factors,
@@ -517,7 +536,11 @@ differently.}\label{alg:sc}
 \State $x_B\gets -B^{-1}\Abar_N z_N$
   \Comment{values of the basic variables}\label{as:xb}
 \For{$t=1,\dots,100$}\label{as:loop}
-  \If{some basic variable violates its bounds} \Comment{dual step}\label{as:dual}
+  \If{first LP \textbf{or} dual warm start}
+    \Comment{dual simplex: $B$ is dual feasible (Prop.~\ref{prop:mono})}\label{as:dual}
+    \If{no basic variable violates its bounds} \Return $\lambda$
+      \Comment{optimal; $\star$ not refactorized}\label{as:opt}
+    \EndIf
     \State $r\gets$ the basic variable with the largest violation;
       $\delta\gets x_{B_r}$ minus the bound it violates
     \State $\rho_r\gets B^{-T}e_r$;\ \ $\alpha_r^T\gets\rho_r^T\Abar$
@@ -526,7 +549,9 @@ differently.}\label{alg:sc}
       \Comment{Farkas ray}\label{as:ray}
     \EndIf
     \State $\alpha_q\gets B^{-1}\Abar_{:q}$;\ \ $\theta_p\gets\delta/\alpha_{rq}$\label{as:dualend}
-  \ElsIf{some nonbasic $d_j$ has the wrong sign} \Comment{primal step}\label{as:primal}
+  \Else \Comment{primal simplex: $B$ is primal feasible}\label{as:primal}
+    \If{no nonbasic $d_j$ has the wrong sign} \Return $\lambda$ \Comment{optimal}
+    \EndIf
     \State $q\gets$ the nonbasic variable with the largest such $|d_j|$;
       $\alpha_q\gets B^{-1}\Abar_{:q}$
     \State $\theta_p\gets$ the largest step of $z_q$, of the sign of $-d_q$, that keeps
@@ -538,9 +563,6 @@ differently.}\label{alg:sc}
       \State \textbf{go to} the next iteration \Comment{bound flip, no pivot}
     \EndIf
     \State $\rho_r\gets B^{-T}e_r$;\ \ $\alpha_r^T\gets\rho_r^T\Abar$\label{as:primalr}
-  \Else
-    \State \Return $\lambda$
-      \Comment{optimal; $\star$ a solver refactorizes and verifies first}\label{as:opt}
   \EndIf
   \State $\theta_d\gets d_q/\alpha_{rq}$
   \State $x_B\gets x_B-\theta_p\alpha_q$;\ \ $\lambda\gets\lambda+\theta_d\rho_r$;\ \
@@ -670,8 +692,9 @@ same policy when an LP ends without an optimum: the multipliers where it
 stopped certify a weaker bound, and the pass continues
 (Section~\ref{sec:pass}). The configurations differ in one step at a time:
 \begin{enumerate}
-\item[R0] \emph{SoPlex as Ibex uses it}: SoPlex~4.0.2 through the LP interface
-of Ibex, which stores the $n$ variable bounds as rows, with presolving on, the
+\item[R0] \emph{SoPlex as Ibex uses it}: SoPlex~4.0.2, the version shipped with
+Ibex and the one its documentation declares compatible, through the LP
+interface of Ibex, which stores the $n$ variable bounds as rows, with presolving on, the
 tolerance $10^{-9}$, the nearest bound first as in the contractor of Ibex, and
 at most 100 iterations per LP;
 \item[R1] \emph{+ merging twin rows} (Section~\ref{sec:merge});
@@ -703,10 +726,11 @@ the 36 systems) and contracts 1\% less.}
 \item[R5] \emph{the hybrid}: SC on relaxations of at most 30 rows, the bare
 simplex beyond.
 \end{enumerate}
-Each rung is compared with R0. HiGHS~1.15.1 and Gurobi~12.0.3, with one
-thread, the dual simplex, the basis kept between LPs and no presolve, cost
-2.3--4.6 times as much per pass as the tuned SoPlex, so we leave them out of
-the ladder.
+Each rung is compared with R0. Three other engines are left out of the
+ladder because they are slower per pass than the tuned SoPlex: SoPlex~8.1.0,
+the latest release (footnote of R2), and HiGHS~1.15.1 and Gurobi~12.0.3, with
+one thread, the dual simplex, the basis kept between LPs and no presolve,
+which cost 2.3--4.6 times as much.
 
 \paragraph{Setting.}
 Contractor and solvers are implemented in Ibex 2.8.9, with the affine and
@@ -724,9 +748,11 @@ average over the nodes, and \emph{large} otherwise; these are the two size
 classes of the tables. For systems of
 equations we use the solver composition of Ibex (HC4, ACID, interval Newton
 when the system is square, and the linear contractor within a fixed point with
-HC4) with the LSmear bisector, on the 242 systems of the Ibex solver benchmark
+HC4) with the LSmear bisector, on the 242 systems of the Ibex solver benchmark,
+drawn from the COPRIN collection~\cite{coprin},
 that some configuration solves within 3600\,s, 2 seeds, 60\,s per run; for
-optimization, IbexOpt on the 240 problems of the Ibex optimization benchmark
+optimization, IbexOpt on the 240 problems of the Ibex optimization benchmark,
+drawn from the COCONUT library~\cite{shcherbina2003benchmarking},
 that some configuration solves within 3600\,s, 4 seeds, 60\,s per run. Three
 of them, bearing, alkyl and alkylbis, are left out of the means: their narrow
 equalities make the upper bounding of IbexOpt, not the contractor, decide the
@@ -810,18 +836,17 @@ that a call of R2 performs, on separate vectors so that the contraction does
 not change. A pass of SC then goes from 0.55--0.60 to 0.88--0.92 times that of
 R2 (geometric means over 100 of the 104 instances; the emulation failed on
 four): refactorizing at every LP accounts for 49--56\% of the gap (in
-logarithm), verifying the solution for 22--23\%, and recomputing the vectors
-and copying the solution for 7--8\%.
+logarithm), verifying the solution (the check of the precision of its primal
+and dual solutions that SoPlex makes before returning; the certificate, which
+every engine receives, is not part of it) for 22--23\%, and recomputing the
+vectors and copying the solution for 7--8\%.
 
 Against the bare simplex (R3), which already skips the checks and copies of
-the \texttt{SoPlex} class, these are not what matters. We added to
-\texttt{SPxSolver} two switches that skip its refactorization before an
-optimum and its precision check: the factorizations per LP drop from 0.79 to
-0.10 on ex7\_2\_3, yet a pass of R3 becomes only 7\% cheaper on optimization
-problems and 4\% on systems, with the same contraction, and SC remains 22\%
-and 12\% cheaper (geometric means; it wins on 69 of the 74 problems and 22 of
-the 36 systems). On bases of 5 to 16 rows a factorization is cheap. What
-remains is the cost of a call of \texttt{SPxSolver::solve} as such: it
+the \texttt{SoPlex} class, these are not what matters: skipping also its
+refactorization before an optimum and its precision check makes a pass of R3
+only 4--7\% cheaper, since a factorization is cheap on bases of 5 to 16 rows.
+What separates R3 from SC is the cost of a call of \texttt{SPxSolver::solve}
+as such: it
 prepares every LP as a new problem, rebuilding its primal and dual vectors and
 its pricing and ratio-test vectors from the factorization (4--25\% of its time
 in profiles of four problems), with a per-pivot bookkeeping built for general
@@ -937,7 +962,7 @@ Table~\ref{tab:solver} runs the same ladder inside the search. To weight
 families equally, we keep one instance per family and size class, the one
 with the largest relaxation; families are the prefix of the name on systems
 of equations, while on optimization problems every problem is its own family,
-except for reformulations of the same problem (\texttt{bis}, \texttt{-1}).
+except for reformulations of the same problem.
 To populate both size classes of the systems, we pool their runs with the
 affine and \texttt{compo} relaxations, each (instance, relaxation) classified
 by its own size. Times are normalized per run as on the bank; unfinished runs
